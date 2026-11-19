@@ -6,7 +6,7 @@
         </div>
         <div class="page-actions">
             <a href="{{ route('dhiran.loans') }}" class="btn btn-secondary btn-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                <x-icon name="arrow-left" size="14" class="mr-1" />
                 Back to Loans
             </a>
         </div>
@@ -18,12 +18,12 @@
          @turbo:before-cache.window="document.body.classList.remove('dh-modal-open')">
 
         <form method="POST" action="{{ route('dhiran.store') }}" class="dhiran-create-form max-w-4xl mx-auto space-y-6" @submit="prepareSubmit" data-turbo-frame="_top">
-            @csrf
+            @csrf <x-dhiran.once />
 
             {{-- Customer Section --}}
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-visible p-6">
                 <div class="dh-section-title">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    <x-icon name="user" />
                     Customer Details
                 </div>
 
@@ -31,13 +31,13 @@
                     <div class="dh-customer-search-row" @click.outside="customerDropdownOpen = false">
                         <div class="dh-customer-search-box">
                             <label class="dh-label">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                <x-icon name="user" />
                                 Customer *
                             </label>
-                            <input type="hidden" name="customer_id" x-model="customer_id">
+                            <input type="hidden" name="customer_id" :value="customer_id">
                             <div class="dh-dd-wrap" :class="{ 'dd-open': customerDropdownOpen }">
                                 <div class="dh-customer-search-control" :class="{ open: customerDropdownOpen }">
-                                    <span class="dh-customer-search-icon"><svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+                                    <span class="dh-customer-search-icon"><x-icon name="search" size="15" /></span>
                                     <input type="search"
                                            class="dh-customer-search-input"
                                            placeholder="Search borrower by name, mobile, PAN, or ID"
@@ -65,7 +65,7 @@
                         </div>
 
                         <button type="button" class="btn btn-dark btn-sm dh-customer-add-btn" @click="openNewBorrower()" aria-label="Add new borrower" title="Add new borrower">
-                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            <x-icon name="plus" size="15" />
                             <span>Add New Borrower</span>
                         </button>
                     </div>
@@ -124,9 +124,9 @@
                  x-show="newBorrowerOpen"
                  x-cloak
                  x-transition.opacity
-                 @keydown.escape.window="newBorrowerOpen = false"
+                 @keydown.escape.window="closeNewBorrower()"
                  @keydown.enter.prevent.stop="if (!$event.target.matches('textarea')) saveBorrower()"
-                 @click.self="newBorrowerOpen = false"
+                 @click.self="closeNewBorrower()"
                  @wheel.self.prevent
                  @touchmove.self.prevent
                  role="dialog"
@@ -138,8 +138,8 @@
                             <h2 id="dh-borrower-modal-title">Add New Borrower</h2>
                             <p>Create a borrower profile and select it for this pledge loan.</p>
                         </div>
-                        <button type="button" class="dh-borrower-modal-close" @click="newBorrowerOpen = false" aria-label="Close borrower form">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        <button type="button" class="dh-borrower-modal-close" @click="closeNewBorrower()" aria-label="Close borrower form">
+                            <x-icon name="x" />
                         </button>
                     </div>
 
@@ -178,7 +178,7 @@
                     </div>
 
                     <div class="dh-borrower-modal-foot">
-                        <button type="button" class="btn btn-secondary btn-sm" @click="newBorrowerOpen = false">Cancel</button>
+                        <button type="button" class="btn btn-secondary btn-sm" @click="closeNewBorrower()" :disabled="nbSaving">Cancel</button>
                         <button type="button" class="dh-borrower-save" @click="saveBorrower()" :disabled="nbSaving">
                             <span x-text="nbSaving ? 'Saving…' : 'Save borrower'"></span>
                         </button>
@@ -189,14 +189,14 @@
             {{-- Pledged Items --}}
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-visible p-6">
                 <div class="dh-section-title">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    <x-icon name="package" />
                     Pledged Items
                 </div>
 
                 <template x-for="(item, index) in items" :key="index">
                     <div class="dh-item-row">
                         <button type="button" class="dh-item-remove" @click="removeItem(index)" x-show="items.length > 1">
-                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            <x-icon name="x" />
                         </button>
 
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
@@ -243,7 +243,8 @@
                                     <select :name="'items['+index+'][purity]'" x-model.number="item.purity" class="dh-select" required @change="recalcItem(index)">
                                         <option value="">Select</option>
                                         <template x-for="opt in purityOptions(item.metal_type)" :key="opt.value">
-                                            <option :value="opt.value" x-text="opt.label"></option>
+                                            {{-- :selected — the options draw after x-model sets the value, so it showed "Select". --}}
+                                            <option :value="opt.value" x-text="opt.label" :selected="Number(opt.value) === Number(item.purity)"></option>
                                         </template>
                                     </select>
                                 </div>
@@ -289,12 +290,12 @@
                                            x-model.number="item.market_value" placeholder="0.00" class="dh-input" @input="recalcItem(index)">
                                 </div>
                                 <input type="text" readonly class="dh-input dh-calc-field" x-show="item.metal_type !== 'other' && item.value_mode !== 'appraised'"
-                                       :value="'{{ $currencySymbol ?? '₹' }}' + item.market_value.toFixed(2)">
+                                       :value="'{{ $currencySymbol ?? '₹' }}' + money(item.market_value)">
                             </div>
                             <div>
                                 <label class="dh-label">Loan Value</label>
                                 <input type="text" readonly class="dh-input dh-calc-field"
-                                       :value="'{{ $currencySymbol ?? '₹' }}' + item.loan_value.toFixed(2)">
+                                       :value="'{{ $currencySymbol ?? '₹' }}' + money(item.loan_value)">
                                 <input type="hidden" :name="'items['+index+'][loan_value]'" :value="item.loan_value">
                             </div>
                             <div></div>
@@ -308,7 +309,7 @@
                 </template>
 
                 <button type="button" class="dh-add-item-btn" @click="addItem()">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    <x-icon name="plus" />
                     Add Item
                 </button>
             </div>
@@ -316,7 +317,7 @@
             {{-- Loan Parameters --}}
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-visible p-6">
                 <div class="dh-section-title">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    <x-icon name="calculator" />
                     Loan Parameters
                 </div>
 
@@ -328,8 +329,10 @@
                             <input type="number" step="0.01" name="principal_amount" id="principal_amount"
                                    x-model.number="principal_amount"
                                    value="{{ old('principal_amount') }}"
-                                   placeholder="0.00" class="dh-input" required>
+                                   placeholder="0.00" class="dh-input" required
+                                   :aria-invalid="principalProblem ? 'true' : 'false'" aria-describedby="principal-limit">
                         </div>
+                        <p id="principal-limit" class="dh-principal-limit" data-principal-limit :class="principalProblem && 'is-problem'" x-text="principalHint" aria-live="polite"></p>
                         @error('principal_amount')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -394,7 +397,7 @@
                     <div>
                         <label class="dh-label">Processing Fee</label>
                         <input type="text" readonly class="dh-input dh-calc-field"
-                               :value="'{{ $currencySymbol ?? '₹' }}' + processingFee.toFixed(2)">
+                               :value="'{{ $currencySymbol ?? '₹' }}' + money(processingFee)">
                         <input type="hidden" name="processing_fee" :value="processingFee">
                     </div>
                 </div>
@@ -403,35 +406,35 @@
             {{-- Summary --}}
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-visible p-6">
                 <div class="dh-section-title">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <x-icon name="badge-check" />
                     Loan Summary
                 </div>
                 <div class="dh-summary-row">
                     <span class="dh-summary-label">Total Market Value</span>
-                    <span class="dh-summary-value" x-text="'{{ $currencySymbol ?? '₹' }}' + totalMarketValue.toFixed(2)"></span>
+                    <span class="dh-summary-value" x-text="'{{ $currencySymbol ?? '₹' }}' + money(totalMarketValue)"></span>
                 </div>
                 <div class="dh-summary-row">
                     <span class="dh-summary-label">Total Loan Value (from items)</span>
-                    <span class="dh-summary-value" x-text="'{{ $currencySymbol ?? '₹' }}' + totalLoanValue.toFixed(2)"></span>
+                    <span class="dh-summary-value" x-text="'{{ $currencySymbol ?? '₹' }}' + money(totalLoanValue)"></span>
                 </div>
                 <div class="dh-summary-row border-t border-slate-200 pt-2">
                     <span class="dh-summary-label font-semibold text-slate-900">Principal Amount</span>
-                    <span class="dh-summary-value text-lg" x-text="'{{ $currencySymbol ?? '₹' }}' + (principal_amount || 0).toFixed(2)"></span>
+                    <span class="dh-summary-value text-lg" x-text="'{{ $currencySymbol ?? '₹' }}' + money((principal_amount || 0))"></span>
                 </div>
                 <div class="dh-summary-row">
                     <span class="dh-summary-label">Monthly Interest (approx.)</span>
-                    <span class="dh-summary-value" x-text="'{{ $currencySymbol ?? '₹' }}' + monthlyInterest.toFixed(2)"></span>
+                    <span class="dh-summary-value" x-text="'{{ $currencySymbol ?? '₹' }}' + money(monthlyInterest)"></span>
                 </div>
                 <div class="dh-summary-row">
                     <span class="dh-summary-label">Processing Fee</span>
-                    <span class="dh-summary-value" x-text="'{{ $currencySymbol ?? '₹' }}' + processingFee.toFixed(2)"></span>
+                    <span class="dh-summary-value" x-text="'{{ $currencySymbol ?? '₹' }}' + money(processingFee)"></span>
                 </div>
             </div>
 
             {{-- Notes --}}
             <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-visible p-6">
                 <label for="notes" class="dh-label">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <x-icon name="file-text" />
                     Notes (optional)
                 </label>
                 <textarea name="notes" id="notes" rows="3" placeholder="Any additional notes about this loan..." class="dh-textarea">{{ old('notes') }}</textarea>
@@ -440,11 +443,11 @@
             {{-- Submit --}}
             <div class="flex justify-end gap-3 pb-6">
                 <a href="{{ route('dhiran.loans') }}" class="btn btn-secondary btn-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    <x-icon name="x" size="14" class="mr-1" />
                     Cancel
                 </a>
-                <button type="submit" class="btn btn-dark btn-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <x-icon name="save" size="14" class="mr-1" />
                     Create Loan
                 </button>
             </div>
@@ -453,9 +456,15 @@
 
     @push('scripts')
     <script>
-        document.addEventListener('alpine:init', () => {
+        (() => {
+        const registerDhiranCreateForm = () => {
             Alpine.data('dhiranCreateForm', () => ({
-                customer_id: '{{ old('customer_id', $preselectedCustomerId ?? '') }}',
+                // The borrower is one value, selectedCustomer; the posted id is read from it, so the form can never
+                // send an id for a borrower the screen does not show (owner 2026-11-12, state-machine audit).
+                initialCustomerId: '{{ old('customer_id', $preselectedCustomerId ?? '') }}',
+                get customer_id() {
+                    return this.selectedCustomer ? this.selectedCustomer.id : '';
+                },
                 customerDisplayName: '',
                 customerDropdownOpen: false,
                 customerSearch: '',
@@ -469,9 +478,15 @@
                     'state_code' => $c->state_code ?? '',
                 ])->values()) }},
                 selectedCustomer: null,
-                newBorrowerOpen: false,
-                nbSaving: false,
+                // Add Borrower dialog: one state, 'closed' -> 'open' -> 'saving' -> 'closed' (saved) or 'open' (refused).
+                nbState: 'closed',
                 nbError: '',
+                get newBorrowerOpen() {
+                    return this.nbState !== 'closed';
+                },
+                get nbSaving() {
+                    return this.nbState === 'saving';
+                },
                 nb: { first_name: '', last_name: '', mobile: '', pan: '', id_number: '', state_code: '', address: '' },
                 loanPan: {{ Illuminate\Support\Js::from(old('pan', '')) }},
                 loanAadhaar: {{ Illuminate\Support\Js::from(old('aadhaar', '')) }},
@@ -482,13 +497,26 @@
                 tenure_months: {{ old('tenure_months', $defaults['tenure_months'] ?? 6) }},
                 penalty_rate_monthly: {{ old('penalty_rate_monthly', $defaults['penalty_rate_monthly'] ?? 2) }},
                 processingFeePercent: {{ $defaults['processing_fee_percent'] ?? 0 }},
+                processingFeeFlat: {{ $defaults['processing_fee_flat'] ?? 0 }},
                 ltvPercent: {{ $defaults['ltv_percent'] ?? 75 }},
+                highValueLtv: {{ $defaults['high_value_ltv'] ?? 75 }},
+                highValueThreshold: {{ $defaults['high_value_threshold'] ?? 250000 }},
+                minLoan: {{ $defaults['min_loan'] ?? 0 }},
+                maxLoan: {{ $defaults['max_loan'] ?? 0 }},
 
-                items: [{
-                    description: '', metal_type: 'gold', value_mode: 'metal', gross_weight: 0, stone_weight: 0, purity: 22,
-                    rate_per_gram_at_pledge: 0, huid: '',
-                    net_metal_weight: 0, fine_weight: 0, market_value: 0, loan_value: 0
-                }],
+                // After a refused save, the items come back as typed (init() recalculates their values).
+                items: {{ Illuminate\Support\Js::from(collect(old('items') ?: [[]])->values()->map(fn ($i) => [
+                    'description' => (string) ($i['description'] ?? ''),
+                    'metal_type' => (string) ($i['metal_type'] ?? 'gold'),
+                    'value_mode' => (string) ($i['value_mode'] ?? 'metal'),
+                    'gross_weight' => (float) ($i['gross_weight'] ?? 0),
+                    'stone_weight' => (float) ($i['stone_weight'] ?? 0),
+                    'purity' => (float) ($i['purity'] ?? 22),
+                    'rate_per_gram_at_pledge' => (float) ($i['rate_per_gram_at_pledge'] ?? 0),
+                    'huid' => (string) ($i['huid'] ?? ''),
+                    'net_metal_weight' => 0, 'fine_weight' => 0,
+                    'market_value' => (float) ($i['market_value'] ?? 0), 'loan_value' => 0,
+                ])) }},
 
                 get totalMarketValue() {
                     return this.items.reduce((sum, i) => sum + (i.market_value || 0), 0);
@@ -496,18 +524,47 @@
                 get totalLoanValue() {
                     return this.items.reduce((sum, i) => sum + (i.loan_value || 0), 0);
                 },
+                // Largest principal the server will accept (mirrors DhiranService::createLoan): the items' market
+                // value at the LTV for the principal's tier (each item rounded to paise), never above the shop's
+                // maximum. A principal at or over the high-value threshold gets the (usually lower) high-value LTV.
+                itemsLoanValueAt(ltv) {
+                    return this.items.reduce((sum, i) => sum + Math.round((i.market_value || 0) * ltv) / 100, 0);
+                },
+                get maxPrincipal() {
+                    const T = this.highValueThreshold, low = this.itemsLoanValueAt(this.ltvPercent), high = this.itemsLoanValueAt(this.highValueLtv);
+                    const best = T <= 0 ? high : (high >= T ? Math.max(high, Math.min(low, T - 0.01)) : Math.min(low, T - 0.01));
+                    return Math.max(0, this.maxLoan > 0 ? Math.min(best, this.maxLoan) : best);
+                },
+                get principalProblem() {
+                    const p = Number(this.principal_amount) || 0;
+                    if (p <= 0 || this.totalMarketValue <= 0) return false;
+                    return p > this.maxPrincipal + 0.001 || p < this.minLoan;
+                },
+                get principalHint() {
+                    if (this.totalMarketValue <= 0) return 'Add the pledged items to see how much can be lent.';
+                    const p = Number(this.principal_amount) || 0, sym = '{{ $currencySymbol ?? '₹' }}';
+                    if (p > 0 && p < this.minLoan) return 'The smallest loan is ' + sym + this.money(this.minLoan) + '.';
+                    if (p > this.maxPrincipal + 0.001) return 'Too high: these items allow up to ' + sym + this.money(this.maxPrincipal) + '.';
+                    return 'Up to ' + sym + this.money(this.maxPrincipal) + ' against these items.';
+                },
                 get monthlyInterest() {
                     return (this.principal_amount || 0) * (this.interest_rate_monthly || 0) / 100;
                 },
                 get processingFee() {
-                    return (this.principal_amount || 0) * (this.processingFeePercent || 0) / 100;
+                    // The shop's fee is either a % of the loan or a fixed amount (Dhiran settings).
+                    return (Number(this.principal_amount) || 0) * (this.processingFeePercent || 0) / 100 + (this.processingFeeFlat || 0);
+                },
+                // Rupees as the rest of the app shows them (₹44,000.00); Number() also covers a value typed as text.
+                money(v) {
+                    return (Number(v) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 },
 
                 init() {
+                    this.items.forEach((_, i) => this.recalcItem(i));
                     // If a borrower was preselected (?customer_id= from the borrower
                     // profile/list), show their name in the picker on load.
-                    if (this.customer_id) {
-                        const c = this.customers.find(x => String(x.id) === String(this.customer_id));
+                    if (this.initialCustomerId) {
+                        const c = this.customers.find(x => String(x.id) === String(this.initialCustomerId));
                         if (c) this.selectCustomer(c, true);
                     }
                 },
@@ -529,7 +586,6 @@
                     this.customerDropdownOpen = true;
                     if (this.selectedCustomer && this.customerSearch.trim() !== (this.selectedCustomer.name || '')) {
                         this.selectedCustomer = null;
-                        this.customer_id = '';
                         this.customerDisplayName = '';
                         this.loanPan = '';
                         this.loanAadhaar = '';
@@ -538,7 +594,12 @@
 
                 openNewBorrower() {
                     this.customerDropdownOpen = false;
-                    this.newBorrowerOpen = true;
+                    this.nbError = '';
+                    this.nbState = 'open';
+                },
+
+                closeNewBorrower() {
+                    if (this.nbState === 'open') this.nbState = 'closed'; // never mid-save: the answer would land unseen
                 },
 
                 aadhaarCandidate(customer) {
@@ -548,7 +609,6 @@
 
                 selectCustomer(customer, keepExistingKyc = false) {
                     this.selectedCustomer = customer;
-                    this.customer_id = customer.id;
                     this.customerDisplayName = customer.name + (customer.mobile ? ' (' + customer.mobile + ')' : '');
                     this.customerSearch = customer.name || '';
                     if (!keepExistingKyc || !this.loanPan) this.loanPan = customer.pan || '';
@@ -560,7 +620,8 @@
                     this.nbError = '';
                     if (!this.nb.first_name.trim()) { this.nbError = 'First name is required.'; return; }
                     if (!/^[0-9]{10}$/.test(this.nb.mobile.trim())) { this.nbError = 'Enter a valid 10-digit mobile number.'; return; }
-                    this.nbSaving = true;
+                    if (this.nbState !== 'open') return; // one save at a time
+                    this.nbState = 'saving';
                     try {
                         const res = await fetch('{{ route('dhiran.customers.store') }}', {
                             method: 'POST',
@@ -594,12 +655,12 @@
                             this.customers.splice(existingIndex, 1, { ...this.customers[existingIndex], ...savedCustomer });
                         }
                         this.selectCustomer(savedCustomer);
-                        this.newBorrowerOpen = false;
+                        this.nbState = 'closed';
                         this.nb = { first_name: '', last_name: '', mobile: '', pan: '', id_number: '', state_code: '', address: '' };
                     } catch (e) {
                         this.nbError = 'Network error. Please try again.';
                     } finally {
-                        this.nbSaving = false;
+                        if (this.nbState === 'saving') this.nbState = 'open'; // refused: back to the form, error shown
                     }
                 },
 
@@ -678,7 +739,11 @@
                     this.items.forEach((_, i) => this.recalcItem(i));
                 }
             }));
-        });
+        };
+        // A Turbo visit runs this script again but alpine:init fired on an earlier page: register now, so the form
+        // gets this render's values (not none, nor a previous page's). The IIFE keeps the const re-runnable.
+        window.Alpine ? registerDhiranCreateForm() : document.addEventListener('alpine:init', registerDhiranCreateForm);
+        })();
     </script>
     @endpush
 </x-dhiran-layout>

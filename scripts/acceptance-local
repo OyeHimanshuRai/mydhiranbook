@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+"""Synthetic HTTP acceptance against the guarded standalone server only."""
+from pathlib import Path
+import subprocess, json, urllib.request, urllib.parse, urllib.error, http.cookiejar, re, uuid, zlib, struct
+ROOT=Path(__file__).resolve().parent.parent
+assert str(ROOT)=='/home/himanshu/Desktop/Dhiran ERP'
+subprocess.run(['php','scripts/verify.php'],cwd=ROOT,check=True)
+BASE='http://127.0.0.1:8787'
+access=json.loads((ROOT/'.runtime/demo-access.json').read_text())
+class Client:
+    def __init__(self):
+        self.http=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+        self.csrf=''
+    def request(self,path,data=None,headers=None):
+        url=urllib.parse.urljoin(BASE,path)
+        assert urllib.parse.urlsplit(url).netloc=='127.0.0.1:8787'
+        response=self.http.open(urllib.request.Request(url,data,headers or {}),timeout=15)
+        body=response.read().decode(); match=re.search(r'name="_token"[^>]*value="([^"]+)"',body)
+        if match:self.csrf=match[1]
+        return response.geturl(),body
+    def post(self,path,values,headers=None):
+        return self.request(path,urllib.parse.urlencode({'_token':self.csrf,**values}).encode(),headers)
+    def login(self,fixture):
+        self.request('/login');self.post('/login',{'email':fixture['email'],'password':fixture['password']})
+    def upload(self,path,values,content):
+        boundary='dhiran'+uuid.uuid4().hex; parts=[]
+        for key,value in {'_token':self.csrf,**values}.items():
+            parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="{key}"\r\n\r\n{value}\r\n'.encode())
+        parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="synthetic-evidence.png"\r\nContent-Type: image/png\r\n\r\n'.encode()+content+b'\r\n')
+        parts.append(f'--{boundary}--\r\n'.encode())
+        return self.request(path,b''.join(parts),{'Content-Type':'multipart/form-data; boundary='+boundary})
+a=Client();a.login(access['owner'])
+_,body=a.post('/dhiran/customers',{'first_name':'Synthetic','last_name':'Acceptance','mobile':'9000000077','address':'Synthetic local acceptance only'},{'Accept':'application/json'})
+customer=json.loads(body)['customer']['id']
+a.request('/dhiran/create')
+values={'idempotency_key':str(uuid.uuid4()),'customer_id':customer,'principal_amount':'50000','gold_rate_on_date':'6000','interest_rate_monthly':'1.5','interest_type':'flat','tenure_months':'6','notes':'Synthetic local acceptance only','items[0][description]':'Synthetic acceptance chain','items[0][metal_type]':'gold','items[0][value_mode]':'metal','items[0][gross_weight]':'20','items[0][stone_weight]':'0','items[0][purity]':'22','items[0][rate_per_gram_at_pledge]':'6000'}
+url,body=a.post('/dhiran',values);match=re.search(r'/dhiran/loans/(\d+)$',url);assert match,(url,'Loan not created');loan=int(match[1]);assert 'awaiting evidence' in body.lower() or 'pending evidence' in body.lower()
+def chunk(kind,data):return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data)&0xffffffff)
+png=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',20,20,8,2,0,0,0))+chunk(b'IDAT',zlib.compress((b'\0'+bytes([234,180,40])*20)*20))+chunk(b'IEND',b'')
+for kind in ['item_photo','id_proof_front']:
+    a.upload('/dhiran/attachments',{'owner_type':'dhiran_loan','owner_id':loan,'document_type':kind},png)
+a.post(f'/dhiran/loans/{loan}/activate',{})
+_,body=a.post(f'/dhiran/loans/{loan}/repay',{'idempotency_key':str(uuid.uuid4()),'amount':'5000','payment_method':'cash'})
+links=re.findall(r'href="([^"]*/payments/\d+/receipt)"',body);assert links,'Payment receipt missing'
+_,receipt=a.request(links[-1]);assert '5,000.00' in receipt and 'Synthetic Acceptance' in receipt
+_,pledge=a.request(f'/dhiran/loans/{loan}/receipt');assert '110,000.00' in pledge and '22K' in pledge and '75.0%' in pledge
+(ROOT/'output/pdf').mkdir(parents=True,exist_ok=True)
+(ROOT/'output/pdf/dhiran-payment-receipt.html').write_text(receipt)
+b=Client();b.login(access['second_owner'])
+try:
+    b.request(f'/dhiran/loans/{loan}');raise AssertionError('Cross-shop access was allowed')
+except urllib.error.HTTPError as error:assert error.code==404,error.code
+result={'loan_id':loan,'customer_id':customer,'payment_receipt':links[-1],'shop_isolation':'second shop received 404','server':BASE,'data':'synthetic only'}
+(ROOT/'.runtime/acceptance-latest.json').write_text(json.dumps(result,indent=2))
+print(json.dumps(result,indent=2))

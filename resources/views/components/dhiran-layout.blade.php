@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dh-html">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @if(request()->routeIs('dhiran.product-preferences.*'))
+        <meta name="turbo-cache-control" content="no-cache">
+    @endif
     <title>{{ $title ?? 'Dhiran' }}</title>
     @include('partials.favicon')
 
@@ -38,35 +41,41 @@
                 <button type="button" class="dh-sidebar-close"
                         @click="open = false"
                         aria-label="Close menu">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    <x-icon name="x" />
                 </button>
             </div>
 
             {{-- Dhiran-only navigation. No POS / inventory / job-order / ERP links. --}}
             <nav class="dh-nav">
                 <a href="{{ route('dhiran.dashboard') }}" class="dh-nav-link {{ request()->routeIs('dhiran.dashboard') ? 'active' : '' }}" @click="open = false">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <x-icon name="house" />
                     <span class="dh-nav-text">Dashboard</span>
                 </a>
                 @if((bool) auth()->user()?->shop_id)
                     <a href="{{ route('dhiran.loans') }}" class="dh-nav-link {{ request()->routeIs('dhiran.loans') || request()->routeIs('dhiran.show') ? 'active' : '' }}" @click="open = false">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <x-icon name="credit-card" />
                         <span class="dh-nav-text">Loans</span>
                     </a>
                     <a href="{{ route('dhiran.borrowers.index') }}" class="dh-nav-link {{ request()->routeIs('dhiran.borrowers.*') ? 'active' : '' }}" @click="open = false">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                        <span class="dh-nav-text">Borrowers</span>
+                        <x-icon name="users" />
+                        <span class="dh-nav-text">Customers</span>
                     </a>
                     <a href="{{ route('dhiran.create') }}" class="dh-nav-link {{ request()->routeIs('dhiran.create') ? 'active' : '' }}" @click="open = false">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        <x-icon name="plus" />
                         <span class="dh-nav-text">New Loan</span>
                     </a>
+                    @can('dhiran.create')
+                    <a href="{{ route('dhiran.old-loans.index') }}" class="dh-nav-link {{ request()->routeIs('dhiran.old-loans.*') ? 'active' : '' }}" @click="open = false">
+                        <x-icon name="book-open" />
+                        <span class="dh-nav-text">Old Loans</span>
+                    </a>
+                    @endcan
                     <a href="{{ route('dhiran.reports.index') }}" class="dh-nav-link {{ request()->routeIs('dhiran.reports.*') ? 'active' : '' }}" @click="open = false">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                        <x-icon name="chart-no-axes-column" />
                         <span class="dh-nav-text">Reports</span>
                     </a>
                     <a href="{{ route('dhiran.settings') }}" class="dh-nav-link {{ request()->routeIs('dhiran.settings') ? 'active' : '' }}" @click="open = false">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        <x-icon name="settings" />
                         <span class="dh-nav-text">Settings</span>
                     </a>
                 @endif
@@ -75,7 +84,7 @@
             <div class="dh-foot">
                 <div class="dh-foot-user">{{ auth()->user()->name ?? \App\Support\Mobile::forDisplay(auth()->user()?->mobile_number) }}</div>
                 <div class="dh-foot-shop">{{ auth()->user()->shop?->name ?? 'Dhiran account' }}</div>
-                <form method="POST" action="{{ route('logout') }}" data-turbo-frame="_top">
+                <form method="POST" action="{{ route('logout') }}" data-turbo-frame="_top" data-confirm-message="Sign out of Dhiran?">
                     @csrf
                     <button type="submit" class="dh-logout">Sign out</button>
                 </form>
@@ -84,33 +93,44 @@
 
         <main class="dh-main">
             @php
+                // Rendering the page first lets <x-dhiran.page-header> push itself into the header band below.
                 $slotMarkup = (string) $slot;
-                $hasPageHeader = str_contains($slotMarkup, 'dh-page-header');
+                $pageHeader = trim($__env->yieldPushContent('dh-page-header'));
+                $hasPageHeader = $pageHeader !== '';
             @endphp
 
-            @if(session('success'))
-                <div class="dh-flash dh-flash-success">{{ session('success') }}</div>
-            @endif
-            @if(session('error'))
-                <div class="dh-flash dh-flash-error">{{ session('error') }}</div>
-            @endif
-
-            @unless($hasPageHeader)
+            {{-- Header band, then the scroll area: on desktop only .dh-scroll scrolls, so the page scrollbar starts
+                 under the header instead of running beside it (as in the ERP shell). --}}
+            @if($hasPageHeader)
+                {!! $pageHeader !!}
+            @else
                 <div class="content-header dh-page-header dh-page-header-fallback">
                     <div class="dh-page-header-content">
                         <button type="button" class="dh-header-toggle"
                                 onclick="window.dispatchEvent(new CustomEvent('dhiran-menu'))"
                                 aria-label="Open menu" aria-controls="dh-sidebar">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                            <x-icon name="menu" />
                         </button>
                         <div class="min-w-0">
                             <h1 class="page-title">{{ $title ?? 'Dhiran' }}</h1>
                         </div>
                     </div>
                 </div>
-            @endunless
+            @endif
 
-            {!! $slotMarkup !!}
+            <div class="dh-scroll">
+                @if(session('success'))
+                    <div class="dh-flash dh-flash-success">{{ session('success') }}</div>
+                @endif
+                @if(session('error'))
+                    <div class="dh-flash dh-flash-error">{{ session('error') }}</div>
+                @elseif(isset($errors) && $errors->any())
+                    {{-- Dhiran dialogs have no inline field errors: show the refusal so a rejected form is never silent. --}}
+                    <div class="dh-flash dh-flash-error">{{ $errors->first() }}</div>
+                @endif
+
+                {!! $slotMarkup !!}
+            </div>
         </main>
     </div>
     @stack('scripts')

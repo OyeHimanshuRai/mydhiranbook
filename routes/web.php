@@ -15,7 +15,7 @@ Route::middleware('shop')->group(function() {
     Route::post('/loans/{loan}/evidence',[Loans::class,'evidence']); Route::post('/loans/{loan}/activate',[Loans::class,'activate']);
     Route::post('/loans/{loan}/payments',[Loans::class,'pay']); Route::get('/payments/{payment}/receipt',[Loans::class,'receipt']);
     Route::get('/attachments/{attachment}',[Loans::class,'attachment']);
-    Route::get('/staff',[Loans::class,'staff']); Route::post('/staff',[Loans::class,'storeStaff']); Route::patch('/staff/{staff}',[Loans::class,'updateStaff']);
+    Route::get('/checkpoint/staff',[Loans::class,'staff']); Route::post('/checkpoint/staff',[Loans::class,'storeStaff']); Route::patch('/staff/{staff}',[Loans::class,'updateStaff']);
 });
 use App\Http\Controllers\Admin\AuthController as AdminAuth;
 use App\Http\Controllers\Admin\PlatformController as Platform;
@@ -42,3 +42,15 @@ require __DIR__.'/dhiran.php';
 
 Route::middleware('shop')->get('/comparison/standalone/new-loan', [Loans::class,'create']);
 Route::middleware('shop')->get('/comparison/original/new-loan', [\App\Http\Controllers\ReferenceDhiranController::class,'create']);
+
+Route::middleware('shop')->group(function () {
+    Route::get('/settings',[\App\Http\Controllers\StaffSettingsController::class,'index'])->middleware('can:staff.view')->name('settings.edit');
+    Route::patch('/settings/roles/{role}',[\App\Http\Controllers\StaffSettingsController::class,'updateRolePermissions'])->middleware('can:settings.edit')->name('settings.update.role');
+    Route::get('/staff',[\App\Http\Controllers\StaffController::class,'index'])->middleware('can:staff.view')->name('staff.index');
+    Route::get('/staff/create',[\App\Http\Controllers\StaffController::class,'create'])->middleware('can:staff.manage')->name('staff.create');
+    Route::post('/staff',[\App\Http\Controllers\StaffController::class,'store'])->middleware('can:staff.manage')->name('staff.store');
+    Route::get('/staff/{staff}/edit',[\App\Http\Controllers\StaffController::class,'edit'])->middleware('can:staff.manage')->name('staff.edit');
+    Route::put('/staff/{staff}',[\App\Http\Controllers\StaffController::class,'update'])->middleware('can:staff.manage')->name('staff.update');
+    Route::delete('/staff/{staff}',[\App\Http\Controllers\StaffController::class,'destroy'])->middleware('can:staff.manage')->name('staff.destroy');
+    Route::patch('/staff/{staff}/reactivate',[\App\Http\Controllers\StaffController::class,'reactivate'])->middleware('can:staff.manage')->name('staff.reactivate');
+});

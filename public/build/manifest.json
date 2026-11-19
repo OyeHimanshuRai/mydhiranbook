@@ -1,6 +1,6 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-Q27R-U9V.css",
+    "file": "assets/app-BxmdN2ff.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -9,7 +9,7 @@
     ]
   },
   "resources/css/dhiran-documents.css": {
-    "file": "assets/dhiran-documents-CipjXTcM.css",
+    "file": "assets/dhiran-documents-Dlkl267J.css",
     "src": "resources/css/dhiran-documents.css",
     "isEntry": true,
     "name": "dhiran-documents",
@@ -18,7 +18,7 @@
     ]
   },
   "resources/css/dhiran.css": {
-    "file": "assets/dhiran-BHVsGthE.css",
+    "file": "assets/dhiran-DvqEORWJ.css",
     "src": "resources/css/dhiran.css",
     "isEntry": true,
     "name": "dhiran",
@@ -27,7 +27,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-DZhuEra2.js",
+    "file": "assets/app-u_hwq68v.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true

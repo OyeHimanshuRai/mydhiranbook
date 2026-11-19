@@ -26,6 +26,7 @@ class DhiranPayment extends Model
         'outstanding_penalty_after'  => 'decimal:2',
     ];
 
+    /** How a payment method reads on screen and on paper ("UPI", "Bank Transfer"). */
     public static function methodLabel(?string $method): string
     {
         return match ($method) {

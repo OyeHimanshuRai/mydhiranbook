@@ -13,6 +13,12 @@ class DhiranLoan extends Model
 {
     use BelongsToShop;
 
+    /** Loans that still owe money (the rest are finished: closed, renewed into a new loan, or forfeited). */
+    public const OPEN = ['pending_evidence', 'active'];
+
+    /** Loans that owe nothing any more. (A loan not yet saved has no status: it is neither.) */
+    public const FINISHED = ['closed', 'renewed', 'forfeited', 'cancelled'];
+
     protected $fillable = [
         'shop_id',
         'customer_id',
@@ -55,6 +61,9 @@ class DhiranLoan extends Model
         'forfeited_by',
         'forfeiture_notice_sent_at',
         'forfeiture_notice_text',
+        'forfeiture_deadline',
+        'brought_forward',
+        'interest_capitalised',
         'created_by',
     ];
 
@@ -65,6 +74,8 @@ class DhiranLoan extends Model
         'closed_at'                 => 'datetime',
         'forfeited_at'              => 'datetime',
         'forfeiture_notice_sent_at' => 'datetime',
+        'forfeiture_deadline'       => 'date',
+        'brought_forward'           => 'boolean',
         'gold_rate_on_date'         => 'decimal:4',
         'silver_rate_on_date'       => 'decimal:4',
         'principal_amount'          => 'decimal:2',
@@ -138,6 +149,11 @@ class DhiranLoan extends Model
 
     public function totalOutstanding(): float
     {
+        // A finished loan owes nothing (a loan renewed before 2026-11-12 still carries the principal it handed on).
+        if (in_array($this->status, self::FINISHED, true)) {
+            return 0.0;
+        }
+
         return round(
             (float) $this->outstanding_principal
             + (float) $this->outstanding_interest
@@ -146,7 +162,7 @@ class DhiranLoan extends Model
         );
     }
 
-    // The copied templates consume these attribute names; the local source omitted their accessors.
+    // The Dhiran views read these two names; without them every total showed ₹0.00 and LTV 0.0%.
     public function getTotalOutstandingAttribute(): float
     {
         return $this->totalOutstanding();
@@ -218,22 +234,68 @@ class DhiranLoan extends Model
     }
 
     /**
-     * Whether forfeiture can be EXECUTED right now. Mirrors the authoritative
-     * service guard (DhiranService::executeForfeit): the loan must be active, a
-     * notice must have been sent, and the configured notice period must have
-     * elapsed. The UI uses this to show/hide the action; the service guard remains
-     * the real protection.
+     * Where an active loan stands on the road to forfeiture: the one rule the loan page, the service guards and the
+     * daily check all use (owner 2026-11-12, state-machine audit). Null for a loan that is not active.
+     *   current     not yet past maturity
+     *   grace       past maturity, within the loan's own grace days
+     *   notice_due  grace over, no notice yet
+     *   notice_sent notice out, its printed deadline not reached
+     *   ready       the deadline on the notice has come: forfeiture may be executed
      */
-    public function canExecuteForfeit(): bool
+    public function forfeitureStage(): ?string
     {
-        if ($this->status !== 'active' || ! $this->forfeiture_notice_sent_at) {
-            return false;
+        if ($this->status !== 'active') {
+            return null;
+        }
+        if ($this->forfeiture_notice_sent_at) {
+            return today()->lt($this->forfeitureDeadline()) ? 'notice_sent' : 'ready';
+        }
+        if (! $this->maturity_date || ! today()->gt($this->maturity_date)) {
+            return 'current';
         }
 
-        $noticeDays   = (int) (\App\Models\Dhiran\DhiranSettings::getForShop($this->shop_id)->forfeiture_notice_days ?? 0);
-        $requiredDate = \Illuminate\Support\Carbon::parse($this->forfeiture_notice_sent_at)->copy()->addDays($noticeDays);
+        return today()->gt(\Illuminate\Support\Carbon::parse($this->maturity_date)->addDays((int) $this->grace_period_days))
+            ? 'notice_due' : 'grace';
+    }
 
-        return ! today()->lt($requiredDate);
+    /** A forfeiture notice may go out now (see forfeitureStage). */
+    public function forfeitureNoticeDue(): bool
+    {
+        return $this->forfeitureStage() === 'notice_due';
+    }
+
+    /** Forfeiture may be executed now (see forfeitureStage); the service re-checks under the row lock. */
+    public function canExecuteForfeit(): bool
+    {
+        return $this->forfeitureStage() === 'ready';
+    }
+
+    /**
+     * The date printed on the forfeiture notice (owner 2026-11-12): forfeiture waits for it even if the shop's notice
+     * period setting changes after the notice went out. Notices sent before the column existed fall back to the setting.
+     */
+    public function forfeitureDeadline(): ?\Illuminate\Support\Carbon
+    {
+        if ($this->forfeiture_deadline) {
+            return \Illuminate\Support\Carbon::parse($this->forfeiture_deadline)->startOfDay();
+        }
+        if (! $this->forfeiture_notice_sent_at) {
+            return null;
+        }
+        $noticeDays = (int) (\App\Models\Dhiran\DhiranSettings::getForShop($this->shop_id)->forfeiture_notice_days ?? 0);
+
+        return \Illuminate\Support\Carbon::parse($this->forfeiture_notice_sent_at)->startOfDay()->addDays($noticeDays);
+    }
+
+    protected static function booted(): void
+    {
+        // Compound monthly rest: the capitalised (month-end unpaid) interest can never exceed the interest still owed.
+        // One rule here covers every path that reduces interest (payments, releases, pre-close, renewal, forfeiture).
+        static::saving(function (self $loan) {
+            if ((float) $loan->interest_capitalised > (float) $loan->outstanding_interest) {
+                $loan->interest_capitalised = max(0, (float) $loan->outstanding_interest);
+            }
+        });
     }
 
     /* ── Route Model Binding (tenant-scoped) ──────────── */
@@ -245,6 +307,12 @@ class DhiranLoan extends Model
     }
 
     /* ── Scopes ────────────────────────────────────────── */
+
+    /** Shops whose loans the nightly jobs work on (cross-shop: console only). */
+    public static function shopsWithActiveLoans(): \Illuminate\Support\Collection
+    {
+        return static::withoutGlobalScope('shop')->where('status', 'active')->distinct()->orderBy('shop_id')->pluck('shop_id');
+    }
 
     public function scopeActive(Builder $query): Builder
     {

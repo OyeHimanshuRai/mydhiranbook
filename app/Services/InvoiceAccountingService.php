@@ -8,7 +8,7 @@ final class InvoiceAccountingService
     {
         $lockDate = DB::table('shops')->where('id', $shopId)->value('financial_lock_date');
         if ($lockDate && $date <= $lockDate) {
-            throw new LogicException('This entry cannot be saved in the locked period.');
+            throw new LogicException("Financial lock is active through {$lockDate}.");
         }
     }
 }

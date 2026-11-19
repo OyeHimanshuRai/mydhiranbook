@@ -13,6 +13,7 @@ class Customer extends Model
     protected $casts=['is_active'=>'boolean'];
     public function getNameAttribute(): string { return trim($this->first_name.' '.$this->last_name); }
     public function shop() { return $this->belongsTo(Shop::class); }
+    public function profilePhoto() { return $this->hasOne(CustomerProfilePhoto::class); }
     public function dhiranLoans() { return $this->hasMany(\App\Models\Dhiran\DhiranLoan::class); }
     protected static function booted(): void
     {

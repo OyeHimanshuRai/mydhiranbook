@@ -73,7 +73,8 @@ class StandaloneWorkflowTest extends TestCase
         $this->post('/loans/'.$loan->id.'/payments',['amount'=>100,'method'=>'cash','submission_key'=>(string)Str::uuid()])->assertForbidden();
         $this->post('/staff',['name'=>'Blocked'])->assertForbidden();
         $owner=$this->owner('staff'); $this->actingAs($owner);
-        $this->post('/staff',['name'=>'Clerk','email'=>'clerk@example.test','password'=>'Local-pass-12345','role'=>'operator','shop_id'=>$viewer->shop_id])->assertRedirect('/staff');
+        $roles=app(\App\Services\TenantRoleService::class)->ensureDefaultsForShop($owner->shop_id);
+        $this->post('/staff',['name'=>'Clerk','mobile_number'=>'9000000081','email'=>'clerk@example.test','password'=>'Local-pass-12345','password_confirmation'=>'Local-pass-12345','role_id'=>$roles['operator']->id,'shop_id'=>$viewer->shop_id])->assertRedirect(route('settings.edit',['tab'=>'staff']));
         $this->assertSame($owner->shop_id,User::where('email','clerk@example.test')->firstOrFail()->shop_id);
     }
     public function test_invalid_payment_does_not_write_and_get_does_not_accrue(): void

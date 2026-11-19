@@ -4,32 +4,185 @@ import flatpickr from 'flatpickr';
 
 import Alpine from 'alpinejs';
 import { registerHistoricalManual } from './historical-manual';
+import { initializeCustomerPhotos } from './customer-photo';
+import { showFlashes, toastSettings } from './toast';
+import { initializeChallanShare } from './repair-challan-share';
+import { initializeRowActionLabels } from './table-row-actions';
+import { initializeListWorkspaces } from './list-workspace';
+import { initializeRepairIntakes } from './repair-intake';
+import { initMobileHeaderActionFabs, cleanupMobileHeaderActionFabs } from './mobile-header-actions';
+import { initializeSectionSwitch } from './section-switch';
+import { initializeReportScreens } from './report-screen';
+import { initializeReportExports } from './report-export';
+import { initializeSettingsWorkspace, placeSettingsToast } from './settings-workspace';
+import { initializeSettingsUnsavedChanges } from './settings-unsaved';
+import { createReorderEditor } from './reorder-editor';
+import { createKarigarEditor, createKarigarFieldHelp } from './karigar-editor';
+import { createIndianAddress } from './indian-address';
+import { configureDialogDatePicker } from './date-picker-dialog';
+import { extractConfirmMessage } from './confirm-message';
+import { createQuoteState } from './pos-quote';
+import { createLatestRequest } from './latest-request';
+
+initializeCustomerPhotos();
+initializeChallanShare();
+initializeRowActionLabels();
+initializeListWorkspaces();
+initializeRepairIntakes();
+initializeSectionSwitch();
+initializeReportScreens();
+initializeReportExports();
+initializeSettingsWorkspace();
+initializeSettingsUnsavedChanges();
 
 let toastTimer = null;
+let toastDuration = 4000;
+let toastSettleTimers = [];
 
-window.showToast = function(message, durationOrTone = 4000) {
+// The width at which the toast's phone rule in app.css applies.
+const toastPhone = window.matchMedia('(max-width: 768px)');
+
+function hideToast(toast) {
+    window.clearTimeout(toastTimer);
+    toastTimer = null;
+    toast.classList.remove('is-visible');
+    toast.setAttribute('aria-hidden', 'true');
+    toast.textContent = '';
+    document.documentElement.style.removeProperty('--toast-space');
+}
+
+// Is a modal, a sheet, a drawer or a dialog over the page? Each is fixed in place over the
+// middle of the screen, and nothing of the page itself is.
+function overlayIsOpen(toast) {
+    let el = document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2);
+    for (; el && el !== document.body; el = el.parentElement) {
+        if (el !== toast && getComputedStyle(el).position === 'fixed') return true;
+    }
+    return false;
+}
+
+// The highest place for the toast, from `top` down, where it lies over no control and no
+// validation message; null when there is none. Only what is on top counts: what a backdrop
+// dims cannot be used anyway.
+function clearToastTop(toast, top) {
+    const { left, right, height } = toast.getBoundingClientRect();
+    const taken = [];
+
+    toast.style.pointerEvents = 'none'; // so the toast is never what is "on top" while looking
+    document.querySelectorAll('a[href], button, input, select, textarea, summary, [role="button"], [role="tab"], [tabindex]:not([tabindex="-1"]), [data-field-error], [role="alert"], .text-red-600, .text-red-500').forEach((el) => {
+        const box = el.getBoundingClientRect();
+        if (toast.contains(el) || !box.width || !box.height || box.right <= left || box.left >= right) return;
+        // A backdrop that closes its modal on a tap fills the screen: it cannot be kept clear of.
+        if (box.width >= window.innerWidth && box.height >= window.innerHeight) return;
+
+        const onTop = document.elementFromPoint((Math.max(box.left, left) + Math.min(box.right, right)) / 2, box.top + box.height / 2);
+        if (onTop && el.contains(onTop)) taken.push(box);
+    });
+    toast.style.pointerEvents = '';
+
+    for (let y = top; y <= window.innerHeight - height - 8; y += 8) {
+        if (!taken.some((box) => box.bottom > y && box.top < y + height)) return y;
+    }
+    return null;
+}
+
+// On phones the toast lies over nothing (.global-toast in app.css); above 768px it keeps
+// its corner and none of this applies. False when there is no place for it at the moment.
+function placeToast(toast) {
+    const root = document.documentElement;
+    if (placeSettingsToast(document, toast)) return true;
+    if (!toastPhone.matches) {
+        root.style.removeProperty('--toast-space');
+        return true;
+    }
+
+    const page = document.getElementById('main-content');
+    let top = (page ? Math.max(page.getBoundingClientRect().top, 0) : 0) + 8;
+
+    if (page && !overlayIsOpen(toast)) {
+        // The page is in view: the toast floats over its top edge (position: fixed in app.css)
+        // and the page does not move. Transient feedback never changes layout.
+        root.style.removeProperty('--toast-space');
+    } else {
+        // Something lies over the page: there is nothing to move out of the way, so a clear
+        // place is looked for. (A layout with no page area to move shows it at the top.)
+        root.style.removeProperty('--toast-space');
+        const clear = clearToastTop(toast, top);
+        if (clear === null) return false;
+        top = clear ?? top;
+    }
+
+    toast.style.setProperty('--toast-top', `${top}px`);
+    return true;
+}
+
+// Shows the toast where placeToast() puts it. With no clear place (a long message over a
+// panel that fills a small screen with controls) it waits out of sight and is retried
+// after interaction or a viewport change. Its display time starts when it can be seen.
+function presentToast(toast) {
+    if (!placeToast(toast)) {
+        // ponytail: pause expiry too; otherwise opening a panel loses an already-visible message.
+        window.clearTimeout(toastTimer);
+        toastTimer = null;
+        toast.classList.remove('is-visible');
+        return;
+    }
+
+    toast.classList.add('is-visible');
+    if (!toastTimer) {
+        toastTimer = window.setTimeout(() => hideToast(toast), toastDuration);
+    }
+}
+
+window.showToast = function(message, durationOrTone = 4000, duration) {
     const toast = document.getElementById('global-toast');
     if (!toast) {
         console.warn('Cannot show toast: #global-toast element not found.');
         return;
     }
 
-    const duration = typeof durationOrTone === 'number' ? durationOrTone : 4000;
+    const settings = toastSettings(durationOrTone, duration);
+    toastDuration = settings.duration;
+    window.clearTimeout(toastTimer);
+    toastTimer = null;
 
-    if (toastTimer) {
-        window.clearTimeout(toastTimer);
+    if (settings.tone) {
+        toast.dataset.tone = settings.tone;
+    } else {
+        delete toast.dataset.tone;
     }
-
     toast.textContent = message;
-    toast.classList.add('is-visible');
     toast.setAttribute('aria-hidden', 'false');
+    presentToast(toast);
+    settleToast();
+};
 
-    toastTimer = window.setTimeout(() => {
-        toast.classList.remove('is-visible');
-        toast.setAttribute('aria-hidden', 'true');
-        toast.textContent = '';
-    }, duration);
+// What is on the screen can change under a toast that shows or waits: a sheet opens, a
+// dialog closes, a panel slides in as the page loads. So it is placed again a moment after
+// it appears and after anything the user does: once when that has had time to show, and
+// once more when whatever slides or fades has finished.
+function settleToast() {
+    // Coalesce scroll/resize bursts; no work is queued when there is no message.
+    toastSettleTimers.forEach((timer) => window.clearTimeout(timer));
+    toastSettleTimers = [];
+    if (!document.getElementById('global-toast')?.textContent) return;
+
+    toastSettleTimers = [120, 500].map((delay) => window.setTimeout(() => {
+        const toast = document.getElementById('global-toast');
+        if (toast && toast.textContent) presentToast(toast);
+    }, delay));
 }
+
+['click', 'keyup'].forEach((type) => document.addEventListener(type, settleToast, true));
+document.addEventListener('scroll', settleToast, { capture: true, passive: true });
+window.addEventListener('resize', settleToast);
+
+// Turbo keeps a copy of the page for Back/Forward. A toast still showing would be kept
+// in it and come back for good: the timer that hides it belongs to the page that was left.
+document.addEventListener('turbo:before-cache', () => {
+    const toast = document.getElementById('global-toast');
+    if (toast) hideToast(toast);
+});
 
 const originalFetch = window.fetch;
 window.fetch = function(input, init) {
@@ -55,21 +208,21 @@ window.fetch = function(input, init) {
 
 window.Alpine = Alpine;
 window.Turbo = Turbo;
+// The retail POS reads its price quote state through this (audit H4).
+window.createQuoteState = createQuoteState;
+// Type-ahead searches on inline pages (the POS customer search) keep only the latest answer (audit M4).
+window.createLatestRequest = createLatestRequest;
 
 registerHistoricalManual(Alpine);
+Alpine.data('reorderRuleEditor', createReorderEditor);
+Alpine.data('karigarEditor', createKarigarEditor);
+Alpine.data('vendorEditor', createKarigarEditor);
+Alpine.data('karigarFieldHelp', createKarigarFieldHelp);
+Alpine.data('indianAddress', createIndianAddress);
 Alpine.start();
 
 function showFlashToasts() {
-    const success = document.querySelector('meta[name="flash-success"]');
-    if (success) {
-        window.showToast(success.content);
-        success.remove();
-    }
-    const error = document.querySelector('meta[name="flash-error"]');
-    if (error) {
-        window.showToast(error.content);
-        error.remove();
-    }
+    showFlashes(document, window.showToast);
 }
 
 function initAjaxDeletes() {
@@ -107,10 +260,10 @@ function initAjaxDeletes() {
             .then(res => res.json().then(data => ({ ok: res.ok, data })))
             .then(({ ok, data }) => {
                 if (!ok) {
-                    window.showToast(data.message || 'Something went wrong.');
+                    window.showToast(data.message || 'Something went wrong.', 'error');
                     return;
                 }
-                window.showToast(data.message || 'Deleted successfully.');
+                window.showToast(data.message || 'Deleted successfully.', 'success');
 
                 if (redirectUrl) {
                     Turbo.visit(redirectUrl);
@@ -126,7 +279,7 @@ function initAjaxDeletes() {
                 }
             })
             .catch(() => {
-                window.showToast('Network error. Please try again.');
+                window.showToast('Network error. Please try again.', 'error');
             });
         });
     });
@@ -139,11 +292,23 @@ let confirmDialogEl = null;
 let confirmDialogResolve = null;
 let confirmDialogFocusReturn = null;
 
+// The sidebar is turbo-permanent, so its Stock pill would keep the first page's
+// count; each page's header bell carries the current one.
+function syncReorderPill() {
+    const bell = document.querySelector('[data-notice-bell]');
+    const pill = document.querySelector('[data-reorder-pill]');
+    if (!bell || !pill) return;
+
+    const count = Number(bell.dataset.reorderCount || 0);
+    pill.textContent = String(count);
+    pill.hidden = count === 0;
+}
+
 function normalizeLegacyPageHeaders() {
     document.querySelectorAll('.content-header').forEach((header) => {
         if (header.dataset.legacyHeaderNormalized === 'true') return;
 
-        const directChildren = Array.from(header.children).filter((child) => !child.classList.contains('content-header-nav'));
+        const directChildren = Array.from(header.children).filter((child) => !child.classList.contains('content-header-nav') && !child.classList.contains('notice-bell'));
         if (!directChildren.length) return;
 
         const firstBlock = directChildren[0];
@@ -209,12 +374,6 @@ function decodeHtmlEntities(value) {
     return textarea.value;
 }
 
-function extractConfirmMessage(onsubmitAttr) {
-    if (!onsubmitAttr) return 'Are you sure you want to continue?';
-    const match = onsubmitAttr.match(/confirm\((['"])([\s\S]*?)\1\)/);
-    if (!match) return 'Are you sure you want to continue?';
-    return decodeHtmlEntities(match[2]);
-}
 
 function ensureConfirmDialog() {
     if (confirmDialogEl) {
@@ -251,6 +410,7 @@ function ensureConfirmDialog() {
         confirmDialogEl.classList.add('hidden');
         confirmDialogEl.classList.remove('flex');
         confirmDialogEl.setAttribute('aria-hidden', 'true');
+        setPageBehindConfirmInert(false);
 
         if (confirmDialogResolve) {
             const resolver = confirmDialogResolve;
@@ -277,6 +437,21 @@ function ensureConfirmDialog() {
     return confirmDialogEl;
 }
 
+// The confirm is modal (audit L3): while it is open, everything else on the page is inert, so Tab cannot walk out
+// of it into the page behind and nothing behind it can be edited or submitted.
+let confirmInertElements = [];
+function setPageBehindConfirmInert(on) {
+    confirmInertElements.forEach((el) => { el.inert = false; });
+    confirmInertElements = [];
+    if (!on) return;
+    for (const el of document.body.children) {
+        if (el !== confirmDialogEl && !el.inert) {
+            el.inert = true;
+            confirmInertElements.push(el);
+        }
+    }
+}
+
 function openConfirmDialog(message) {
     const dialog = ensureConfirmDialog();
     const messageEl = dialog.querySelector('[data-confirm-message="true"]');
@@ -288,6 +463,7 @@ function openConfirmDialog(message) {
     dialog.classList.remove('hidden');
     dialog.classList.add('flex');
     dialog.setAttribute('aria-hidden', 'false');
+    setPageBehindConfirmInert(true);
 
     setTimeout(() => cancelButton.focus(), 20);
 
@@ -309,7 +485,7 @@ function normalizeConfirmForms() {
 
         const onsubmitAttr = form.getAttribute('onsubmit') || '';
         if (!form.dataset.confirmMessage) {
-            form.dataset.confirmMessage = extractConfirmMessage(onsubmitAttr);
+            form.dataset.confirmMessage = extractConfirmMessage(onsubmitAttr, decodeHtmlEntities);
         }
         form.removeAttribute('onsubmit');
     });
@@ -331,48 +507,62 @@ function persistSidebarScroll() {
     sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(nav.scrollTop));
 }
 
+// Does this sidebar link answer for the current address? Returns the length of
+// the path that matched (0 for none), so the most specific link can win.
+function navLinkMatchLength(link, currentPath, currentQuery) {
+    let url;
+    try {
+        url = new URL(link.href);
+    } catch (_) {
+        return 0;
+    }
+
+    const covers = path => currentPath === path || currentPath.startsWith(path + '/');
+    let length = 0;
+
+    // The link's own address. Dashboard must be exact match only; a link that
+    // names a query (Profile is /settings?tab=profile) is that page only.
+    const ownPath = url.pathname;
+    const queryMatches = Array.from(url.searchParams).every(([key, value]) => currentQuery.get(key) === value);
+    if (queryMatches && (ownPath === '/dashboard' ? currentPath === ownPath : covers(ownPath))) {
+        length = ownPath.length;
+    }
+
+    // Pages that open from this link's page but live at another path:
+    // data-nav-match="/report,/reporting" on the reports hub link.
+    (link.dataset.navMatch || '').split(',').filter(Boolean).forEach(path => {
+        if (covers(path) && path.length > length) length = path.length;
+    });
+
+    return length;
+}
+
 function syncActiveNavLink() {
     const currentPath = window.location.pathname;
-    const links = Array.from(
-        document.querySelectorAll('.sidebar .nav-link[href]')
-    );
+    const currentQuery = new URLSearchParams(window.location.search);
 
     let bestMatch = null;
     let bestLength = 0;
 
-    links.forEach(link => {
+    document.querySelectorAll('.sidebar .nav-link[href]').forEach(link => {
         link.classList.remove('active');
 
-        let linkPath;
-        try {
-            linkPath = new URL(link.href).pathname;
-        } catch (_) {
-            return;
-        }
-
-        // Dashboard must be exact match only
-        if (linkPath === '/dashboard') {
-            if (currentPath === '/dashboard') {
-                if (linkPath.length > bestLength) {
-                    bestMatch = link;
-                    bestLength = linkPath.length;
-                }
-            }
-            return;
-        }
-
-        // All other links: current path must start with link path
-        if (currentPath === linkPath || currentPath.startsWith(linkPath + '/')) {
-            if (linkPath.length > bestLength) {
-                bestMatch = link;
-                bestLength = linkPath.length;
-            }
+        const length = navLinkMatchLength(link, currentPath, currentQuery);
+        if (length > bestLength) {
+            bestMatch = link;
+            bestLength = length;
         }
     });
 
     if (bestMatch) {
         bestMatch.classList.add('active');
     }
+
+    // The footer's Profile and Settings links each answer for themselves. The
+    // sidebar is turbo-permanent, so the class the server rendered goes stale.
+    document.querySelectorAll('.sidebar .sidebar-footer-link[href]').forEach(link => {
+        link.classList.toggle('is-active', navLinkMatchLength(link, currentPath, currentQuery) > 0);
+    });
 }
 
 function closeMobileMenu() {
@@ -413,7 +603,8 @@ function setMobileDrawerState(key = 'tenant', isOpen = false) {
             : (key === 'admin' ? 'Open admin navigation' : 'Open navigation'));
     });
 
-    if (window.innerWidth <= 1023) {
+    // The tenant sidebar is a slide-in panel up to 1280px (app.css); the admin one up to 1023px.
+    if (window.innerWidth <= 1280) {
         const hasOpenDrawer = Array.from(document.querySelectorAll('[data-mobile-drawer]'))
             .some(element => element.classList.contains('mobile-open'));
         document.body.classList.toggle('drawer-open', hasOpenDrawer);
@@ -553,6 +744,8 @@ function initSearchAutoSubmit() {
         if (!form || form.method.toLowerCase() !== 'get') return;
         if (_searchAutoSubmitInited.has(input)) return;
         if (input.hasAttribute('data-suggest') || input.hasAttribute('data-live-filter')) return;
+        // Dhiran search boxes refresh only their results frame and keep the cursor (x-dhiran.search).
+        if (input.closest('[data-dhiran-search]')) return;
         _searchAutoSubmitInited.add(input);
 
         let timer = null;
@@ -611,207 +804,6 @@ function initMobileTableScrollShells() {
 
         shell.classList.toggle('mobile-table-scroll-shell', shouldEnableInnerScrollShell);
         shell.classList.toggle('mobile-table-scroll-shell--bounded', shouldEnableInnerScrollShell);
-    });
-}
-
-function cleanupMobileHeaderActionFabs() {
-    document.querySelectorAll('.jf-header-mobile-fab').forEach((fab) => fab.remove());
-    document.querySelectorAll('.jf-header-fab-source').forEach((actions) => actions.classList.remove('jf-header-fab-source'));
-    document.querySelectorAll('.jf-header-fab-pinned').forEach((action) => action.classList.remove('jf-header-fab-pinned'));
-    document.querySelectorAll('.content-header.jf-header-auto-mobile').forEach((header) => header.classList.remove('jf-header-auto-mobile'));
-}
-
-function getHeaderActionLabel(sourceNode) {
-    if (!sourceNode || typeof sourceNode.getAttribute !== 'function') {
-        return '';
-    }
-
-    const nodeTag = sourceNode.tagName.toLowerCase();
-
-    if (nodeTag === 'form') {
-        const submitter = sourceNode.querySelector('button[type="submit"], button:not([type]), input[type="submit"]');
-        const submitterText = (submitter?.textContent || submitter?.value || '').replace(/\s+/g, ' ').trim();
-        if (submitterText) return submitterText;
-    }
-
-    const ariaLabel = sourceNode.getAttribute('aria-label')?.trim();
-    if (ariaLabel) return ariaLabel;
-
-    const title = sourceNode.getAttribute('title')?.trim();
-    if (title) return title;
-
-    const text = (sourceNode.textContent || '').replace(/\s+/g, ' ').trim();
-    return text;
-}
-
-function applyHeaderFabActionContent(targetNode, sourceNode, labelOverride = null) {
-    if (!targetNode) return;
-
-    const normalizedSource = sourceNode && typeof sourceNode.querySelector === 'function' ? sourceNode : null;
-    const icon = normalizedSource?.querySelector('svg, img, i');
-    if (icon) {
-        targetNode.appendChild(icon.cloneNode(true));
-    }
-
-    const label = (labelOverride || getHeaderActionLabel(normalizedSource) || 'Action').trim();
-    const labelNode = document.createElement('span');
-    labelNode.className = 'jf-header-mobile-fab-label';
-    labelNode.textContent = label;
-    targetNode.appendChild(labelNode);
-}
-
-function buildHeaderFabAction(sourceNode, closeFab) {
-    if (!sourceNode || !sourceNode.tagName) return null;
-
-    const sourceTag = sourceNode.tagName.toLowerCase();
-
-    if (sourceTag === 'a') {
-        const link = document.createElement('a');
-        link.className = 'jf-header-mobile-fab-link';
-        link.href = sourceNode.getAttribute('href') || '#';
-        if (sourceNode.getAttribute('target')) link.setAttribute('target', sourceNode.getAttribute('target'));
-        if (sourceNode.getAttribute('rel')) link.setAttribute('rel', sourceNode.getAttribute('rel'));
-        applyHeaderFabActionContent(link, sourceNode);
-        link.addEventListener('click', closeFab);
-
-        const text = getHeaderActionLabel(sourceNode).toLowerCase();
-        if (text.includes('delete') || sourceNode.className.toLowerCase().includes('danger')) {
-            link.classList.add('is-danger');
-        }
-        return link;
-    }
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'jf-header-mobile-fab-link';
-
-    if (sourceTag === 'button') {
-        applyHeaderFabActionContent(button, sourceNode);
-        const text = getHeaderActionLabel(sourceNode).toLowerCase();
-        if (text.includes('delete') || sourceNode.className.toLowerCase().includes('danger')) {
-            button.classList.add('is-danger');
-        }
-        button.addEventListener('click', (event) => {
-            event.preventDefault();
-            closeFab();
-            sourceNode.click();
-        });
-        return button;
-    }
-
-    if (sourceTag === 'form') {
-        const submitter = sourceNode.querySelector('button[type="submit"], button:not([type]), input[type="submit"]');
-        const text = (submitter?.textContent || submitter?.value || '').toLowerCase();
-        applyHeaderFabActionContent(button, submitter || sourceNode, submitter?.value || submitter?.textContent || 'Submit');
-        if (text.includes('delete') || submitter?.className?.toLowerCase().includes('danger')) {
-            button.classList.add('is-danger');
-        }
-
-        button.addEventListener('click', (event) => {
-            event.preventDefault();
-            closeFab();
-            if (submitter && submitter.tagName.toLowerCase() === 'button') {
-                submitter.click();
-                return;
-            }
-            if (typeof sourceNode.requestSubmit === 'function') {
-                sourceNode.requestSubmit(submitter || undefined);
-                return;
-            }
-            sourceNode.submit();
-        });
-        return button;
-    }
-
-    return null;
-}
-
-function initMobileHeaderActionFabs() {
-    cleanupMobileHeaderActionFabs();
-
-    const isMobileViewport = window.matchMedia('(max-width: 768px)').matches;
-    if (!isMobileViewport) return;
-
-    let createdFabCount = 0;
-
-    document.querySelectorAll('.content-header').forEach((header) => {
-        const nonBaseClasses = Array.from(header.classList).filter((className) => className !== 'content-header');
-        if (nonBaseClasses.length > 0) return;
-        if (header.closest('.admin-shell')) return;
-
-        const actions = header.querySelector(':scope > .page-actions');
-        if (!actions) return;
-
-        const hasFormControls = actions.querySelector('input:not([type="hidden"]), select, textarea');
-        if (hasFormControls) return;
-
-        header.classList.add('jf-header-auto-mobile');
-
-        const actionNodes = Array.from(actions.children).filter((node) => {
-            const tag = node.tagName.toLowerCase();
-            return tag === 'a' || tag === 'button' || tag === 'form';
-        });
-
-        if (actionNodes.length <= 1) return;
-
-        // Keep Back action in the mobile header; move remaining actions into FAB.
-        const pinnedHeaderAction = actionNodes.find((node) => {
-            const label = getHeaderActionLabel(node).toLowerCase();
-            return label.startsWith('back') || label.includes('back to');
-        });
-
-        if (pinnedHeaderAction) {
-            pinnedHeaderAction.classList.add('jf-header-fab-pinned');
-        }
-
-        const fabActionNodes = actionNodes.filter((node) => !node.classList.contains('jf-header-fab-pinned'));
-        if (!fabActionNodes.length) return;
-
-        actions.classList.add('jf-header-fab-source');
-
-        const fab = document.createElement('div');
-        fab.className = 'jf-header-mobile-fab';
-        fab.innerHTML = `
-            <div class="jf-header-mobile-fab-shell">
-                <nav class="jf-header-mobile-fab-nav" aria-label="Header quick actions"></nav>
-                <button type="button" class="jf-header-mobile-fab-toggle" aria-expanded="false" aria-label="Toggle header actions">
-                    <span class="jf-header-mobile-fab-bars" aria-hidden="true">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </span>
-                </button>
-            </div>
-        `;
-
-        const shell = fab.querySelector('.jf-header-mobile-fab-shell');
-        const nav = fab.querySelector('.jf-header-mobile-fab-nav');
-        const toggle = fab.querySelector('.jf-header-mobile-fab-toggle');
-
-        const closeFab = () => {
-            shell.classList.remove('is-open');
-            toggle.setAttribute('aria-expanded', 'false');
-        };
-
-        fabActionNodes.forEach((node) => {
-            const action = buildHeaderFabAction(node, closeFab);
-            if (action) nav.appendChild(action);
-        });
-
-        if (!nav.children.length) return;
-
-        toggle.addEventListener('click', () => {
-            const nextState = !shell.classList.contains('is-open');
-            shell.classList.toggle('is-open', nextState);
-            toggle.setAttribute('aria-expanded', nextState ? 'true' : 'false');
-        });
-
-        if (createdFabCount > 0) {
-            fab.style.display = 'none';
-        }
-
-        document.body.appendChild(fab);
-        createdFabCount += 1;
     });
 }
 
@@ -1017,7 +1009,7 @@ function styleDatePickerInput(nativeInput, instance) {
 
     displayInput.classList.add('jf-date-picker-input');
     displayInput.setAttribute('autocomplete', 'off');
-    displayInput.readOnly = true;
+    displayInput.readOnly = !instance.config.allowInput;
 
     if (nativeInput.className) {
         nativeInput.className.split(/\s+/).filter(Boolean).forEach((className) => {
@@ -1027,6 +1019,14 @@ function styleDatePickerInput(nativeInput, instance) {
 
     if (nativeInput.getAttribute('aria-label')) {
         displayInput.setAttribute('aria-label', nativeInput.getAttribute('aria-label'));
+    } else if (nativeInput.getAttribute('aria-labelledby')) {
+        displayInput.setAttribute('aria-labelledby', nativeInput.getAttribute('aria-labelledby'));
+    } else if (nativeInput.id) {
+        const label = document.querySelector(`label[for="${nativeInput.id.replace(/["\\]/g, '\\$&')}"]`);
+        if (label) {
+            if (!label.id) label.id = `${nativeInput.id}-label`;
+            displayInput.setAttribute('aria-labelledby', label.id);
+        }
     }
 
     displayInput.placeholder = nativeInput.placeholder || 'dd/mm/yyyy';
@@ -1038,7 +1038,7 @@ function dispatchDatePickerChange(nativeInput) {
 }
 
 function buildDatePickerOptions(nativeInput) {
-    return {
+    return configureDialogDatePicker(nativeInput, {
         dateFormat: 'Y-m-d',
         altInput: true,
         altFormat: 'd/m/Y',
@@ -1062,7 +1062,7 @@ function buildDatePickerOptions(nativeInput) {
             nativeInput.value = dateStr || '';
             dispatchDatePickerChange(nativeInput);
         },
-    };
+    });
 }
 
 function initDatePickers(root = document) {
@@ -1422,7 +1422,8 @@ document.addEventListener('click', (event) => {
     const link = event.target.closest('.sidebar .nav-link[href]');
     if (!link) return;
     persistSidebarScroll();
-    if (window.innerWidth <= 768) closeMobileMenu();
+    // a slide-in panel up to 1280px (app.css): a picked page closes it
+    if (window.innerWidth <= 1280) closeMobileMenu();
 });
 
 document.addEventListener('click', (event) => {
@@ -1460,7 +1461,12 @@ document.addEventListener('submit', async (event) => {
         form.dataset.confirmMessage || 'Are you sure you want to continue?'
     );
     if (!confirmed) return;
-
+    // A form that is no longer valid would be stopped by the browser before its submit event, leaving the one-shot
+    // mark below set and its NEXT submit unconfirmed (audit L3). Report it instead; the user submits again.
+    if (!form.noValidate && !form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
     confirmClearedForm = form;
     if (typeof form.requestSubmit === 'function') {
         form.requestSubmit();
@@ -1490,6 +1496,7 @@ document.addEventListener('turbo:before-cache', () => {
         confirmDialogEl.classList.add('hidden');
         confirmDialogEl.classList.remove('flex');
         confirmDialogEl.setAttribute('aria-hidden', 'true');
+        setPageBehindConfirmInert(false);
         // Detach so it is NOT captured in the Turbo cache snapshot (which would
         // leave a duplicate, listener-less copy in the restored page). It is
         // re-appended to the live body by ensureConfirmDialog() on next use.
@@ -1514,11 +1521,13 @@ document.addEventListener('turbo:before-cache', () => {
     // has hidden elements. Without this, when the snapshot is shown
     // on back-navigation, Alpine-managed elements (modals, dropdowns)
     // briefly appear before Alpine re-initializes and hides them.
-    document.querySelectorAll('[x-data]').forEach(el => {
+    // Promoted Settings frame visits snapshot the document while its Alpine
+    // roots stay live. Hiding them here leaves their unchanged x-show state hidden.
+    document.querySelectorAll('[x-data]:not(.settings-shell [x-data])').forEach(el => {
         el.setAttribute('x-cloak', '');
     });
 
-    document.querySelectorAll('[x-show]').forEach(el => {
+    document.querySelectorAll('[x-show]:not(.settings-shell [x-show])').forEach(el => {
         el.style.display = 'none';
     });
 });
@@ -1532,6 +1541,7 @@ document.addEventListener('turbo:visit', () => {
 
 document.addEventListener('turbo:load', () => {
     normalizeLegacyPageHeaders();
+    syncReorderPill();
     normalizeButtonTypes();
     upgradeInlineClickTargetsA11y();
     normalizeConfirmForms();
@@ -1562,21 +1572,6 @@ document.addEventListener('turbo:frame-render', () => {
     showFlashToasts();
     initDatePickers();
 });
-
-// Watch for Turbo Stream toast messages
-const toastTarget = document.getElementById('turbo-stream-toasts');
-if (toastTarget) {
-    new MutationObserver((mutations) => {
-        mutations.forEach(m => {
-            m.addedNodes.forEach(node => {
-                if (node.nodeType === 1 && node.dataset.toastMessage) {
-                    window.showToast(node.dataset.toastMessage);
-                    node.remove();
-                }
-            });
-        });
-    }).observe(toastTarget, { childList: true });
-}
 
 if (document.readyState !== 'loading') {
     normalizeLegacyPageHeaders();

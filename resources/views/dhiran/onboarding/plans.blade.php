@@ -5,6 +5,11 @@
             <p>Run your pledge loan business with confidence.</p>
         </div>
 
+        @if(! $plan)
+        <div class="dop-card">
+            <p class="dop-note">Dhiran plans are not available right now. Please contact support.</p>
+        </div>
+        @else
         <div class="dop-card">
             <div class="dop-card-top">
                 <span class="dop-badge">Yearly plan</span>
@@ -17,19 +22,19 @@
 
             <ul class="dop-feat">
                 <li>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <x-icon name="check" stroke-width="2.4" />
                     Track every pledge loan, interest, and repayment in one place.
                 </li>
                 <li>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <x-icon name="check" stroke-width="2.4" />
                     Printable loan receipts and closure certificates.
                 </li>
                 <li>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <x-icon name="check" stroke-width="2.4" />
                     Renewal, pre-close, and forfeiture handling built in.
                 </li>
                 <li>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    <x-icon name="check" stroke-width="2.4" />
                     Reports for the whole year, ready when you need them.
                 </li>
             </ul>
@@ -42,5 +47,6 @@
                 <p class="dop-note">You pay for one year. Set up your business right after payment.</p>
             </div>
         </div>
+        @endif
     </div>
 </x-dhiran-layout>

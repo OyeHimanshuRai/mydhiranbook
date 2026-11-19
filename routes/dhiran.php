@@ -1,6 +1,6 @@
 <?php
 use Illuminate\Support\Facades\Route;
-    Route::prefix('dhiran')->name('dhiran.')->middleware('shop')->group(function () {
+    Route::prefix('dhiran')->name('dhiran.')->middleware(['shop'])->group(function () {
         // Dashboard & Activation — no dhiran.enabled check (dashboard shows activation page)
         Route::get('/', [\App\Http\Controllers\DhiranController::class, 'dashboard'])->middleware('can:dhiran.view')->name('dashboard');
         Route::post('/activate', [\App\Http\Controllers\DhiranController::class, 'activate'])->middleware('can:dhiran.settings')->name('activate');
@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Route;
 
             // Inline borrower creation from the New Loan page (Dhiran-scoped).
             Route::post('/customers', [\App\Http\Controllers\DhiranController::class, 'storeCustomer'])->middleware('can:dhiran.create')->name('customers.store');
+            // Save a customer's details without a loan (declared before /borrowers/{customer}).
+            Route::get('/borrowers/create', [\App\Http\Controllers\DhiranController::class, 'createCustomer'])->middleware('can:dhiran.create')->name('borrowers.create');
 
             // Private evidence attachments (item photos, ID proof, loan documents).
             Route::post('/attachments', [\App\Http\Controllers\DhiranController::class, 'storeAttachment'])->middleware('can:dhiran.create')->name('attachments.store');
@@ -29,6 +31,17 @@ use Illuminate\Support\Facades\Route;
             Route::post('/loans/{loan}/repay', [\App\Http\Controllers\DhiranController::class, 'repay'])->middleware('can:dhiran.pay')->name('repay');
             Route::post('/loans/{loan}/pre-close', [\App\Http\Controllers\DhiranController::class, 'preClose'])->middleware('can:dhiran.pay')->name('pre-close');
             Route::post('/loans/{loan}/close', [\App\Http\Controllers\DhiranController::class, 'close'])->middleware('can:dhiran.pay')->name('close');
+            Route::post('/loans/{loan}/cancel', [\App\Http\Controllers\DhiranController::class, 'cancel'])->middleware('can:dhiran.create')->name('cancel');
+
+            // Old Loans: bring a shop's running paper loans in, borrower and loan together (owner 2026-11-12)
+            Route::get('/old-loans', [\App\Http\Controllers\DhiranOldLoanController::class, 'index'])->middleware('can:dhiran.create')->name('old-loans.index');
+            Route::get('/old-loans/create', [\App\Http\Controllers\DhiranOldLoanController::class, 'create'])->middleware('can:dhiran.create')->name('old-loans.create');
+            Route::post('/old-loans', [\App\Http\Controllers\DhiranOldLoanController::class, 'store'])->middleware('can:dhiran.create')->name('old-loans.store');
+            Route::get('/old-loans/template', [\App\Http\Controllers\DhiranOldLoanController::class, 'template'])->middleware('can:dhiran.create')->name('old-loans.template');
+            Route::get('/old-loans/upload', [\App\Http\Controllers\DhiranOldLoanController::class, 'uploadForm'])->middleware('can:dhiran.create')->name('old-loans.upload');
+            Route::post('/old-loans/upload', [\App\Http\Controllers\DhiranOldLoanController::class, 'upload'])->middleware('can:dhiran.create')->name('old-loans.upload.store');
+            Route::get('/old-loans/upload/{token}', [\App\Http\Controllers\DhiranOldLoanController::class, 'preview'])->middleware('can:dhiran.create')->name('old-loans.upload.preview');
+            Route::post('/old-loans/upload/{token}', [\App\Http\Controllers\DhiranOldLoanController::class, 'confirmUpload'])->middleware('can:dhiran.create')->name('old-loans.upload.confirm');
 
             // Release item — release permission
             Route::post('/loans/{loan}/release-item', [\App\Http\Controllers\DhiranController::class, 'releaseItem'])->middleware('can:dhiran.release')->name('release-item');
@@ -47,6 +60,9 @@ use Illuminate\Support\Facades\Route;
             Route::get('/loans/{loan}/payments/{payment}/receipt', [\App\Http\Controllers\DhiranController::class, 'paymentReceipt'])->middleware('can:dhiran.view')->name('payment-receipt');
 
             // Borrowers (Dhiran customer profiles) — view permission. Shop-scoped.
+            Route::get('/borrowers/{customer}/photo', [\App\Http\Controllers\CustomerProfilePhotoController::class, 'show'])->middleware('can:dhiran.view')->name('borrowers.photo.show');
+            Route::post('/borrowers/{customer}/photo', [\App\Http\Controllers\CustomerProfilePhotoController::class, 'store'])->middleware('can:dhiran.create')->name('borrowers.photo.store');
+            Route::delete('/borrowers/{customer}/photo', [\App\Http\Controllers\CustomerProfilePhotoController::class, 'destroy'])->middleware('can:dhiran.create')->name('borrowers.photo.destroy');
             Route::get('/borrowers', [\App\Http\Controllers\DhiranController::class, 'borrowers'])->middleware('can:dhiran.view')->name('borrowers.index');
             Route::get('/borrowers/{customer}', [\App\Http\Controllers\DhiranController::class, 'borrowerProfile'])->middleware('can:dhiran.view')->name('borrowers.show');
 
@@ -72,3 +88,4 @@ use Illuminate\Support\Facades\Route;
             Route::get('/reports/profitability', [\App\Http\Controllers\DhiranController::class, 'reportProfitability'])->middleware('can:dhiran.reports')->name('reports.profitability');
         });
     });
+

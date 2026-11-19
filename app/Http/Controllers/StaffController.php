@@ -58,7 +58,7 @@ class StaffController extends Controller
             // shops). The check MUST be global — a per-shop check let a globally
             // duplicate mobile pass validation and then 500 on the DB constraint.
             'mobile_number' => ['required', new IndianMobileRule(), Rule::unique('users', 'mobile_number')],
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->where('shop_id', $shopId)],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
             'role_id' => [
                 'required',
@@ -123,7 +123,7 @@ class StaffController extends Controller
             abort(403);
         }
 
-        if ($staff->assignedRole?->name === 'owner') {
+        if ($staff->isShopOwner()) {
             abort(403, 'The shop owner account cannot be managed from staff management.');
         }
     }
@@ -150,7 +150,7 @@ class StaffController extends Controller
             'name' => 'required|string|max:255',
             // Global uniqueness — see store(): mobile is the global login identity.
             'mobile_number' => ['required', new IndianMobileRule(), Rule::unique('users', 'mobile_number')->ignore($staff->id)],
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->where('shop_id', $shopId)->ignore($staff->id)],
+            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($staff->id)],
             'role_id' => [
                 'required',
                 // SECURITY: must scope to THIS shop AND exclude the owner role.

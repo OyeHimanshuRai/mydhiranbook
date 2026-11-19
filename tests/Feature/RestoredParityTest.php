@@ -12,13 +12,13 @@ class RestoredParityTest extends TestCase
     use RefreshDatabase;
     public function test_original_new_loan_submission_and_pledge_receipt_keep_fields_and_math(): void
     {
-        $shop=Shop::create(['name'=>'Synthetic Parity Shop']);
+        $shop=self::createDhiranShop(['name'=>'Synthetic Parity Shop']);
         $owner=User::create(['name'=>'Parity Owner','email'=>'parity@example.test','password'=>'Parity-pass-12345','shop_id'=>$shop->id]);
         TenantContext::runFor($shop->id,fn()=>\App\Models\Dhiran\DhiranSettings::getForShop($shop->id)->update(['is_enabled'=>true]));
         $this->actingAs($owner);
         $borrower=TenantContext::runFor($shop->id,fn()=>Customer::create(['first_name'=>'Synthetic','last_name'=>'Parity','mobile'=>'9000000090']));
         $this->get('/dhiran/create?customer_id='.$borrower->id)->assertOk()->assertSee('New Pledge Loan')->assertSee('Add New Borrower')->assertSee('Add Item')->assertSee('Interest Type')->assertSee('Loan Summary');
-        $this->post('/dhiran',['customer_id'=>$borrower->id,'principal_amount'=>50000,'gold_rate_on_date'=>6000,'interest_rate_monthly'=>1.5,'interest_type'=>'flat','tenure_months'=>6,'penalty_rate_monthly'=>2,'notes'=>'Synthetic parity check','items'=>[['description'=>'Synthetic gold chain','metal_type'=>'gold','value_mode'=>'metal','gross_weight'=>20,'stone_weight'=>0,'purity'=>22,'rate_per_gram_at_pledge'=>6000,'huid'=>'SYNTH1']]])->assertRedirect();
+        $this->post('/dhiran',['idempotency_key'=>'parity-loan-0001','customer_id'=>$borrower->id,'principal_amount'=>50000,'gold_rate_on_date'=>6000,'interest_rate_monthly'=>1.5,'interest_type'=>'flat','tenure_months'=>6,'penalty_rate_monthly'=>2,'notes'=>'Synthetic parity check','items'=>[['description'=>'Synthetic gold chain','metal_type'=>'gold','value_mode'=>'metal','gross_weight'=>20,'stone_weight'=>0,'purity'=>22,'rate_per_gram_at_pledge'=>6000,'huid'=>'SYNTH1']]])->assertRedirect();
         $loan=DhiranLoan::withoutTenant()->where('shop_id',$shop->id)->firstOrFail();
         $this->assertSame(110000.0,(float)$loan->total_collateral_value);
         $this->assertSame(50000.0,(float)$loan->principal_amount);

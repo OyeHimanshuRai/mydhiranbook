@@ -20,13 +20,19 @@ class ShopAuthController
             $shop=Shop::create(['name'=>$data['shop_name']]);
             TenantContext::runFor($shop->id,fn()=>DhiranSettings::getForShop($shop->id)->update(['is_enabled'=>true]));
             DB::table('subscriptions')->insert(['shop_id'=>$shop->id,'plan'=>'local-trial','status'=>'trial','expires_at'=>today()->addDays(30),'created_at'=>now(),'updated_at'=>now()]);
-            return User::create(['name'=>$data['name'],'email'=>$data['email'],'password'=>$data['password'],'shop_id'=>$shop->id,'role'=>'owner']);
+            $roles=app(\App\Services\TenantRoleService::class)->ensureDefaultsForShop($shop->id);
+            return User::create(['role_id'=>$roles['owner']->id,'name'=>$data['name'],'email'=>$data['email'],'password'=>$data['password'],'shop_id'=>$shop->id,'role'=>'owner']);
         });
         Auth::guard('web')->login($user); $r->session()->regenerate(); return redirect('/');
     }
     public function login(Request $r)
     {
-        $data=$r->validate(['email'=>'required|email','password'=>'required|string']);
+        $input=$r->validate(['email'=>'required|string|max:190','password'=>'required|string']);
+        $identity=trim($input['email']);
+        $column=filter_var($identity,FILTER_VALIDATE_EMAIL) ? 'email' : 'mobile_number';
+        $identity=$column === 'email' ? strtolower($identity) : \App\Support\Mobile::normalize($identity);
+        if (!$identity) { throw ValidationException::withMessages(['email'=>'Enter your email address or mobile number.']); }
+        $data=[$column=>$identity,'password'=>$input['password']];
         if (!Auth::guard('web')->attempt([...$data,'is_active'=>true])) { throw ValidationException::withMessages(['email'=>'These credentials could not be verified.']); }
         $r->session()->regenerate(); return redirect('/');
     }
