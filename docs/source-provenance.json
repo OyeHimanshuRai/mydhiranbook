@@ -1,0 +1,134 @@
+{
+  "repository": "Himanshu-u-rai/JewelFlow",
+  "commit": "2b9dfc2c860d2ff570c54ecd278be19cda147577",
+  "files": [
+    {
+      "path": "app/Services/DhiranService.php",
+      "upstream_sha256": "4387c62764728881704aa94a85854d907ce123ccd62c1bb958fbacc4a130cb7f"
+    },
+    {
+      "path": "app/Models/Concerns/BelongsToShop.php",
+      "upstream_sha256": "63cdef99c27b8371047326b6740c05b910e49f2a0db9791bbc9d5c96b229dcc7"
+    },
+    {
+      "path": "app/Models/Concerns/ImmutableLedger.php",
+      "upstream_sha256": "fe971905c91e28b264d983e6fa89bd0a93393792ef222472516cbae57b64e885"
+    },
+    {
+      "path": "app/Models/Concerns/ArchivableParty.php",
+      "upstream_sha256": "966b923ec6f42de3922000ae0998ddb6ebfd36ebf5550673f44873dddc19dab2"
+    },
+    {
+      "path": "app/Support/TenantContext.php",
+      "upstream_sha256": "a8e3dcdbf8a2cf8aa6d45df3087bd4247e09b4a9b26613c482d66201a0ecf731"
+    },
+    {
+      "path": "app/Models/ShopCounter.php",
+      "upstream_sha256": "1025f73c61fcdd2ba0d9febeb8c61bd1455dbd37f226a3f1f2124e8666415aee"
+    },
+    {
+      "path": "app/Services/TotpService.php",
+      "upstream_sha256": "80cff0117ca24e35b555f9297ac2f8356f189ceeedc9b005ca860e34f648c005"
+    },
+    {
+      "path": "app/Models/Platform/PlatformAdmin.php",
+      "upstream_sha256": "c07f9e8b4fc76e7738150c552f2b6a4e231d4826d246915cac365d1b0afd98a6"
+    },
+    {
+      "path": "app/Models/Platform/PlatformAuditLog.php",
+      "upstream_sha256": "b3c7e1e5b5c44a0dee24521206d7259970020f2a8a483af268c7fc5a93f59904"
+    },
+    {
+      "path": "app/Notifications/PlatformAdminResetPassword.php",
+      "upstream_sha256": "de5fe8b8e811d038b14cd6a996cc55966d90a4cdbb9a52ffed1b8b910a178dfa"
+    },
+    {
+      "path": "app/Http/Middleware/UseRouteScopedSessionCookie.php",
+      "upstream_sha256": "48a3fcc562ed9087e682ed055355b087c723465c7e148016519679f3c639b48b"
+    },
+    {
+      "path": "app/Console/Commands/DhiranAccrueInterest.php",
+      "upstream_sha256": "92c86ec22b27c85ab3f8c45675af835f88da58f5eacbbe72fe16aea1ec532708"
+    },
+    {
+      "path": "app/Console/Commands/DhiranForfeitureCheck.php",
+      "upstream_sha256": "8239050bb05afe46555379082575c2e5d54365d022655a4328f208f332045bd1"
+    },
+    {
+      "path": "resources/css/dhiran-tokens.css",
+      "upstream_sha256": "532751f0891a5d131c1229c62e22fc45d640aabce14f15653ad1a8da9fc1a8e7"
+    },
+    {
+      "path": "resources/css/super-admin.css",
+      "upstream_sha256": "9747b37cd2603ab8e8bc8d9e88ba1f3997cd62b89b4d651f06530b6792b73b97"
+    },
+    {
+      "path": "app/Models/Dhiran/DhiranCashEntry.php",
+      "upstream_sha256": "4e9a76e56f44d99c4ea30d790393cc22926259ccb8b1d1b89aaa8a856194e0aa"
+    },
+    {
+      "path": "app/Models/Dhiran/DhiranLedgerEntry.php",
+      "upstream_sha256": "876d9f5c4a790890beb72341457470826911660dff5b7573157bc6067ed36bfd"
+    },
+    {
+      "path": "app/Models/Dhiran/DhiranPayment.php",
+      "upstream_sha256": "557404058477cadc951e6ace2c6c064592986639ff0ab0a712affb6734ef980d"
+    },
+    {
+      "path": "app/Models/Dhiran/DhiranLoan.php",
+      "upstream_sha256": "71d5f29514bb71106bed193c8ac29264c0a3f8f139859d01af9d73e48821d7bb"
+    },
+    {
+      "path": "app/Models/Dhiran/DhiranLoanItem.php",
+      "upstream_sha256": "f14479c2a0e197ccc685beef1fda3b2ff6ededf482691dfa9759eedfcc1e1fc1"
+    },
+    {
+      "path": "app/Models/Dhiran/DhiranSettings.php",
+      "upstream_sha256": "b6c24c473058840e16e23fc84547f4af1b55cec58151357f8651a7b18e085ebb"
+    },
+    {
+      "path": "app/Models/Dhiran/DhiranAttachment.php",
+      "upstream_sha256": "64384971a095fe18d649c299e0e970bcd0f33d960d41cae1e207efa05054ce71"
+    },
+    {
+      "path": "database/migrations/2026_08_27_020000_widen_dhiran_loans_kyc_aadhaar.php",
+      "upstream_sha256": "fa7c6142bb9e07c0362ee604275dfe66dac15d227fbd13dbef58590e2368fec4"
+    },
+    {
+      "path": "database/migrations/2026_04_16_070000_add_forfeited_by_to_dhiran_loans.php",
+      "upstream_sha256": "692d502d2a52f6fe4b943bdeac1a64e3c0ea0a6f450e47d0c064b9b254cb0886"
+    },
+    {
+      "path": "database/migrations/2026_08_25_010000_restrict_shop_delete_on_dhiran_financial_tables.php",
+      "upstream_sha256": "fed04f69ea2ed2203f51641e3ccbef77ce29f49772d8294db745cbfb33f7bda5"
+    },
+    {
+      "path": "database/migrations/2026_11_12_120000_allow_cancelled_dhiran_loans.php",
+      "upstream_sha256": "95d34538e4955adcbb7911ae743a26e2da219770520fa6066ee7ff95f1a90179"
+    },
+    {
+      "path": "database/migrations/2026_11_12_110000_check_dhiran_loan_and_item_status.php",
+      "upstream_sha256": "2938dab86a6b873a3fe443240ea29bf4096d26c7eea2ffbf1bbf589088595db4"
+    },
+    {
+      "path": "database/migrations/2026_08_27_010000_create_dhiran_attachments_table.php",
+      "upstream_sha256": "8dab616906ac19ca379140bc987f27e3c87349325fd17c693457d2b15a9f8c18"
+    },
+    {
+      "path": "database/migrations/2026_04_16_060000_add_unique_payment_id_to_dhiran_cash_entries.php",
+      "upstream_sha256": "f2b30bbdf6c91cdebf17ea60a70211ebf3a73402fb4e7ced6b87a8fbe6b0aae1"
+    },
+    {
+      "path": "database/migrations/2026_11_12_130000_add_brought_forward_to_dhiran_loans.php",
+      "upstream_sha256": "8b3c722b169c8d151ac2586c347bf1f611458d489c927dda9c55a4facb82afc1"
+    },
+    {
+      "path": "database/migrations/2026_04_10_100000_create_dhiran_module_tables.php",
+      "upstream_sha256": "05500eafd82163d48c49541624667b51e6d38c15b022f2f8296fc7c7a1c8ca32"
+    },
+    {
+      "path": "database/migrations/2026_11_12_100000_add_compound_rest_and_forfeiture_deadline_to_dhiran_loans.php",
+      "upstream_sha256": "4b85ce1ab58943d1187bffc10db0c61d7c045f5e9e29295fc111e79c6f788e92"
+    }
+  ]
+}

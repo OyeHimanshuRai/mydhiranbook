@@ -1,0 +1,11 @@
+/vendor/
+/node_modules/
+/.source/
+/.runtime/
+/.env
+/.env.testing
+/bootstrap/cache/*.php
+/storage/**
+!/storage/.gitignore
+/.phpunit.cache/
+/public/hot

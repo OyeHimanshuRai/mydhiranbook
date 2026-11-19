@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd -- "$(dirname -- "$0")/.."
+root=$(realpath .)
+[[ "$root" == '/home/himanshu/Desktop/Dhiran ERP' ]]
+[[ "$(git rev-parse --show-toplevel)" == "$root" ]]
+[[ -z "$(git remote)" ]]
+pgbin=/usr/lib/postgresql/16/bin
+mkdir -p .runtime/postgres/socket
+chmod 700 .runtime .runtime/postgres .runtime/postgres/socket
+if [[ ! -f .runtime/postgres/data/PG_VERSION ]]; then
+  "$pgbin/initdb" -D "$root/.runtime/postgres/data" --auth-local=peer --auth-host=reject --encoding=UTF8 --locale=C.UTF-8 > .runtime/postgres/init.log
+  cat >> .runtime/postgres/data/postgresql.conf <<CONF
+listen_addresses = ''
+port = 55439
+unix_socket_directories = '$root/.runtime/postgres/socket'
+unix_socket_permissions = 0700
+CONF
+  cat > .runtime/postgres/data/pg_hba.conf <<HBA
+local dhiran_local dhiran_app scram-sha-256
+local dhiran_test dhiran_test scram-sha-256
+local all $(id -un) peer
+local all all reject
+HBA
+fi
+if ! "$pgbin/pg_ctl" -D "$root/.runtime/postgres/data" status >/dev/null 2>&1; then
+ "$pgbin/pg_ctl" -D "$root/.runtime/postgres/data" -l "$root/.runtime/postgres/server.log" start
+fi
+python3 scripts/setup-environment.py

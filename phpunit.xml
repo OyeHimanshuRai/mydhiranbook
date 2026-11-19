@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="tests/bootstrap.php" colors="true" cacheDirectory=".phpunit.cache">
+  <testsuites><testsuite name="Dhiran"><directory>tests/Unit</directory><directory>tests/Feature</directory></testsuite></testsuites>
+  <source><include><directory>app</directory></include></source>
+  <php><env name="APP_ENV" value="testing" force="true"/><env name="BCRYPT_ROUNDS" value="4" force="true"/></php>
+</phpunit>

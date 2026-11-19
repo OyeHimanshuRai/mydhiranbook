@@ -1,0 +1,157 @@
+<?php
+
+namespace App\Models\Platform;
+
+use App\Notifications\PlatformAdminResetPassword;
+use Illuminate\Auth\Passwords\CanResetPassword;
+use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use LogicException;
+
+class PlatformAdmin extends Authenticatable implements CanResetPasswordContract
+{
+    use CanResetPassword;
+    use Notifiable;
+
+    /** @var array<int, string> */
+    protected static array $mobileColumns = ['mobile_number'];
+
+    protected $attributes = ['is_active'=>true, 'two_factor_enabled'=>false, 'last_totp_window'=>-1];
+
+    protected $table = 'platform_admins';
+
+    protected $guarded = ['id'];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+        'two_factor_secret',
+        'recovery_codes',
+    ];
+
+    public const PERMISSIONS = [
+        'can_manage_shops', 'can_manage_subscriptions', 'can_suspend_shop',
+        'can_view_audit_logs', 'can_manage_admins', 'can_view_security',
+        'can_manage_jobs', 'can_view_compliance',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'password' => 'hashed',
+            'two_factor_secret' => 'encrypted',
+            'is_active' => 'boolean',
+            'two_factor_enabled' => 'boolean',
+            'last_login_at' => 'datetime',
+            'password_changed_at' => 'datetime',
+            'email_verified_at' => 'datetime',
+            'permissions' => 'array',
+            'recovery_codes' => 'array',
+        ];
+    }
+
+    public function hasVerifiedEmail(): bool
+    {
+        return $this->email_verified_at !== null;
+    }
+
+    public function hasRecoveryCodes(): bool
+    {
+        return ! empty($this->recovery_codes);
+    }
+
+    /**
+     * Replace any existing codes with a fresh batch (regenerating invalidates
+     * the old set). Returns the PLAINTEXT codes — shown to the admin once;
+     * only the hashes are persisted.
+     */
+    public function generateRecoveryCodes(int $count = 8): array
+    {
+        $plain = [];
+        $hashed = [];
+        for ($i = 0; $i < $count; $i++) {
+            $code = strtoupper(\Illuminate\Support\Str::random(5) . '-' . \Illuminate\Support\Str::random(5));
+            $plain[] = $code;
+            $hashed[] = \Illuminate\Support\Facades\Hash::make($code);
+        }
+        $this->forceFill(['recovery_codes' => $hashed])->save();
+
+        return $plain;
+    }
+
+    /**
+     * Single-use: if the code matches a stored hash, consume it (remove from
+     * the set) and return true. A used code can never be replayed.
+     */
+    public function useRecoveryCode(string $code): bool
+    {
+        $code = trim($code);
+        $codes = $this->recovery_codes ?? [];
+        foreach ($codes as $i => $hash) {
+            if (\Illuminate\Support\Facades\Hash::check($code, $hash)) {
+                unset($codes[$i]);
+                $this->forceFill(['recovery_codes' => array_values($codes)])->save();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function markEmailAsVerified(): void
+    {
+        $this->forceFill(['email_verified_at' => now()])->save();
+    }
+
+    /** Email the reset link via our own platform-admin route, not the shop route. */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new PlatformAdminResetPassword($token));
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (PlatformAdmin $admin) {
+            if ($admin->isSuperAdmin() && $admin->is_active && static::countActiveSuperAdminsExcluding($admin->id) < 1) {
+                throw new LogicException('Cannot delete the last active super admin.');
+            }
+        });
+
+        static::updating(function (PlatformAdmin $admin) {
+            $wasSuperAdmin = $admin->getOriginal('role') === 'super_admin';
+            $wasActive = (bool) $admin->getOriginal('is_active');
+            $losingSuperRole = $admin->isDirty('role') && $wasSuperAdmin && $admin->role !== 'super_admin';
+            $deactivating = $admin->isDirty('is_active') && $wasActive && !$admin->is_active;
+
+            if ($losingSuperRole && $wasActive && static::countActiveSuperAdminsExcluding($admin->id) < 1) {
+                throw new LogicException('Cannot demote the last active super admin.');
+            }
+
+            if ($deactivating && $wasSuperAdmin && static::countActiveSuperAdminsExcluding($admin->id) < 1) {
+                throw new LogicException('Cannot suspend the last active super admin.');
+            }
+        });
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        if ($this->isSuperAdmin()) return true;
+        $perms = $this->permissions ?? [];
+        return in_array($permission, $perms);
+    }
+
+    public static function countActiveSuperAdminsExcluding(?int $excludeId = null): int
+    {
+        return static::query()
+            ->where('role', 'super_admin')
+            ->whereRaw('is_active IS TRUE')
+            ->when($excludeId, fn ($q) => $q->whereKeyNot($excludeId))
+            ->count();
+    }
+}

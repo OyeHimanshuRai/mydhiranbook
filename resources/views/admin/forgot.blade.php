@@ -1,0 +1,3 @@
+@extends('admin.auth') @section('title','Admin password recovery') @section('content')
+<p class="admin-auth-eyebrow">ACCOUNT RECOVERY</p><h2 class="admin-auth-title">Reset your password.</h2><p class="admin-auth-copy">Enter your Dhiran platform admin email.</p><form class="admin-auth-form" method="post" action="/admin/forgot-password">@csrf<div><label for="email">Admin email</label><input id="email" type="email" name="email" required></div><button class="admin-auth-submit">Request recovery link</button></form><p class="help" style="margin-top:20px">Local edition delivers recovery mail to the private Dhiran mail log.</p><p style="margin-top:20px"><a href="/admin/login">← Back to sign in</a></p>
+@endsection

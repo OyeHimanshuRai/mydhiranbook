@@ -1,0 +1,5 @@
+@extends('auth.base') @section('title','Create a shop') @section('content')
+<p class="eyebrow">A FRESH START</p><h1>Your own shop.</h1><p class="muted">Create a Dhiran owner account.</p><form method="post" action="/register">@csrf
+@foreach(['shop_name'=>'Shop name','name'=>'Your name','email'=>'Email address'] as $field=>$label)<div class="field"><label for="{{ $field }}">{{ $label }}</label><input id="{{ $field }}" name="{{ $field }}" value="{{ old($field) }}" type="{{ $field==='email'?'email':'text' }}" required></div>@endforeach
+<div class="field"><label for="password">Password · at least 12 characters</label><input id="password" name="password" type="password" minlength="12" autocomplete="new-password" required></div><div class="field"><label for="password_confirmation">Confirm password</label><input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" required></div><button class="gold">Create shop</button></form><p class="footnote">Already have an account? <a href="/login">Sign in</a></p>
+@endsection
