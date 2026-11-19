@@ -26,7 +26,6 @@ class DhiranPayment extends Model
         'outstanding_penalty_after'  => 'decimal:2',
     ];
 
-    /** How a payment method reads on screen and on paper ("UPI", "Bank Transfer"). */
     public static function methodLabel(?string $method): string
     {
         return match ($method) {
@@ -43,14 +42,6 @@ class DhiranPayment extends Model
         $model->save();
 
         return $model;
-    }
-
-    protected static function booted(): void
-    {
-        static::creating(function (self $payment): void {
-            $sequence = \App\Services\BusinessIdentifierService::nextCounter((int)$payment->shop_id, 'receipt');
-            $payment->receipt_number = 'DH-R'.str_pad((string)$sequence, 6, '0', STR_PAD_LEFT);
-        });
     }
 
     /* ── Relationships ─────────────────────────────────── */

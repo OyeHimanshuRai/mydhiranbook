@@ -5,7 +5,8 @@ $app = Application::configure(basePath: dirname(__DIR__))
     ->withRouting(web: __DIR__.'/../routes/web.php', commands: __DIR__.'/../routes/console.php', health: '/up')
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->web(prepend: [App\Http\Middleware\UseRouteScopedSessionCookie::class]);
-        $middleware->alias(['shop' => App\Http\Middleware\UseShop::class, 'admin.session'=>App\Http\Middleware\AdminSession::class]);
+        $middleware->prependToPriorityList(Illuminate\Routing\Middleware\SubstituteBindings::class, App\Http\Middleware\UseShop::class);
+        $middleware->alias(['shop' => App\Http\Middleware\UseShop::class, 'admin.session'=>App\Http\Middleware\AdminSession::class, 'dhiran.enabled'=>App\Http\Middleware\EnsureDhiranEnabled::class]);
     })->withExceptions(function (Illuminate\Foundation\Configuration\Exceptions $exceptions) {})->create();
 
 if (getenv('APP_ENV') === 'testing' || ($_ENV['APP_ENV'] ?? '') === 'testing') {

@@ -1,0 +1,131 @@
+- complementary:
+  - link "D Dhiran Pledge Loan Manager":
+    - /url: http://127.0.0.1:8787/comparison/original/dashboard
+    - generic: D
+    - generic: Dhiran
+    - generic: Pledge Loan Manager
+  - navigation:
+    - link "Dashboard":
+      - /url: http://127.0.0.1:8787/comparison/original/dashboard
+      - generic: Dashboard
+    - link "Loans":
+      - /url: http://127.0.0.1:8787/comparison/original/loans
+      - generic: Loans
+    - link "Borrowers":
+      - /url: http://127.0.0.1:8787/comparison/original/borrowers/index
+      - generic: Borrowers
+    - link "New Loan":
+      - /url: http://127.0.0.1:8787/comparison/original/new-loan
+      - generic: New Loan
+    - link "Reports":
+      - /url: http://127.0.0.1:8787/comparison/original/reports/index
+      - generic: Reports
+    - link "Settings":
+      - /url: http://127.0.0.1:8787/comparison/original/settings
+      - generic: Settings
+  - generic: Demo Owner
+  - generic: Dhiran Demo · Pune
+  - button "Sign out"
+- main:
+  - heading "New Pledge Loan" [level=1]
+  - paragraph: Create a new gold & silver pledge loan
+  - link "Back to Loans":
+    - /url: http://127.0.0.1:8787/comparison/original/loans
+    - text: Back to Loans
+  - text: Customer Details
+  - text: Customer *
+  - searchbox "Search borrower by name, mobile, PAN, or ID": Synthetic Borrower
+  - button "Add new borrower":
+    - generic: Add New Borrower
+  - generic: SB
+  - paragraph: Synthetic Borrower
+  - paragraph: Selected borrower profile
+  - term: Mobile
+  - definition: "9000000001"
+  - term: PAN
+  - definition: Not added
+  - term: ID number
+  - definition: Not added
+  - term: State code
+  - definition: Not added
+  - term: Address
+  - definition: Demonstration address only
+  - text: Pledged Items
+  - generic: Description *
+  - textbox "e.g. Gold chain, silver anklet": Synthetic gold chain
+  - text: Gross Weight (g)
+  - generic: "*"
+  - spinbutton: "20"
+  - generic: Stone Weight (g)
+  - spinbutton: "0"
+  - generic: Type *
+  - combobox:
+    - option "Gold" [selected]
+    - option "Silver"
+    - option "Other (diamond, platinum, watch…)"
+  - generic: Valuation
+  - combobox:
+    - option "Auto (metal value)" [selected]
+    - option "Appraised (enter value)"
+  - generic: Purity *
+  - combobox:
+    - option "Select"
+    - option "24K"
+    - option "22K" [selected]
+    - option "20K"
+    - option "18K"
+    - option "14K"
+  - generic: Rate/gram at Pledge
+  - generic: ₹
+  - spinbutton: "6000"
+  - generic: HUID (optional)
+  - textbox "HUID"
+  - generic: Net Metal Wt (g)
+  - textbox: "20.000"
+  - generic: Fine Weight (g)
+  - textbox: "18.333"
+  - generic: Market Value
+  - textbox: ₹110000.00
+  - generic: Loan Value
+  - textbox: ₹82500.00
+  - button "Add Item":
+    - text: Add Item
+  - text: Loan Parameters
+  - generic: Principal Amount *
+  - generic: ₹
+  - spinbutton "Principal Amount *" [active]: "50000"
+  - generic: Gold rate today (per gram)
+  - generic: ₹
+  - spinbutton "Gold rate today (per gram)": "6000"
+  - generic: Monthly Interest Rate (%) *
+  - spinbutton "Monthly Interest Rate (%) *": "1.5"
+  - generic: Interest Type *
+  - combobox "Interest Type *":
+    - option "Flat (Simple)" [selected]
+    - option "Daily"
+    - option "Compound"
+  - generic: Tenure (Months) *
+  - spinbutton "Tenure (Months) *": "6"
+  - generic: Penalty Rate Monthly (%)
+  - spinbutton "Penalty Rate Monthly (%)": "2"
+  - generic: Processing Fee
+  - textbox: ₹0.00
+  - text: Loan Summary
+  - generic: Total Market Value
+  - generic: ₹110000.00
+  - generic: Total Loan Value (from items)
+  - generic: ₹82500.00
+  - generic: Principal Amount
+  - generic: ₹50000.00
+  - generic: Monthly Interest (approx.)
+  - generic: ₹750.00
+  - generic: Processing Fee
+  - generic: ₹0.00
+  - text: Notes (optional)
+  - textbox "Notes (optional)":
+    - /placeholder: Any additional notes about this loan...
+  - link "Cancel":
+    - /url: http://127.0.0.1:8787/comparison/original/loans
+    - text: Cancel
+  - button "Create Loan":
+    - text: Create Loan

@@ -1,0 +1,60 @@
+worktree /home/himanshu/Desktop/JewelFlow
+HEAD 018b3d810e37d534f498033ab582ee41f3197c27
+branch refs/heads/fix/small-batch-20260914
+
+worktree /home/himanshu/Desktop/JewelFlow/.claude/worktrees/eager-boyd-c1ed92
+HEAD d7dcfb0367fa6ffd3571502d25c44a7bdb36aedf
+branch refs/heads/claude/eager-boyd-c1ed92
+
+worktree /home/himanshu/Desktop/JewelFlow/.claude/worktrees/goofy-curran-78541f
+HEAD d7dcfb0367fa6ffd3571502d25c44a7bdb36aedf
+branch refs/heads/claude/goofy-curran-78541f
+
+worktree /home/himanshu/Desktop/JewelFlow/.claude/worktrees/practical-albattani-8ebe11
+HEAD a8b92c39d37d2423a55913306cd99c094066bd9b
+branch refs/heads/claude/practical-albattani-8ebe11
+
+worktree /home/himanshu/Desktop/JewelFlow/.claude/worktrees/sleepy-lamarr-531611
+HEAD 42c5e007326f0f5242882b0c30fa070bd3fd5691
+branch refs/heads/fix/admin-2fa-manage-slot
+
+worktree /home/himanshu/Desktop/JewelFlow/.claude/worktrees/trusting-jang-e6c482
+HEAD 5d8ea6a2b386a1a0894f460c100ece5904d2fbaa
+branch refs/heads/fix/pagination-tie-breakers
+
+worktree /home/himanshu/Desktop/jewelflow-worktrees/acceptance-c5c46e45
+HEAD c5c46e452c6f23a4dad80caacf4223806a54e3fe
+detached
+
+worktree /home/himanshu/Desktop/jewelflow-worktrees/acceptance-fixes
+HEAD 2b9dfc2c860d2ff570c54ecd278be19cda147577
+branch refs/heads/review/acceptance-fixes-20261118
+
+worktree /home/himanshu/Desktop/jewelflow-worktrees/icons-baseline
+HEAD d7dcfb0367fa6ffd3571502d25c44a7bdb36aedf
+detached
+
+worktree /home/himanshu/Desktop/jewelflow-worktrees/icons-batch1
+HEAD 090436daa875dca7e9c5ee8ef3a6666972dfa99e
+branch refs/heads/feature/lucide-icons-batch1
+
+worktree /home/himanshu/Desktop/jewelflow-worktrees/jewelflows-takeover
+HEAD 48b0d5eb0a286055ece99e869e35a77d3f0880e3
+branch refs/heads/feature/login-mobile-verification
+
+worktree /home/himanshu/Desktop/jewelflow-worktrees/mobile-companion-api
+HEAD b1d7f5c4b7cc2d57990c9a31f2b613c556e5b407
+branch refs/heads/feature/mobile-companion-api
+
+worktree /home/himanshu/Desktop/jewelflow-worktrees/rehearsal-d7dcfb0
+HEAD d7dcfb0367fa6ffd3571502d25c44a7bdb36aedf
+detached
+
+worktree /home/himanshu/Desktop/jewelflow-worktrees/repairs-list-fix
+HEAD 2b9dfc2c860d2ff570c54ecd278be19cda147577
+branch refs/heads/fix/repairs-list-and-customers-header-20261119
+
+worktree /home/himanshu/Desktop/jewelflow-worktrees/ui-integration
+HEAD f093ff351fc7a93e44b7596bb595df33ce822a7b
+branch refs/heads/feature/table-consistency
+

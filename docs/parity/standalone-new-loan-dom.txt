@@ -1,0 +1,55 @@
+- complementary:
+  - link "dhiran.":
+    - /url: /
+  - paragraph: THE PLEDGE BOOK
+  - navigation:
+    - link "Loan book":
+      - /url: /
+    - link "Borrowers":
+      - /url: /borrowers
+    - link "Staff & access":
+      - /url: /staff
+  - strong: Dhiran Demo · Pune
+  - text: Your shop. Your records.
+  - paragraph: Dhiran · Local edition
+- banner:
+  - generic: Dhiran Demo · Pune
+  - generic: Demo Owner · Owner
+  - button "Sign out"
+- main:
+  - link "← Loan book":
+    - /url: /
+  - heading "A new pledge." [level=1]
+  - paragraph: Record the borrower, collateral and agreed loan terms.
+  - heading "01 · Borrower & collateral" [level=2]
+  - generic: Borrower
+  - combobox "Borrower":
+    - option "Synthetic Borrower · 9000000001" [selected]
+  - generic: Pledged item
+  - textbox "Pledged item":
+    - /placeholder: e.g. Gold chain
+    - text: Synthetic gold chain
+  - generic: Metal
+  - combobox "Metal":
+    - option "Gold" [selected]
+    - option "Silver"
+  - generic: "Purity · gold: karat / silver: fineness"
+  - 'spinbutton "Purity · gold: karat / silver: fineness"': "22"
+  - generic: Gross weight (g)
+  - spinbutton "Gross weight (g)": "20"
+  - generic: Stone weight (g)
+  - spinbutton "Stone weight (g)": "0"
+  - generic: Pure metal rate per gram (₹)
+  - spinbutton "Pure metal rate per gram (₹)": "6000"
+  - paragraph: "Enter the agreed valuation rate. Maximum loan: 75% of collateral value."
+  - heading "02 · Loan terms" [level=2]
+  - generic: Principal amount (₹)
+  - spinbutton "Principal amount (₹)": "50000"
+  - generic: Monthly interest (%)
+  - spinbutton "Monthly interest (%)": "1.5"
+  - generic: Tenure (months)
+  - spinbutton "Tenure (months)" [active]: "6"
+  - generic: Issue date
+  - textbox "Issue date": 2026-11-20
+  - generic: "Next: upload a photo of the pledged item and the borrower’s ID proof, then activate the loan."
+  - button "Create pledge"

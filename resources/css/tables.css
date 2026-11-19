@@ -1,0 +1,419 @@
+/*
+ * Shared data-table pattern (Retail, Dhiran, platform admin).
+ *
+ * Opt-in and scoped: nothing here applies unless a <table> carries .jf-table, so unrelated screens, print documents and
+ * editable entry grids (POS, invoice, historical entry) are untouched. Cell selectors use child combinators so they win over
+ * the per-cell Tailwind utilities the existing tables carry (px-6 py-3 text-xs tracking-[0.2em] ...) and over the older global
+ * ".content-inner table" padding rule by specificity, without !important: a table is migrated by adding classes, not by
+ * rewriting every cell. The older global "Data tables" block in app.css excludes .jf-table (table:not(.jf-table)).
+ *
+ *   <div class="jf-table-wrap">              scroll container: the table scrolls inside it, never the page
+ *     <table class="jf-table">               header, cell, separator, hover and focus pattern
+ *       numbers: right-aligned cells (.text-right or .jf-num) get tabular figures and never wrap
+ *       actions: <div class="jf-table-actions"> wraps inside its cell instead of widening the column
+ *       empty:   <td colspan="N" class="jf-table-empty">
+ *
+ * Palette stays per product through the custom properties below (Retail slate, Dhiran warm, admin dark).
+ */
+
+.jf-table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+}
+
+/* All opted-in registers share Customers' available page width; wide columns scroll inside. */
+.content-inner[data-list-workspace] {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+}
+
+/* Native scrollbars for lists and explicitly opted-in non-list scroll areas.
+   Keep the normal-width drag target; touch platforms retain their own overlay bars. */
+.jf-scrollbar,
+[data-list-scroll] {
+    --sb-track-color: #f1f5f9;
+    --sb-thumb-color: #b45309;
+    --sb-size: 14px;
+}
+.dh-app .jf-scrollbar, .dh-app [data-list-scroll] { --sb-thumb-color: var(--dh-scrollbar-thumb); --sb-track-color: var(--dh-scrollbar-track); }
+.admin-main .jf-scrollbar, .admin-main [data-list-scroll] { --sb-thumb-color: #b45309; --sb-track-color: #f1f3f9; }
+.jf-scrollbar::-webkit-scrollbar,
+[data-list-scroll]::-webkit-scrollbar { width: var(--sb-size); height: var(--sb-size); }
+.jf-scrollbar::-webkit-scrollbar-track,
+.jf-scrollbar::-webkit-scrollbar-corner,
+[data-list-scroll]::-webkit-scrollbar-track,
+[data-list-scroll]::-webkit-scrollbar-corner { background: var(--sb-track-color); border-radius: 3px; }
+.jf-scrollbar::-webkit-scrollbar-thumb,
+[data-list-scroll]::-webkit-scrollbar-thumb {
+    background: var(--sb-thumb-color);
+    border-radius: 3px;
+}
+@supports not selector(::-webkit-scrollbar) {
+    .jf-scrollbar, [data-list-scroll] { scrollbar-color: var(--sb-thumb-color) var(--sb-track-color); }
+}
+@media (forced-colors: active) { .jf-scrollbar, [data-list-scroll] { scrollbar-color: auto; } }
+
+/* Explicit list workspaces only. Short/zoomed/phone layouts and print keep normal page flow.
+   Height is the measured remaining viewport, never a fixed table height. */
+@media screen and (min-width: 1024px) and (min-height: 800px) {
+    [data-list-workspace][data-list-fit] {
+        display: flex;
+        flex-direction: column;
+        height: var(--jf-list-available);
+        min-height: 0;
+    }
+    [data-list-workspace][data-list-fit] [data-list-panel],
+    [data-list-workspace][data-list-fit] [data-list-frame] {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        min-width: 0;
+    }
+    [data-list-workspace][data-list-fit] > :not([data-list-panel]):not([data-list-frame]),
+    [data-list-workspace][data-list-fit] [data-list-panel] > :not([data-list-frame]),
+    [data-list-workspace][data-list-fit] [data-list-frame] > :not([data-list-scroll]) { flex-shrink: 0; }
+    [data-list-workspace][data-list-fit] [data-list-scroll] {
+        flex: 1 1 auto;
+        min-height: 12rem;
+        min-width: 0;
+        overflow: auto;
+        scrollbar-gutter: stable;
+        scroll-padding-block: calc(var(--jf-list-head-size, 3rem) + 8px) 8px;
+    }
+    [data-list-workspace][data-list-fit] [data-list-scroll]:focus-visible {
+        outline: 2px solid var(--jf-t-focus, #b45309);
+        outline-offset: -2px;
+    }
+    /* Selected-shop actions reserve their own space instead of covering the footer. */
+    [data-list-workspace][data-list-fit] > [data-list-toolbar] {
+        position: static;
+        transform: none;
+        max-width: none;
+        padding: 12px 0 0;
+    }
+    [data-list-workspace][data-list-fit] [data-list-scroll] > .jf-table { border-collapse: separate; }
+    [data-list-workspace][data-list-fit] [data-list-scroll] > .jf-table > thead > tr > th {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+    }
+    [data-list-workspace][data-list-fit] [data-list-scroll] > .jf-table--sticky-end > thead > tr > th:last-child { z-index: 4; }
+}
+
+.jf-table {
+    /* values are the pattern the inventory, repairs and invoices tables had already converged on */
+    --jf-t-head-bg: #f8fafc;
+    --jf-t-head-fg: #475569;
+    --jf-t-head-line: #e5e7eb;
+    --jf-t-row-line: #edf2f7;
+    --jf-t-zebra: #f8fbff;
+    --jf-t-hover: #edf5ff;
+    --jf-t-surface: #ffffff;
+    --jf-t-focus: #b45309;
+    --jf-t-muted: #64748b;
+    --jf-t-pad-x: 12px;
+    --jf-t-head-pad-y: 12px;
+    --jf-t-pad-y: 14px;
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+.jf-table > thead,
+.jf-table > thead.border-b {
+    background: var(--jf-t-head-bg);
+    border-bottom: 1px solid var(--jf-t-head-line);
+}
+
+.jf-table > thead > tr > th {
+    padding: var(--jf-t-head-pad-y) var(--jf-t-pad-x);
+    background: var(--jf-t-head-bg);
+    color: var(--jf-t-head-fg);
+    border-bottom: 1px solid var(--jf-t-head-line);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.jf-table > tbody > tr > td {
+    padding: var(--jf-t-pad-y) var(--jf-t-pad-x);
+    border-bottom: 1px solid var(--jf-t-row-line);
+    line-height: 1.45;
+    vertical-align: middle;
+}
+
+/* Tailwind's divide-y puts a second line on every row; the cell borders above are the separators */
+.jf-table > tbody > tr { border-top-width: 0 !important; transition: background-color 120ms ease; }
+.jf-table > tbody > tr:nth-child(even) { background: var(--jf-t-zebra); }
+.jf-table > tbody > tr:last-child > td { border-bottom: 0; }
+
+/* the first and last cells get a little more room so content does not sit on the card edge */
+.jf-table > thead > tr > th:first-child,
+.jf-table > tbody > tr > td:first-child { padding-left: calc(var(--jf-t-pad-x) + 8px); }
+.jf-table > thead > tr > th:last-child,
+.jf-table > tbody > tr > td:last-child { padding-right: calc(var(--jf-t-pad-x) + 8px); }
+
+/* .jf-table--compact: tighter side padding for tables with many columns in a narrow card */
+.jf-table--compact { --jf-t-pad-x: 8px; }
+/* .jf-table--fit: a table with a few short columns fits a phone without the forced scroll width (bill previews, summaries) */
+@media (max-width: 768px) { .jf-table.jf-table--fit { min-width: 0; } }
+
+/* label / value summary rows: the first cell of an indented row (CGST under a taxable total) keeps its indent */
+.jf-table > tbody > tr > td.jf-indent { padding-left: calc(var(--jf-t-pad-x) + 32px); }
+
+/* .jf-grid: editable entry grids (POS cart, historical items, job-order receive) keep their own cell spacing, borders, inputs and keyboard
+   behaviour; only the header text takes the shared look */
+.jf-grid > thead > tr > th {
+    color: #475569;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* Row position is separate from a customer/bill identifier; opt-in, never nth-child. */
+.jf-table > thead > tr > th.jf-table-index,
+.jf-table > tbody > tr > td.jf-table-index {
+    width: 4rem;
+    min-width: 3.5rem;
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    border-inline-end: 1px solid var(--jf-t-row-line);
+}
+.jf-table > tbody > tr > td.jf-table-index {
+    color: var(--jf-t-muted);
+    font-size: 12px;
+}
+.jf-row-number {
+    display: inline-block;
+    margin-inline-end: 0.5rem;
+    color: var(--jf-t-muted, #64748b);
+    font-size: 12px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* a selection checkbox column stays narrow */
+.jf-table > thead > tr > th:has(> input[type="checkbox"]),
+.jf-table > tbody > tr > td:has(> input[type="checkbox"]) {
+    width: 1%;
+    padding-left: 12px;
+    padding-right: 4px;
+}
+
+.jf-table > tbody > tr:hover,
+.jf-table > tbody > tr:focus-within { background: var(--jf-t-hover); }
+/* no hover tint on a row that only carries an empty or "no match" message */
+.jf-table > tbody > tr:has(> .jf-table-empty):hover { background: transparent; }
+
+.jf-table a:focus-visible,
+.jf-table button:focus-visible,
+.jf-table select:focus-visible,
+.jf-table input:focus-visible,
+.jf-table summary:focus-visible {
+    outline: 2px solid var(--jf-t-focus);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+/* a header without an alignment class starts at the left like its cells (browsers centre <th> by default); :where() keeps this at
+   zero specificity so text-right / text-center on a header still win */
+:where(.jf-table > thead > tr > th) { text-align: start; }
+
+/* numbers: amounts, weights, counts line up on the right and are never wrapped or truncated */
+.jf-table > thead > tr > th.text-right,
+.jf-table > thead > tr > th.jf-num { text-align: right; }
+.jf-table > tbody > tr > td.text-right,
+.jf-table > tbody > tr > td.jf-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* action cells: controls wrap inside the cell instead of widening the column; touch screens get larger targets */
+.jf-table-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px 8px;
+}
+.jf-table-actions--center { justify-content: center; }
+.jf-table-actions > form { display: inline-flex; margin: 0; }
+/* every control in an action cell has the same height (a 44px button next to 30px links looked broken); touch screens get 44px for all */
+.jf-table-actions > a,
+.jf-table-actions > button,
+.jf-table-actions > form > button,
+.jf-table-actions > form > select { min-height: 36px; }
+@media (pointer: coarse) {
+    .jf-table-actions > a,
+    .jf-table-actions > button,
+    .jf-table-actions > form > button,
+    .jf-table-actions > form > select { min-height: 44px; }
+}
+
+/* .jf-row-action: icon-only row action (view, edit, print, delete ...) with a floating label, as on the Invoice register.
+   The visible text lives in the .jf-sr-only span (screen readers and the accessible name are unchanged) and in data-tip (the floating
+   label, mounted outside table overflow on hover and keyboard focus). Variants: --view, --edit, --neutral, --danger, --success, --primary. */
+.jf-row-action {
+    --jf-ra-bg: #f8fafc;
+    --jf-ra-line: #cbd5e1;
+    --jf-ra-fg: #334155;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    box-sizing: border-box;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    border: 1px solid var(--jf-ra-line);
+    border-radius: 9px;
+    background: var(--jf-ra-bg);
+    color: var(--jf-ra-fg);
+    font-size: 0;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out, transform 120ms ease-out;
+}
+/* Mobile cards do not inherit the table-scoped palette. */
+.jf-row-action--view { --jf-ra-bg: var(--jf-t-focus, #b45309); --jf-ra-line: var(--jf-t-focus, #b45309); --jf-ra-fg: #ffffff; }
+.jf-row-action--edit { --jf-ra-bg: #fff7ed; --jf-ra-line: #fed7aa; --jf-ra-fg: #92400e; }
+.jf-row-action--danger { --jf-ra-bg: #fef2f2; --jf-ra-line: #fecaca; --jf-ra-fg: #b91c1c; }
+.jf-row-action--success { --jf-ra-bg: #f0fdf4; --jf-ra-line: #bbf7d0; --jf-ra-fg: #15803d; }
+.jf-row-action--primary { --jf-ra-bg: #1e293b; --jf-ra-line: #1e293b; --jf-ra-fg: #ffffff; }
+.jf-row-action:hover { transform: translateY(-1px); }
+.jf-row-action:active { transform: scale(0.97); }
+.jf-row-action:focus-visible { outline: 2px solid var(--jf-t-focus, #b45309); outline-offset: 2px; }
+.jf-row-action > svg { width: 16px; height: 16px; flex: none; }
+.jf-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+.jf-row-action-label {
+    position: fixed;
+    inset: auto;
+    z-index: 1000;
+    margin: 0;
+    width: max-content;
+    max-width: calc(100vw - 16px);
+    box-sizing: border-box;
+    padding: 5px 7px;
+    border: 0;
+    border-radius: 7px;
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 1.3;
+    text-transform: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.jf-chart-value-label {
+    max-width: min(280px, calc(100vw - 16px));
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+.jf-chart-value-label::first-line { font-weight: 700; }
+@media (pointer: coarse) {
+    .jf-row-action { width: 44px; height: 44px; min-height: 44px; }
+}
+
+/* .jf-table--sticky-end: a wide table keeps its last (action) column pinned at the right edge of the scroll container, so the
+   actions stay visible while the other columns scroll; nothing is hidden or removed */
+.jf-table--sticky-end > thead > tr > th:last-child,
+.jf-table--sticky-end > tbody > tr > td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    border-inline-start: 1px solid var(--jf-t-head-line);
+    box-shadow: none;
+}
+.jf-table--sticky-end > thead > tr > th:last-child { background: var(--jf-t-head-bg); z-index: 2; }
+.jf-table--sticky-end > tbody > tr > td:last-child { background: var(--jf-t-surface); }
+.jf-table--sticky-end > tbody > tr:nth-child(even) > td:last-child { background: var(--jf-t-zebra-solid, var(--jf-t-zebra)); }
+.jf-table--sticky-end > tbody > tr:hover > td:last-child,
+.jf-table--sticky-end > tbody > tr:focus-within > td:last-child { background: var(--jf-t-hover-solid, var(--jf-t-hover)); }
+
+/* empty and no-match states */
+.jf-table > tbody > tr > td.jf-table-empty {
+    padding: 48px 16px;
+    text-align: center;
+    color: var(--jf-t-muted);
+    font-size: 14px;
+}
+.jf-table .jf-table-empty svg {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 12px;
+    color: #cbd5e1;
+}
+.jf-table-empty-title { font-weight: 600; color: var(--jf-t-head-fg); }
+.jf-table-empty-hint { margin-top: 4px; font-size: 13px; }
+
+/* long descriptive text only (never amounts, identifiers or names): clipped with an ellipsis, full value in title for the mouse,
+   and the element is focusable (tabindex="0"), so keyboard focus or a tap on a touch screen expands it to the full text */
+.jf-cell-clip {
+    display: block;
+    max-width: var(--jf-clip, 28ch);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: default;
+}
+.jf-cell-clip:focus,
+.jf-cell-clip:focus-visible {
+    max-width: none;
+    overflow: visible;
+    white-space: normal;
+    outline: 2px solid var(--jf-t-focus, #b45309);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* narrow screens: tighter cells, and the table keeps a readable width and scrolls inside its container */
+@media (max-width: 768px) {
+    .jf-table { --jf-t-pad-x: 10px; --jf-t-head-pad-y: 10px; --jf-t-pad-y: 10px; min-width: 720px; }
+    .jf-table > thead > tr > th { font-size: 11px; }
+}
+
+/* product palettes */
+.dh-app .jf-table {
+    --jf-t-zebra: #fdfbf6;
+    --jf-t-zebra-solid: #fdfbf6;
+    --jf-t-hover: #fbf3e0;
+    --jf-t-hover-solid: #fbf3e0;
+    --jf-t-focus: #d98b00;
+    --jf-t-row-line: #efe9dc;
+}
+/* platform admin: the cool-grey header the admin tables already render (#f1f3f9) and its amber row hover, on white rows */
+.jf-table.admin-table {
+    --jf-t-head-bg: #f1f3f9;
+    --jf-t-hover: rgba(244, 163, 0, 0.09);
+    --jf-t-hover-solid: #fdf3df;
+    --jf-t-focus: #b45309;
+}

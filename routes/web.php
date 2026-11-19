@@ -1,14 +1,14 @@
 <?php
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ShopAuthController as Auth;
-use App\Http\Controllers\DhiranController as Loans;
+use App\Http\Controllers\CheckpointDhiranController as Loans;
 Route::get('/login',[Auth::class,'loginForm'])->name('login');
 Route::post('/login',[Auth::class,'login'])->middleware('throttle:5,1');
 Route::get('/register',[Auth::class,'registerForm']);
 Route::post('/register',[Auth::class,'register'])->middleware('throttle:5,1');
-Route::post('/logout',[Auth::class,'logout']);
+Route::post('/logout',[Auth::class,'logout'])->name('logout');
 Route::middleware('shop')->group(function() {
-    Route::get('/',[Loans::class,'index']);
+    Route::get('/',[\App\Http\Controllers\DhiranController::class,'dashboard']);
     Route::get('/borrowers',[Loans::class,'borrowers']); Route::post('/borrowers',[Loans::class,'storeBorrower']);
     Route::get('/loans/create',[Loans::class,'create']); Route::post('/loans',[Loans::class,'store']);
     Route::get('/loans/{loan}',[Loans::class,'show'])->whereNumber('loan');
@@ -36,3 +36,9 @@ Route::prefix('admin')->group(function() {
         Route::get('/accounts',[Platform::class,'admins']); Route::post('/accounts',[Platform::class,'storeAdmin']); Route::patch('/accounts/{admin}',[Platform::class,'updateAdmin']);
     });
 });
+
+
+require __DIR__.'/dhiran.php';
+
+Route::middleware('shop')->get('/comparison/standalone/new-loan', [Loans::class,'create']);
+Route::middleware('shop')->get('/comparison/original/new-loan', [\App\Http\Controllers\ReferenceDhiranController::class,'create']);

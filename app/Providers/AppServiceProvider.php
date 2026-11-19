@@ -15,6 +15,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        \Illuminate\Support\Facades\Gate::before(fn ($user, $ability) => $user instanceof \App\Models\User ? $user->hasPermission($ability) : null);
         RuntimeGuard::verify($this->app);
         Event::listen(ConnectionEstablished::class, function (ConnectionEstablished $event): void {
             RuntimeGuard::verifyConnection($event->connection->getPdo(), $this->app->environment(), base_path());

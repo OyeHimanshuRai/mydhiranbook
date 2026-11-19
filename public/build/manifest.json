@@ -1,0 +1,35 @@
+{
+  "resources/css/app.css": {
+    "file": "assets/app-Q27R-U9V.css",
+    "src": "resources/css/app.css",
+    "isEntry": true,
+    "name": "app",
+    "names": [
+      "app.css"
+    ]
+  },
+  "resources/css/dhiran-documents.css": {
+    "file": "assets/dhiran-documents-CipjXTcM.css",
+    "src": "resources/css/dhiran-documents.css",
+    "isEntry": true,
+    "name": "dhiran-documents",
+    "names": [
+      "dhiran-documents.css"
+    ]
+  },
+  "resources/css/dhiran.css": {
+    "file": "assets/dhiran-BHVsGthE.css",
+    "src": "resources/css/dhiran.css",
+    "isEntry": true,
+    "name": "dhiran",
+    "names": [
+      "dhiran.css"
+    ]
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-DZhuEra2.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  }
+}
