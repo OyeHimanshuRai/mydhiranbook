@@ -32,10 +32,11 @@ class ShopSubscription extends Model
         return $this->ends_at ? (int) now()->startOfDay()->diffInDays($this->ends_at->copy()->startOfDay(), false) : null;
     }
 
-    /** Grants access today: active until ends_at, grace until grace_ends_at (inclusive dates). */
+    /** Date-derived access: active|grace until max(ends_at, grace_ends_at), inclusive; expired/cancelled never. */
     public function grantsAccessToday(): bool
     {
-        $until = match ($this->status) { 'active' => $this->ends_at, 'grace' => $this->grace_ends_at, default => null };
+        if (!in_array($this->status, ['active', 'grace'], true)) { return false; }
+        $until = collect([$this->ends_at, $this->grace_ends_at])->filter()->max();
         return $until !== null && $until->toDateString() >= today()->toDateString();
     }
 }

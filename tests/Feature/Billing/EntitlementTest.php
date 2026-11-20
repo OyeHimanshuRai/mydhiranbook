@@ -26,10 +26,22 @@ class EntitlementTest extends TestCase
     {
         $shop=$this->shop(); self::activeSubscription($shop,'expired',today()->subDays(30));
         $this->assertFalse($shop->hasEdition('dhiran')); $this->assertTrue($shop->isLapsed());
-        $past=$this->shop(); self::activeSubscription($past,'active',today()->subDay());
+        $past=$this->shop(); self::activeSubscription($past,'active',today()->subDays(30));
         $this->assertTrue($past->isLapsed());
         $pastGrace=$this->shop(); self::activeSubscription($pastGrace,'grace',today()->subDays(20));
         $this->assertTrue($pastGrace->isLapsed());
+    }
+    public function test_active_past_ends_at_within_grace_window_still_entitled(): void
+    {
+        $shop=$this->shop(); $sub=self::activeSubscription($shop,'active',today()->subDays(2));
+        $sub->update(['grace_ends_at'=>today()->addDays(5)]);
+        $this->assertTrue($shop->hasEdition('dhiran'));
+    }
+    public function test_active_past_grace_ends_at_not_entitled(): void
+    {
+        $shop=$this->shop(); $sub=self::activeSubscription($shop,'active',today()->subDays(10));
+        $sub->update(['grace_ends_at'=>today()->subDay()]);
+        $this->assertFalse($shop->hasEdition('dhiran'));
     }
     public function test_no_subscription_is_not_entitled(): void
     {
