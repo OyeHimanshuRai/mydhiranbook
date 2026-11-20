@@ -146,7 +146,7 @@ class DhiranOldLoanImportTest extends TestCase
     {
         $this->upload(UploadedFile::fake()->create('photo.jpg', 10, 'image/jpeg'))->assertSessionHasErrors('file');
 
-        \Illuminate\Support\Facades\DB::table('subscriptions')->where('shop_id', $this->shop->id)->update(['status'=>'expired']);
+        \Illuminate\Support\Facades\DB::table('shop_subscriptions')->where('shop_id', $this->shop->id)->update(['status'=>'expired']);
         $this->owner = $this->owner->fresh();
         $this->in(fn () => $this->get(self::HOST . '/dhiran/old-loans/upload'))->assertRedirect(route('dhiran.dashboard'));
         $this->upload($this->csv($this->book()))->assertRedirect(route('dhiran.dashboard'));

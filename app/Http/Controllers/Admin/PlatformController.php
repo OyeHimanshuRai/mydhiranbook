@@ -1,7 +1,8 @@
 <?php
 namespace App\Http\Controllers\Admin;
 use App\Models\Shop;
-use App\Models\Platform\PlatformAdmin;
+use App\Models\Platform\{Plan,PlatformAdmin,ShopSubscription,SubscriptionEvent};
+use Illuminate\Support\Carbon;
 use App\Models\Platform\PlatformAuditLog;
 use App\Services\PlatformAuditService;
 use Illuminate\Http\Request;
@@ -20,7 +21,8 @@ class PlatformController
     }
     public function dashboard()
     {
-        return view('admin.dashboard',['shops'=>DB::table('shops')->leftJoin('subscriptions','shops.id','=','subscriptions.shop_id')->select('shops.*','subscriptions.plan','subscriptions.status as subscription_status','subscriptions.expires_at')->orderBy('shops.id')->paginate(20),'shopCount'=>Shop::count(),'activeCount'=>Shop::where('status','active')->count(),'subscriptionCount'=>DB::table('subscriptions')->where('status','active')->count(),'adminCount'=>PlatformAdmin::where('is_active',true)->count()]);
+        $current=DB::table('shop_subscriptions')->whereNotNull('shop_id')->where('status','!=','cancelled')->selectRaw('distinct on (shop_id) shop_id,plan_id,status,ends_at')->orderBy('shop_id')->orderByRaw('ends_at desc nulls last')->orderByDesc('id');
+        return view('admin.dashboard',['shops'=>DB::table('shops')->leftJoinSub($current,'cs','shops.id','=','cs.shop_id')->leftJoin('plans','plans.id','=','cs.plan_id')->select('shops.*','plans.code as plan','cs.status as subscription_status','cs.ends_at as expires_at')->orderBy('shops.id')->paginate(20),'shopCount'=>Shop::count(),'activeCount'=>Shop::where('status','active')->count(),'subscriptionCount'=>DB::table('shop_subscriptions')->where('status','active')->count(),'adminCount'=>PlatformAdmin::where('is_active',true)->count()]);
     }
     public function updateShop(Request $r,int $shop)
     {
@@ -35,11 +37,15 @@ class PlatformController
     public function subscription(Request $r,int $shop)
     {
         $this->permit($r,'can_manage_subscriptions'); Shop::findOrFail($shop);
-        $data=$r->validate(['plan'=>'required|in:local-trial,dhiran-basic,dhiran-pro','status'=>'required|in:trial,active,expired,cancelled','expires_at'=>'required|date_format:Y-m-d','reason'=>'required|string|max:500']);
+        $data=$r->validate(['plan'=>'required|exists:plans,code','status'=>'required|in:'.implode(',',ShopSubscription::STATUSES),'expires_at'=>'required|date_format:Y-m-d','reason'=>'required|string|max:500']);
         DB::transaction(function() use($r,$shop,$data) {
-            $before=DB::table('subscriptions')->where('shop_id',$shop)->first();
-            DB::table('subscriptions')->updateOrInsert(['shop_id'=>$shop],['plan'=>$data['plan'],'status'=>$data['status'],'expires_at'=>$data['expires_at'],'created_at'=>$before?->created_at ?? now(),'updated_at'=>now()]);
-            $this->audit->log(Auth::guard('platform_admin')->user(),'subscription.updated','shop',$shop,$before?(array)$before:null,array_intersect_key($data,array_flip(['plan','status','expires_at'])),$data['reason'],$r);
+            $admin=Auth::guard('platform_admin')->user(); $plan=Plan::where('code',$data['plan'])->firstOrFail();
+            $sub=Shop::findOrFail($shop)->currentSubscription(); $before=$sub?->only('plan_id','status','ends_at');
+            $values=['plan_id'=>$plan->id,'status'=>$data['status'],'ends_at'=>$data['expires_at'],'grace_ends_at'=>Carbon::parse($data['expires_at'])->addDays($plan->grace_days),'cancelled_at'=>$data['status']==='cancelled'?now():null,'updated_by_admin_id'=>$admin->id,'actor_type'=>'admin'];
+            if ($sub) { $sub->update($values); $type='admin_updated'; }
+            else { $cycle=$plan->code==='dhiran_yearly'?'yearly':'monthly'; $sub=ShopSubscription::create($values+['shop_id'=>$shop,'billing_cycle'=>$cycle,'starts_at'=>today()]); $type='admin_granted'; }
+            SubscriptionEvent::create(['shop_subscription_id'=>$sub->id,'shop_id'=>$shop,'admin_id'=>$admin->id,'event_type'=>$type,'before'=>$before,'after'=>$sub->only('plan_id','status','ends_at'),'reason'=>$data['reason']]);
+            $this->audit->log($admin,'subscription.updated','shop',$shop,$before,array_intersect_key($data,array_flip(['plan','status','expires_at'])),$data['reason'],$r);
         }); return back()->with('success','Subscription updated.');
     }
     public function audit(Request $r)

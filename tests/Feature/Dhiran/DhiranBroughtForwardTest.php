@@ -193,7 +193,7 @@ class DhiranBroughtForwardTest extends TestCase
         $this->in(fn () => $this->get(self::HOST . '/dhiran/old-loans/create'))->assertOk()->assertSee('name="paper_loan_number"', false);
         $this->in(fn () => $this->get(self::HOST . '/dhiran'))->assertSee(route('dhiran.old-loans.index'), false);
 
-        \Illuminate\Support\Facades\DB::table('subscriptions')->where('shop_id', $this->shop->id)->update(['status'=>'expired']);
+        \Illuminate\Support\Facades\DB::table('shop_subscriptions')->where('shop_id', $this->shop->id)->update(['status'=>'expired']);
         $this->owner = $this->owner->fresh(); // the signed-in user's shop editions were loaded by the requests above
         $this->in(fn () => $this->get(self::HOST . '/dhiran/old-loans/create'))->assertRedirect(route('dhiran.dashboard'));
         $this->in(fn () => $this->get(self::HOST . '/dhiran/old-loans'))->assertOk();

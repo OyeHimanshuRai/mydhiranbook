@@ -30,6 +30,7 @@ class StandaloneWorkflowTest extends TestCase
     public function test_register_borrower_loan_evidence_repayment_and_receipt(): void
     {
         $this->post('/register',['name'=>'Demo Owner','shop_name'=>'Dhiran Synthetic Shop','email'=>'owner@example.test','password'=>'Local-pass-12345','password_confirmation'=>'Local-pass-12345'])->assertRedirect('/');
+        self::activeSubscription(User::where('email','owner@example.test')->firstOrFail()->shop);
         $owner=User::where('email','owner@example.test')->firstOrFail();
         $this->post('/borrowers',['first_name'=>'Synthetic','last_name'=>'Borrower','mobile'=>'9000000001','address'=>'Synthetic address'])->assertRedirect('/borrowers');
         $customer=Customer::withoutTenant()->firstOrFail();

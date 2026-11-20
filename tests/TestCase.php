@@ -5,11 +5,19 @@ use App\Support\RuntimeGuard;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 abstract class TestCase extends BaseTestCase
 {
-    /** Source fixtures use Dhiran's own trial subscription in place of ERP editions. */
+    /** Give a shop a paid Dhiran subscription (yearly plan) in the given status. */
+    protected static function activeSubscription(\App\Models\Shop $shop, string $status='active', ?\Illuminate\Support\Carbon $endsAt=null): \App\Models\Platform\ShopSubscription
+    {
+        (new \Database\Seeders\PlanSeeder)->run();
+        $plan=\App\Models\Platform\Plan::where('code','dhiran_yearly')->firstOrFail();
+        $endsAt??=today()->addYear();
+        return \App\Models\Platform\ShopSubscription::create(['shop_id'=>$shop->id,'plan_id'=>$plan->id,'status'=>$status,'billing_cycle'=>'yearly','starts_at'=>$endsAt->copy()->subYear(),'ends_at'=>$endsAt,'grace_ends_at'=>$endsAt->copy()->addDays($plan->grace_days),'price_paid'=>$plan->price_yearly,'actor_type'=>'system']);
+    }
+    /** Source fixtures get an active paid subscription in place of ERP editions. */
     protected static function createDhiranShop(array $attributes): \App\Models\Shop
     {
         $shop=\App\Models\Shop::create($attributes);
-        \Illuminate\Support\Facades\DB::table('subscriptions')->insert(['shop_id'=>$shop->id,'plan'=>'synthetic-trial','status'=>'trial','expires_at'=>today()->addDays(30),'created_at'=>now(),'updated_at'=>now()]);
+        self::activeSubscription($shop);
         return $shop;
     }
     protected function setUp(): void { TenantContext::clear(); parent::setUp(); \Illuminate\Support\Facades\Cache::flush(); }

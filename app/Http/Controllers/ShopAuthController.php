@@ -19,7 +19,6 @@ class ShopAuthController
         $user=DB::transaction(function() use($data) {
             $shop=Shop::create(['name'=>$data['shop_name']]);
             TenantContext::runFor($shop->id,fn()=>DhiranSettings::getForShop($shop->id)->update(['is_enabled'=>true]));
-            DB::table('subscriptions')->insert(['shop_id'=>$shop->id,'plan'=>'local-trial','status'=>'trial','expires_at'=>today()->addDays(30),'created_at'=>now(),'updated_at'=>now()]);
             $roles=app(\App\Services\TenantRoleService::class)->ensureDefaultsForShop($shop->id);
             return User::create(['role_id'=>$roles['owner']->id,'name'=>$data['name'],'email'=>$data['email'],'password'=>$data['password'],'shop_id'=>$shop->id,'role'=>'owner']);
         });

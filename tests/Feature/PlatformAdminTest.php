@@ -27,12 +27,13 @@ class PlatformAdminTest extends TestCase
     public function test_admin_password_mfa_dashboard_and_local_shop_subscription_management(): void
     {
         $admin=$this->admin(); $shop=Shop::create(['name'=>'Synthetic Tenant']);
+        (new \Database\Seeders\PlanSeeder)->run();
         $this->signIn($admin);
         $this->get('/admin')->assertOk()->assertSee('Dhiran platform')->assertSee('Synthetic Tenant');
         $this->patch('/admin/shops/'.$shop->id,['name'=>'Renamed Tenant','status'=>'suspended','reason'=>'Synthetic acceptance check'])->assertRedirect();
         $this->assertDatabaseHas('shops',['id'=>$shop->id,'status'=>'suspended']);
-        $this->post('/admin/shops/'.$shop->id.'/subscription',['plan'=>'dhiran-pro','status'=>'active','expires_at'=>today()->addMonth()->toDateString(),'reason'=>'Local acceptance'])->assertRedirect();
-        $this->assertDatabaseHas('subscriptions',['shop_id'=>$shop->id,'plan'=>'dhiran-pro','status'=>'active']);
+        $this->post('/admin/shops/'.$shop->id.'/subscription',['plan'=>'dhiran_yearly','status'=>'active','expires_at'=>today()->addMonth()->toDateString(),'reason'=>'Local acceptance'])->assertRedirect();
+        $this->assertDatabaseHas('shop_subscriptions',['shop_id'=>$shop->id,'status'=>'active']);
         $this->get('/admin/audit')->assertOk()->assertSee('shop.updated')->assertSee('subscription.updated');
         $this->assertDatabaseHas('platform_audit_logs',['actor_admin_id'=>$admin->id,'action'=>'admin.mfa_passed']);
         $this->get('/')->assertRedirect('/login');

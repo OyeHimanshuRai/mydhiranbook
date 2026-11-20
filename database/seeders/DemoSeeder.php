@@ -23,7 +23,8 @@ class DemoSeeder extends Seeder
             $password=bin2hex(random_bytes(8)).'D!';
             $shop=Shop::create(['name'=>'Dhiran Demo · Pune','phone'=>'9000000001','address'=>'Synthetic Market Road, Pune · Demonstration only']);
             $owner=User::create(['name'=>'Demo Owner','email'=>'owner@dhiran.test','password'=>$password,'shop_id'=>$shop->id,'role'=>'owner']);
-            DB::table('subscriptions')->insert(['shop_id'=>$shop->id,'plan'=>'local-trial','status'=>'trial','expires_at'=>today()->addDays(30),'created_at'=>now(),'updated_at'=>now()]);
+            (new PlanSeeder)->run(); $plan=\App\Models\Platform\Plan::where('code','dhiran_yearly')->firstOrFail();
+            \App\Models\Platform\ShopSubscription::create(['shop_id'=>$shop->id,'plan_id'=>$plan->id,'status'=>'active','billing_cycle'=>'yearly','starts_at'=>today(),'ends_at'=>today()->addYear(),'grace_ends_at'=>today()->addYear()->addDays($plan->grace_days),'price_paid'=>$plan->price_yearly,'actor_type'=>'system','notes'=>'Synthetic demo subscription']);
             $loan=TenantContext::runFor($shop->id,function() use($shop,$owner) {
                 DhiranSettings::getForShop($shop->id)->update(['is_enabled'=>true]);
                 $borrower=Customer::create(['first_name'=>'Synthetic','last_name'=>'Borrower','mobile'=>'9000000001','address'=>'Demonstration address only']);
