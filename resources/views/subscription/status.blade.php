@@ -19,6 +19,12 @@
             <p class="muted">No subscription yet. Choose a plan to start.</p>
         @endif
     </div>
+    @if($receipts->isNotEmpty())
+    <div class="sub-current">
+        <h2>Payment receipts</h2>
+        <ul>@foreach($receipts as $r)<li><a href="{{ route('subscription.receipt', $r) }}">{{ $r->invoice_number }}</a> · {{ $r->issued_at->format('d M Y') }} · ₹{{ number_format((float) $r->total_amount, 2) }}</li>@endforeach</ul>
+    </div>
+    @endif
     <h2>{{ $subscription ? 'Renew' : 'Choose a plan' }}</h2>
     <div class="sub-plans">
         @foreach($plans as $plan)

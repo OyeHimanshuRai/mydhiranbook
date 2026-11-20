@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Platform\Plan;
+use App\Models\Platform\PlatformInvoice;
 use App\Models\Platform\ShopSubscription;
 use App\Services\Billing\SubscriptionPaymentService;
 use App\Services\Billing\SubscriptionWebhookService;
@@ -158,6 +159,22 @@ class SubscriptionController extends Controller
             'subscription' => $subscription,
             'plans' => Plan::where('is_active', true)->orderBy('price_monthly')->get(),
             'hasShop' => (bool) $user->shop_id,
+            'receipts' => PlatformInvoice::where('status', 'issued')
+                ->when($user->shop_id, fn ($q) => $q->where('shop_id', $user->shop_id), fn ($q) => $q->whereNull('shop_id')->whereHas('subscription', fn ($s) => $s->where('user_id', $user->id)))
+                ->orderByDesc('id')->get(),
         ]);
+    }
+
+    /** Own shop's receipts, or the owner's own shopless receipts; everything else is a 404 (no existence leak). */
+    public function receipt(PlatformInvoice $invoice)
+    {
+        $this->authorizeBuyer();
+        $user = Auth::user();
+        $invoice->load(['subscription.user', 'plan', 'shop']);
+        $own = $invoice->shop_id !== null
+            ? (int) $invoice->shop_id === (int) $user->shop_id
+            : (int) $invoice->subscription?->user_id === (int) $user->id;
+        abort_unless($own, 404);
+        return response(view('subscription.receipt', ['invoice' => $invoice])->render());
     }
 }

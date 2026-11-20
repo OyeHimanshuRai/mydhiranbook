@@ -26,7 +26,7 @@ class SubscriptionPaymentService
     public const OUTCOME_TRANSIENT = 'transient'; // 500: provider/DB hiccup, safe to retry
     public const EXPECTED_CURRENCY = 'INR';
 
-    public function __construct(private readonly RazorpayClient $razorpay) {}
+    public function __construct(private readonly RazorpayClient $razorpay, private readonly PlatformInvoiceService $receipts) {}
 
     /** @throws \Razorpay\Api\Errors\SignatureVerificationError */
     public function verifyPaymentSignature(string $orderId, string $paymentId, string $signature): void
@@ -140,6 +140,7 @@ class SubscriptionPaymentService
                     'before' => $previous?->toArray(), 'after' => $sub->toArray(),
                     'reason' => ($previous ? 'Renewal' : 'Payment').' via Razorpay: '.$paymentId.($previous ? " (previous subscription #{$previous->id})" : ''),
                 ]);
+                $this->receipts->issueForSubscription($sub);
                 return [$sub, true];
             });
         } catch (UniqueConstraintViolationException) {

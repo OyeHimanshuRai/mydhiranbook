@@ -88,6 +88,12 @@ class PlatformInvoice extends Model
         return $this->belongsTo(PlatformAdmin::class, 'created_by_admin_id');
     }
 
+    /** "Tax Invoice" only when GST was charged; otherwise a plain "Payment Receipt". */
+    public function documentTitle(): string
+    {
+        return (float) $this->gst_amount > 0 ? 'Tax Invoice' : 'Payment Receipt';
+    }
+
     public function isCancelled(): bool
     {
         return $this->status === 'cancelled';

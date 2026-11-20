@@ -66,6 +66,7 @@ class ReconcileTest extends TestCase
             }
             $this->assertSame(1, ShopSubscription::where('razorpay_payment_id', $triple['razorpay_payment_id'])->count());
             $this->assertSame(1, ShopSubscription::where('razorpay_order_id', $triple['razorpay_order_id'])->count());
+            $this->assertSame(1, \App\Models\Platform\PlatformInvoice::where('razorpay_payment_id', $triple['razorpay_payment_id'])->count());
             $this->assertSame(1, SubscriptionEvent::whereIn('event_type', ['subscription.paid', 'subscription.renewed'])->where('after->razorpay_payment_id', $triple['razorpay_payment_id'])->count());
         }
     }
