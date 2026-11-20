@@ -63,9 +63,14 @@ class SubscriptionPaymentService
         if (($rzpOrder->currency ?? null) !== self::EXPECTED_CURRENCY) { throw new \Exception('Payment currency mismatch.'); }
     }
 
-    public function verifyPaymentCaptured(string $paymentId): void
+    /** The captured money itself must match the order it is being applied to: same order, same paise, INR. */
+    public function verifyPaymentCaptured(string $paymentId, ?string $orderId = null, ?int $expectedPaise = null): void
     {
-        if (($this->razorpay->fetchPayment($paymentId)->status ?? null) !== 'captured') { throw new \Exception('Payment not captured.'); }
+        $payment = $this->razorpay->fetchPayment($paymentId);
+        if (($payment->status ?? null) !== 'captured') { throw new \Exception('Payment not captured.'); }
+        if ($orderId !== null && ($payment->order_id ?? null) !== $orderId) { throw new \LogicException("Payment {$paymentId} was made on a different order than {$orderId}."); }
+        if ($expectedPaise !== null && (int) ($payment->amount ?? -1) !== $expectedPaise) { throw new \LogicException("Captured amount of payment {$paymentId} does not match the order price."); }
+        if (($payment->currency ?? null) !== self::EXPECTED_CURRENCY) { throw new \LogicException("Captured currency of payment {$paymentId} is not ".self::EXPECTED_CURRENCY.'.'); }
     }
 
     public function findExistingSubscription(string $paymentId): ?ShopSubscription
@@ -98,9 +103,11 @@ class SubscriptionPaymentService
         return $this->persistTerm($plan, $billingCycle, $price, $paymentId, $orderId, $actor ?? $current->user, $current);
     }
 
-    private function latestTermFor(int $shopId): ?ShopSubscription
+    /** The payer's latest non-cancelled term: the shop's, or for a shopless buyer their own pending-business terms. */
+    private function latestTermFor(?int $shopId, ?int $userId = null): ?ShopSubscription
     {
-        return ShopSubscription::where('shop_id', $shopId)->where('status', '!=', 'cancelled')
+        return ShopSubscription::where('status', '!=', 'cancelled')
+            ->when($shopId, fn ($q) => $q->where('shop_id', $shopId), fn ($q) => $q->whereNull('shop_id')->where('user_id', $userId))
             ->orderByRaw('ends_at desc nulls last')->orderByDesc('id')->first();
     }
 
@@ -109,13 +116,15 @@ class SubscriptionPaymentService
         try {
             [$sub, $created] = DB::transaction(function () use ($plan, $cycle, $price, $paymentId, $orderId, $actor, $hint) {
                 $shopId = $actor?->shop_id ?? $hint?->shop_id;
-                if ($shopId) { Shop::whereKey($shopId)->lockForUpdate()->first(); } // serialise this shop's terms
+                // serialise this payer's terms: the shop row, or for a shopless buyer their own user row
+                if ($shopId) { Shop::whereKey($shopId)->lockForUpdate()->first(); }
+                elseif ($actor) { User::whereKey($actor->id)->lockForUpdate()->first(); }
                 if ($existing = $this->findExistingSubscription($paymentId)) { return [$existing, false]; }
                 if (ShopSubscription::where('razorpay_order_id', $orderId)->exists()) {
                     throw new \LogicException("Order {$orderId} is already paid by another payment; this one needs a refund.");
                 }
 
-                $previous = $shopId ? $this->latestTermFor((int) $shopId) : null;
+                $previous = ($shopId || $actor) ? $this->latestTermFor($shopId ? (int) $shopId : null, $actor?->id) : null;
                 $startsAt = $this->termStart($previous);
                 $endsAt = $cycle === 'yearly' ? $startsAt->copy()->addYearNoOverflow()->subDay() : $startsAt->copy()->addMonthNoOverflow()->subDay();
 
@@ -172,8 +181,8 @@ class SubscriptionPaymentService
         if (!$plan->is_active) { throw new \Exception("Plan {$plan->id} is not active; payment cannot be applied."); }
 
         $this->verifyCurrency($order);
-        $this->verifyAmount($order, $plan, $cycle);
-        $this->verifyPaymentCaptured($paymentId);
+        $paise = $this->verifyAmount($order, $plan, $cycle);
+        $this->verifyPaymentCaptured($paymentId, $orderId, $paise);
 
         return $this->createSubscription($plan, $cycle, (float) $plan->priceFor($cycle), $paymentId, $orderId, $actor);
     }

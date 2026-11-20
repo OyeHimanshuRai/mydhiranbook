@@ -169,4 +169,43 @@ class PaymentFlowTest extends TestCase
         $this->assertSame(1, ShopSubscription::count());
         $this->assertSame('pay_dup', SubscriptionEvent::where('event_type', 'payment.unresolved')->sole()->after['payment_id']);
     }
+
+    public function test_shopless_second_payment_extends_previous_term_not_overlapping(): void
+    {
+        $user = $this->shoplessUser();
+        $this->actingAs($user)->payCallback($this->paidOrder($user));
+        $this->payCallback($this->paidOrder($user));
+        [$first, $second] = ShopSubscription::where('user_id', $user->id)->orderBy('id')->get()->all();
+        $this->assertSame($first->ends_at->copy()->addDay()->toDateString(), $second->starts_at->toDateString());
+        $this->assertSame($second->starts_at->copy()->addYearNoOverflow()->subDay()->toDateString(), $second->ends_at->toDateString());
+        $this->assertSame(1, SubscriptionEvent::where('event_type', 'subscription.renewed')->count());
+    }
+
+    public function test_payment_from_different_order_is_refused_and_recorded(): void
+    {
+        $user = $this->shoplessUser(); $real = $this->paidOrder($user); $other = $this->paidOrder($user);
+        // callback: signature is valid for the pair, but payment X was made on another order
+        $this->razorpay->payments[$real['razorpay_payment_id']]->order_id = $other['razorpay_order_id'];
+        $this->actingAs($user)->payCallback($real)->assertRedirect(route('subscription.payment'));
+        $this->assertSame(0, ShopSubscription::count());
+        $this->assertSame(1, SubscriptionEvent::where('event_type', 'payment.unresolved')->count());
+        // manual reconcile pairing a captured payment with an unpaid, correctly priced order
+        $this->artisan('subscription:reconcile-payments', ['--payment' => $real['razorpay_payment_id'], '--order' => $real['razorpay_order_id']])->assertSuccessful();
+        $this->assertSame(0, ShopSubscription::count());
+    }
+
+    public function test_captured_amount_mismatch_is_refused_and_recorded(): void
+    {
+        $user = $this->shoplessUser(); $triple = $this->paidOrder($user);
+        $this->razorpay->payments[$triple['razorpay_payment_id']]->amount = 100;
+        $this->actingAs($user)->payCallback($triple)->assertRedirect(route('subscription.payment'));
+        $this->assertSame(0, ShopSubscription::count());
+        $this->assertSame(1, SubscriptionEvent::where('event_type', 'payment.unresolved')->count());
+        $this->artisan('subscription:reconcile-payments', ['--payment' => $triple['razorpay_payment_id'], '--order' => $triple['razorpay_order_id']])->assertSuccessful();
+        $this->assertSame(0, ShopSubscription::count());
+        $this->razorpay->payments[$triple['razorpay_payment_id']]->amount = 1999900;
+        $this->razorpay->payments[$triple['razorpay_payment_id']]->currency = 'USD';
+        $this->artisan('subscription:reconcile-payments', ['--payment' => $triple['razorpay_payment_id'], '--order' => $triple['razorpay_order_id']])->assertSuccessful();
+        $this->assertSame(0, ShopSubscription::count());
+    }
 }

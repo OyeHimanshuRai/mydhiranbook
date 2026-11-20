@@ -30,9 +30,10 @@ class FakeRazorpayClient implements RazorpayClient
         $this->orders[$id] = (object) ['id' => $id, 'amount' => $amountPaise, 'currency' => $currency, 'notes' => $notes];
     }
 
-    public function seedPayment(string $id, string $orderId, string $status = 'captured'): void
+    public function seedPayment(string $id, string $orderId, string $status = 'captured', ?int $amount = null, string $currency = 'INR'): void
     {
-        $this->payments[$id] = (object) ['id' => $id, 'order_id' => $orderId, 'status' => $status];
+        $amount ??= isset($this->orders[$orderId]) ? (int) $this->orders[$orderId]->amount : 0;
+        $this->payments[$id] = (object) ['id' => $id, 'order_id' => $orderId, 'status' => $status, 'amount' => $amount, 'currency' => $currency];
     }
 
     public function fetchOrder(string $orderId): object
