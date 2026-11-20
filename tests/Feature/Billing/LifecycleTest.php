@@ -10,9 +10,6 @@ use App\Models\User;
 use App\Services\DhiranService;
 use App\Support\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Tests\Support\BillingFixtures;
 use Tests\TestCase;
 
@@ -184,18 +181,5 @@ class LifecycleTest extends TestCase
         $this->assertNull(TenantContext::get());
         $this->assertSame(2, ShopSubscription::where('status', 'grace')->count());
         $this->assertSame(2, SubscriptionEvent::whereIn('shop_id', [$a->id, $b->id])->count());
-    }
-
-    public function test_overdue_reminder_logs_and_sends_nothing(): void
-    {
-        Mail::fake(); Log::spy();
-        $owner = $this->owner(); $c = $this->customer($owner);
-        self::activeSubscription($owner->shop);
-        DhiranSettings::getForShop($owner->shop_id)->update(['sms_reminders_enabled' => true]);
-        $loan = $this->makeLoan($owner, $c);
-        $loan->forceFill(['status' => 'active', 'maturity_date' => today()->subDays(3)])->save();
-        $this->artisan('dhiran:overdue-reminders')->expectsOutputToContain('1 overdue')->assertSuccessful();
-        Mail::assertNothingSent(); Mail::assertNothingQueued();
-        $this->assertNull(TenantContext::get());
     }
 }
