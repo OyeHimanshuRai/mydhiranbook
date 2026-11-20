@@ -25,6 +25,9 @@ class StaffSettingsController extends Controller
                 ->with('error', 'Owner role permissions cannot be modified.');
         }
 
+        // A user cannot widen or narrow the permissions of the role they hold themselves.
+        abort_if($role->id === $request->user()->role_id, 403);
+
         $validated = $request->validate([
             'permissions' => 'array',
             'permissions.*' => 'exists:permissions,id',

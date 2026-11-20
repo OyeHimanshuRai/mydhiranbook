@@ -28,7 +28,7 @@ class BillingManagementController
             $sub=$live->first();
             // extend / plan-switch only: shortening or revoking is terminate (an early renewer has several live rows)
             $floor=collect([today(),$sub?->starts_at,...$live->pluck('ends_at')])->filter()->max();
-            if ($data['ends_at'] < $floor->toDateString()) { abort(response('To shorten or revoke access, terminate the subscription.',422)); }
+            if ($data['ends_at'] < $floor->toDateString()) { throw ValidationException::withMessages(['ends_at'=>'To shorten or revoke access, terminate the subscription.']); }
             $before=$sub?->only(self::TRACK);
             $values=['plan_id'=>$plan->id,'billing_cycle'=>$data['billing_cycle'],'status'=>'active','ends_at'=>$data['ends_at'],'grace_ends_at'=>Carbon::parse($data['ends_at'])->addDays($plan->grace_days),'cancelled_at'=>null,'updated_by_admin_id'=>$admin->id,'actor_type'=>'admin'];
             if ($sub) { $sub->update($values); } else { $sub=ShopSubscription::create($values+['shop_id'=>$shop->id,'starts_at'=>today()]); }

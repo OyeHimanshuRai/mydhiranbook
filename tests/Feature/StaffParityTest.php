@@ -45,4 +45,13 @@ class StaffParityTest extends TestCase
         $foreignOwner=User::create(['shop_id'=>$b->id,'role_id'=>$rolesB['owner']->id,'name'=>'B','password'=>'Synthetic-pass-12345']);
         $this->get('/staff/'.$foreignOwner->id.'/edit')->assertForbidden();
     }
+    public function test_staff_cannot_edit_own_role_permissions(): void
+    {
+        $shop=self::createDhiranShop(['name'=>'Self role shop']); $roles=app(TenantRoleService::class)->ensureDefaultsForShop($shop->id);
+        $manager=User::create(['shop_id'=>$shop->id,'role_id'=>$roles['staff']->id,'name'=>'Staff Editor','email'=>'se@staff.test','password'=>'Synthetic-pass-12345']);
+        $roles['staff']->permissions()->syncWithoutDetaching([Permission::where('name','settings.edit')->firstOrFail()->id]);
+        $before=$roles['staff']->permissions()->pluck('permissions.id')->sort()->values()->all();
+        $this->actingAs($manager)->patch('/settings/roles/'.$roles['staff']->id,['permissions'=>[Permission::first()->id]])->assertForbidden();
+        $this->assertSame($before,$roles['staff']->permissions()->pluck('permissions.id')->sort()->values()->all());
+    }
 }

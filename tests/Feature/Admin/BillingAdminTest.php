@@ -36,8 +36,8 @@ class BillingAdminTest extends AdminTestCase
     {
         (new PlanSeeder)->run(); $this->signIn($this->admin()); $shop=self::createDhiranShop(['name'=>'Shorten']);
         $sub=$shop->currentSubscription(); $before=$sub->only('ends_at','grace_ends_at','starts_at');
-        $this->grant($shop,'dhiran_yearly','yearly',today()->subDays(30)->toDateString(),'Chargeback')->assertStatus(422)->assertSee('terminate the subscription');
-        $this->grant($shop,'dhiran_yearly','yearly',today()->addMonths(6)->toDateString())->assertStatus(422);
+        $this->grant($shop,'dhiran_yearly','yearly',today()->subDays(30)->toDateString(),'Chargeback')->assertSessionHasErrors(['ends_at'=>'To shorten or revoke access, terminate the subscription.']);
+        $this->grant($shop,'dhiran_yearly','yearly',today()->addMonths(6)->toDateString())->assertSessionHasErrors('ends_at');
         $this->assertEquals($before,$sub->fresh()->only('ends_at','grace_ends_at','starts_at'));
         $this->assertTrue($shop->fresh()->hasEdition('dhiran'));
         $this->post('/admin/shops/'.$shop->id.'/subscription/terminate',['reason'=>'Chargeback'])->assertRedirect();
@@ -50,7 +50,7 @@ class BillingAdminTest extends AdminTestCase
         $mk=fn($end)=>ShopSubscription::create(['shop_id'=>$shop->id,'plan_id'=>$plan->id,'status'=>'active','billing_cycle'=>'yearly','starts_at'=>$end->copy()->subYear(),'ends_at'=>$end,'grace_ends_at'=>$end->copy()->addDays(14),'price_paid'=>19999,'actor_type'=>'self_service']);
         $old=$mk(today()->addDays(10)); $new=$mk(today()->addDays(40));
         $snap=[$old->fresh()->ends_at->toDateString(),$new->fresh()->ends_at->toDateString()];
-        $this->grant($shop,'dhiran_yearly','yearly',today()->addDays(20)->toDateString())->assertStatus(422);
+        $this->grant($shop,'dhiran_yearly','yearly',today()->addDays(20)->toDateString())->assertSessionHasErrors('ends_at');
         $this->assertSame($snap,[$old->fresh()->ends_at->toDateString(),$new->fresh()->ends_at->toDateString()]);
         $end=today()->addDays(100); $this->grant($shop,'dhiran_yearly','yearly',$end->toDateString())->assertRedirect();
         $new->refresh(); $this->assertSame([$end->toDateString(),$end->copy()->addDays(14)->toDateString()],[$new->ends_at->toDateString(),$new->grace_ends_at->toDateString()]);
