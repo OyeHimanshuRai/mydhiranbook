@@ -19,7 +19,7 @@
 - **New, separate Razorpay account:** keys and webhook secret only in Dhiran's `.env`.
 - Plans seeded: `dhiran_monthly` ₹1,852 (grace 7 days, `staff_limit` 3, `max_items` 1000); `dhiran_yearly` ₹19,999 (grace 14 days, `staff_limit` 7, `max_items` 3000).
 - Renewal = Razorpay Orders + Checkout one-time payment; no autopay.
-- Admin sign-in stays password + TOTP MFA. Impersonation: super admin only, reason required, 30-minute limit, visible banner, every action audited.
+- Admin sign-in stays password + TOTP MFA. Admin panel = essentials only (owner 2026-11-20): no impersonation, announcements, settings page, revenue page, exports.
 - Grace = full access; after expiry = collect-only. No automatic data deletion.
 - Secrets only in `.env`; never committed. Tests run only via `scripts/test` on `dhiran_test`.
 - Money, ledger, migration and security changes are reviewed in the main session before commit.
@@ -31,7 +31,7 @@
 1. Same Razorpay payment reaches callback, webhook and reconcile (any order, retried) → exactly one `shop_subscriptions` row and one receipt. Test in Task 3.
 2. Owner pays, browser closes before callback → webhook finalizes a pending subscription; on next login the owner lands on create-business, not plans. Tests in Tasks 3 and 5.
 3. Order amount/currency differs from the plan price at capture time (tampered order, or admin changed price meanwhile) → no grant, `recordUnresolvedPayment` row visible in admin. Test in Task 3.
-4. Impersonation by a non-super admin, without reason, after 30 minutes, or on a shop-owner session that later hits `/admin` → denied/ended and audited. Test in Task 8.
+4. Shop-owner session or non-MFA admin session hitting `/admin` write routes → denied; every admin write audited. Tests in Tasks 7 and 8.
 5. Expired shop: collect-only actions and the renew page still reachable; new loans blocked; after renewal payment full access returns. Test in Task 6.
 
 ---
@@ -160,34 +160,34 @@ JewelFlow sources for each copied file have the same name; models live in JewelF
 - [ ] **Step 2: Run** → FAIL. **Step 3: Implement.** **Step 4: Run** `scripts/test` → pass.
 - [ ] **Step 5: Commit** `feat(billing): expiry, grace, collect-only and plan limits`.
 
-### Task 7: Platform admin — shops, users, plans, billing
+### Task 7: Platform admin — essentials only (owner scope cut 2026-11-20)
+
+Owner: "we don't need a big admin panel, just the right things for Dhiran and what's important for security."
 
 **Files:**
-- Create: admin controllers `ShopManagementController`, `UserManagementController`, `PlanController`, `SubscriptionManagementController`, `PlatformInvoiceAdminController`, `RevenueAnalyticsController`, `UnresolvedPaymentController`, `BillingManagementController`; views under `resources/views/admin/{shops,users,plans,subscriptions,receipts,revenue,unresolved}/`; `routes/admin.php` (required from `routes/web.php` inside the existing `/admin` + `admin.session` group)
-- Modify: `app/Http/Controllers/Admin/PlatformController.php` (dashboard counts; remove old `subscription` action), `resources/views/admin/layout.blade.php` (nav), `app/Models/Platform/PlatformAdmin.php` (permissions list: keep existing, add `can_manage_plans`, `can_view_revenue`)
+- Create: `app/Http/Controllers/Admin/{ShopManagementController,PlanController,BillingManagementController,UnresolvedPaymentController}.php`; views under `resources/views/admin/{shops,plans,billing}/`
+- Modify: `app/Http/Controllers/Admin/PlatformController.php` (dashboard: shop counts by state, active subscriptions, money collected this month; remove old `subscription` action — replaced by BillingManagementController), `resources/views/admin/layout.blade.php` (nav), `routes/web.php` admin group, `app/Models/Platform/PlatformAdmin.php` (add `can_manage_plans`; drop unused `can_manage_jobs`, `can_view_compliance` if nothing uses them)
 - Test: `tests/Feature/Admin/{ShopAdminTest,PlanAdminTest,BillingAdminTest}.php`
 
 **Interfaces:**
 - Consumes: Task 2–4 models/services; `PlatformAuditService` for every write.
-- Produces: admin manual grant/extend (`BillingManagementController@updateShopSubscription`: plan, cycle, ends_at, reason required, audited, no payment); plans CRUD + toggle; CSV exports of shops and subscriptions; shop data export (zip of the shop's own rows) and data-delete request copied from JewelFlow `GdprExportController@scheduleDelete` (super admin, reason required, audited, refused while any loan is not closed/forfeited/cancelled; never automatic).
+- Produces: shops list/search + detail (owner, staff count, subscription history, receipts, unresolved payments) + suspend/activate with reason; plans edit (price, grace, limits, active) — no create/delete; manual grant/extend (`BillingManagementController@updateShopSubscription`: plan, cycle, ends_at, reason required, audited, no payment, NO receipt, `grace_ends_at = ends_at + plan.grace_days`, termination sets status cancelled); unresolved payments list with mark-resolved (reason, audited); receipts list.
+- Cut (owner): impersonation, announcements, platform settings page, revenue page, CSV exports, shop-user management, data export/delete UI.
 
-- [ ] **Step 1: Write failing tests**: `test_admin_lists_and_filters_shops`, `test_shop_detail_shows_subscription_history`, `test_plan_crud_and_inactive_plan_hidden_from_signup`, `test_manual_grant_requires_reason_and_is_audited`, `test_unresolved_payments_listed`, `test_data_delete_refused_while_open_loans_and_audited`, `test_admin_without_permission_403` (each controller), `test_shop_owner_session_cannot_reach_admin`.
-- [ ] **Step 2: Run** → FAIL. **Step 3: Implement** (copy JewelFlow controllers/views, restyle to existing admin layout, drop edition/realm code). **Step 4: Run** → pass.
-- [ ] **Step 5: Commit** `feat(admin): shops, users, plans, subscriptions, receipts, revenue`.
+- [ ] **Step 1: Write failing tests**: `test_admin_lists_and_searches_shops`, `test_shop_detail_shows_subscriptions_and_receipts`, `test_suspend_requires_reason_and_blocks_shop_login_access`, `test_plan_edit_and_inactive_plan_hidden_from_signup`, `test_manual_grant_requires_reason_audited_and_recomputes_grace`, `test_admin_shortening_ends_at_also_shortens_grace`, `test_unresolved_payment_mark_resolved_audited`, `test_admin_without_permission_403` (each controller), `test_shop_owner_session_cannot_reach_admin`.
+- [ ] **Step 2: Run** → FAIL. **Step 3: Implement** (copy JewelFlow controller logic where it fits, restyle to existing admin layout, drop edition/realm code). **Step 4: Run** → pass.
+- [ ] **Step 5: Commit** `feat(admin): essential shop, plan and billing admin`.
 
-### Task 8: Impersonation, announcements, platform settings
+### Task 8: Admin security hardening (replaces impersonation/announcements — owner scope cut)
 
 **Files:**
-- Create: `app/Services/AdminImpersonationService.php`, `app/Http/Controllers/Admin/{ImpersonationController,AnnouncementController,PlatformSettingsController}.php`, banner partial `resources/views/components/impersonation-banner.blade.php`, `resources/views/components/announcement-banner.blade.php`, admin views
-- Modify: `components/dhiran-layout.blade.php` (both banners), `routes/admin.php`
-- Test: `tests/Feature/Admin/{ImpersonationTest,AnnouncementTest}.php`
+- Modify: `app/Http/Middleware/AdminSession.php`, `app/Http/Controllers/Admin/*` (audit coverage), `app/Http/Controllers/StaffSettingsController.php` (block editing your own role — earlier security finding)
+- Delete (now-unused after scope cut): `app/Models/Platform/{PlatformAnnouncement,PlatformImpersonationSession,PlatformSetting}.php` and their tables (new migration dropping `platform_announcements`, `platform_impersonation_sessions`, `platform_settings`) if nothing references them
+- Test: `tests/Feature/Admin/AdminSecurityTest.php`, `tests/Feature/StaffParityTest.php`
 
-**Interfaces:**
-- Produces: `AdminImpersonationService::start(PlatformAdmin $admin, Shop $shop, string $reason): PlatformImpersonationSession` (owner user of the shop, `expires_at = now()+30min`), `stop(): void`; middleware check ends expired sessions on every shop request; every shop write during impersonation records `impersonation_session_id` in `platform_audit_logs`.
-
-- [ ] **Step 1: Write failing tests** (Review Focus 4): `test_super_admin_can_impersonate_with_reason`, `test_non_super_admin_cannot_impersonate`, `test_reason_required`, `test_session_ends_after_30_minutes`, `test_banner_visible_while_impersonating`, `test_writes_during_impersonation_are_audited`, `test_stop_returns_to_admin`, `test_announcement_shows_to_shops_between_dates`.
-- [ ] **Step 2: Run** → FAIL. **Step 3: Implement.** **Step 4: Run** → pass.
-- [ ] **Step 5: Commit** `feat(admin): audited impersonation, announcements, settings`.
+- [ ] **Step 1: Write failing tests**: `test_every_admin_write_route_writes_audit_log` (iterate admin POST/PATCH/DELETE routes), `test_admin_session_expires_after_idle_limit`, `test_admin_routes_require_completed_mfa`, `test_disabled_admin_logged_out_on_next_request`, `test_staff_cannot_edit_own_role_permissions`.
+- [ ] **Step 2: Run** → FAIL. **Step 3: Fix gaps.** **Step 4: Run** → pass.
+- [ ] **Step 5: Commit** `fix(admin): audit coverage and session hardening`.
 
 ### Task 9: Public website
 
