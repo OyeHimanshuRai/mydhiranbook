@@ -11,7 +11,7 @@ class ShopAuthController
     public function registerForm() { return view('auth.register'); }
     public function register(Request $r)
     {
-        $r->merge(['mobile'=>\App\Support\Mobile::normalize($r->input('mobile')) ?? $r->input('mobile')]);
+        $r->merge(['email'=>strtolower(trim((string)$r->input('email'))),'mobile'=>\App\Support\Mobile::normalize($r->input('mobile')) ?? $r->input('mobile')]);
         $data=$r->validate(['name'=>'required|string|max:120','email'=>'required|email:strict|lowercase|max:190|unique:users,email','mobile'=>['required',new \App\Rules\IndianMobileRule(),'unique:users,mobile_number'],'password'=>['required','confirmed',Password::min(12)],'terms'=>'accepted'],['terms.accepted'=>'You must accept the Terms of Service and Privacy Policy.','mobile.unique'=>'This mobile number is already registered.']);
         $user=User::create(['name'=>$data['name'],'email'=>$data['email'],'mobile_number'=>$data['mobile'],'password'=>$data['password'],'role'=>'owner','terms_accepted_at'=>now()]);
         Auth::guard('web')->login($user); $r->session()->regenerate(); return redirect('/');

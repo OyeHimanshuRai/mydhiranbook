@@ -22,9 +22,10 @@ class EmailVerificationOtpController extends Controller
     public function send(Request $request)
     {
         $user = Auth::user();
+        if ($request->has('email')) { $request->merge(['email' => strtolower(trim((string) $request->input('email')))]); }
         $data = $request->validate(['email' => ['required', 'email:strict', 'max:190', Rule::unique('users', 'email')->ignore($user->id)]], ['email.unique' => 'This email is already registered to another account.']);
         if ($user->email_verified_at) { throw ValidationException::withMessages(['email' => 'Email is already verified.']); }
-        $email = strtolower(trim($data['email']));
+        $email = $data['email'];
         $this->otp->send($user, $email);
         return response()->json(['status' => 'sent', 'message' => "We have sent a 6-digit code to {$email}. It expires in ".OtpService::EXPIRY_MINUTES.' minutes.']);
     }

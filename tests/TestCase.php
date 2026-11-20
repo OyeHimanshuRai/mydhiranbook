@@ -20,6 +20,12 @@ abstract class TestCase extends BaseTestCase
         self::activeSubscription($shop);
         return $shop;
     }
+    /** One test session is reused across requests, so a bound password hash from the previous user would log the next one out (AuthenticateSession). */
+    public function actingAs(\Illuminate\Contracts\Auth\Authenticatable $user, $guard = null)
+    {
+        $this->app['session']->forget('password_hash_web');
+        return parent::actingAs($user, $guard);
+    }
     protected function setUp(): void { TenantContext::clear(); parent::setUp(); \Illuminate\Support\Facades\Cache::flush(); }
     protected function tearDown(): void { TenantContext::clear(); parent::tearDown(); }
     protected function refreshApplication(): void

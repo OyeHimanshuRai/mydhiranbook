@@ -40,4 +40,23 @@ class PasswordResetTest extends TestCase
         $token = null; Notification::assertSentTo($u, ResetPassword::class, function ($n) use (&$token) { $token = $n->token; return true; });
         $this->post('/reset-password', ['token' => $token, 'email' => $u->email, 'password' => 'short', 'password_confirmation' => 'short'])->assertSessionHasErrors('password');
     }
+
+    public function test_password_reset_logs_out_other_sessions(): void
+    {
+        Notification::fake();
+        $u = $this->newOwner(['email_verified_at' => null]);
+        $this->post('/login', ['email' => $u->email, 'password' => 'a-long-test-password'])->assertRedirect('/');
+        $this->get('/verify-email')->assertOk();
+        $attacker = session()->all();
+        $this->flushSession(); auth()->forgetGuards();
+        $this->post('/forgot-password', ['email' => $u->email]);
+        $token = null; Notification::assertSentTo($u, ResetPassword::class, function ($n) use (&$token) { $token = $n->token; return true; });
+        $old = $u->fresh()->remember_token;
+        $this->post('/reset-password', ['token' => $token, 'email' => $u->email, 'password' => 'Brand-new-pass-99', 'password_confirmation' => 'Brand-new-pass-99'])->assertRedirect('/login');
+        $this->assertNotSame($old, $u->fresh()->remember_token);
+        $this->assertNotNull($u->fresh()->email_verified_at);
+        auth()->forgetGuards(); $this->flushSession();
+        $this->withSession($attacker)->get('/')->assertRedirect(route('login'));
+        $this->assertGuest();
+    }
 }

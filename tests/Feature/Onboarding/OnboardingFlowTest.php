@@ -83,4 +83,52 @@ class OnboardingFlowTest extends TestCase
         $this->assertNull($inv->fresh()->shop_id);
         $this->actingAs($u->fresh())->get(route('subscription.status'))->assertOk()->assertSee($inv->invoice_number);
     }
+
+    public function test_expired_by_date_shopless_subscription_cannot_create_business(): void
+    {
+        $u = $this->newOwner(); $s = $this->paidShopless($u);
+        $s->forceFill(['ends_at' => today()->subDays(20), 'grace_ends_at' => today()->subDays(6)])->save();
+        $this->actingAs($u)->get('/')->assertRedirect(route('dhiran.plans'));
+        $this->actingAs($u)->post(route('dhiran.onboarding.store'), $this->biz())->assertRedirect(route('dhiran.plans'));
+        $this->assertDatabaseCount('shops', 0);
+        $s->forceFill(['ends_at' => today()->subDays(2), 'grace_ends_at' => today()->addDay()])->save();
+        $this->actingAs($u)->get('/')->assertRedirect(route('dhiran.onboarding'));
+    }
+
+    public function test_user_with_shop_passes_gates_even_if_unverified(): void
+    {
+        $this->setUpBilling();
+        $o = $this->shopUser(); $this->assertNull($o->email_verified_at);
+        self::activeSubscription($o->shop);
+        $this->actingAs($o)->get('/')->assertOk();
+        $this->actingAs($o)->get('/dhiran')->assertOk();
+    }
+
+    public function test_create_business_blocked_when_email_unverified(): void
+    {
+        $u = $this->newOwner(['email_verified_at' => null]); $this->paidShopless($u);
+        $this->actingAs($u)->post(route('dhiran.onboarding.store'), $this->biz())->assertRedirect(route('dhiran.verify-email'));
+        $this->actingAs($u)->get(route('dhiran.onboarding'))->assertRedirect(route('dhiran.verify-email'));
+        $this->assertDatabaseCount('shops', 0);
+    }
+
+    public function test_dhiran_route_goes_through_onboarding_chain_for_shopless_user(): void
+    {
+        $u = $this->newOwner(['email_verified_at' => null]);
+        $this->actingAs($u)->get('/dhiran')->assertRedirect(route('dhiran.verify-email'));
+        $u->forceFill(['email_verified_at' => now()])->save();
+        $this->actingAs($u)->get('/dhiran')->assertRedirect(route('dhiran.plans'));
+        $this->paidShopless($u);
+        $this->actingAs($u)->get('/dhiran')->assertRedirect(route('dhiran.onboarding'));
+    }
+
+    public function test_posted_shop_id_and_role_fields_ignored_on_create_business(): void
+    {
+        $other = Shop::create(['name' => 'Someone else']);
+        $u = $this->newOwner(); $this->paidShopless($u);
+        $this->actingAs($u)->post(route('dhiran.onboarding.store'), $this->biz(['shop_id' => $other->id, 'role' => 'viewer', 'role_id' => 1, 'user_id' => 1, 'status' => 'suspended']))->assertRedirect('/');
+        $mine = Shop::where('name', 'Sharma Gold Finance')->sole(); $u->refresh();
+        $this->assertSame($mine->id, $u->shop_id); $this->assertNotSame($other->id, $u->shop_id);
+        $this->assertSame('active', $mine->status); $this->assertSame('owner', $u->role); $this->assertTrue($u->isShopOwner());
+    }
 }

@@ -14,7 +14,7 @@ class EmailOtpTest extends TestCase
 
     private function sendCode(User $u): string
     {
-        Mail::fake();
+        Mail::fake(); $this->flushSession(); auth()->forgetGuards();
         $this->actingAs($u)->postJson(route('dhiran.verify-email.send'), ['email' => $u->email])->assertOk();
         $code = null; Mail::assertSent(EmailOtpMail::class, function ($m) use (&$code) { $code = $m->otp; return true; });
         return $code;
@@ -64,5 +64,23 @@ class EmailOtpTest extends TestCase
     {
         $other = $this->newOwner(); $u = $this->newOwner(['email_verified_at' => null]);
         $this->actingAs($u)->postJson(route('dhiran.verify-email.send'), ['email' => $other->email])->assertStatus(422);
+    }
+
+    public function test_email_change_with_different_case_of_existing_email_is_rejected_cleanly(): void
+    {
+        $other = $this->newOwner(['email' => 'taken@onboard.test']); $u = $this->newOwner(['email_verified_at' => null]);
+        Mail::fake();
+        $this->actingAs($u)->postJson(route('dhiran.verify-email.send'), ['email' => '  Taken@Onboard.TEST '])->assertStatus(422)->assertJsonValidationErrors('email');
+        Mail::assertNothingSent();
+        $this->actingAs($u)->postJson(route('dhiran.verify-email.send'), ['email' => 'Fresh@Onboard.test'])->assertOk();
+        $this->assertSame('fresh@onboard.test', $u->fresh()->email);
+    }
+
+    public function test_otp_send_hourly_cap(): void
+    {
+        Mail::fake(); $u = $this->newOwner(['email_verified_at' => null]);
+        for ($i = 0; $i < 5; $i++) { $this->actingAs($u)->postJson(route('dhiran.verify-email.send'), ['email' => $u->email])->assertOk(); $this->travel(61)->seconds(); }
+        $this->actingAs($u)->postJson(route('dhiran.verify-email.send'), ['email' => $u->email])->assertStatus(422);
+        Mail::assertSentCount(5);
     }
 }
