@@ -59,7 +59,7 @@ class StandaloneWorkflowTest extends TestCase
         $a=$this->owner(); $loan=$this->loan($a);
         $payment=TenantContext::runFor($a->shop_id,fn()=>app(DhiranService::class)->recordPayment($loan,5000));
         $b=$this->owner('two'); $this->actingAs($b);
-        $this->get('/')->assertOk()->assertDontSee('Synthetic gold chain');
+        $this->get('/dhiran')->assertOk()->assertDontSee('Synthetic gold chain');
         $this->get('/loans/'.$loan->id)->assertNotFound();
         $this->get('/payments/'.$payment->id.'/receipt')->assertNotFound();
         $this->post('/loans/'.$loan->id.'/payments',['amount'=>1000,'method'=>'cash','submission_key'=>(string)Str::uuid()])->assertNotFound();

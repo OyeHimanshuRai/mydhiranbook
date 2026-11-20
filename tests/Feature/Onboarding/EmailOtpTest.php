@@ -23,7 +23,7 @@ class EmailOtpTest extends TestCase
     public function test_unverified_user_redirected_to_verify_email(): void
     {
         $u = $this->newOwner(['email_verified_at' => null]);
-        $this->actingAs($u)->get('/')->assertRedirect(route('dhiran.verify-email'));
+        $this->actingAs($u)->get('/dhiran')->assertRedirect(route('dhiran.verify-email'));
         $this->actingAs($u)->get(route('dhiran.verify-email'))->assertOk();
         $this->actingAs($u)->get('/subscription/status')->assertRedirect(route('dhiran.verify-email'));
     }

@@ -50,8 +50,18 @@ class SiteTest extends TestCase
         }
     }
 
-    public function test_authenticated_root_keeps_app_behaviour(): void
+    public function test_guest_root_is_home_and_signed_in_root_goes_to_app(): void
     {
-        $this->actingAs($this->newOwner())->get('/')->assertRedirect(route('dhiran.plans'));
+        $this->get('/')->assertOk()->assertSee('Get started');
+        $this->actingAs($this->newOwner())->get('/')->assertRedirect(route('dhiran.dashboard'));
+        // shopless owner still lands in the onboarding chain
+        $this->actingAs($this->newOwner())->followingRedirects()->get('/')->assertSee('Choose your Dhiran plan');
+    }
+
+    public function test_footer_is_styled_on_shop_layout_pages(): void
+    {
+        $this->get('/register')->assertSee('site-', false);
+        $this->get('/pricing')->assertSee('build/assets/site-', false);
+        $this->get('/register')->assertSee('build/assets/site-', false);
     }
 }

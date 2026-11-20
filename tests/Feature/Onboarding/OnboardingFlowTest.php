@@ -20,7 +20,7 @@ class OnboardingFlowTest extends TestCase
     {
         (new \Database\Seeders\PlanSeeder)->run();
         $u = $this->newOwner();
-        $this->actingAs($u)->get('/')->assertRedirect(route('dhiran.plans'));
+        $this->actingAs($u)->get('/dhiran')->assertRedirect(route('dhiran.plans'));
         $this->actingAs($u)->get(route('dhiran.plans'))->assertOk()->assertSee('Dhiran Monthly')->assertSee(route('subscription.choose'), false);
         $this->actingAs($u)->get(route('dhiran.onboarding'))->assertRedirect(route('dhiran.plans'));
     }
@@ -28,7 +28,7 @@ class OnboardingFlowTest extends TestCase
     public function test_paid_user_without_shop_resumes_create_business(): void
     {
         $u = $this->newOwner(); $this->paidShopless($u);
-        $this->actingAs($u)->get('/')->assertRedirect(route('dhiran.onboarding'));
+        $this->actingAs($u)->get('/dhiran')->assertRedirect(route('dhiran.onboarding'));
         $this->actingAs($u)->get(route('dhiran.plans'))->assertRedirect(route('dhiran.onboarding'));
         $this->actingAs($u)->get(route('dhiran.onboarding'))->assertOk()->assertSee('Business name');
     }
@@ -53,7 +53,7 @@ class OnboardingFlowTest extends TestCase
         $s = DhiranSettings::withoutTenant()->where('shop_id', $shop->id)->sole();
         $this->assertTrue((bool) $s->is_enabled); $this->assertSame('SGF', $s->loan_number_prefix);
         $this->assertSame(6, \App\Models\Role::withoutTenant()->where('shop_id', $shop->id)->count());
-        $this->actingAs($u)->get('/')->assertOk();
+        $this->actingAs($u)->get('/dhiran')->assertOk();
     }
 
     public function test_second_business_for_same_owner_refused(): void
@@ -88,11 +88,11 @@ class OnboardingFlowTest extends TestCase
     {
         $u = $this->newOwner(); $s = $this->paidShopless($u);
         $s->forceFill(['ends_at' => today()->subDays(20), 'grace_ends_at' => today()->subDays(6)])->save();
-        $this->actingAs($u)->get('/')->assertRedirect(route('dhiran.plans'));
+        $this->actingAs($u)->get('/dhiran')->assertRedirect(route('dhiran.plans'));
         $this->actingAs($u)->post(route('dhiran.onboarding.store'), $this->biz())->assertRedirect(route('dhiran.plans'));
         $this->assertDatabaseCount('shops', 0);
         $s->forceFill(['ends_at' => today()->subDays(2), 'grace_ends_at' => today()->addDay()])->save();
-        $this->actingAs($u)->get('/')->assertRedirect(route('dhiran.onboarding'));
+        $this->actingAs($u)->get('/dhiran')->assertRedirect(route('dhiran.onboarding'));
     }
 
     public function test_user_with_shop_passes_gates_even_if_unverified(): void
@@ -100,7 +100,7 @@ class OnboardingFlowTest extends TestCase
         $this->setUpBilling();
         $o = $this->shopUser(); $this->assertNull($o->email_verified_at);
         self::activeSubscription($o->shop);
-        $this->actingAs($o)->get('/')->assertOk();
+        $this->actingAs($o)->get('/dhiran')->assertOk();
         $this->actingAs($o)->get('/dhiran')->assertOk();
     }
 

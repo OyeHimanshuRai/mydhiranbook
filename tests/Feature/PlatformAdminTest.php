@@ -37,7 +37,7 @@ class PlatformAdminTest extends TestCase
         $this->assertDatabaseHas('shop_subscriptions',['shop_id'=>$shop->id,'status'=>'active']);
         $this->get('/admin/audit')->assertOk()->assertSee('shop.updated')->assertSee('subscription.updated');
         $this->assertDatabaseHas('platform_audit_logs',['actor_admin_id'=>$admin->id,'action'=>'admin.mfa_passed']);
-        $this->get('/')->assertRedirect('/login');
+        $this->get('/dhiran')->assertRedirect('/login');
     }
     public function test_shop_owner_and_foreign_jewelflows_cookie_grant_no_admin_access(): void
     {

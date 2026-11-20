@@ -32,7 +32,7 @@ Route::view('/terms','site.terms')->name('site.terms');
 Route::view('/privacy','site.privacy')->name('site.privacy');
 Route::view('/refund','site.refund')->name('site.refund');
 Route::view('/contact','site.contact')->name('site.contact');
-Route::middleware([\App\Http\Middleware\GuestsSeeSite::class,'auth','dhiran.verified','shop.exists','shop'])->get('/',[\App\Http\Controllers\DhiranController::class,'dashboard']);
+Route::get('/',[SiteController::class,'home'])->name('site.home');
 
 Route::middleware('shop')->group(function() {
     Route::get('/borrowers',[Loans::class,'borrowers']); Route::post('/borrowers',[Loans::class,'storeBorrower']);

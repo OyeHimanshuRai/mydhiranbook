@@ -2,5 +2,5 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-head"><a href="/" class="brand">dhiran<span>.</span></a><nav aria-label="Main"><a href="/pricing">Pricing</a><a href="/contact">Contact</a><a href="/login">Sign in</a><a href="/register" class="button gold small">Get started</a></nav></header>
 <main id="main">@yield('content')</main>
-@include('site._footer')
+@include('site._footer', ['siteCss' => true])
 </body></html>
