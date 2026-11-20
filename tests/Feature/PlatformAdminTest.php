@@ -45,7 +45,7 @@ class PlatformAdminTest extends TestCase
         $this->actingAs($owner,'web')->get('/admin')->assertRedirect('/admin/login');
         Auth::guard('web')->logout();
         $this->withUnencryptedCookie('jewelflows_platform_admin_session','foreign-session')->get('/admin')->assertRedirect('/admin/login');
-        $this->withUnencryptedCookie('jewelflows_session','foreign-session')->get('/')->assertRedirect('/login');
+        $this->withUnencryptedCookie('jewelflows_session','foreign-session')->get('/')->assertOk()->assertSee('Get started')->assertDontSee('Loan book'); // guest / is the public home
         $this->post('/admin/login',['email'=>$owner->email,'password'=>'Owner-pass-12345'])->assertSessionHasErrors('email');
         $this->assertGuest('platform_admin');
     }

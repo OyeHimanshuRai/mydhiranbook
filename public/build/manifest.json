@@ -26,6 +26,15 @@
       "dhiran.css"
     ]
   },
+  "resources/css/site.css": {
+    "file": "assets/site-CL3km9Ac.css",
+    "src": "resources/css/site.css",
+    "isEntry": true,
+    "name": "site",
+    "names": [
+      "site.css"
+    ]
+  },
   "resources/js/app.js": {
     "file": "assets/app-u_hwq68v.js",
     "name": "app",

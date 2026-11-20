@@ -26,7 +26,13 @@ Route::middleware(['auth','dhiran.verified'])->prefix('onboarding')->group(funct
     Route::get('/business',[$o,'create'])->name('dhiran.onboarding');
     Route::post('/business',[$o,'store'])->middleware('throttle:10,1')->name('dhiran.onboarding.store');
 });
-Route::middleware(['auth','dhiran.verified','shop.exists','shop'])->get('/',[\App\Http\Controllers\DhiranController::class,'dashboard']);
+use App\Http\Controllers\SiteController;
+Route::get('/pricing',[SiteController::class,'pricing'])->name('site.pricing');
+Route::view('/terms','site.terms')->name('site.terms');
+Route::view('/privacy','site.privacy')->name('site.privacy');
+Route::view('/refund','site.refund')->name('site.refund');
+Route::view('/contact','site.contact')->name('site.contact');
+Route::middleware([\App\Http\Middleware\GuestsSeeSite::class,'auth','dhiran.verified','shop.exists','shop'])->get('/',[\App\Http\Controllers\DhiranController::class,'dashboard']);
 
 Route::middleware('shop')->group(function() {
     Route::get('/borrowers',[Loans::class,'borrowers']); Route::post('/borrowers',[Loans::class,'storeBorrower']);

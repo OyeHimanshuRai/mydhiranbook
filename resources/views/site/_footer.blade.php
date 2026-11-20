@@ -1,0 +1,1 @@
+<footer class="site-footer"><nav aria-label="Legal and help"><a href="/pricing">Pricing</a><a href="/terms">Terms</a><a href="/privacy">Privacy</a><a href="/refund">Refund &amp; Cancellation</a><a href="/contact">Contact</a></nav><p>&copy; {{ date('Y') }} {{ config('business.legal_name') ?: config('business.name') }}</p></footer>
