@@ -17,9 +17,11 @@ class AppServiceProvider extends ServiceProvider
     {
         \Illuminate\Support\Facades\Gate::before(fn ($user, $ability) => $user instanceof \App\Models\User ? $user->hasPermission($ability) : null);
         RuntimeGuard::verify($this->app);
-        Event::listen(ConnectionEstablished::class, function (ConnectionEstablished $event): void {
-            RuntimeGuard::verifyConnection($event->connection->getPdo(), $this->app->environment(), base_path());
-        });
-        RuntimeGuard::verifyConnection(DB::connection()->getPdo(), $this->app->environment(), base_path());
+        if (RuntimeGuard::isLocal($this->app->environment())) {
+            Event::listen(ConnectionEstablished::class, function (ConnectionEstablished $event): void {
+                RuntimeGuard::verifyConnection($event->connection->getPdo(), $this->app->environment(), base_path());
+            });
+            RuntimeGuard::verifyConnection(DB::connection()->getPdo(), $this->app->environment(), base_path());
+        }
     }
 }

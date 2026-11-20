@@ -25,26 +25,61 @@ final class RuntimeGuard
 
     public static function verify(Application $app): void
     {
+        $config = config()->all();
+        $config['runtime'] = ['storage_path' => realpath($app->storagePath()), 'base_path' => realpath($app->basePath())];
+        self::verifyConfig($config, $app->basePath());
+    }
+
+    public static function isLocal(string $environment): bool
+    {
+        return in_array($environment, ['local', 'testing'], true);
+    }
+
+    public static function verifyConfig(array $config, string $basePath): void
+    {
+        $env = (string) data_get($config, 'app.env');
+        self::refuse(self::isLocal($env) || $env === 'production', 'unknown environment');
+        $env === 'production' ? self::verifyProduction($config) : self::verifyLocal($config, $env);
+    }
+
+    private static function verifyProduction(array $config): void
+    {
+        $get = fn (string $key) => data_get($config, $key);
+        self::refuse($get('app.debug') === false, 'APP_DEBUG must be false in production');
+        self::refuse(str_starts_with((string) $get('app.url'), 'https://'), 'APP_URL must be https in production');
+        self::refuse((string) $get('app.key') !== '', 'missing application key');
+        self::refuse($get('database.default') === 'pgsql' && $get('database.connections.pgsql.driver') === 'pgsql', 'production requires PostgreSQL');
+        self::refuse(!in_array($get('queue.default'), ['sync', 'null', null, ''], true), 'production requires a persistent queue');
+        self::refuse($get('session.secure') === true, 'session cookie must be secure in production');
+        self::refuse(!in_array($get('mail.default'), ['log', 'array', null, ''], true), 'production requires a real mailer');
+        foreach (['key', 'secret', 'webhook_secret'] as $name) {
+            self::refuse((string) $get('services.razorpay.'.$name) !== '', 'missing Razorpay '.$name);
+        }
+    }
+
+    private static function verifyLocal(array $config, string $environment): void
+    {
+        $get = fn (string $key) => data_get($config, $key);
         $root = '/home/himanshu/Desktop/Dhiran ERP';
-        self::refuse(realpath($app->basePath()) === $root && is_dir($root.'/.git'), 'workspace boundary');
+        self::refuse($get('runtime.base_path') === $root && is_dir($root.'/.git'), 'workspace boundary');
         $manifest = json_decode(file_get_contents($root.'/.runtime/targets.json'), true, flags: JSON_THROW_ON_ERROR);
         self::refuse(($manifest['root'] ?? '') === $root, 'target manifest root');
-        $db = config('database.connections.pgsql');
-        self::validateDatabase($db, $app->environment(), $root);
-        $target = $manifest[$app->environment()];
-        self::refuse(hash_equals($target['password'], (string)$db['password']), 'credentials differ from the dedicated target');
-        self::refuse(config('database.default') === 'pgsql' && array_keys(config('database.connections')) === ['pgsql'], 'additional database targets');
-        $storage = $app->environment('testing') ? $root.'/.runtime/testing/storage' : $root.'/storage';
-        self::refuse(realpath($app->storagePath()) === $storage, 'storage outside Dhiran');
+        $db = $get('database.connections.pgsql');
+        self::validateDatabase($db, $environment, $root);
+        $target = $manifest[$environment];
+        self::refuse(hash_equals($target['password'], (string) $db['password']), 'credentials differ from the dedicated target');
+        self::refuse($get('database.default') === 'pgsql' && array_keys($get('database.connections')) === ['pgsql'], 'additional database targets');
+        $storage = $environment === 'testing' ? $root.'/.runtime/testing/storage' : $root.'/storage';
+        self::refuse($get('runtime.storage_path') === $storage, 'storage outside Dhiran');
         foreach (['app/private', 'framework/cache/data', 'framework/sessions', 'framework/views', 'logs'] as $path) {
             self::refuse(realpath($storage.'/'.$path) === $storage.'/'.$path, 'symlink or missing private storage');
         }
-        self::refuse(config('filesystems.default') === 'local' && count(config('filesystems.disks')) === 1 && config('filesystems.disks.local.root') === $storage.'/app/private', 'filesystem target');
-        self::refuse(config('cache.default') === 'file' && config('cache.stores.file.path') === $storage.'/framework/cache/data', 'cache target');
-        self::refuse(config('session.driver') === 'file' && config('session.files') === $storage.'/framework/sessions' && config('session.domain') === null, 'session target');
-        self::refuse(config('queue.default') === 'database' && count(config('queue.connections')) === 1 && config('queue.connections.database.connection') === 'pgsql' && config('queue.connections.database.queue') === 'dhiran-'.$app->environment(), 'queue target');
-        self::refuse(config('mail.default') === 'log' && count(config('mail.mailers')) === 1, 'mail must stay local');
-        self::refuse(str_starts_with((string)config('app.key'), 'base64:'), 'missing local application key');
+        self::refuse($get('filesystems.default') === 'local' && count($get('filesystems.disks')) === 1 && $get('filesystems.disks.local.root') === $storage.'/app/private', 'filesystem target');
+        self::refuse($get('cache.default') === 'file' && $get('cache.stores.file.path') === $storage.'/framework/cache/data', 'cache target');
+        self::refuse($get('session.driver') === 'file' && $get('session.files') === $storage.'/framework/sessions' && $get('session.domain') === null, 'session target');
+        self::refuse($get('queue.default') === 'database' && count($get('queue.connections')) === 1 && $get('queue.connections.database.connection') === 'pgsql' && $get('queue.connections.database.queue') === 'dhiran-'.$environment, 'queue target');
+        self::refuse($get('mail.default') === 'log' && count($get('mail.mailers')) === 1, 'mail must stay local');
+        self::refuse(str_starts_with((string) $get('app.key'), 'base64:'), 'missing local application key');
     }
 
     public static function verifyConnection(PDO $pdo, string $environment, string $root): array
