@@ -38,6 +38,16 @@ Route::prefix('admin')->group(function() {
 });
 
 
+Route::post('/subscription/payment/webhook',[\App\Http\Controllers\SubscriptionController::class,'webhook'])->name('subscription.webhook');
+Route::middleware('auth')->prefix('subscription')->name('subscription.')->group(function() {
+    $c=\App\Http\Controllers\SubscriptionController::class;
+    Route::get('/status',[$c,'status'])->name('status');
+    Route::post('/choose',[$c,'choosePlan'])->name('choose');
+    Route::get('/payment',[$c,'payment'])->name('payment');
+    Route::post('/payment/initiate',[$c,'initiatePayment'])->name('payment.initiate');
+    Route::post('/payment/callback',[$c,'paymentCallback'])->name('payment.callback');
+});
+
 require __DIR__.'/dhiran.php';
 
 Route::middleware('shop')->get('/comparison/standalone/new-loan', [Loans::class,'create']);
