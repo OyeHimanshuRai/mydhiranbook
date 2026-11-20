@@ -66,7 +66,8 @@ class EntitlementTest extends TestCase
     }
     public function test_registration_creates_no_trial(): void
     {
-        $this->post('/register',['name'=>'Demo Owner','shop_name'=>'No Trial Shop','email'=>'notrial@example.test','password'=>'Local-pass-12345','password_confirmation'=>'Local-pass-12345'])->assertRedirect('/');
+        $this->post('/register',['name'=>'Demo Owner','email'=>'notrial@example.test','mobile'=>'9812300077','terms'=>'1','password'=>'Local-pass-12345','password_confirmation'=>'Local-pass-12345'])->assertRedirect('/');
+        $this->assertDatabaseCount('shops',0);
         $this->assertDatabaseCount('shop_subscriptions',0);
     }
 }

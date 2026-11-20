@@ -1,4 +1,5 @@
-<x-dhiran-layout title="Set up your Dhiran business">
+<x-subscription-page title="Set up your Dhiran business">
+    <style>.dob-wrap{max-width:560px}.dob-field{margin-bottom:14px}.dob-field label{display:block;font-weight:600;margin-bottom:4px}.dob-field input{width:100%}.dob-err{color:#b91c1c;font-size:13px}.opt{font-weight:400;color:#64748b}</style>
     <div class="dob-wrap">
         <div class="dob-head">
             <h1>Set up your Dhiran business</h1>
@@ -6,7 +7,7 @@
         </div>
 
         <div class="dob-card">
-            <form method="POST" action="{{ route('dhiran.onboarding.store') }}" data-turbo-frame="_top">
+            <form method="POST" action="{{ route('dhiran.onboarding.store') }}" data-turbo="false">
                 @csrf
                 <div class="dob-grid">
                     <div class="dob-field full">
@@ -16,39 +17,15 @@
                     </div>
 
                     <div class="dob-field">
-                        <label for="owner_name">Owner name</label>
-                        <input id="owner_name" name="owner_name" type="text" value="{{ old('owner_name') }}" required maxlength="255" placeholder="Full name">
-                        @error('owner_name') <span class="dob-err">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="dob-field">
-                        <label for="phone">Mobile number</label>
-                        <input id="phone" name="phone" type="tel" value="{{ old('phone') }}" required pattern="[0-9]{10}" maxlength="10" placeholder="10-digit number">
+                        <label for="phone">Business phone</label>
+                        <input id="phone" name="phone" type="tel" value="{{ old('phone') }}" required inputmode="numeric" maxlength="16" placeholder="10-digit number">
                         @error('phone') <span class="dob-err">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="dob-field full">
-                        <label for="address">Shop address</label>
+                        <label for="address">Business address</label>
                         <input id="address" name="address" type="text" value="{{ old('address') }}" required maxlength="500" placeholder="Street, area, landmark">
                         @error('address') <span class="dob-err">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="dob-field">
-                        <label for="city">City</label>
-                        <input id="city" name="city" type="text" value="{{ old('city') }}" required maxlength="100">
-                        @error('city') <span class="dob-err">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="dob-field">
-                        <label for="state">State</label>
-                        <input id="state" name="state" type="text" value="{{ old('state') }}" required maxlength="100">
-                        @error('state') <span class="dob-err">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="dob-field">
-                        <label for="gst_number">GSTIN <span class="opt">(optional)</span></label>
-                        <input id="gst_number" name="gst_number" type="text" value="{{ old('gst_number') }}" maxlength="50">
-                        @error('gst_number') <span class="dob-err">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="dob-field">
@@ -59,9 +36,9 @@
                 </div>
 
                 <div class="dob-foot">
-                    <button type="submit" class="dob-btn">Finish setup &amp; open dashboard</button>
+                    <button type="submit" class="gold">Finish setup &amp; open dashboard</button>
                 </div>
             </form>
         </div>
     </div>
-</x-dhiran-layout>
+</x-subscription-page>

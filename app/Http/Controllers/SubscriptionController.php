@@ -117,7 +117,7 @@ class SubscriptionController extends Controller
         if ($result['subscription'] === null) { return $back('Your payment could not be applied yet.'); }
 
         session()->forget(['pending_plan_id', 'pending_billing_cycle']);
-        return redirect()->route('subscription.status')->with('success', 'Payment received. Your subscription is active.');
+        return redirect()->route(Auth::user()->shop_id ? 'subscription.status' : 'dhiran.onboarding')->with('success', 'Payment received. Your subscription is active.');
     }
 
     public function webhook(Request $request)
@@ -160,7 +160,7 @@ class SubscriptionController extends Controller
             'plans' => Plan::where('is_active', true)->orderBy('price_monthly')->get(),
             'hasShop' => (bool) $user->shop_id,
             'receipts' => PlatformInvoice::where('status', 'issued')
-                ->when($user->shop_id, fn ($q) => $q->where('shop_id', $user->shop_id), fn ($q) => $q->whereNull('shop_id')->whereHas('subscription', fn ($s) => $s->where('user_id', $user->id)))
+                ->where(fn ($q) => $q->where('shop_id', $user->shop_id ?? 0)->orWhere(fn ($q) => $q->whereNull('shop_id')->whereHas('subscription', fn ($s) => $s->where('user_id', $user->id))))
                 ->orderByDesc('id')->get(),
         ]);
     }

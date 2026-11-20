@@ -20,7 +20,7 @@ class PaymentFlowTest extends TestCase
     public function test_callback_with_valid_signature_creates_pending_subscription_without_shop(): void
     {
         $user = $this->shoplessUser(); $triple = $this->paidOrder($user);
-        $this->actingAs($user)->payCallback($triple)->assertRedirect(route('subscription.status'));
+        $this->actingAs($user)->payCallback($triple)->assertRedirect(route('dhiran.onboarding'));
         $sub = ShopSubscription::sole();
         $this->assertNull($sub->shop_id); $this->assertSame($user->id, $sub->user_id); $this->assertSame('active', $sub->status);
         $this->assertSame('yearly', $sub->billing_cycle); $this->assertSame($triple['razorpay_payment_id'], $sub->razorpay_payment_id);

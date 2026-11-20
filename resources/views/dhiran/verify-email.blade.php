@@ -18,8 +18,7 @@
         </div>
         <h1>Verify your email</h1>
         <p class="sub">
-            Add and verify an email so you can reset your password if you ever forget it.
-            You need a verified email to continue using Dhiran.
+            Verify your email to continue. It is also how you reset your password if you ever forget it.
         </p>
 
         {{-- Step 1: email --}}
@@ -73,7 +72,7 @@
             if (otp.length!==6) return msg('Enter the 6-digit code.', false);
             const btn=document.getElementById('verifyBtn'); btn.disabled=true;
             const { ok, data } = await post('{{ route('dhiran.verify-email.verify') }}', { otp });
-            if (ok) { msg('Email verified! Redirecting…', true); setTimeout(()=>window.location.href='{{ route('dhiran.dashboard') }}', 800); }
+            if (ok) { msg('Email verified! Redirecting…', true); setTimeout(()=>window.location.href='{{ url('/') }}', 800); }
             else { btn.disabled=false; msg(firstError(data), false); }
         }
         async function resendOtp() {

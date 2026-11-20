@@ -7,8 +7,28 @@ Route::post('/login',[Auth::class,'login'])->middleware('throttle:5,1');
 Route::get('/register',[Auth::class,'registerForm']);
 Route::post('/register',[Auth::class,'register'])->middleware('throttle:5,1');
 Route::post('/logout',[Auth::class,'logout'])->name('logout');
+Route::get('/forgot-password',[\App\Http\Controllers\PasswordResetController::class,'forgotForm'])->name('password.request');
+Route::post('/forgot-password',[\App\Http\Controllers\PasswordResetController::class,'forgot'])->middleware('throttle:3,1')->name('password.email');
+Route::get('/reset-password/{token}',[\App\Http\Controllers\PasswordResetController::class,'resetForm'])->name('password.reset');
+Route::post('/reset-password',[\App\Http\Controllers\PasswordResetController::class,'reset'])->middleware('throttle:5,1')->name('password.store');
+
+// Email verification (shopless owners still onboarding) and the pay-first onboarding chain.
+Route::middleware('auth')->group(function() {
+    $v=\App\Http\Controllers\EmailVerificationOtpController::class;
+    Route::get('/verify-email',[$v,'show'])->name('dhiran.verify-email');
+    Route::post('/verify-email/send',[$v,'send'])->middleware('throttle:10,1')->name('dhiran.verify-email.send');
+    Route::post('/verify-email/verify',[$v,'verify'])->middleware('throttle:10,1')->name('dhiran.verify-email.verify');
+    Route::post('/verify-email/resend',[$v,'resend'])->middleware('throttle:10,1')->name('dhiran.verify-email.resend');
+});
+Route::middleware(['auth','dhiran.verified'])->prefix('onboarding')->group(function() {
+    $o=\App\Http\Controllers\DhiranOnboardingController::class;
+    Route::get('/plans',[$o,'plans'])->name('dhiran.plans');
+    Route::get('/business',[$o,'create'])->name('dhiran.onboarding');
+    Route::post('/business',[$o,'store'])->middleware('throttle:10,1')->name('dhiran.onboarding.store');
+});
+Route::middleware(['auth','dhiran.verified','shop.exists','shop'])->get('/',[\App\Http\Controllers\DhiranController::class,'dashboard']);
+
 Route::middleware('shop')->group(function() {
-    Route::get('/',[\App\Http\Controllers\DhiranController::class,'dashboard']);
     Route::get('/borrowers',[Loans::class,'borrowers']); Route::post('/borrowers',[Loans::class,'storeBorrower']);
     Route::get('/loans/create',[Loans::class,'create']); Route::post('/loans',[Loans::class,'store']);
     Route::get('/loans/{loan}',[Loans::class,'show'])->whereNumber('loan');
@@ -39,7 +59,7 @@ Route::prefix('admin')->group(function() {
 
 
 Route::post('/subscription/payment/webhook',[\App\Http\Controllers\SubscriptionController::class,'webhook'])->name('subscription.webhook');
-Route::middleware('auth')->prefix('subscription')->name('subscription.')->group(function() {
+Route::middleware(['auth','dhiran.verified'])->prefix('subscription')->name('subscription.')->group(function() {
     $c=\App\Http\Controllers\SubscriptionController::class;
     Route::get('/status',[$c,'status'])->name('status');
     Route::post('/choose',[$c,'choosePlan'])->name('choose');

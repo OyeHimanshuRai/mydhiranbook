@@ -29,9 +29,8 @@ class StandaloneWorkflowTest extends TestCase
     }
     public function test_register_borrower_loan_evidence_repayment_and_receipt(): void
     {
-        $this->post('/register',['name'=>'Demo Owner','shop_name'=>'Dhiran Synthetic Shop','email'=>'owner@example.test','password'=>'Local-pass-12345','password_confirmation'=>'Local-pass-12345'])->assertRedirect('/');
-        self::activeSubscription(User::where('email','owner@example.test')->firstOrFail()->shop);
-        $owner=User::where('email','owner@example.test')->firstOrFail();
+        $owner=$this->owner('regflow'); $this->actingAs($owner);
+        self::activeSubscription($owner->shop);
         $this->post('/borrowers',['first_name'=>'Synthetic','last_name'=>'Borrower','mobile'=>'9000000001','address'=>'Synthetic address'])->assertRedirect('/borrowers');
         $customer=Customer::withoutTenant()->firstOrFail();
         $this->post('/loans',['customer_id'=>$customer->id,'description'=>'Synthetic gold chain','metal_type'=>'gold','purity'=>24,'gross_weight'=>20,'stone_weight'=>0,'rate_per_gram'=>6000,'principal_amount'=>50000,'interest_rate_monthly'=>2,'tenure_months'=>12,'loan_date'=>today()->toDateString()])->assertRedirect();

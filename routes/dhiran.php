@@ -1,8 +1,8 @@
 <?php
 use Illuminate\Support\Facades\Route;
+    Route::middleware(['auth','dhiran.verified','shop.exists','shop','can:dhiran.view'])->get('/dhiran',[\App\Http\Controllers\DhiranController::class,'dashboard'])->name('dhiran.dashboard');
     Route::prefix('dhiran')->name('dhiran.')->middleware(['shop'])->group(function () {
         // Dashboard & Activation — no dhiran.enabled check (dashboard shows activation page)
-        Route::get('/', [\App\Http\Controllers\DhiranController::class, 'dashboard'])->middleware('can:dhiran.view')->name('dashboard');
         Route::post('/activate', [\App\Http\Controllers\DhiranController::class, 'activate'])->middleware('can:dhiran.settings')->name('activate');
 
         // All remaining routes require dhiran to be enabled

@@ -33,7 +33,7 @@ trait BillingFixtures
     protected function shoplessUser(): User
     {
         static $n = 0; $n++;
-        return User::create(['name' => "Buyer $n", 'email' => "buyer$n@billing.test", 'password' => 'a-long-test-password', 'role' => 'owner']);
+        return User::create(['name' => "Buyer $n", 'email' => "buyer$n@billing.test", 'password' => 'a-long-test-password', 'role' => 'owner', 'email_verified_at' => now()]);
     }
 
     /** Seed a Razorpay order + payment for $user; returns the checkout callback triple. */
