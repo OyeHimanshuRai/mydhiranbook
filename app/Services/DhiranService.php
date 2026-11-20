@@ -91,6 +91,13 @@ class DhiranService
                 throw new LogicException('At least one collateral item is required.');
             }
 
+            // Plan item cap (also covers old-loan import, which comes through here). Shop row lock serialises concurrent creates.
+            Shop::whereKey($shop->id)->lockForUpdate()->value('id');
+            $limit = $shop->itemLimit();
+            if ($limit !== -1 && $shop->pledgedItemCount() + count($items) > $limit) {
+                throw new LogicException("Item limit reached: your plan allows {$limit} pledged items and this loan would exceed it. Close or release items, or upgrade your plan.");
+            }
+
             $settings = DhiranSettings::getForShop($shop->id);
 
             // ── Resolve parameters with settings defaults ────
