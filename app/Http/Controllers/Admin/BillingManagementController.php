@@ -24,7 +24,11 @@ class BillingManagementController
         if (!$plan->sellsCycle($data['billing_cycle'])) { throw ValidationException::withMessages(['billing_cycle'=>'This plan does not sell that billing cycle.']); }
         DB::transaction(function() use($r,$shop,$plan,$data) {
             $admin=Auth::guard('platform_admin')->user();
-            $sub=ShopSubscription::where('shop_id',$shop->id)->where('status','!=','cancelled')->orderByRaw('ends_at desc nulls last')->orderByDesc('id')->lockForUpdate()->first();
+            $live=ShopSubscription::where('shop_id',$shop->id)->where('status','!=','cancelled')->orderByRaw('ends_at desc nulls last')->orderByDesc('id')->lockForUpdate()->get();
+            $sub=$live->first();
+            // extend / plan-switch only: shortening or revoking is terminate (an early renewer has several live rows)
+            $floor=collect([today(),$sub?->starts_at,...$live->pluck('ends_at')])->filter()->max();
+            if ($data['ends_at'] < $floor->toDateString()) { abort(response('To shorten or revoke access, terminate the subscription.',422)); }
             $before=$sub?->only(self::TRACK);
             $values=['plan_id'=>$plan->id,'billing_cycle'=>$data['billing_cycle'],'status'=>'active','ends_at'=>$data['ends_at'],'grace_ends_at'=>Carbon::parse($data['ends_at'])->addDays($plan->grace_days),'cancelled_at'=>null,'updated_by_admin_id'=>$admin->id,'actor_type'=>'admin'];
             if ($sub) { $sub->update($values); } else { $sub=ShopSubscription::create($values+['shop_id'=>$shop->id,'starts_at'=>today()]); }

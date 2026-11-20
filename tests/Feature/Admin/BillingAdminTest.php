@@ -32,15 +32,31 @@ class BillingAdminTest extends AdminTestCase
         // a plan cannot be granted for a cycle it does not sell
         $this->grant($shop,'dhiran_monthly','yearly',$end2->toDateString())->assertSessionHasErrors('billing_cycle');
     }
-    public function test_admin_shortening_ends_at_also_shortens_grace(): void
+    public function test_grant_cannot_shorten_access_use_terminate(): void
     {
         (new PlanSeeder)->run(); $this->signIn($this->admin()); $shop=self::createDhiranShop(['name'=>'Shorten']);
-        $sub=$shop->currentSubscription(); $this->assertTrue($shop->hasEdition('dhiran'));
-        $past=today()->subDays(30);
-        $this->grant($shop,'dhiran_yearly','yearly',$past->toDateString(),'Chargeback')->assertRedirect();
-        $sub->refresh(); $this->assertSame($past->copy()->addDays(14)->toDateString(),$sub->grace_ends_at->toDateString());
+        $sub=$shop->currentSubscription(); $before=$sub->only('ends_at','grace_ends_at','starts_at');
+        $this->grant($shop,'dhiran_yearly','yearly',today()->subDays(30)->toDateString(),'Chargeback')->assertStatus(422)->assertSee('terminate the subscription');
+        $this->grant($shop,'dhiran_yearly','yearly',today()->addMonths(6)->toDateString())->assertStatus(422);
+        $this->assertEquals($before,$sub->fresh()->only('ends_at','grace_ends_at','starts_at'));
+        $this->assertTrue($shop->fresh()->hasEdition('dhiran'));
+        $this->post('/admin/shops/'.$shop->id.'/subscription/terminate',['reason'=>'Chargeback'])->assertRedirect();
         $this->assertFalse($shop->fresh()->hasEdition('dhiran'));
-        $this->assertNotNull($sub->price_paid); // paid record untouched
+    }
+    public function test_grant_extends_when_shop_has_two_live_rows(): void
+    {
+        (new PlanSeeder)->run(); $this->signIn($this->admin()); $shop=Shop::create(['name'=>'Two']);
+        $plan=Plan::where('code','dhiran_yearly')->first();
+        $mk=fn($end)=>ShopSubscription::create(['shop_id'=>$shop->id,'plan_id'=>$plan->id,'status'=>'active','billing_cycle'=>'yearly','starts_at'=>$end->copy()->subYear(),'ends_at'=>$end,'grace_ends_at'=>$end->copy()->addDays(14),'price_paid'=>19999,'actor_type'=>'self_service']);
+        $old=$mk(today()->addDays(10)); $new=$mk(today()->addDays(40));
+        $snap=[$old->fresh()->ends_at->toDateString(),$new->fresh()->ends_at->toDateString()];
+        $this->grant($shop,'dhiran_yearly','yearly',today()->addDays(20)->toDateString())->assertStatus(422);
+        $this->assertSame($snap,[$old->fresh()->ends_at->toDateString(),$new->fresh()->ends_at->toDateString()]);
+        $end=today()->addDays(100); $this->grant($shop,'dhiran_yearly','yearly',$end->toDateString())->assertRedirect();
+        $new->refresh(); $this->assertSame([$end->toDateString(),$end->copy()->addDays(14)->toDateString()],[$new->ends_at->toDateString(),$new->grace_ends_at->toDateString()]);
+        $this->assertSame($snap[0],$old->fresh()->ends_at->toDateString());
+        $this->assertTrue($shop->fresh()->hasEdition('dhiran'));
+        $this->assertSame(0,PlatformInvoice::count());
     }
     public function test_termination_sets_cancelled_and_never_entitled(): void
     {
