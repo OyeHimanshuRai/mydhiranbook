@@ -1,8 +1,8 @@
 <?php
 namespace App\Http\Controllers\Admin;
 use App\Models\Shop;
-use App\Models\Platform\{Plan,PlatformAdmin,ShopSubscription,SubscriptionEvent};
-use Illuminate\Support\Carbon;
+use App\Http\Controllers\Admin\Concerns\ChecksAdminPermission;
+use App\Models\Platform\PlatformAdmin;
 use App\Models\Platform\PlatformAuditLog;
 use App\Services\PlatformAuditService;
 use Illuminate\Http\Request;
@@ -12,41 +12,19 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 class PlatformController
 {
+    use ChecksAdminPermission;
     public function __construct(private PlatformAuditService $audit) {}
-    private function permit(Request $r,string $permission): void
-    {
-        if (!Auth::guard('platform_admin')->user()->hasPermission($permission)) {
-            $this->audit->log(Auth::guard('platform_admin')->user(),'admin.permission_denied',reason:$permission,request:$r); abort(403);
-        }
-    }
     public function dashboard()
     {
-        $current=DB::table('shop_subscriptions')->whereNotNull('shop_id')->where('status','!=','cancelled')->selectRaw('distinct on (shop_id) shop_id,plan_id,status,ends_at')->orderBy('shop_id')->orderByRaw('ends_at desc nulls last')->orderByDesc('id');
-        return view('admin.dashboard',['shops'=>DB::table('shops')->leftJoinSub($current,'cs','shops.id','=','cs.shop_id')->leftJoin('plans','plans.id','=','cs.plan_id')->select('shops.*','plans.code as plan','cs.status as subscription_status','cs.ends_at as expires_at')->orderBy('shops.id')->paginate(20),'shopCount'=>Shop::count(),'activeCount'=>Shop::where('status','active')->count(),'subscriptionCount'=>DB::table('shop_subscriptions')->where('status','active')->count(),'adminCount'=>PlatformAdmin::where('is_active',true)->count()]);
-    }
-    public function updateShop(Request $r,int $shop)
-    {
-        $this->permit($r,'can_manage_shops'); $shop=Shop::findOrFail($shop);
-        $data=$r->validate(['name'=>'required|string|max:150','status'=>'required|in:active,suspended','reason'=>'required|string|max:500']);
-        DB::transaction(function() use($r,$shop,$data) {
-            $before=$shop->only('name','status'); $shop->update(['name'=>$data['name'],'status'=>$data['status']]);
-            $this->audit->log(Auth::guard('platform_admin')->user(),'shop.updated','shop',$shop->id,$before,$shop->only('name','status'),$data['reason'],$r);
-        });
-        return back()->with('success','Shop updated.');
-    }
-    public function subscription(Request $r,int $shop)
-    {
-        $this->permit($r,'can_manage_subscriptions'); Shop::findOrFail($shop);
-        $data=$r->validate(['plan'=>'required|exists:plans,code','status'=>'required|in:'.implode(',',ShopSubscription::STATUSES),'expires_at'=>'required|date_format:Y-m-d','reason'=>'required|string|max:500']);
-        DB::transaction(function() use($r,$shop,$data) {
-            $admin=Auth::guard('platform_admin')->user(); $plan=Plan::where('code',$data['plan'])->firstOrFail();
-            $sub=Shop::findOrFail($shop)->currentSubscription(); $before=$sub?->only('plan_id','status','ends_at');
-            $values=['plan_id'=>$plan->id,'status'=>$data['status'],'ends_at'=>$data['expires_at'],'grace_ends_at'=>Carbon::parse($data['expires_at'])->addDays($plan->grace_days),'cancelled_at'=>$data['status']==='cancelled'?now():null,'updated_by_admin_id'=>$admin->id,'actor_type'=>'admin'];
-            if ($sub) { $sub->update($values); $type='admin_updated'; }
-            else { $cycle=$plan->code==='dhiran_yearly'?'yearly':'monthly'; $sub=ShopSubscription::create($values+['shop_id'=>$shop,'billing_cycle'=>$cycle,'starts_at'=>today()]); $type='admin_granted'; }
-            SubscriptionEvent::create(['shop_subscription_id'=>$sub->id,'shop_id'=>$shop,'admin_id'=>$admin->id,'event_type'=>$type,'before'=>$before,'after'=>$sub->only('plan_id','status','ends_at'),'reason'=>$data['reason']]);
-            $this->audit->log($admin,'subscription.updated','shop',$shop,$before,array_intersect_key($data,array_flip(['plan','status','expires_at'])),$data['reason'],$r);
-        }); return back()->with('success','Subscription updated.');
+        $entitled=DB::table('shop_subscriptions')->whereNotNull('shop_id')->whereIn('status',['active','grace'])->whereRaw('greatest(ends_at,grace_ends_at) >= ?',[today()->toDateString()]);
+        $paidThisMonth=DB::table('shop_subscriptions')->whereNotNull('razorpay_payment_id')->where('created_at','>=',now()->startOfMonth());
+        return view('admin.dashboard',['stats'=>[
+            'shops'=>Shop::count(),'active'=>Shop::where('status','active')->count(),'suspended'=>Shop::where('status','suspended')->count(),
+            'entitled'=>$entitled->distinct()->count('shop_id'),
+            'pending'=>DB::table('shop_subscriptions')->whereNull('shop_id')->count(),
+            'collected'=>$paidThisMonth->sum('price_paid'),
+            'unresolved'=>DB::table('subscription_events')->where('event_type','payment.unresolved')->whereRaw("(after->>'resolved_at') is null")->count(),
+        ],'adminCount'=>PlatformAdmin::where('is_active',true)->count()]);
     }
     public function audit(Request $r)
     {

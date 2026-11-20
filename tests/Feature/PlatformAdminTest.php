@@ -29,10 +29,11 @@ class PlatformAdminTest extends TestCase
         $admin=$this->admin(); $shop=Shop::create(['name'=>'Synthetic Tenant']);
         (new \Database\Seeders\PlanSeeder)->run();
         $this->signIn($admin);
-        $this->get('/admin')->assertOk()->assertSee('Dhiran platform')->assertSee('Synthetic Tenant');
-        $this->patch('/admin/shops/'.$shop->id,['name'=>'Renamed Tenant','status'=>'suspended','reason'=>'Synthetic acceptance check'])->assertRedirect();
+        $this->get('/admin')->assertOk()->assertSee('Dhiran platform');
+        $this->get('/admin/shops')->assertOk()->assertSee('Synthetic Tenant');
+        $this->patch('/admin/shops/'.$shop->id,['status'=>'suspended','reason'=>'Synthetic acceptance check'])->assertRedirect();
         $this->assertDatabaseHas('shops',['id'=>$shop->id,'status'=>'suspended']);
-        $this->post('/admin/shops/'.$shop->id.'/subscription',['plan'=>'dhiran_yearly','status'=>'active','expires_at'=>today()->addMonth()->toDateString(),'reason'=>'Local acceptance'])->assertRedirect();
+        $this->post('/admin/shops/'.$shop->id.'/subscription',['plan'=>'dhiran_yearly','billing_cycle'=>'yearly','ends_at'=>today()->addMonth()->toDateString(),'reason'=>'Local acceptance'])->assertRedirect();
         $this->assertDatabaseHas('shop_subscriptions',['shop_id'=>$shop->id,'status'=>'active']);
         $this->get('/admin/audit')->assertOk()->assertSee('shop.updated')->assertSee('subscription.updated');
         $this->assertDatabaseHas('platform_audit_logs',['actor_admin_id'=>$admin->id,'action'=>'admin.mfa_passed']);
@@ -66,8 +67,8 @@ class PlatformAdminTest extends TestCase
         $this->admin(['email'=>'super@example.test']);
         $limited=$this->admin(['role'=>'support','permissions'=>[]]); $shop=Shop::create(['name'=>'Protected']);
         $this->signIn($limited);
-        $this->patch('/admin/shops/'.$shop->id,['name'=>'Changed','status'=>'suspended','reason'=>'Denied'])->assertForbidden();
-        $this->post('/admin/shops/'.$shop->id.'/subscription',['plan'=>'pro','status'=>'active','expires_at'=>today()->addMonth()->toDateString(),'reason'=>'Denied'])->assertForbidden();
+        $this->patch('/admin/shops/'.$shop->id,['status'=>'suspended','reason'=>'Denied'])->assertForbidden();
+        $this->post('/admin/shops/'.$shop->id.'/subscription',['plan'=>'dhiran_yearly','billing_cycle'=>'yearly','ends_at'=>today()->addMonth()->toDateString(),'reason'=>'Denied'])->assertForbidden();
         $this->get('/admin/audit')->assertForbidden();
         $this->assertSame('active',$shop->fresh()->status);
     }

@@ -33,7 +33,7 @@ class PlatformAdmin extends Authenticatable implements CanResetPasswordContract
     public const PERMISSIONS = [
         'can_manage_shops', 'can_manage_subscriptions', 'can_suspend_shop',
         'can_view_audit_logs', 'can_manage_admins', 'can_view_security',
-        'can_manage_jobs', 'can_view_compliance',
+        'can_manage_plans',
     ];
 
     protected function casts(): array

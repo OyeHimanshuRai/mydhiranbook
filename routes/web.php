@@ -39,6 +39,7 @@ Route::middleware('shop')->group(function() {
 });
 use App\Http\Controllers\Admin\AuthController as AdminAuth;
 use App\Http\Controllers\Admin\PlatformController as Platform;
+use App\Http\Controllers\Admin\{ShopManagementController as AdminShops,PlanController as AdminPlans,BillingManagementController as AdminBilling,UnresolvedPaymentController as AdminUnresolved};
 Route::prefix('admin')->group(function() {
     Route::get('/login',[AdminAuth::class,'form'])->name('admin.login');
     Route::post('/login',[AdminAuth::class,'login'])->middleware('throttle:5,1');
@@ -51,8 +52,12 @@ Route::prefix('admin')->group(function() {
         Route::post('/logout',[AdminAuth::class,'logout']);
     });
     Route::middleware('admin.session')->group(function() {
-        Route::get('/',[Platform::class,'dashboard']); Route::patch('/shops/{shop}',[Platform::class,'updateShop']);
-        Route::post('/shops/{shop}/subscription',[Platform::class,'subscription']); Route::get('/audit',[Platform::class,'audit']);
+        Route::get('/',[Platform::class,'dashboard']); Route::get('/audit',[Platform::class,'audit']);
+        Route::get('/shops',[AdminShops::class,'index']); Route::get('/shops/{shop}',[AdminShops::class,'show'])->whereNumber('shop'); Route::patch('/shops/{shop}',[AdminShops::class,'update']);
+        Route::post('/shops/{shop}/subscription',[AdminBilling::class,'updateShopSubscription']); Route::post('/shops/{shop}/subscription/terminate',[AdminBilling::class,'terminateShopSubscription']);
+        Route::get('/receipts/{invoice}',[AdminBilling::class,'receipt']);
+        Route::get('/plans',[AdminPlans::class,'index']); Route::patch('/plans/{plan}',[AdminPlans::class,'update']);
+        Route::get('/unresolved-payments',[AdminUnresolved::class,'index']); Route::post('/unresolved-payments/{event}/resolve',[AdminUnresolved::class,'resolve']);
         Route::get('/accounts',[Platform::class,'admins']); Route::post('/accounts',[Platform::class,'storeAdmin']); Route::patch('/accounts/{admin}',[Platform::class,'updateAdmin']);
     });
 });
