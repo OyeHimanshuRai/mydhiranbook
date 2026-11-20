@@ -4,7 +4,9 @@ namespace App\Services\Billing;
 use App\Jobs\SendPlatformInvoiceEmail;
 use App\Models\Platform\PlatformInvoice;
 use App\Models\Platform\ShopSubscription;
+use App\Models\Platform\SubscriptionEvent;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * One receipt per paid subscription term. Not GST-registered (default): a plain "Payment Receipt" with no tax lines.
@@ -12,6 +14,38 @@ use Illuminate\Support\Facades\DB;
  */
 class PlatformInvoiceService
 {
+    /**
+     * Receipt bookkeeping must never undo a paid grant: runs in a savepoint, any failure is logged and recorded
+     * (receipt.failed) and the caller's transaction carries on. Zero/unpaid terms get no receipt. Returns null if none issued.
+     */
+    public function issueSafely(ShopSubscription $subscription): ?PlatformInvoice
+    {
+        if ((float) $subscription->price_paid <= 0) { return null; }
+        try {
+            return DB::transaction(fn () => $this->issueForSubscription($subscription));
+        } catch (\Throwable $e) {
+            Log::error('Receipt issue failed; subscription kept, reconcile will retry', ['subscription_id' => $subscription->id, 'error' => $e->getMessage()]);
+            // one marker per subscription: the retry sweep must not append an event every run
+            if (!SubscriptionEvent::where('shop_subscription_id', $subscription->id)->where('event_type', 'receipt.failed')->exists()) {
+                SubscriptionEvent::create([
+                    'shop_subscription_id' => $subscription->id, 'shop_id' => $subscription->shop_id, 'admin_id' => null,
+                    'event_type' => 'receipt.failed', 'before' => null, 'after' => ['error' => mb_substr($e->getMessage(), 0, 500)],
+                    'reason' => 'Receipt could not be issued; will be re-issued by reconcile.',
+                ]);
+            }
+            return null;
+        }
+    }
+
+    /** Issue receipts for paid terms that have none (a failed issue, or one lost before commit). @return int issued */
+    public function reissueMissing(int $limit = 50): int
+    {
+        $issued = 0;
+        ShopSubscription::where('price_paid', '>', 0)->whereNotExists(fn ($q) => $q->selectRaw('1')->from('platform_invoices')->whereColumn('platform_invoices.shop_subscription_id', 'shop_subscriptions.id'))
+            ->orderBy('id')->limit($limit)->get()->each(function ($sub) use (&$issued) { if ($this->issueSafely($sub)) { $issued++; } });
+        return $issued;
+    }
+
     /** Call inside the transaction that creates the term. Idempotent: a second call returns the existing receipt. */
     public function issueForSubscription(ShopSubscription $subscription): PlatformInvoice
     {

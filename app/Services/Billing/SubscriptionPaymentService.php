@@ -140,12 +140,16 @@ class SubscriptionPaymentService
                     'before' => $previous?->toArray(), 'after' => $sub->toArray(),
                     'reason' => ($previous ? 'Renewal' : 'Payment').' via Razorpay: '.$paymentId.($previous ? " (previous subscription #{$previous->id})" : ''),
                 ]);
-                $this->receipts->issueForSubscription($sub);
+                $this->receipts->issueSafely($sub);
                 return [$sub, true];
             });
-        } catch (UniqueConstraintViolationException) {
+        } catch (UniqueConstraintViolationException $e) {
             Log::info('Concurrent payment application caught by unique constraint', ['payment_id' => $paymentId]);
             $sub = $this->findExistingSubscription($paymentId);
+            // only a violation on the subscription's own razorpay keys means "paid by another payment"; anything else is retryable
+            if (!$sub && !str_contains($e->getMessage(), 'shop_subscriptions_razorpay')) {
+                throw new \RuntimeException('Unexpected unique violation while applying payment: '.$e->getMessage(), 0, $e);
+            }
             if (!$sub) { throw new \LogicException("Order {$orderId} is already paid by another payment; this one needs a refund."); }
             return $sub;
         }

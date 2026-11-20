@@ -1,6 +1,7 @@
 <?php
 namespace App\Console\Commands;
 
+use App\Services\Billing\PlatformInvoiceService;
 use App\Services\Billing\RazorpayClient;
 use App\Services\Billing\SubscriptionPaymentService;
 use Illuminate\Console\Command;
@@ -21,7 +22,7 @@ class ReconcileCapturedPayments extends Command
 
     protected $description = 'Finalize captured Razorpay payments never applied to a subscription.';
 
-    public function handle(SubscriptionPaymentService $service, RazorpayClient $razorpay): int
+    public function handle(SubscriptionPaymentService $service, RazorpayClient $razorpay, PlatformInvoiceService $receipts): int
     {
         if ($paymentId = $this->option('payment')) {
             if (!($orderId = $this->option('order'))) { $this->error('--order is required with --payment.'); return self::FAILURE; }
@@ -29,6 +30,9 @@ class ReconcileCapturedPayments extends Command
             $this->line($sub ? "Applied {$paymentId} -> subscription {$sub->id}" : "Could not apply {$paymentId}; recorded for admin review.");
             return self::SUCCESS;
         }
+
+        $reissued = $receipts->reissueMissing(); // receipts are bookkeeping: retried here, independent of the provider call below
+        if ($reissued) { $this->info("{$reissued} missing receipt(s) issued."); }
 
         $limit = max(1, (int) $this->option('limit'));
         $sleepMs = max(0, (int) $this->option('sleep-ms'));

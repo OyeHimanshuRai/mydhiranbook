@@ -5,7 +5,9 @@ use App\Jobs\SendPlatformInvoiceEmail;
 use App\Mail\PlatformInvoiceMail;
 use App\Models\Platform\PlatformInvoice;
 use App\Models\Platform\ShopSubscription;
+use App\Models\Platform\SubscriptionEvent;
 use App\Models\User;
+use App\Services\Billing\PlatformInvoiceService;
 use App\Services\Billing\SubscriptionPaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -129,5 +131,50 @@ class ReceiptTest extends TestCase
         $html = $this->actingAs($user)->get(route('subscription.receipt', $inv))->getContent();
         $this->assertStringContainsString($inv->razorpay_payment_id, $html);
         $this->assertStringNotContainsStringIgnoringCase('signature', $html);
+    }
+
+    public function test_receipt_failure_does_not_roll_back_paid_subscription(): void
+    {
+        Mail::fake();
+        $user = $this->shopUser(); $triple = $this->paidOrder($user);
+        $this->app->instance(PlatformInvoiceService::class, \Mockery::mock(PlatformInvoiceService::class)->makePartial()
+            ->shouldReceive('issueForSubscription')->andThrow(new \RuntimeException('boom'))->getMock());
+        $result = app(SubscriptionPaymentService::class)->applyCapturedPayment($triple['razorpay_order_id'], $triple['razorpay_payment_id']);
+
+        $this->assertSame(SubscriptionPaymentService::OUTCOME_APPLIED, $result['outcome']);
+        $sub = ShopSubscription::sole();
+        $this->assertSame(0, PlatformInvoice::count());
+        $this->assertSame(1, SubscriptionEvent::where('event_type', 'receipt.failed')->where('shop_subscription_id', $sub->id)->count());
+        $this->assertSame(0, SubscriptionEvent::where('event_type', 'payment.unresolved')->count());
+
+        $this->app->forgetInstance(PlatformInvoiceService::class);
+        $this->artisan('subscription:reconcile-payments', ['--sleep-ms' => 0])->assertSuccessful();
+        $this->artisan('subscription:reconcile-payments', ['--sleep-ms' => 0])->assertSuccessful();
+        $this->assertSame(1, PlatformInvoice::where('shop_subscription_id', $sub->id)->count());
+    }
+
+    public function test_zero_price_subscription_skips_receipt_without_error(): void
+    {
+        Mail::fake();
+        $sub = ShopSubscription::create(['shop_id' => $this->shopUser()->shop_id, 'plan_id' => $this->plan()->id, 'status' => 'active', 'billing_cycle' => 'yearly',
+            'starts_at' => today(), 'ends_at' => today()->addYear(), 'price_paid' => 0, 'actor_type' => 'admin']);
+        $this->assertNull(app(PlatformInvoiceService::class)->issueSafely($sub));
+        $this->artisan('subscription:reconcile-payments', ['--sleep-ms' => 0])->assertSuccessful();
+        $this->assertSame(0, PlatformInvoice::count());
+        $this->assertSame(0, SubscriptionEvent::where('event_type', 'receipt.failed')->count());
+    }
+
+    public function test_invoice_unique_violation_is_not_classified_as_paid_by_other_payment(): void
+    {
+        Mail::fake();
+        $this->pay($this->shopUser());
+        DB::table('platform_counters')->update(['value' => 0]); // next number collides with DHR-YYYY-000001
+        $user = $this->shopUser(); $triple = $this->paidOrder($user);
+        $result = app(SubscriptionPaymentService::class)->applyCapturedPayment($triple['razorpay_order_id'], $triple['razorpay_payment_id']);
+
+        $this->assertSame(SubscriptionPaymentService::OUTCOME_APPLIED, $result['outcome']);
+        $this->assertSame(0, SubscriptionEvent::where('event_type', 'payment.unresolved')->count());
+        $this->assertSame(1, ShopSubscription::where('razorpay_payment_id', $triple['razorpay_payment_id'])->count());
+        $this->assertSame(1, SubscriptionEvent::where('event_type', 'receipt.failed')->count());
     }
 }
