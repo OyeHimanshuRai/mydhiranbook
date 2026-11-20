@@ -54,4 +54,42 @@ class StaffParityTest extends TestCase
         $this->actingAs($manager)->patch('/settings/roles/'.$roles['staff']->id,['permissions'=>[Permission::first()->id]])->assertForbidden();
         $this->assertSame($before,$roles['staff']->permissions()->pluck('permissions.id')->sort()->values()->all());
     }
+    /** Cashier (view+pay) who may also edit roles and manage staff; staff role (view+create+pay) is stronger. */
+    private function delegate(): array
+    {
+        $shop=self::createDhiranShop(['name'=>'Delegation shop']); $roles=app(TenantRoleService::class)->ensureDefaultsForShop($shop->id);
+        $roles['cashier']->permissions()->syncWithoutDetaching(Permission::whereIn('name',['settings.edit','staff.manage'])->pluck('id'));
+        $lead=User::create(['shop_id'=>$shop->id,'role_id'=>$roles['cashier']->id,'name'=>'Lead','mobile_number'=>'9000000091','password'=>'Synthetic-pass-12345']);
+        return [$shop,$roles,$lead];
+    }
+    public function test_staff_cannot_change_own_role(): void
+    {
+        [,$roles,$lead]=$this->delegate();
+        $this->actingAs($lead)->put('/staff/'.$lead->id,['name'=>'Lead','mobile_number'=>'9000000091','role_id'=>$roles['manager']->id])->assertForbidden();
+        $this->assertSame($roles['cashier']->id,$lead->fresh()->role_id);
+    }
+    public function test_non_owner_cannot_grant_permission_they_lack(): void
+    {
+        [,$roles,$lead]=$this->delegate(); $create=Permission::where('name','dhiran.create')->value('id');
+        $this->actingAs($lead)->patch('/settings/roles/'.$roles['viewer']->id,['permissions'=>[$create]])->assertForbidden();
+        $this->assertFalse($roles['viewer']->hasPermission('dhiran.create'));
+        $pay=Permission::where('name','dhiran.pay')->value('id'); // held by the lead: allowed
+        $this->patch('/settings/roles/'.$roles['viewer']->id,['permissions'=>[$pay]])->assertRedirect();
+    }
+    public function test_non_owner_cannot_assign_role_stronger_than_own(): void
+    {
+        [,$roles,$lead]=$this->delegate(); $clerk=User::create(['shop_id'=>$lead->shop_id,'role_id'=>$roles['viewer']->id,'name'=>'Clerk','mobile_number'=>'9000000092','password'=>'Synthetic-pass-12345']);
+        $this->actingAs($lead)->put('/staff/'.$clerk->id,['name'=>'Clerk','mobile_number'=>'9000000092','role_id'=>$roles['staff']->id])->assertForbidden();
+        $this->post('/staff',['name'=>'New','mobile_number'=>'9000000093','password'=>'Synthetic-pass-12345','password_confirmation'=>'Synthetic-pass-12345','role_id'=>$roles['manager']->id])->assertForbidden();
+        $this->assertSame($roles['viewer']->id,$clerk->fresh()->role_id);
+        $this->put('/staff/'.$clerk->id,['name'=>'Clerk','mobile_number'=>'9000000092','role_id'=>$roles['cashier']->id])->assertRedirect(); // equal role is fine
+    }
+    public function test_owner_can_grant_any_non_owner_permission(): void
+    {
+        $shop=self::createDhiranShop(['name'=>'Owner grant']); $roles=app(TenantRoleService::class)->ensureDefaultsForShop($shop->id);
+        $owner=User::create(['shop_id'=>$shop->id,'role_id'=>$roles['owner']->id,'name'=>'O','password'=>'Synthetic-pass-12345']);
+        $ids=Permission::pluck('id')->all();
+        $this->actingAs($owner)->patch('/settings/roles/'.$roles['viewer']->id,['permissions'=>$ids])->assertRedirect();
+        $this->assertCount(count($ids),$roles['viewer']->permissions);
+    }
 }

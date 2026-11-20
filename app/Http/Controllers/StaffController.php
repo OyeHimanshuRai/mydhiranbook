@@ -79,6 +79,7 @@ class StaffController extends Controller
         ]);
 
         $role = Role::where('shop_id', $shopId)->find($validated['role_id']);
+        abort_unless(auth()->user()->canGrant($role->permissions()->pluck('permissions.id')), 403);
         
         $user = User::create([
             'name' => $validated['name'],
@@ -170,6 +171,10 @@ class StaffController extends Controller
             'mobile_number.unique' => 'This mobile number is already registered. Each mobile number can belong to only one account.',
         ]);
         
+        // No self-promotion, and no assigning a role stronger than your own.
+        abort_if($staff->id === auth()->id() && (int) $validated['role_id'] !== $staff->role_id, 403);
+        abort_unless(auth()->user()->canGrant(Role::where('shop_id', $shopId)->findOrFail($validated['role_id'])->permissions()->pluck('permissions.id')), 403);
+
         $staff->name = $validated['name'];
         $staff->mobile_number = $validated['mobile_number'];
         // email is nullable+optional — absent from $validated when not supplied.

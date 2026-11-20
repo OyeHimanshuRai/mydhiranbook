@@ -30,6 +30,11 @@ class User extends Authenticatable
         if ($this->role_id) { return (int)$this->assignedRole?->shop_id === (int)$this->shop_id && $this->assignedRole->hasPermission($permission); }
         return $this->role === 'owner' || ($this->role === 'operator' && in_array($permission,['dhiran.view','dhiran.create','dhiran.pay'],true)) || ($this->role === 'viewer' && $permission === 'dhiran.view');
     }
+    /** Owner may grant anything; anyone else only permissions their own role holds (no privilege escalation). */
+    public function canGrant(iterable $permissionIds): bool
+    {
+        return $this->isShopOwner() || collect($permissionIds)->diff($this->assignedRole?->permissions()->pluck('permissions.id') ?? [])->isEmpty();
+    }
     public function scopeActive($query) { return $query->where('is_active',true); }
     public function may(string $permission): bool
     {

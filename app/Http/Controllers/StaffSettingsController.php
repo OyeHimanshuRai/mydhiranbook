@@ -38,6 +38,9 @@ class StaffSettingsController extends Controller
 
         $afterIds = collect($validated['permissions'] ?? [])->map(fn ($id) => (int) $id)->unique()->sort()->values()->all();
 
+        // Delegation: a non-owner may only add permissions they hold themselves.
+        abort_unless($request->user()->canGrant(array_diff($afterIds, $beforeIds)), 403);
+
         $role->permissions()->sync($afterIds);
 
         // Audit the change — added/removed permission names for accountability.
