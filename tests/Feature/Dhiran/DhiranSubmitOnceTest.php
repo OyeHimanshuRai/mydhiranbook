@@ -119,7 +119,8 @@ class DhiranSubmitOnceTest extends TestCase
             'items' => [['description' => 'Ring', 'metal_type' => 'gold', 'purity' => 22, 'gross_weight' => 10, 'rate_per_gram_at_pledge' => 6000]]];
         $this->send('/dhiran', $base + ['pan' => 'HELLO', 'idempotency_key' => 'form-key-0004'])->assertSessionHasErrors('pan');
         $this->send('/dhiran', $base + ['pan' => 'abcde1234f', 'idempotency_key' => 'form-key-0005'])->assertRedirect();
-        $this->assertSame('ABCDE1234F', DhiranLoan::withoutGlobalScopes()->where('shop_id', $this->shop->id)->value('kyc_pan'));
+        $this->assertSame('ABCDE1234F', DhiranLoan::withoutGlobalScopes()->where('shop_id', $this->shop->id)->first()->kyc_pan);
+        $this->assertNotSame('ABCDE1234F', \Illuminate\Support\Facades\DB::table('dhiran_loans')->where('shop_id', $this->shop->id)->value('kyc_pan')); // encrypted at rest
     }
 
     public function test_renewal_accepts_card(): void

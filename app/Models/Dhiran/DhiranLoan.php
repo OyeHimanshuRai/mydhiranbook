@@ -68,6 +68,7 @@ class DhiranLoan extends Model
     ];
 
     protected $casts = [
+        'kyc_pan'                   => 'encrypted', // borrower PII, never queried by value
         'loan_date'                 => 'date',
         'maturity_date'             => 'date',
         'interest_accrued_through'  => 'date',
