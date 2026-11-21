@@ -50,7 +50,7 @@
                                         <template x-for="c in filteredCustomers" :key="c.id">
                                             <button type="button" class="dh-dd-opt" @click="selectCustomer(c)">
                                                 <span class="dh-dd-opt-name" x-text="c.name"></span>
-                                                <span class="dh-dd-opt-sub" x-text="[c.mobile, c.pan, c.address].filter(Boolean).join(' · ') || 'No profile details added'"></span>
+                                                <span class="dh-dd-opt-sub" x-text="[c.mobile, c.address].filter(Boolean).join(' · ') || 'No profile details added'"></span>
                                             </button>
                                         </template>
                                         <div x-show="filteredCustomers.length === 0" class="dh-dd-opt dh-dd-opt-muted">
@@ -473,8 +473,6 @@
                     'name'   => trim($c->first_name . ' ' . ($c->last_name ?? '')),
                     'mobile' => $c->mobile ?? '',
                     'address' => $c->address ?? '',
-                    'pan'    => $c->pan ?? '',
-                    'id_number' => $c->id_number ?? '',
                     'state_code' => $c->state_code ?? '',
                 ])->values()) }},
                 selectedCustomer: null,
@@ -579,7 +577,7 @@
                     const q = (this.customerSearch || '').toLowerCase();
                     if (!q) return this.customers;
                     return this.customers.filter(c =>
-                        [c.name, c.mobile, c.address, c.pan, c.id_number].join(' ').toLowerCase().includes(q));
+                        [c.name, c.mobile, c.address].join(' ').toLowerCase().includes(q));
                 },
 
                 handleCustomerSearchInput() {
@@ -607,13 +605,23 @@
                     return /^[0-9Xx\- ]{4,20}$/.test(id) ? id : '';
                 },
 
-                selectCustomer(customer, keepExistingKyc = false) {
+                async selectCustomer(customer, keepExistingKyc = false) {
                     this.selectedCustomer = customer;
                     this.customerDisplayName = customer.name + (customer.mobile ? ' (' + customer.mobile + ')' : '');
                     this.customerSearch = customer.name || '';
-                    if (!keepExistingKyc || !this.loanPan) this.loanPan = customer.pan || '';
-                    if (!keepExistingKyc || !this.loanAadhaar) this.loanAadhaar = this.aadhaarCandidate(customer);
                     this.customerDropdownOpen = false;
+                    if (!keepExistingKyc) { this.loanPan = ''; this.loanAadhaar = ''; } // never keep the previous borrower's KYC
+                    // PAN / ID are not in the page: fetch this one borrower's, then prefill as before.
+                    try {
+                        const res = await fetch('{{ url('/dhiran/borrowers') }}/' + encodeURIComponent(customer.id) + '/kyc', { headers: { 'Accept': 'application/json' } });
+                        if (!res.ok) return;
+                        const kyc = await res.json();
+                        if (!this.selectedCustomer || this.selectedCustomer.id !== customer.id) return; // picked someone else meanwhile
+                        this.selectedCustomer.pan = kyc.pan || '';
+                        this.selectedCustomer.id_number = kyc.id_number || '';
+                    } catch (e) { return; }
+                    if (!keepExistingKyc || !this.loanPan) this.loanPan = this.selectedCustomer.pan;
+                    if (!keepExistingKyc || !this.loanAadhaar) this.loanAadhaar = this.aadhaarCandidate(this.selectedCustomer);
                 },
 
                 async saveBorrower() {

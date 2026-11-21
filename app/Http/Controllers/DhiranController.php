@@ -87,7 +87,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         $customers = Customer::where('shop_id', $shopId)
             ->orderBy('first_name')
             ->orderBy('last_name')
-            ->get(['id', 'first_name', 'last_name', 'mobile', 'address', 'pan', 'id_number', 'state_code']);
+            ->get(['id', 'first_name', 'last_name', 'mobile', 'address', 'state_code']); // no pan / id_number: they ride in the page source (kyc() serves one on selection)
 
         // Preselect a borrower when arriving from the borrower profile / list
         // (?customer_id=). Only honoured if that customer belongs to this shop.
@@ -114,6 +114,14 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         ];
 
         return view('dhiran.create', compact('settings', 'customers', 'preselectedCustomerId', 'defaults'));
+    }
+
+    /** One borrower's PAN / ID number for the New Loan form, fetched when that borrower is picked (never the whole list). */
+    public function kyc(Customer $customer)
+    {
+        abort_unless((int) $customer->shop_id === (int) auth()->user()->shop_id, 404);
+
+        return response()->json($customer->only('pan', 'id_number'))->header('Cache-Control', 'no-store, private');
     }
 
     /**

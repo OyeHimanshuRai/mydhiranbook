@@ -74,6 +74,9 @@ Route::middleware(['auth','dhiran.verified'])->prefix('subscription')->name('sub
 });
 
 require __DIR__.'/dhiran.php';
+// New Loan page: one borrower's PAN / ID on selection (kept out of the page source). Same guards as the dhiran group.
+Route::middleware(['auth','dhiran.verified','shop.exists','shop','dhiran.enabled','can:dhiran.create'])
+    ->get('/dhiran/borrowers/{customer}/kyc',[\App\Http\Controllers\DhiranController::class,'kyc'])->name('dhiran.borrowers.kyc');
 
 
 Route::middleware('shop')->group(function () {
