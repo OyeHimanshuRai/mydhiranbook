@@ -22,7 +22,7 @@ class DemoSeeder extends Seeder
         $credentials=DB::transaction(function() {
             $password=bin2hex(random_bytes(8)).'D!';
             $shop=Shop::create(['name'=>'Dhiran Demo · Pune','phone'=>'9000000001','address'=>'Synthetic Market Road, Pune · Demonstration only']);
-            $owner=User::create(['name'=>'Demo Owner','email'=>'owner@dhiran.test','password'=>$password,'shop_id'=>$shop->id,'role'=>'owner']);
+            $owner=User::create(['name'=>'Demo Owner','email'=>'owner@dhiran.test','password'=>$password,'shop_id'=>$shop->id,'role_id'=>app(\App\Services\TenantRoleService::class)->ensureDefaultsForShop($shop->id)['owner']->id]);
             (new PlanSeeder)->run(); $plan=\App\Models\Platform\Plan::where('code','dhiran_yearly')->firstOrFail();
             \App\Models\Platform\ShopSubscription::create(['shop_id'=>$shop->id,'plan_id'=>$plan->id,'status'=>'active','billing_cycle'=>'yearly','starts_at'=>today(),'ends_at'=>today()->addYear(),'grace_ends_at'=>today()->addYear()->addDays($plan->grace_days),'price_paid'=>$plan->price_yearly,'actor_type'=>'system','notes'=>'Synthetic demo subscription']);
             $loan=TenantContext::runFor($shop->id,function() use($shop,$owner) {
@@ -41,7 +41,7 @@ class DemoSeeder extends Seeder
                 return $loan;
             });
             $second=Shop::create(['name'=>'Dhiran Demo · Nashik']); $secondPass=bin2hex(random_bytes(8)).'D!';
-            User::create(['name'=>'Second Demo Owner','email'=>'second@dhiran.test','password'=>$secondPass,'shop_id'=>$second->id,'role'=>'owner']);
+            User::create(['name'=>'Second Demo Owner','email'=>'second@dhiran.test','password'=>$secondPass,'shop_id'=>$second->id,'role_id'=>app(\App\Services\TenantRoleService::class)->ensureDefaultsForShop($second->id)['owner']->id]);
             TenantContext::runFor($second->id,fn()=>DhiranSettings::getForShop($second->id)->update(['is_enabled'=>true]));
             $adminPass=bin2hex(random_bytes(8)).'A!'; $secret=app(TotpService::class)->generateSecret();
             $admin=PlatformAdmin::create(['name'=>'Synthetic Dhiran Admin','email'=>'admin@dhiran.test','password'=>$adminPass,'role'=>'super_admin','is_active'=>true,'two_factor_secret'=>$secret,'two_factor_enabled'=>true]);
