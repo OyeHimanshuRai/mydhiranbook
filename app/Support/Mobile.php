@@ -18,7 +18,7 @@ namespace App\Support;
  *                   trunk prefix — a dialling instruction, not part of the
  *                   number.
  *
- * JewelFlow is India-only, so we store the ten-digit national number rather
+ * Dhiran is India-only, so we store the ten-digit national number rather
  * than full E.164: the +91 is a constant, and a constant in every row is
  * storage, not information. Nothing here accepts a landline and nothing here
  * accepts a letter.

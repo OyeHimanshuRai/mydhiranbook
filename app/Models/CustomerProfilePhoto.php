@@ -15,11 +15,9 @@ class CustomerProfilePhoto extends Model
 
     protected $casts = ['width' => 'integer', 'height' => 'integer', 'size_bytes' => 'integer'];
 
-    public function url(string $realm = 'erp'): string
+    public function url(): string
     {
-        $prefix = ['dhiran' => 'dhiran.borrowers', 'mobile' => 'mobile.customers'][$realm] ?? 'customers';
-
-        return route($prefix.'.photo.show', [
+        return route('dhiran.borrowers.photo.show', [
             'customer' => $this->customer_id, 'version' => $this->version,
         ]);
     }

@@ -809,7 +809,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
     public function borrowerProfile(Customer $customer)
     {
         // Route binding is tenant-scoped via BelongsToShop; this is the explicit
-        // belt-and-suspenders shop guard (rejects ERP + other-shop customers).
+        // belt-and-suspenders shop guard (rejects other-shop customers).
         abort_unless((int) $customer->shop_id === (int) auth()->user()->shop_id, 404);
         $shopId = (int) auth()->user()->shop_id;
 

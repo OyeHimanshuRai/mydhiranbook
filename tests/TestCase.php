@@ -20,6 +20,12 @@ abstract class TestCase extends BaseTestCase
         self::activeSubscription($shop);
         return $shop;
     }
+    /** A shop user holding the shop's real role (users.role grants nothing). */
+    protected static function userWithRole(\App\Models\Shop $shop, array $attributes, string $role='owner'): \App\Models\User
+    {
+        $roles=app(\App\Services\TenantRoleService::class)->ensureDefaultsForShop($shop->id);
+        return \App\Models\User::create($attributes+['shop_id'=>$shop->id,'role_id'=>$roles[$role]->id]);
+    }
     /** One test session is reused across requests, so a bound password hash from the previous user would log the next one out (AuthenticateSession). */
     public function actingAs(\Illuminate\Contracts\Auth\Authenticatable $user, $guard = null)
     {

@@ -50,7 +50,7 @@ class DhiranOnboardingController extends Controller
             $shop = Shop::create(['name' => $data['name'], 'phone' => $data['phone'], 'address' => $data['address'], 'status' => 'active']);
             TenantContext::runFor($shop->id, fn () => DhiranSettings::getForShop($shop->id)->update(['is_enabled' => true] + (($data['loan_number_prefix'] ?? '') !== '' ? ['loan_number_prefix' => $data['loan_number_prefix']] : [])));
             $owner = $roles->ensureDefaultsForShop($shop->id)['owner'];
-            $user->forceFill(['shop_id' => $shop->id, 'role_id' => $owner->id, 'role' => 'owner'])->save();
+            $user->forceFill(['shop_id' => $shop->id, 'role_id' => $owner->id])->save();
             ShopSubscription::where('user_id', $user->id)->whereNull('shop_id')->where('status', '!=', 'cancelled')->update(['shop_id' => $shop->id]);
             return true;
         });

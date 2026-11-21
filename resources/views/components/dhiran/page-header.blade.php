@@ -12,7 +12,7 @@
 @endphp
 
 {{-- Dhiran-only page header. Pushed to the layout's header band, above the scroll area, so the page scrollbar
-     starts under the header (as the ERP shell does); nothing renders where the page wrote <x-dhiran.page-header>. --}}
+     starts under the header; nothing renders where the page wrote <x-dhiran.page-header>. --}}
 @push('dh-page-header')
 <div {{ $attributes->merge(['class' => 'content-header dh-page-header', 'data-legacy-header-normalized' => 'true']) }}
      x-data="{

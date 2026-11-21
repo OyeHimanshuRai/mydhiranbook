@@ -84,6 +84,35 @@ class StaffParityTest extends TestCase
         $this->assertSame($roles['viewer']->id,$clerk->fresh()->role_id);
         $this->put('/staff/'.$clerk->id,['name'=>'Clerk','mobile_number'=>'9000000092','role_id'=>$roles['cashier']->id])->assertRedirect(); // equal role is fine
     }
+    public function test_non_owner_cannot_remove_permissions_from_stronger_role(): void
+    {
+        [,$roles,$lead]=$this->delegate(); $this->actingAs($lead);
+        $before=$roles['staff']->permissions()->pluck('permissions.id')->sort()->values()->all();
+        $keep=Permission::where('name','dhiran.view')->value('id');
+        $this->patch('/settings/roles/'.$roles['staff']->id,['permissions'=>[$keep]])->assertForbidden(); // staff holds dhiran.create, lead does not
+        $this->assertSame($before,$roles['staff']->permissions()->pluck('permissions.id')->sort()->values()->all());
+        $roles['viewer']->permissions()->sync(Permission::whereIn('name',['dhiran.view','dhiran.pay'])->pluck('id'));
+        $this->patch('/settings/roles/'.$roles['viewer']->id,['permissions'=>[$keep]])->assertRedirect(); // removing a held permission from a weaker role works
+        $this->assertSame([$keep],$roles['viewer']->permissions()->pluck('permissions.id')->all());
+    }
+    public function test_legacy_role_column_grants_nothing(): void
+    {
+        $shop=self::createDhiranShop(['name'=>'Legacy role shop']);
+        \App\Models\Dhiran\DhiranSettings::getForShop($shop->id)->update(['is_enabled'=>true]);
+        $u=User::create(['shop_id'=>$shop->id,'role'=>'owner','role_id'=>null,'name'=>'Legacy','email'=>'legacy@staff.test','password'=>'Synthetic-pass-12345']);
+        $this->assertFalse($u->hasPermission('dhiran.view'));
+        $this->assertFalse($u->isShopOwner()); $this->assertFalse($u->isOwner()); $this->assertFalse($u->hasRole('owner'));
+        $this->actingAs($u)->post('/dhiran/customers',['first_name'=>'X','mobile'=>'9000000003'])->assertForbidden();
+    }
+    public function test_no_route_writes_users_role(): void
+    {
+        foreach (['app/Http','app/Services'] as $dir) {
+            foreach (new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(base_path($dir),\FilesystemIterator::SKIP_DOTS)) as $f) {
+                if (!$f->isFile() || str_contains($f->getPathname(),'Admin')) { continue; }
+                $this->assertDoesNotMatchRegularExpression("/'role'\s*=>/",file_get_contents($f->getPathname()),$f->getPathname().' writes users.role');
+            }
+        }
+    }
     public function test_owner_can_grant_any_non_owner_permission(): void
     {
         $shop=self::createDhiranShop(['name'=>'Owner grant']); $roles=app(TenantRoleService::class)->ensureDefaultsForShop($shop->id);

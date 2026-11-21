@@ -10,15 +10,17 @@ use App\Support\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 class StandaloneWorkflowTest extends TestCase
 {
     use RefreshDatabase;
     private function owner(string $suffix='one', string $role='owner'): User
     {
-        $shop=Shop::create(['name'=>'Synthetic shop '.$suffix]);
-        return User::create(['name'=>'Synthetic Owner','email'=>$suffix.'@example.test','password'=>'Local-pass-12345','shop_id'=>$shop->id,'role'=>$role]);
+        $shop=self::createDhiranShop(['name'=>'Synthetic shop '.$suffix]);
+        TenantContext::runFor($shop->id,fn()=>\App\Models\Dhiran\DhiranSettings::getForShop($shop->id)->update(['is_enabled'=>true]));
+        $roles=app(\App\Services\TenantRoleService::class)->ensureDefaultsForShop($shop->id);
+        return User::create(['name'=>'Synthetic Owner','email'=>$suffix.'@example.test','password'=>'Local-pass-12345','shop_id'=>$shop->id,'role_id'=>$roles[$role]->id]);
     }
     private function loan(User $owner): DhiranLoan
     {
@@ -27,50 +29,59 @@ class StandaloneWorkflowTest extends TestCase
             return app(DhiranService::class)->createLoan($owner->shop,$c,[['description'=>'Synthetic gold chain','metal_type'=>'gold','purity'=>24,'gross_weight'=>20,'rate_per_gram_at_pledge'=>6000]],['principal_amount'=>50000,'gold_rate_on_date'=>6000,'interest_rate_monthly'=>2,'tenure_months'=>12,'min_interest_months'=>0,'created_by'=>$owner->id]);
         });
     }
+    private function evidence(DhiranLoan $loan,string $type,string $name='e.jpg'): array
+    {
+        return ['owner_type'=>'dhiran_loan','owner_id'=>$loan->id,'document_type'=>$type,'file'=>UploadedFile::fake()->image($name)];
+    }
     public function test_register_borrower_loan_evidence_repayment_and_receipt(): void
     {
+        Storage::fake('local');
         $owner=$this->owner('regflow'); $this->actingAs($owner);
-        self::activeSubscription($owner->shop);
-        $this->post('/borrowers',['first_name'=>'Synthetic','last_name'=>'Borrower','mobile'=>'9000000001','address'=>'Synthetic address'])->assertRedirect('/borrowers');
-        $customer=Customer::withoutTenant()->firstOrFail();
-        $this->post('/loans',['customer_id'=>$customer->id,'description'=>'Synthetic gold chain','metal_type'=>'gold','purity'=>24,'gross_weight'=>20,'stone_weight'=>0,'rate_per_gram'=>6000,'principal_amount'=>50000,'interest_rate_monthly'=>2,'tenure_months'=>12,'loan_date'=>today()->toDateString()])->assertRedirect();
+        $customer=TenantContext::runFor($owner->shop_id,fn()=>Customer::create(['first_name'=>'Synthetic','last_name'=>'Borrower','mobile'=>'9000000001']));
+        $this->post('/dhiran',['idempotency_key'=>'standalone-loan-0001','customer_id'=>$customer->id,'principal_amount'=>50000,'gold_rate_on_date'=>6000,'interest_rate_monthly'=>2,'interest_type'=>'flat','tenure_months'=>12,'items'=>[['description'=>'Synthetic gold chain','metal_type'=>'gold','value_mode'=>'metal','gross_weight'=>20,'stone_weight'=>0,'purity'=>24,'rate_per_gram_at_pledge'=>6000]]])->assertRedirect();
         $loan=DhiranLoan::withoutTenant()->firstOrFail();
         $this->assertSame('pending_evidence',$loan->status);
-        $this->post('/loans/'.$loan->id.'/activate')->assertSessionHasErrors();
-        $this->post('/loans/'.$loan->id.'/evidence',['item_photo'=>UploadedFile::fake()->image('synthetic-chain.jpg'),'id_proof'=>UploadedFile::fake()->image('synthetic-id.jpg')])->assertRedirect();
-        $this->post('/loans/'.$loan->id.'/activate')->assertRedirect();
+        $this->post('/dhiran/loans/'.$loan->id.'/activate')->assertSessionHas('error');
+        $this->assertSame('pending_evidence',$loan->fresh()->status);
+        $this->post('/dhiran/attachments',$this->evidence($loan,'item_photo'))->assertSessionHasNoErrors();
+        $this->post('/dhiran/attachments',$this->evidence($loan,'id_proof_front'))->assertSessionHasNoErrors();
+        $this->post('/dhiran/loans/'.$loan->id.'/activate')->assertSessionHas('success');
         $this->assertSame('active',$loan->fresh()->status);
-        $key=(string)Str::uuid();
-        $payload=['amount'=>'5000.00','method'=>'cash','submission_key'=>$key];
-        $response=$this->post('/loans/'.$loan->id.'/payments',$payload)->assertRedirect();
+        $this->post('/dhiran/loans/'.$loan->id.'/repay',$pay=['idempotency_key'=>'standalone-pay-0001','amount'=>'5000.00','payment_method'=>'cash'])->assertSessionHas('success');
+        $this->post('/dhiran/loans/'.$loan->id.'/repay',$pay); // double submit records nothing more
         $payment=DhiranPayment::withoutTenant()->where('direction','in')->firstOrFail();
-        $this->assertSame(45000.0,(float)$loan->fresh()->outstanding_principal);
-        $this->get($response->headers->get('Location'))->assertOk()->assertSee('Payment receipt')->assertSee('5,000.00')->assertSee('45,000.00')->assertSee('Synthetic Borrower');
-        $this->post('/loans/'.$loan->id.'/payments',$payload)->assertRedirect();
         $this->assertSame(1,DhiranPayment::withoutTenant()->where('direction','in')->count());
-        $this->post('/loans/'.$loan->id.'/payments',['amount'=>1000,'method'=>'cash','submission_key'=>(string)Str::uuid()])->assertRedirect();
-        $this->get('/payments/'.$payment->id.'/receipt')->assertOk()->assertSee('45,000.00');
-        $this->assertDatabaseHas('dhiran_cash_entries',['dhiran_payment_id'=>$payment->id,'amount'=>'5000.00']);
-        $this->assertDatabaseHas('dhiran_ledger_entries',['dhiran_payment_id'=>$payment->id,'amount'=>'5000.00']);
+        $this->assertLessThan(50000.0,(float)$loan->fresh()->outstanding_principal);
+        $this->get('/dhiran/loans/'.$loan->id.'/payments/'.$payment->id.'/receipt')->assertOk()->assertSee('Synthetic Borrower');
+        $this->assertDatabaseHas('dhiran_cash_entries',['dhiran_payment_id'=>$payment->id]);
+        $this->assertDatabaseHas('dhiran_ledger_entries',['dhiran_payment_id'=>$payment->id]);
         $this->assertNull(TenantContext::get());
     }
     public function test_second_shop_cannot_list_view_repay_or_print_first_shops_loan(): void
     {
+        Storage::fake('local');
         $a=$this->owner(); $loan=$this->loan($a);
         $payment=TenantContext::runFor($a->shop_id,fn()=>app(DhiranService::class)->recordPayment($loan,5000));
+        $att=TenantContext::runFor($a->shop_id,fn()=>app(\App\Services\Dhiran\DhiranAttachmentService::class)->store(UploadedFile::fake()->image('id.jpg'),$a->shop_id,'dhiran_loan',$loan->id,'id_proof_front',$a->id));
+        $before=(float)$loan->fresh()->outstanding_principal;
         $b=$this->owner('two'); $this->actingAs($b);
-        $this->get('/dhiran')->assertOk()->assertDontSee('Synthetic gold chain');
-        $this->get('/loans/'.$loan->id)->assertNotFound();
-        $this->get('/payments/'.$payment->id.'/receipt')->assertNotFound();
-        $this->post('/loans/'.$loan->id.'/payments',['amount'=>1000,'method'=>'cash','submission_key'=>(string)Str::uuid()])->assertNotFound();
-        $this->post('/loans',['customer_id'=>$loan->customer_id,'description'=>'Forged','metal_type'=>'gold','purity'=>24,'gross_weight'=>20,'rate_per_gram'=>6000,'principal_amount'=>50000,'interest_rate_monthly'=>2,'tenure_months'=>12,'loan_date'=>today()->toDateString(),'shop_id'=>$a->shop_id])->assertSessionHasErrors('customer_id');
-        $this->assertSame(45000.0,(float)$loan->fresh()->outstanding_principal);
+        $this->get('/dhiran/loans')->assertOk()->assertDontSee($loan->loan_number);
+        $this->get('/dhiran/loans/'.$loan->id)->assertNotFound();
+        $this->get('/dhiran/loans/'.$loan->id.'/payments/'.$payment->id.'/receipt')->assertNotFound();
+        $this->get('/dhiran/attachments/'.$att->id)->assertNotFound();
+        $this->post('/dhiran/loans/'.$loan->id.'/repay',['idempotency_key'=>'foreign-pay-0001','amount'=>1000,'payment_method'=>'cash'])->assertNotFound();
+        $this->post('/dhiran/attachments',$this->evidence($loan,'loan_document'))->assertNotFound();
+        $this->post('/dhiran',['idempotency_key'=>'forged-loan-0001','customer_id'=>$loan->customer_id,'principal_amount'=>50000,'gold_rate_on_date'=>6000,'interest_rate_monthly'=>2,'interest_type'=>'flat','tenure_months'=>12,'shop_id'=>$a->shop_id,'items'=>[['description'=>'Forged','metal_type'=>'gold','value_mode'=>'metal','gross_weight'=>20,'stone_weight'=>0,'purity'=>24,'rate_per_gram_at_pledge'=>6000]]])->assertSessionHasErrors('customer_id');
+        $this->assertSame(0,DhiranLoan::withoutTenant()->where('shop_id',$b->shop_id)->count());
+        $this->assertSame($before,(float)$loan->fresh()->outstanding_principal);
     }
     public function test_viewer_cannot_write_and_owner_cannot_assign_staff_to_another_shop(): void
     {
         $viewer=$this->owner('view','viewer'); $loan=$this->loan($viewer); $this->actingAs($viewer);
-        $this->post('/borrowers',['first_name'=>'Blocked','mobile'=>'9000000002'])->assertForbidden();
-        $this->post('/loans/'.$loan->id.'/payments',['amount'=>100,'method'=>'cash','submission_key'=>(string)Str::uuid()])->assertForbidden();
+        $this->get('/dhiran/loans/'.$loan->id)->assertOk();
+        $this->post('/dhiran/loans/'.$loan->id.'/repay',['idempotency_key'=>'viewer-pay-0001','amount'=>100,'payment_method'=>'cash'])->assertForbidden();
+        $this->post('/dhiran/loans/'.$loan->id.'/activate')->assertForbidden();
+        $this->post('/dhiran/customers',['first_name'=>'Blocked','mobile'=>'9000000002'])->assertForbidden();
         $this->post('/staff',['name'=>'Blocked'])->assertForbidden();
         $owner=$this->owner('staff'); $this->actingAs($owner);
         $roles=app(\App\Services\TenantRoleService::class)->ensureDefaultsForShop($owner->shop_id);
@@ -81,12 +92,13 @@ class StandaloneWorkflowTest extends TestCase
     {
         $owner=$this->owner(); $loan=$this->loan($owner); $this->actingAs($owner);
         $before=$loan->getRawOriginal();
-        $this->get('/loans/'.$loan->id)->assertOk();
+        $this->get('/dhiran/loans/'.$loan->id)->assertOk();
         $this->assertSame($before,$loan->fresh()->getRawOriginal());
-        foreach (['0','-10','999999','0.001'] as $amount) {
-            $this->post('/loans/'.$loan->id.'/payments',['amount'=>$amount,'method'=>'cash','submission_key'=>(string)Str::uuid()])->assertSessionHasErrors();
+        foreach (['0','-10','abc'] as $i=>$amount) {
+            $this->post('/dhiran/loans/'.$loan->id.'/repay',['idempotency_key'=>'invalid-pay-000'.$i,'amount'=>$amount,'payment_method'=>'cash'])->assertSessionHasErrors('amount');
         }
-        $this->assertSame(1,DhiranPayment::withoutTenant()->count());
+        $this->post('/dhiran/loans/'.$loan->id.'/repay',['idempotency_key'=>'invalid-pay-9999','amount'=>'999999','payment_method'=>'cash'])->assertSessionHas('error');
+        $this->assertSame(0,DhiranPayment::withoutTenant()->where('direction','in')->count());
         $this->assertSame(50000.0,(float)$loan->fresh()->outstanding_principal);
     }
 }

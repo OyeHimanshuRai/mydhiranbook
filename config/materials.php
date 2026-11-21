@@ -1,7 +1,7 @@
 <?php
 
 /**
- * JewelFlow Material Configuration.
+ * Material Configuration.
  *
  * Phase 0 — this file establishes the tier scaffold that Phase 1's
  * MetalRegistry will absorb as its authoritative source. During Phase 0,

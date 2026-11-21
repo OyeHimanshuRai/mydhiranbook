@@ -23,7 +23,7 @@ class ShopManagementController
         $this->permit($r,'can_manage_shops'); $shop=Shop::findOrFail($shop);
         return view('admin.shops.show',[
             'shop'=>$shop,'current'=>$shop->currentSubscription(),'staff'=>$shop->currentStaffCount(),
-            'owner'=>User::where('shop_id',$shop->id)->where('role','owner')->orderBy('id')->first() ?? User::where('shop_id',$shop->id)->orderBy('id')->first(),
+            'owner'=>User::where('shop_id',$shop->id)->whereIn('role_id',\App\Models\Role::withoutTenant()->where('shop_id',$shop->id)->where('name','owner')->select('id'))->orderBy('id')->first() ?? User::where('shop_id',$shop->id)->orderBy('id')->first(),
             'events'=>SubscriptionEvent::where('shop_id',$shop->id)->latest('id')->limit(50)->get(),
             'receipts'=>PlatformInvoice::where('shop_id',$shop->id)->latest('id')->get(),
             'plans'=>Plan::orderBy('price_monthly')->get(),

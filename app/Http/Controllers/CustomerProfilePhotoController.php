@@ -54,8 +54,6 @@ class CustomerProfilePhotoController extends Controller
 
     private function present(Request $request, ?CustomerProfilePhoto $photo): ?array
     {
-        $realm = $request->routeIs('dhiran.*') ? 'dhiran' : ($request->routeIs('mobile.*') ? 'mobile' : 'erp');
-
-        return $photo ? ['url' => $photo->url($realm), 'version' => $photo->version] : null;
+        return $photo ? ['url' => $photo->url(), 'version' => $photo->version] : null;
     }
 }

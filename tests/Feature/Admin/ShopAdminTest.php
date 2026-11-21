@@ -25,18 +25,18 @@ class ShopAdminTest extends AdminTestCase
     public function test_suspend_requires_reason_and_blocks_shop_login_access(): void
     {
         $admin=$this->signIn($this->admin());
-        $shop=self::createDhiranShop(['name'=>'Suspend Me']); $owner=User::create(['name'=>'O','email'=>'o@example.test','password'=>'Owner-pass-12345','shop_id'=>$shop->id]);
+        $shop=self::createDhiranShop(['name'=>'Suspend Me']); $owner=self::userWithRole($shop,['name'=>'O','email'=>'o@example.test','password'=>'Owner-pass-12345']); \App\Support\TenantContext::runFor($shop->id,fn()=>\App\Models\Dhiran\DhiranSettings::getForShop($shop->id)->update(['is_enabled'=>true]));
         $this->patch('/admin/shops/'.$shop->id,['status'=>'suspended'])->assertSessionHasErrors('reason');
         $this->assertSame('active',$shop->fresh()->status);
         $this->patch('/admin/shops/'.$shop->id,['status'=>'suspended','reason'=>'Non-payment'])->assertRedirect();
         $this->assertSame('suspended',$shop->fresh()->status);
         $this->assertDatabaseHas('platform_audit_logs',['actor_admin_id'=>$admin->id,'action'=>'shop.updated','target_id'=>$shop->id,'reason'=>'Non-payment']);
         \Illuminate\Support\Facades\Auth::shouldUse('web'); // one app instance serves both sessions in a test
-        $this->actingAs($owner)->get('/borrowers')->assertForbidden();
+        $this->actingAs($owner)->get('/dhiran/borrowers')->assertForbidden();
         \Illuminate\Support\Facades\Auth::shouldUse('platform_admin');
         $this->patch('/admin/shops/'.$shop->id,['status'=>'active','reason'=>'Paid'])->assertRedirect();
         \Illuminate\Support\Facades\Auth::shouldUse('web');
-        $this->actingAs($owner->fresh())->get('/borrowers')->assertOk(); // fresh: drops the cached suspended shop relation
+        $this->actingAs($owner->fresh())->get('/dhiran/borrowers')->assertOk(); // fresh: drops the cached suspended shop relation
     }
     public function test_admin_without_permission_403(): void
     {

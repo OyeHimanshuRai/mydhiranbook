@@ -68,7 +68,7 @@
                                     {{-- One value per column (owner 2026-11-11): name, code and loan state are not stacked. --}}
                                     <td data-label="Customer" class="pl-6 pr-4 py-3 whitespace-nowrap">
                                         <span class="inline-flex items-center gap-3">
-                                            <x-customer-avatar :customer="$borrower" realm="dhiran" />
+                                            <x-customer-avatar :customer="$borrower" />
                                             <a href="{{ route('dhiran.borrowers.show', $borrower) }}" class="font-medium text-slate-800 hover:text-amber-700">{{ $borrower->name }}</a>
                                         </span>
                                     </td>

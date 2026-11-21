@@ -14,9 +14,8 @@
     <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/css/dhiran.css', 'resources/js/app.js'])
 
-    {{-- Dhiran shell — a dedicated, Dhiran-only navigation surface. NONE of the
-         ERP chrome (POS, inventory, job orders, returns, ERP reports) appears
-         here: the markup simply does not include those links. --}}
+    {{-- Dhiran shell — a dedicated, Dhiran-only navigation surface. Only
+         pledge-loan navigation appears here. --}}
 </head>
 <body class="dh-app">
     <div class="dh-shell"
@@ -45,7 +44,7 @@
                 </button>
             </div>
 
-            {{-- Dhiran-only navigation. No POS / inventory / job-order / ERP links. --}}
+            {{-- Dhiran-only navigation. Pledge-loan links only. --}}
             <nav class="dh-nav">
                 <a href="{{ route('dhiran.dashboard') }}" class="dh-nav-link {{ request()->routeIs('dhiran.dashboard') ? 'active' : '' }}" @click="open = false">
                     <x-icon name="house" />
@@ -100,7 +99,7 @@
             @endphp
 
             {{-- Header band, then the scroll area: on desktop only .dh-scroll scrolls, so the page scrollbar starts
-                 under the header instead of running beside it (as in the ERP shell). --}}
+                 under the header instead of running beside it. --}}
             @if($hasPageHeader)
                 {!! $pageHeader !!}
             @else

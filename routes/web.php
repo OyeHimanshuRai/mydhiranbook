@@ -1,7 +1,6 @@
 <?php
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ShopAuthController as Auth;
-use App\Http\Controllers\CheckpointDhiranController as Loans;
 Route::get('/login',[Auth::class,'loginForm'])->name('login');
 Route::post('/login',[Auth::class,'login'])->middleware('throttle:5,1');
 Route::get('/register',[Auth::class,'registerForm']);
@@ -34,15 +33,6 @@ Route::view('/refund','site.refund')->name('site.refund');
 Route::view('/contact','site.contact')->name('site.contact');
 Route::get('/',[SiteController::class,'home'])->name('site.home');
 
-Route::middleware('shop')->group(function() {
-    Route::get('/borrowers',[Loans::class,'borrowers']); Route::post('/borrowers',[Loans::class,'storeBorrower']);
-    Route::get('/loans/create',[Loans::class,'create']); Route::post('/loans',[Loans::class,'store']);
-    Route::get('/loans/{loan}',[Loans::class,'show'])->whereNumber('loan');
-    Route::post('/loans/{loan}/evidence',[Loans::class,'evidence']); Route::post('/loans/{loan}/activate',[Loans::class,'activate']);
-    Route::post('/loans/{loan}/payments',[Loans::class,'pay']); Route::get('/payments/{payment}/receipt',[Loans::class,'receipt']);
-    Route::get('/attachments/{attachment}',[Loans::class,'attachment']);
-    Route::get('/checkpoint/staff',[Loans::class,'staff']); Route::post('/checkpoint/staff',[Loans::class,'storeStaff']); Route::patch('/staff/{staff}',[Loans::class,'updateStaff']);
-});
 use App\Http\Controllers\Admin\AuthController as AdminAuth;
 use App\Http\Controllers\Admin\PlatformController as Platform;
 use App\Http\Controllers\Admin\{ShopManagementController as AdminShops,PlanController as AdminPlans,BillingManagementController as AdminBilling,UnresolvedPaymentController as AdminUnresolved};
@@ -82,8 +72,6 @@ Route::middleware(['auth','dhiran.verified'])->prefix('subscription')->name('sub
 
 require __DIR__.'/dhiran.php';
 
-Route::middleware('shop')->get('/comparison/standalone/new-loan', [Loans::class,'create']);
-Route::middleware('shop')->get('/comparison/original/new-loan', [\App\Http\Controllers\ReferenceDhiranController::class,'create']);
 
 Route::middleware('shop')->group(function () {
     Route::get('/settings',[\App\Http\Controllers\StaffSettingsController::class,'index'])->middleware('can:staff.view')->name('settings.edit');

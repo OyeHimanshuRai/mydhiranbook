@@ -13,7 +13,7 @@ class RestoredParityTest extends TestCase
     public function test_original_new_loan_submission_and_pledge_receipt_keep_fields_and_math(): void
     {
         $shop=self::createDhiranShop(['name'=>'Synthetic Parity Shop']);
-        $owner=User::create(['name'=>'Parity Owner','email'=>'parity@example.test','password'=>'Parity-pass-12345','shop_id'=>$shop->id]);
+        $owner=self::userWithRole($shop,['name'=>'Parity Owner','email'=>'parity@example.test','password'=>'Parity-pass-12345']);
         TenantContext::runFor($shop->id,fn()=>\App\Models\Dhiran\DhiranSettings::getForShop($shop->id)->update(['is_enabled'=>true]));
         $this->actingAs($owner);
         $borrower=TenantContext::runFor($shop->id,fn()=>Customer::create(['first_name'=>'Synthetic','last_name'=>'Parity','mobile'=>'9000000090']));

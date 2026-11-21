@@ -1,10 +1,10 @@
-@props(['customer' => null, 'realm' => 'erp', 'mode' => 'profile'])
+@props(['customer' => null, 'mode' => 'profile'])
 @php
     $photo = $customer?->profilePhoto;
-    $permission = $mode === 'form' ? ($customer ? 'customers.edit' : 'customers.create') : ($realm === 'dhiran' ? 'dhiran.create' : 'customers.edit');
+    $permission = 'dhiran.create';
     $canChange = auth()->user()?->can($permission);
-    $id = 'customer-photo-'.$realm.'-'.($customer?->id ?? 'new').'-'.$mode;
-    $url = $customer?->exists ? route(($realm === 'dhiran' ? 'dhiran.borrowers' : 'customers').'.photo.show', $customer) : '';
+    $id = 'customer-photo-'.($customer?->id ?? 'new').'-'.$mode;
+    $url = $customer?->exists ? route('dhiran.borrowers.photo.show', $customer) : '';
     $actions = [
         'camera' => ['Take photo', 'camera'],
         'upload' => ['Upload photo', 'upload'],
@@ -14,7 +14,7 @@
 @endphp
 <section class="customer-photo" data-customer-photo data-photo-mode="{{ $mode }}" data-photo-url="{{ $url }}" data-photo-version="{{ $photo?->version ?? '' }}" aria-label="Customer photo">
     <div class="customer-photo__identity">
-        <x-customer-avatar :customer="$customer" :realm="$realm" size="profile" />
+        <x-customer-avatar :customer="$customer" size="profile" />
         <div class="customer-photo__copy">
             <div class="customer-photo__label">Customer photo <span>Optional</span></div>
             <p>Private to your shop. Separate from KYC documents.</p>

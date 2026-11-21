@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * One receipt per paid subscription term. Not GST-registered (default): a plain "Payment Receipt" with no tax lines.
- * With billing.gst_registered on, price_paid is treated as GST-inclusive and split like JewelFlow does.
+ * With billing.gst_registered on, price_paid is treated as GST-inclusive and split into base and GST.
  */
 class PlatformInvoiceService
 {
