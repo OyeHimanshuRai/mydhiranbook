@@ -51,10 +51,16 @@ class StandaloneWorkflowTest extends TestCase
         $this->post('/dhiran/loans/'.$loan->id.'/repay',$pay); // double submit records nothing more
         $payment=DhiranPayment::withoutTenant()->where('direction','in')->firstOrFail();
         $this->assertSame(1,DhiranPayment::withoutTenant()->where('direction','in')->count());
-        $this->assertLessThan(50000.0,(float)$loan->fresh()->outstanding_principal);
-        $this->get('/dhiran/loans/'.$loan->id.'/payments/'.$payment->id.'/receipt')->assertOk()->assertSee('Synthetic Borrower');
-        $this->assertDatabaseHas('dhiran_cash_entries',['dhiran_payment_id'=>$payment->id]);
-        $this->assertDatabaseHas('dhiran_ledger_entries',['dhiran_payment_id'=>$payment->id]);
+        // the 5,000 splits fully into components; principal drops by exactly the principal part
+        $this->assertSame('5000.00',$payment->amount);
+        $this->assertEqualsWithDelta(5000.0,(float)$payment->interest_component+(float)$payment->penalty_component+(float)$payment->principal_component+(float)$payment->processing_fee_component,0.001);
+        $after=50000.0-(float)$payment->principal_component;
+        $this->assertGreaterThan(0.0,(float)$payment->principal_component);
+        $this->assertSame($after,(float)$loan->fresh()->outstanding_principal);
+        $this->assertSame($after,(float)$payment->outstanding_principal_after);
+        $this->get('/dhiran/loans/'.$loan->id.'/payments/'.$payment->id.'/receipt')->assertOk()->assertSee('Synthetic Borrower')->assertSee('5,000.00')->assertSee(number_format($after,2));
+        $this->assertDatabaseHas('dhiran_cash_entries',['dhiran_payment_id'=>$payment->id,'amount'=>'5000.00']);
+        $this->assertDatabaseHas('dhiran_ledger_entries',['dhiran_payment_id'=>$payment->id,'amount'=>'5000.00']);
         $this->assertNull(TenantContext::get());
     }
     public function test_second_shop_cannot_list_view_repay_or_print_first_shops_loan(): void
@@ -94,7 +100,7 @@ class StandaloneWorkflowTest extends TestCase
         $before=$loan->getRawOriginal();
         $this->get('/dhiran/loans/'.$loan->id)->assertOk();
         $this->assertSame($before,$loan->fresh()->getRawOriginal());
-        foreach (['0','-10','abc'] as $i=>$amount) {
+        foreach (['0','-10','abc','0.001'] as $i=>$amount) {
             $this->post('/dhiran/loans/'.$loan->id.'/repay',['idempotency_key'=>'invalid-pay-000'.$i,'amount'=>$amount,'payment_method'=>'cash'])->assertSessionHasErrors('amount');
         }
         $this->post('/dhiran/loans/'.$loan->id.'/repay',['idempotency_key'=>'invalid-pay-9999','amount'=>'999999','payment_method'=>'cash'])->assertSessionHas('error');
