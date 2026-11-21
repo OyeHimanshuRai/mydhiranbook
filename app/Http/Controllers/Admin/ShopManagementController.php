@@ -13,7 +13,7 @@ class ShopManagementController
     public function __construct(private PlatformAuditService $audit) {}
     public function index(Request $r)
     {
-        $this->permit($r,'can_manage_shops'); $q=trim((string)$r->query('q'));
+        $this->permit($r,'can_manage_shops'); $q=is_string($r->query("q")) ? trim($r->query("q")) : "";
         $shops=Shop::query()->when($q!=='',fn($s)=>$s->where('name','ilike','%'.addcslashes($q,'%_\\').'%'))->orderBy('id')->paginate(20)->withQueryString();
         $shops->getCollection()->each(fn($s)=>$s->setRelation('current',$s->currentSubscription()));
         return view('admin.shops.index',['shops'=>$shops,'q'=>$q]);

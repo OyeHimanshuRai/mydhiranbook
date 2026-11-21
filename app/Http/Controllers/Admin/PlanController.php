@@ -19,7 +19,7 @@ class PlanController
     public function update(Request $r,int $plan)
     {
         $this->permit($r,'can_manage_plans'); $plan=Plan::findOrFail($plan);
-        $data=$r->validate(['price_monthly'=>'required|integer|min:0|max:10000000','price_yearly'=>'nullable|integer|min:0|max:10000000','grace_days'=>'required|integer|min:0|max:90','staff_limit'=>'required|integer|min:1|max:1000','max_items'=>'required|integer|min:1|max:1000000','is_active'=>'required|boolean','reason'=>'nullable|string|max:500']);
+        $data=$r->validate(['price_monthly'=>'required|integer|min:'.($r->boolean('is_active')?1:0).'|max:10000000','price_yearly'=>'nullable|integer|min:0|max:10000000','grace_days'=>'required|integer|min:0|max:90','staff_limit'=>'required|integer|min:1|max:1000','max_items'=>'required|integer|min:1|max:1000000','is_active'=>'required|boolean','reason'=>'nullable|string|max:500']);
         DB::transaction(function() use($r,$plan,$data) {
             if (!$data['is_active'] && !Plan::where('is_active',true)->whereKeyNot($plan->id)->exists()) {
                 throw ValidationException::withMessages(['is_active'=>'At least one plan must stay active, or nobody can sign up.']);

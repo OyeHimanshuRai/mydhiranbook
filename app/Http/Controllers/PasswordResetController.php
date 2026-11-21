@@ -10,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 
 class PasswordResetController extends Controller
 {
-    private function normalizeEmail(Request $r): void { if ($r->has('email')) { $r->merge(['email' => strtolower(trim((string) $r->input('email')))]); } }
+    private function normalizeEmail(Request $r): void { if (is_string($r->input('email'))) { $r->merge(['email' => strtolower(trim($r->input('email')))]); } }
 
     public function forgotForm() { return view('auth.forgot-password'); }
 
@@ -18,7 +18,7 @@ class PasswordResetController extends Controller
     public function forgot(Request $r)
     {
         $this->normalizeEmail($r);
-        $r->validate(['email' => 'required|email|max:190']);
+        $r->validate(['email' => 'required|string|email|max:190']);
         Password::broker('users')->sendResetLink(['email' => strtolower(trim($r->input('email')))]);
         return back()->with('success', 'If that email has an account, a reset link is on its way.');
     }
@@ -28,7 +28,7 @@ class PasswordResetController extends Controller
     public function reset(Request $r)
     {
         $this->normalizeEmail($r);
-        $r->validate(['token' => 'required|string', 'email' => 'required|email', 'password' => ['required', 'confirmed', PasswordRule::min(12)]]);
+        $r->validate(['token' => 'required|string', 'email' => 'required|string|email', 'password' => ['required', 'confirmed', PasswordRule::min(12)]]);
         $status = Password::broker('users')->reset(
             ['email' => strtolower(trim($r->input('email'))), 'token' => $r->input('token'), 'password' => $r->input('password'), 'password_confirmation' => $r->input('password_confirmation')],
             function (User $user, string $password) { $user->forceFill(['password' => $password, 'remember_token' => Str::random(60), 'email_verified_at' => $user->email_verified_at ?? now()])->save(); },

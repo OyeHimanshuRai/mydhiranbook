@@ -382,7 +382,11 @@ class HistoricalSourceFileReader
             }
         });
 
-        $spreadsheet = $reader->load($path);
+        try {
+            $spreadsheet = $reader->load($path);
+        } catch (\PhpOffice\PhpSpreadsheet\Exception) {
+            throw new HistoricalParseException('This file is not a readable .xlsx workbook. It may be corrupt or saved in another format.');
+        }
         $worksheet   = $sheet !== null && $sheet !== ''
             ? $spreadsheet->getSheetByName($sheet)
             : $spreadsheet->getSheet(0);

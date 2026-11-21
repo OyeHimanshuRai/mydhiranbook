@@ -66,6 +66,10 @@ class DhiranAttachmentService
         if ($realMime !== self::ALLOWED[$ext]) {
             throw new LogicException('File contents do not match its type.');
         }
+        // Refuse absurd pixel counts before GD allocates the bitmap (a tiny PNG can decode to gigabytes).
+        if ($realMime !== 'application/pdf' && ($size = @getimagesize($file->getRealPath())) && $size[0] * $size[1] > self::MAX_PIXELS) {
+            throw new LogicException('Image is too large (max 40 megapixels).');
+        }
         if (! in_array($documentType, DhiranAttachment::DOCUMENT_TYPES, true)) {
             throw new LogicException('Unknown document type.');
         }
@@ -95,6 +99,8 @@ class DhiranAttachmentService
             'uploaded_by'   => $uploadedBy,
         ]);
     }
+
+    public const MAX_PIXELS = 40_000_000;
 
     /** Longest side of a gallery thumbnail, in pixels. */
     public const THUMB_MAX = 320;

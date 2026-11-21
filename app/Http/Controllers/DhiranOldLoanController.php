@@ -92,6 +92,9 @@ class DhiranOldLoanController extends Controller implements \Illuminate\Routing\
         $request->validate(['file' => ['required', 'file', 'max:5120', 'mimes:csv,txt,xlsx']],
             ['file.mimes' => 'Upload the Old Loans template as a CSV or Excel (.xlsx) file.']);
         $ext = strtolower($request->file('file')->getClientOriginalExtension()) === 'xlsx' ? 'xlsx' : 'csv';
+        if ($ext === 'xlsx' && file_get_contents($request->file('file')->getRealPath(), false, null, 0, 2) !== 'PK') { // an .xlsx is a zip
+            throw ValidationException::withMessages(['file' => 'This is not a real Excel (.xlsx) file. Upload the Old Loans template as a CSV or Excel file.']);
+        }
         $token = (string) Str::uuid();
         Storage::disk('local')->putFileAs($this->folder(), $request->file('file'), "{$token}.{$ext}");
 
@@ -129,7 +132,7 @@ class DhiranOldLoanController extends Controller implements \Illuminate\Routing\
             try {
                 $this->oldLoans->bringIn($loan['data'], $shopId);
                 $in++;
-            } catch (\LogicException $e) {
+            } catch (\LogicException|ValidationException) { // e.g. archived borrower: skip this loan, keep the rest
                 $skipped[] = $loan['ticket'];
             }
         }

@@ -219,7 +219,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
 
         $data = $request->validate(\App\Services\Dhiran\DhiranCollateral::rules() + [
             'customer_id'              => ['required', 'integer', Customer::activeExistsRule((int) $shopId)],
-            'principal_amount'         => 'required|numeric|min:1',
+            'principal_amount'         => 'required|numeric|min:1|max:999999999999.99', // decimal(14,2)
             'gold_rate_on_date'        => ($needsGold ? 'required' : 'nullable') . '|numeric|min:0',
             'silver_rate_on_date'      => ($needsSilver ? 'required' : 'nullable') . '|numeric|min:0',
             'interest_rate_monthly'    => 'nullable|numeric|min:0|max:10',
@@ -231,7 +231,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             'min_lock_months'          => 'nullable|integer|min:0|max:60',
             'grace_period_days'        => 'nullable|integer|min:0|max:90',
             'penalty_rate_monthly'     => 'nullable|numeric|min:0|max:10',
-            'processing_fee'           => 'nullable|numeric|min:0',
+            'processing_fee'           => 'nullable|numeric|min:0|max:999999999999.99',
             'processing_fee_type'      => 'nullable|in:flat,percent',
             // Aadhaar: accept a full 12-digit number OR an already-masked value, but
             // NEVER persist the full number (masked to last-4 before save below).
@@ -696,7 +696,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             ]);
 
         if ($request->filled('search')) {
-            $s = $request->search;
+            $s = addcslashes((string) $request->search, '%_\\'); // literal match: % _ \ are not wildcards
             $query->where(function ($q) use ($s) {
                 $q->where('first_name', 'ilike', "%{$s}%")
                   ->orWhere('last_name', 'ilike', "%{$s}%")
@@ -896,12 +896,12 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             'default_penalty_rate_monthly'  => 'required|numeric|min:0|max:10',
             'default_min_interest_months'   => 'required|integer|min:0|max:12',
             'default_ltv_ratio'             => 'required|numeric|min:1|max:100',
-            'high_value_threshold'          => 'required|numeric|min:0',
+            'high_value_threshold'          => 'required|numeric|min:0|max:999999999999.99', // decimal(14,2)
             'high_value_ltv_ratio'          => 'required|numeric|min:1|max:100',
-            'min_loan_amount'               => 'required|numeric|min:0',
-            'max_loan_amount'               => 'required|numeric|gte:min_loan_amount',
+            'min_loan_amount'               => 'required|numeric|min:0|max:999999999999.99',
+            'max_loan_amount'               => 'required|numeric|gte:min_loan_amount|max:999999999999.99',
             'processing_fee_type'           => 'required|in:flat,percent',
-            'processing_fee_value'          => 'required|numeric|min:0',
+            'processing_fee_value'          => ['required', 'numeric', 'min:0', 'max:' . ($request->input('processing_fee_type') === 'percent' ? 100 : 99999999.99)], // decimal(10,2); a percentage is at most 100
             'default_tenure_months'         => 'required|integer|min:1|max:60',
             'default_min_lock_months'       => 'required|integer|min:0|max:60',
             'grace_period_days'             => 'required|integer|min:0|max:90',

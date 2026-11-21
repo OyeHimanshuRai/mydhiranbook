@@ -370,20 +370,20 @@
         </div>
 
         {{-- KYC Section --}}
-        @if($loan->aadhaar || $loan->pan)
+        @if($loan->kyc_aadhaar || $loan->kyc_pan)
         <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 mb-6">
             <h2 class="text-lg font-semibold text-slate-900 mb-4">KYC Information</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @if($loan->aadhaar)
+                @if($loan->kyc_aadhaar)
                 <div>
                     <div class="ds-info-item-label">Aadhaar Number</div>
-                    <div class="ds-info-item-value">{{ $loan->aadhaar }}</div>
+                    <div class="ds-info-item-value">{{ $loan->kyc_aadhaar }}</div>
                 </div>
                 @endif
-                @if($loan->pan)
+                @if($loan->kyc_pan)
                 <div>
                     <div class="ds-info-item-label">PAN</div>
-                    <div class="ds-info-item-value">{{ $loan->pan }}</div>
+                    <div class="ds-info-item-value">{{ $loan->kyc_pan }}</div>
                 </div>
                 @endif
             </div>

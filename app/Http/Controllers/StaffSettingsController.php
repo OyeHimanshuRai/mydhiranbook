@@ -30,7 +30,7 @@ class StaffSettingsController extends Controller
 
         $validated = $request->validate([
             'permissions' => 'array',
-            'permissions.*' => 'exists:permissions,id',
+            'permissions.*' => ['bail', 'integer', 'exists:permissions,id'],
         ]);
 
         // Snapshot the current permission set so we can audit the diff.

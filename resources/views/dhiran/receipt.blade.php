@@ -60,16 +60,16 @@
                 <span class="receipt-detail-label">Maturity Date:</span>
                 <span class="receipt-detail-value">{{ $loan->maturity_date ? $loan->maturity_date->format('d M Y') : '---' }}</span>
             </div>
-            @if($loan->aadhaar)
+            @if($loan->kyc_aadhaar)
             <div class="receipt-detail-row">
                 <span class="receipt-detail-label">Aadhaar:</span>
-                <span class="receipt-detail-value">{{ $loan->aadhaar }}</span>
+                <span class="receipt-detail-value">{{ $loan->kyc_aadhaar }}</span>
             </div>
             @endif
-            @if($loan->pan)
+            @if($loan->kyc_pan)
             <div class="receipt-detail-row">
                 <span class="receipt-detail-label">PAN:</span>
-                <span class="receipt-detail-value">{{ $loan->pan }}</span>
+                <span class="receipt-detail-value">{{ $loan->kyc_pan }}</span>
             </div>
             @endif
         </div>

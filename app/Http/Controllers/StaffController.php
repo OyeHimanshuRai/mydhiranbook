@@ -39,6 +39,17 @@ class StaffController extends Controller
         return view('staff.create', compact('roles', 'shop'));
     }
 
+    /** Same canonical forms as sign-up: lower-case email, ten-digit mobile (login looks both up that way). Non-strings are left for validation to refuse. */
+    private function canonicalise(Request $request): void
+    {
+        $email = $request->input('email');
+        $mobile = $request->input('mobile_number');
+        $request->merge([
+            'email' => is_string($email) ? strtolower(trim($email)) : $email,
+            'mobile_number' => is_string($mobile) ? (\App\Support\Mobile::normalize($mobile) ?? $mobile) : $mobile,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $shop = auth()->user()->shop;
@@ -50,6 +61,7 @@ class StaffController extends Controller
         }
 
         $shopId = auth()->user()->shop_id;
+        $this->canonicalise($request);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -57,11 +69,13 @@ class StaffController extends Controller
             // mobile_number, and login resolves users by mobile across all
             // shops). The check MUST be global — a per-shop check let a globally
             // duplicate mobile pass validation and then 500 on the DB constraint.
-            'mobile_number' => ['required', new IndianMobileRule(), Rule::unique('users', 'mobile_number')],
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
+            'mobile_number' => ['bail', 'required', 'string', new IndianMobileRule(), Rule::unique('users', 'mobile_number')],
+            'email' => ['nullable', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
             'password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()],
             'role_id' => [
+                'bail',
                 'required',
+                'integer',
                 // SECURITY: must scope to THIS shop AND exclude the owner role.
                 // A chained ->where('name','!=','owner') on the exists rule does
                 // NOT honour the 3-arg operator form (Laravel's DatabaseRule::where
@@ -149,14 +163,17 @@ class StaffController extends Controller
         $this->guardStaffTarget($staff);
 
         $shopId = auth()->user()->shop_id;
+        $this->canonicalise($request);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             // Global uniqueness — see store(): mobile is the global login identity.
-            'mobile_number' => ['required', new IndianMobileRule(), Rule::unique('users', 'mobile_number')->ignore($staff->id)],
-            'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($staff->id)],
+            'mobile_number' => ['bail', 'required', 'string', new IndianMobileRule(), Rule::unique('users', 'mobile_number')->ignore($staff->id)],
+            'email' => ['nullable', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($staff->id)],
             'role_id' => [
+                'bail',
                 'required',
+                'integer',
                 // SECURITY: must scope to THIS shop AND exclude the owner role.
                 // A chained ->where('name','!=','owner') on the exists rule does
                 // NOT honour the 3-arg operator form (Laravel's DatabaseRule::where

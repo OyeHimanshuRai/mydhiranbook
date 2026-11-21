@@ -61,6 +61,9 @@ final class DhiranCollateral
             if ((float) ($row['gross_weight'] ?? 0) <= 0) {
                 $errors["items.{$idx}.gross_weight"] = 'Gross weight is required for a metal-valued item.';
             }
+            if ((float) ($row['stone_weight'] ?? 0) > (float) ($row['gross_weight'] ?? 0)) {
+                $errors["items.{$idx}.stone_weight"] = 'Stone weight cannot be more than the gross weight.';
+            }
             if (! isset($row['rate_per_gram_at_pledge']) || $row['rate_per_gram_at_pledge'] === '') {
                 $errors["items.{$idx}.rate_per_gram_at_pledge"] = 'Rate per gram is required for a metal-valued item.';
             }
