@@ -622,7 +622,9 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         $loan->load(['customer', 'items', 'creator']);
         $shop = $loan->shop; // the lender named on the receipt (the view fell back to "Dhiran" without it)
 
-        return view('dhiran.receipt', compact('loan', 'shop'));
+        $show = DhiranSettings::receiptVisibility((int) $loan->shop_id, 'pledge');
+
+        return view('dhiran.receipt', compact('loan', 'shop', 'show'));
     }
 
     public function closureCertificate(DhiranLoan $loan)
@@ -654,8 +656,9 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         abort_unless((int) $payment->dhiran_loan_id === (int) $loan->id, 404);
 
         $loan->load('customer');
+        $show = DhiranSettings::receiptVisibility((int) $loan->shop_id, 'payment');
 
-        return view('dhiran.payment-receipt', compact('loan', 'payment'));
+        return view('dhiran.payment-receipt', compact('loan', 'payment', 'show'));
     }
 
     /* ================================================================

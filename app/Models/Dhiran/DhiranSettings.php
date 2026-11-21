@@ -36,6 +36,7 @@ class DhiranSettings extends Model
         'closure_certificate_text',
         'sms_reminders_enabled',
         'reminder_days_before_due',
+        'hidden_receipt_fields',
     ];
 
     protected $casts = [
@@ -56,7 +57,92 @@ class DhiranSettings extends Model
         'grace_period_days'             => 'integer',
         'forfeiture_notice_days'        => 'integer',
         'reminder_days_before_due'      => 'integer',
+        'hidden_receipt_fields'         => 'array',
     ];
+
+    /**
+     * Receipt fields the owner may switch off, per receipt, grouped for the settings page. This is the single source
+     * for the settings form, the save validation and the receipt views. The Loan Number is deliberately absent: it is
+     * always printed (it is how a loan is found in the directory). Stored as hidden "receipt.key" strings, so a field
+     * added here later shows by default.
+     */
+    public const RECEIPT_FIELDS = [
+        'pledge' => [
+            'label' => 'Pledge receipt',
+            'groups' => [
+                'Heading' => [
+                    'shop_name' => 'Shop name', 'shop_address' => 'Shop address', 'shop_phone' => 'Shop phone',
+                    'title' => 'Document title',
+                ],
+                'Loan' => [
+                    'loan_date' => 'Date', 'principal_amount' => 'Principal amount', 'interest_rate' => 'Interest rate and type',
+                    'tenure' => 'Tenure', 'maturity_date' => 'Maturity date',
+                ],
+                'Borrower' => [
+                    'customer_name' => 'Name', 'customer_mobile' => 'Contact number', 'kyc_aadhaar' => 'Aadhaar', 'kyc_pan' => 'PAN',
+                ],
+                'Items table' => [
+                    'item_description' => 'Description', 'item_huid' => 'HUID (under description)', 'item_metal' => 'Metal',
+                    'item_gross' => 'Gross weight', 'item_net' => 'Net weight', 'item_purity' => 'Purity',
+                    'item_fine' => 'Fine weight', 'item_value' => 'Value', 'item_totals' => 'Totals row',
+                ],
+                'Summary' => [
+                    'summary_market_value' => 'Total market value', 'summary_ltv' => 'LTV applied',
+                    'summary_principal' => 'Principal disbursed', 'summary_fee' => 'Processing fee',
+                ],
+                'Footer' => [
+                    'terms' => 'Terms and conditions', 'signatures' => 'Signature lines', 'footer_note' => 'Computer-generated note',
+                ],
+            ],
+        ],
+        'payment' => [
+            'label' => 'Payment receipt',
+            'groups' => [
+                'Heading' => [
+                    'shop_name' => 'Shop name', 'shop_address' => 'Shop address', 'shop_contact' => 'Shop phone and email',
+                    'title' => 'Document title',
+                ],
+                'Payment' => [
+                    'receipt_no' => 'Receipt number', 'payment_date' => 'Payment date and time', 'method' => 'Payment method',
+                ],
+                'Received from' => [
+                    'customer_name' => 'Name', 'customer_mobile' => 'Contact number', 'customer_address' => 'Address',
+                ],
+                'Amount' => [
+                    'principal_component' => 'Principal', 'interest_component' => 'Interest', 'penalty_component' => 'Penalty',
+                    'fee_component' => 'Processing fee', 'amount_paid' => 'Amount paid',
+                ],
+                'Balance after payment' => [
+                    'balance_principal' => 'Outstanding principal', 'balance_interest' => 'Outstanding interest',
+                    'balance_penalty' => 'Outstanding penalty', 'balance_total' => 'Total balance',
+                ],
+                'Footer' => ['signatures' => 'Signature lines'],
+            ],
+        ],
+    ];
+
+    /** Every switchable "receipt.key" string. */
+    public static function receiptKeys(): array
+    {
+        $keys = [];
+        foreach (self::RECEIPT_FIELDS as $receipt => $def) {
+            foreach ($def['groups'] as $fields) {
+                foreach (array_keys($fields) as $key) {
+                    $keys[] = "$receipt.$key";
+                }
+            }
+        }
+
+        return $keys;
+    }
+
+    /** `$show('key')`: is this field printed on the given receipt for this shop? */
+    public static function receiptVisibility(int $shopId, string $receipt): \Closure
+    {
+        $hidden = static::getForShop($shopId)->hidden_receipt_fields ?? [];
+
+        return fn (string $key): bool => ! in_array("$receipt.$key", $hidden, true);
+    }
 
     /* ── Relationships ─────────────────────────────────── */
 

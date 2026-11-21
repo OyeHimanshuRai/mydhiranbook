@@ -162,5 +162,7 @@
                 </button>
             </div>
         </form>
+
+        @include('dhiran._receipt-settings')
     </div>
 </x-dhiran-layout>
