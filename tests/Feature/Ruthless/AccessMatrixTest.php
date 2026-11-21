@@ -258,10 +258,10 @@ class AccessMatrixTest extends AdminTestCase
             'shopless business -> plans' => ['verified-shopless', '/onboarding/business', '/onboarding/plans', 200],
             'paid dhiran -> business' => ['paid-shopless', '/dhiran', '/onboarding/business', 200],
             'paid plans -> business' => ['paid-shopless', '/onboarding/plans', '/onboarding/business', 200],
-            'owner root -> dashboard' => ['owner-active', '/', '/dhiran', 200],
-            'owner onboarding bounced' => ['owner-active', '/onboarding/business', '/dhiran', 200],
+            'owner root -> loans' => ['owner-active', '/', '/dhiran/loans', 200],
+            'owner onboarding bounced' => ['owner-active', '/onboarding/business', '/dhiran/loans', 200],
             'grace keeps new loans' => ['owner-grace', '/dhiran/create', '/dhiran/create', 200],
-            'expired new loan page -> dashboard' => ['owner-expired', '/dhiran/create', '/dhiran', 200],
+            'expired new loan page -> loans' => ['owner-expired', '/dhiran/create', '/dhiran/loans', 200],
             'expired books readable' => ['owner-expired', '/dhiran/loans', '/dhiran/loans', 200],
             'suspended shop blocked' => ['owner-suspended', '/dhiran', '/dhiran', 403],
             'minimal staff cannot create' => ['staff-minimal', '/dhiran/create', '/dhiran/create', 403],
@@ -650,7 +650,7 @@ class AccessMatrixTest extends AdminTestCase
     {
         $w = $this->world();
         $this->loginAs($w['ownerA']);
-        $this->get('/dhiran')->assertOk(); $this->fresh();
+        $this->get('/dhiran/loans')->assertOk(); $this->fresh();
         session(['probe' => 'secret']); $id = session()->getId();
         $this->post('/logout')->assertRedirect('/login');
         $this->fresh();
@@ -664,7 +664,7 @@ class AccessMatrixTest extends AdminTestCase
     {
         $w = $this->world();
         $this->loginAs($w['staffA']);
-        $this->get('/dhiran')->assertOk(); $this->fresh();
+        $this->get('/dhiran/loans')->assertOk(); $this->fresh();
         User::whereKey($w['staffA']->id)->update(['is_active' => false]);
         $bad = [];
         foreach (['/dhiran', '/dhiran/loans', '/dhiran/borrowers', '/settings', '/subscription/status', '/subscription/payment', '/', '/verify-email'] as $url) {
@@ -687,7 +687,7 @@ class AccessMatrixTest extends AdminTestCase
     {
         $w = $this->world();
         $this->loginAs($w['ownerA']);
-        $this->get('/dhiran')->assertOk(); $this->fresh(); // session now bound to the old password hash
+        $this->get('/dhiran/loans')->assertOk(); $this->fresh(); // session now bound to the old password hash
         $token = Password::broker('users')->createToken($w['ownerA']->fresh());
         // the reset itself arrives with no session of its own: stash the logged-in one, as a second browser would
         $other = session()->all();

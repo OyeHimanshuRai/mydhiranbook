@@ -573,7 +573,7 @@ class InputsTest extends TestCase
         $img = '<img src=x onerror=alert(2)>';
         $c = $this->cust($this->shopA, ['first_name' => $evil, 'last_name' => $img, 'address' => $img, 'notes' => $img]);
         $loan = $this->loanFor($this->shopA, $c, ['notes' => $img]);
-        $pages = ['/dhiran', '/dhiran/borrowers', '/dhiran/borrowers/' . $c->id, '/dhiran/loans', '/dhiran/loans/' . $loan->id,
+        $pages = ['/dhiran/borrowers', '/dhiran/borrowers/' . $c->id, '/dhiran/loans', '/dhiran/loans/' . $loan->id,
             '/dhiran/loans/' . $loan->id . '/receipt', '/dhiran/reports/active', '/dhiran/old-loans', '/dhiran/create'];
         foreach ($pages as $p) {
             $this->as($this->ownerA, fn () => $this->get(self::HOST . $p))->assertOk()->assertDontSee($evil, false)->assertDontSee($img, false);
