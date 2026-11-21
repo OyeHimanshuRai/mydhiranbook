@@ -16,6 +16,7 @@
                 <div><dt>Full access until</dt><dd>{{ ($subscription->grace_ends_at ?? $subscription->ends_at)?->format('d M Y') }}</dd></div>
                 <div><dt>Paid</dt><dd>₹{{ number_format((float) $subscription->price_paid) }}</dd></div>
             </dl>
+            @if($queued)<p class="muted">Renewal queued: {{ $queued->plan?->name }}, starts {{ $queued->starts_at->format('d M Y') }}</p>@endif
         @else
             <p class="muted">No subscription yet. Choose a plan to start.</p>
         @endif

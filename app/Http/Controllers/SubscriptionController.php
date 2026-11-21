@@ -152,11 +152,17 @@ class SubscriptionController extends Controller
     {
         $this->authorizeBuyer();
         $user = Auth::user();
-        $subscription = ShopSubscription::with('plan')
-            ->when($user->shop_id, fn ($q) => $q->where('shop_id', $user->shop_id), fn ($q) => $q->whereNull('shop_id')->where('user_id', $user->id))
-            ->orderByRaw('ends_at desc nulls last')->orderByDesc('id')->first();
+        // a shop's term is the started live one (never a queued early renewal or a cancelled row); shopless buyers have only their paid-before-business row
+        $subscription = $user->shop_id
+            ? $user->shop->currentSubscription()
+            : ShopSubscription::with('plan')->whereNull('shop_id')->where('user_id', $user->id)->orderByRaw('ends_at desc nulls last')->orderByDesc('id')->first();
+        $queued = $user->shop_id
+            ? ShopSubscription::with('plan')->where('shop_id', $user->shop_id)->where('status', '!=', 'cancelled')->whereDate('starts_at', '>', today())
+                ->when($subscription, fn ($q) => $q->where('id', '!=', $subscription->id))->orderBy('starts_at')->first()
+            : null;
         return $this->render('subscription.status', [
             'subscription' => $subscription,
+            'queued' => $queued,
             'plans' => Plan::where('is_active', true)->orderBy('price_monthly')->get(),
             'hasShop' => (bool) $user->shop_id,
             'receipts' => PlatformInvoice::where('status', 'issued')

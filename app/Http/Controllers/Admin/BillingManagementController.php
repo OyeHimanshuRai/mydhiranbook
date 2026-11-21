@@ -25,6 +25,9 @@ class BillingManagementController
         DB::transaction(function() use($r,$shop,$plan,$data) {
             $admin=Auth::guard('platform_admin')->user();
             $live=ShopSubscription::where('shop_id',$shop->id)->where('status','!=','cancelled')->orderByRaw('ends_at desc nulls last')->orderByDesc('id')->lockForUpdate()->get();
+            // the latest-ending row of an early renewer is the QUEUED term: rewriting it would leave the started term on its old plan and dates
+            $queued=$live->first(fn($l)=>$l->starts_at && $l->starts_at->gt(today()));
+            if ($queued) { throw ValidationException::withMessages(['ends_at'=>'A renewal is already queued (starts '.$queued->starts_at->format('d M Y').'). Terminate it first or wait until it starts.']); }
             $sub=$live->first();
             // extend / plan-switch only: shortening or revoking is terminate (an early renewer has several live rows)
             $floor=collect([today(),$sub?->starts_at,...$live->pluck('ends_at')])->filter()->max();

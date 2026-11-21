@@ -122,6 +122,9 @@ class SubscriptionWebhookService
                     ]),
                     'reason' => 'Razorpay '.($full ? 'full' : 'partial').' refund: '.$refundId.' (cumulative '.number_format($cumulative / 100, 2).' of '.number_format($captured / 100, 2).')'.($full ? '' : ', subscription remains active'),
                 ]);
+                // the capture landed after an earlier refused attempt: that evidence stays, but its alert is closed
+                SubscriptionEvent::where('event_type', 'refund.invalid')->where('after->payment_id', $paymentId)->where('after->refund_id', $refundId)->whereNull('after->resolved_at')->get()
+                    ->each(fn ($e) => $e->update(['after' => array_merge($e->after, ['resolved_at' => now()->toIso8601String()])]));
                 return SubscriptionPaymentService::OUTCOME_APPLIED;
             });
         } catch (\Throwable $e) {
@@ -138,7 +141,7 @@ class SubscriptionWebhookService
             $after = $existing->after;
             $after['attempt_count'] = (int) ($after['attempt_count'] ?? 1) + 1;
             $after['last_failed_at'] = now()->toIso8601String();
-            $existing->update(['after' => $after]);
+            $existing->update(['after' => $after + $extra]); // a redelivery that now knows the park is final must record the marker
             return SubscriptionPaymentService::OUTCOME_PERMANENT;
         }
         SubscriptionEvent::create([
@@ -147,7 +150,9 @@ class SubscriptionWebhookService
                 'attempt_count' => 1, 'first_failed_at' => now()->toIso8601String(), 'last_failed_at' => now()->toIso8601String(), 'resolved_at' => null, 'validation_reason' => $reason] + $extra,
             'reason' => 'Razorpay refund refused, validation failed: '.$reason,
         ]);
-        Log::critical('Refund refused, validation failed', ['event_id' => $eventId, 'payment_id' => $paymentId, 'refund_id' => $refundId, 'reason' => $reason]);
+        // an out-of-order refund (capture not seen yet) is retried by Razorpay and normally resolves itself
+        $level = str_contains($reason, '(will retry)') ? 'warning' : 'critical';
+        Log::$level('Refund refused, validation failed', ['event_id' => $eventId, 'payment_id' => $paymentId, 'refund_id' => $refundId, 'reason' => $reason]);
         return SubscriptionPaymentService::OUTCOME_PERMANENT;
     }
 }

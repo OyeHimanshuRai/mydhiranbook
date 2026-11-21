@@ -16,6 +16,14 @@ class StaffController extends Controller
 {
     use RespondsDynamically;
 
+    /** A lapsed shop has no plan limit to quote; otherwise name the cap. */
+    private function staffBlockedMessage(\App\Models\Shop $shop, string $hint = ''): string
+    {
+        return $shop->isLapsed()
+            ? 'Your Dhiran plan has ended. Renew it to add staff.'
+            : trim("Staff limit reached ({$shop->staffLimit()} accounts allowed on your plan). {$hint}");
+    }
+
     public function index()
     {
         return redirect()->route('settings.edit', ['tab' => 'staff']);
@@ -26,9 +34,8 @@ class StaffController extends Controller
         $shop = auth()->user()->shop;
 
         if (!$shop->canAddStaff()) {
-            $limit = $shop->staffLimit();
             return redirect()->route('settings.edit', ['tab' => 'staff'])
-                ->with('error', "Staff limit reached ({$limit} accounts allowed on your plan). Remove an existing member or upgrade your plan.");
+                ->with('error', $this->staffBlockedMessage($shop, 'Remove an existing member or upgrade your plan.'));
         }
 
         // Scope roles to this shop only, exclude owner
@@ -56,8 +63,7 @@ class StaffController extends Controller
 
         // Re-check limit at store time (prevents race condition / direct POST bypass)
         if (!$shop->canAddStaff()) {
-            $limit = $shop->staffLimit();
-            return back()->with('error', "Staff limit reached ({$limit} accounts allowed on your plan).");
+            return back()->with('error', $this->staffBlockedMessage($shop));
         }
 
         $shopId = auth()->user()->shop_id;
@@ -273,8 +279,7 @@ class StaffController extends Controller
 
         // A recovered staff member counts toward the active-staff limit again.
         if (! $staff->shop->canAddStaff()) {
-            $limit = $staff->shop->staffLimit();
-            return $this->dynamicRedirect('settings.edit', ['tab' => 'staff'], "Staff limit reached ({$limit} accounts allowed on your plan). Remove another member before recovering this one.", 'error');
+            return $this->dynamicRedirect('settings.edit', ['tab' => 'staff'], $this->staffBlockedMessage($staff->shop, 'Remove another member before recovering this one.'), 'error');
         }
 
         $name = $staff->name ?? $staff->mobile_number;
