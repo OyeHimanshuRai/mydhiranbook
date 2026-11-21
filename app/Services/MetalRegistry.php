@@ -296,10 +296,11 @@ final class MetalRegistry
             return null;
         }
 
-        return match ($normalized) {
-            'gold'   => $purity / 24.0,
-            'silver' => $purity / 1000.0,
-            default  => null,
+        // out-of-range purity (above 24k / 1000 fineness, or not positive) has no fine weight: callers refuse it
+        return match (true) {
+            $normalized === 'gold' && $purity > 0 && $purity <= 24      => $purity / 24.0,
+            $normalized === 'silver' && $purity > 0 && $purity <= 1000  => $purity / 1000.0,
+            default => null,
         };
     }
 

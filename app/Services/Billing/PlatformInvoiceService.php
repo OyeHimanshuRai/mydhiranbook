@@ -68,7 +68,7 @@ class PlatformInvoiceService
                 'invoice_number' => sprintf('%s-%d-%06d', config('billing.receipt_prefix'), $issuedAt->year, $sequence),
                 'invoice_sequence' => $sequence, 'billing_cycle' => $cycle,
                 'billing_period_start' => $subscription->starts_at,
-                'billing_period_end' => $subscription->ends_at ?? ($cycle === 'yearly' ? $subscription->starts_at->copy()->addYear() : $subscription->starts_at->copy()->addMonth()),
+                'billing_period_end' => $subscription->ends_at ?? ($cycle === 'yearly' ? $subscription->starts_at->copy()->addYearNoOverflow() : $subscription->starts_at->copy()->addMonthNoOverflow()),
                 'amount_before_tax' => $net, 'gst_rate' => $rate, 'gst_amount' => round($total - $net, 2), 'total_amount' => $total,
                 'razorpay_payment_id' => $subscription->razorpay_payment_id, 'razorpay_order_id' => $subscription->razorpay_order_id,
                 'payment_method' => 'razorpay', 'status' => 'issued', 'issued_at' => $issuedAt,

@@ -69,6 +69,28 @@ class DhiranService
             : "This loan is already {$status}. Reload the page to see it as it is now.";
     }
 
+    /** Money moves in whole paise: refuse sub-paisa and fractional-paisa amounts instead of booking a rounded value. */
+    private function assertPaise(float $amount): void
+    {
+        if ($amount <= 0) {
+            throw new LogicException('Payment amount must be greater than zero.');
+        }
+        if ($amount < 0.01 || abs($amount * 100 - round($amount * 100)) > 1e-6) {
+            throw new LogicException('Amount must be at least 0.01 and in whole paise (two decimals at most).');
+        }
+    }
+
+    /** Paying a loan off by any path is a settlement: the pre-close rules (lock period, minimum interest) apply. */
+    private function assertMaySettle(DhiranLoan $loan): void
+    {
+        if (! $loan->canPreClose()) {
+            throw new LogicException('This payment would settle the loan during its lock period. Settlement is allowed once the lock period ends.');
+        }
+        if ((float) $loan->total_interest_collected + (float) $loan->outstanding_interest < $loan->minimumInterestAmount() - 0.005) {
+            throw new LogicException('This payment would settle the loan before its minimum interest is earned. Use Pre-close, which charges the minimum interest.');
+        }
+    }
+
     private function assertOpen(int $shopId, mixed $date): void
     {
         \App\Services\InvoiceAccountingService::assertShopLockForDate($shopId, Carbon::parse($date)->toDateString());
@@ -106,6 +128,9 @@ class DhiranService
             $interestType         = $params['interest_type'] ?? $settings->default_interest_type ?? 'flat';
             $penaltyRateMonthly   = (float) ($params['penalty_rate_monthly'] ?? $settings->default_penalty_rate_monthly);
             $tenureMonths         = (int) ($params['tenure_months'] ?? $settings->default_tenure_months);
+            if ($tenureMonths < 1 || $interestRateMonthly < 0) { // the service guards its own terms, not only the form
+                throw new LogicException('Tenure must be at least 1 month and the interest rate cannot be negative.');
+            }
             $minLockMonths        = (int) ($params['min_lock_months'] ?? $settings->default_min_lock_months);
             $gracePeriodDays      = (int) ($params['grace_period_days'] ?? $settings->grace_period_days);
             $minInterestMonths    = (int) ($params['min_interest_months'] ?? $settings->default_min_interest_months);
@@ -158,7 +183,7 @@ class DhiranService
                     $purity          = (float) $item['purity'];
                     $fineMultiplier  = \App\Services\MetalRegistry::fineWeightMultiplier($pledgeMetal, $purity);
                     if ($fineMultiplier === null) {
-                        throw new \LogicException("Cannot derive fine weight for non-accounting metal '{$pledgeMetal}' in dhiran pledge. Use an appraised value instead.");
+                        throw new \LogicException("Cannot derive fine weight for '{$pledgeMetal}' at purity {$purity}: purity must be above 0 and at most 24 karat (gold) or 1000 fineness (silver).");
                     }
                     $fineWeight  = $netMetalWeight * $fineMultiplier;
                     $marketValue = round($fineWeight * $ratePerGram, 2);
@@ -246,7 +271,7 @@ class DhiranService
             };
 
             // ── Create loan record ───────────────────────────
-            $maturityDate = $loanDate->copy()->addMonths($tenureMonths);
+            $maturityDate = $loanDate->copy()->addMonthsNoOverflow($tenureMonths);
 
             $loan = DhiranLoan::create([
                 'shop_id'                  => $shop->id,
@@ -644,7 +669,10 @@ class DhiranService
                 $interestAccrual = $outstandingPrincipal * $perDay * $days;
             }
 
-            $interestAccrual = round($interestAccrual, 2);
+            // book whole paise, carry the fraction to the next accrual (result independent of how often this runs)
+            $rawInterest = $interestAccrual + (float) $loan->interest_remainder;
+            $interestAccrual = round($rawInterest, 2);
+            $loan->interest_remainder = $rawInterest - $interestAccrual;
 
             // ── Penalty accrual (if overdue past grace) ──────
             $penaltyAccrual = 0.0;
@@ -658,10 +686,9 @@ class DhiranService
                     $overdueDaysInPeriod = (int) $overduePeriodStart->diffInDays($today, false);
 
                     if ($overdueDaysInPeriod > 0) {
-                        $penaltyAccrual = round(
-                            $outstandingPrincipal * $penaltyRateMonthly / 100 / 30 * $overdueDaysInPeriod,
-                            2
-                        );
+                        $rawPenalty = $outstandingPrincipal * $penaltyRateMonthly / 100 / 30 * $overdueDaysInPeriod + (float) $loan->penalty_remainder;
+                        $penaltyAccrual = round($rawPenalty, 2);
+                        $loan->penalty_remainder = $rawPenalty - $penaltyAccrual;
                     }
                 }
             }
@@ -733,9 +760,7 @@ class DhiranService
     public function recordPayment(DhiranLoan $loan, float $amount, string $method = 'cash'): DhiranPayment
     {
         $this->assertActive($loan);
-        if ($amount <= 0) {
-            throw new LogicException('Payment amount must be greater than zero.');
-        }
+        $this->assertPaise($amount);
 
         // Accrue interest up to today before applying payment
         $this->accrueInterest($loan);
@@ -750,6 +775,9 @@ class DhiranService
                 throw new LogicException(
                     "Payment amount ({$amount}) exceeds total outstanding ({$totalOutstanding}). Overpayment not allowed."
                 );
+            }
+            if (round($totalOutstanding, 2) - $amount < 0.01) {
+                $this->assertMaySettle($loan);
             }
 
             // ── Split payment: penalty → interest → principal
@@ -850,9 +878,7 @@ class DhiranService
     public function recordInterestPayment(DhiranLoan $loan, float $amount, string $method = 'cash'): DhiranPayment
     {
         $this->assertActive($loan);
-        if ($amount <= 0) {
-            throw new LogicException('Payment amount must be greater than zero.');
-        }
+        $this->assertPaise($amount);
 
         // Accrue interest up to today
         $this->accrueInterest($loan);
@@ -990,6 +1016,7 @@ class DhiranService
         if ($item->status !== 'pledged') {
             throw new LogicException('Only pledged items can be released.');
         }
+        $this->assertPaise($paymentAmount);
 
         // Accrue interest first
         $this->accrueInterest($loan);
@@ -999,6 +1026,12 @@ class DhiranService
         return DB::transaction(function () use ($loan, $item, $paymentAmount, $method, $conditionNote, $actorId): DhiranPayment {
             $loan = $this->lockActive($loan);
             $item = DhiranLoanItem::lockForUpdate()->find($item->id);
+            if (! $item || $item->status !== 'pledged') { // re-check under the lock: a stale copy must not release twice
+                throw new LogicException('Only pledged items can be released.');
+            }
+            if ($loan->items()->where('status', 'pledged')->whereKeyNot($item->id)->doesntExist()) {
+                $this->assertMaySettle($loan); // releasing the last item settles the loan
+            }
 
             $required = $this->releaseMinimum($loan, $item);
             $proportionalPrincipal = round($required - (float) $loan->outstanding_penalty - (float) $loan->outstanding_interest, 2);
@@ -1446,8 +1479,11 @@ class DhiranService
             $newLoanNumber  = $this->generateLoanNumber($shop);
             $newTenureVal   = $newTenure ?? (int) $loan->tenure_months;
             $newRateVal     = $newRate ?? (float) $loan->interest_rate_monthly;
+            if ($newTenureVal < 1 || $newRateVal < 0) {
+                throw new LogicException('Tenure must be at least 1 month and the interest rate cannot be negative.');
+            }
             $newLoanDate    = today();
-            $newMaturity    = $newLoanDate->copy()->addMonths($newTenureVal);
+            $newMaturity    = $newLoanDate->copy()->addMonthsNoOverflow($newTenureVal);
 
             $newLoan = DhiranLoan::create([
                 'shop_id'                  => $loan->shop_id,

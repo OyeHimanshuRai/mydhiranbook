@@ -208,7 +208,7 @@ class DhiranLoan extends Model
             return false;
         }
 
-        return now()->lt($this->loan_date->copy()->addMonths($this->min_lock_months));
+        return now()->lt($this->loan_date->copy()->addMonthsNoOverflow($this->min_lock_months));
     }
 
     public function minimumInterestAmount(): float
