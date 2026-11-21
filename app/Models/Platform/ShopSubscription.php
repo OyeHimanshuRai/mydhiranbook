@@ -36,6 +36,7 @@ class ShopSubscription extends Model
     public function grantsAccessToday(): bool
     {
         if (!in_array($this->status, ['active', 'grace'], true)) { return false; }
+        if ($this->starts_at !== null && $this->starts_at->toDateString() > today()->toDateString()) { return false; } // queued term: not yet
         $until = collect([$this->ends_at, $this->grace_ends_at])->filter()->max();
         return $until !== null && $until->toDateString() >= today()->toDateString();
     }

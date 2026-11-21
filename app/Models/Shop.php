@@ -6,10 +6,12 @@ class Shop extends Model
     protected $attributes = ['status'=>'active'];
     public function users() { return $this->hasMany(User::class); }
     public function subscriptions() { return $this->hasMany(\App\Models\Platform\ShopSubscription::class); }
-    /** Latest non-cancelled subscription by end date. */
+    /** The live term that has started (an early-renewed future term only counts once it starts); else the next one queued. */
     public function currentSubscription(): ?\App\Models\Platform\ShopSubscription
     {
-        return $this->subscriptions()->with('plan')->where('status','!=','cancelled')->orderByRaw('ends_at desc nulls last')->orderByDesc('id')->first();
+        $live = fn () => $this->subscriptions()->with('plan')->where('status','!=','cancelled');
+        return $live()->where(fn ($q) => $q->whereNull('starts_at')->orWhereDate('starts_at','<=',today()))->orderByRaw('ends_at desc nulls last')->orderByDesc('id')->first()
+            ?? $live()->orderBy('starts_at')->orderBy('id')->first();
     }
     public function hasEdition(string $edition): bool
     {
@@ -25,6 +27,7 @@ class Shop extends Model
         return \App\Models\Dhiran\DhiranLoanItem::withoutGlobalScopes()->where('shop_id', $this->id)->where('status', 'pledged')
             ->whereIn('dhiran_loan_id', \App\Models\Dhiran\DhiranLoan::withoutGlobalScopes()->where('shop_id', $this->id)->whereNotIn('status', \App\Models\Dhiran\DhiranLoan::FINISHED)->select('id'))->count();
     }
-    public function canAddStaff(): bool { return $this->staffLimit() === -1 || $this->currentStaffCount() < $this->staffLimit(); }
+    // a lapsed shop (refunded/terminated/expired) is collect-only: no new staff either, whatever the old plan allowed
+    public function canAddStaff(): bool { return !$this->isLapsed() && ($this->staffLimit() === -1 || $this->currentStaffCount() < $this->staffLimit()); }
     protected $fillable = ['name', 'phone', 'address', 'status', 'financial_lock_date'];
 }

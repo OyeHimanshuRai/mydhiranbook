@@ -1,6 +1,7 @@
 <?php
 namespace App\Services\Billing;
 
+use App\Models\Platform\PlatformInvoice;
 use App\Models\Platform\ShopSubscription;
 use App\Models\Platform\SubscriptionEvent;
 use Illuminate\Support\Carbon;
@@ -78,10 +79,12 @@ class SubscriptionWebhookService
         try {
             return DB::transaction(function () use ($paymentId, $refundId, $paise, $currency, $eventId) {
                 DB::statement('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', [$eventId]);
-                if (SubscriptionEvent::where('after->event_id', $eventId)->exists()) { return SubscriptionPaymentService::OUTCOME_APPLIED; }
+                // a refused attempt (refund.invalid) is evidence, not an application: a redelivery must still be able to apply
+                if (SubscriptionEvent::where('after->event_id', $eventId)->where('event_type', '!=', 'refund.invalid')->exists()) { return SubscriptionPaymentService::OUTCOME_APPLIED; }
 
                 $sub = ShopSubscription::where('razorpay_payment_id', $paymentId)->lockForUpdate()->first();
-                if (!$sub) { return $this->refuseRefund($paymentId, $refundId, 'no local subscription found for payment id', $paise, $currency, $eventId); }
+                // webhooks arrive out of order: keep evidence and ask Razorpay to redeliver, so the refund applies once the capture lands
+                if (!$sub) { $this->refuseRefund($paymentId, $refundId, 'no local subscription found for payment id (will retry)', $paise, $currency, $eventId); return SubscriptionPaymentService::OUTCOME_TRANSIENT; }
 
                 $refunds = SubscriptionEvent::where('shop_subscription_id', $sub->id)->whereIn('event_type', self::REFUND_EVENTS);
                 if ((clone $refunds)->where('after->refund_id', $refundId)->exists()) { return SubscriptionPaymentService::OUTCOME_APPLIED; }
@@ -94,7 +97,12 @@ class SubscriptionWebhookService
 
                 $full = $cumulative === $captured;
                 $before = $sub->toArray();
-                if ($full) { $sub->update(['status' => 'cancelled', 'cancelled_at' => Carbon::now()]); }
+                if ($full) {
+                    $sub->update(['status' => 'cancelled', 'cancelled_at' => Carbon::now()]);
+                    // a fully refunded term's receipt no longer stands
+                    PlatformInvoice::where('shop_subscription_id', $sub->id)->where('status', '!=', 'cancelled')->get()
+                        ->each(fn ($i) => $i->update(['status' => 'cancelled', 'cancelled_at' => Carbon::now(), 'cancellation_reason' => 'Full refund '.$refundId]));
+                }
 
                 SubscriptionEvent::create([
                     'shop_subscription_id' => $sub->id, 'shop_id' => $sub->shop_id, 'admin_id' => null,

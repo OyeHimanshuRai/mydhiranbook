@@ -41,7 +41,7 @@ class PlatformInvoiceService
     public function reissueMissing(int $limit = 50): int
     {
         $issued = 0;
-        ShopSubscription::where('price_paid', '>', 0)->whereNotExists(fn ($q) => $q->selectRaw('1')->from('platform_invoices')->whereColumn('platform_invoices.shop_subscription_id', 'shop_subscriptions.id'))
+        ShopSubscription::where('price_paid', '>', 0)->where('status', '!=', 'cancelled')->whereNotExists(fn ($q) => $q->selectRaw('1')->from('platform_invoices')->whereColumn('platform_invoices.shop_subscription_id', 'shop_subscriptions.id'))
             ->orderBy('id')->limit($limit)->get()->each(function ($sub) use (&$issued) { if ($this->issueSafely($sub)) { $issued++; } });
         return $issued;
     }
