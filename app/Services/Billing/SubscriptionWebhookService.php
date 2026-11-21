@@ -84,7 +84,12 @@ class SubscriptionWebhookService
 
                 $sub = ShopSubscription::where('razorpay_payment_id', $paymentId)->lockForUpdate()->first();
                 // webhooks arrive out of order: keep evidence and ask Razorpay to redeliver, so the refund applies once the capture lands
-                if (!$sub) { $this->refuseRefund($paymentId, $refundId, 'no local subscription found for payment id (will retry)', $paise, $currency, $eventId); return SubscriptionPaymentService::OUTCOME_TRANSIENT; }
+                if (!$sub) {
+                    // a payment parked as unresolved never gets a subscription: answer final, or Razorpay retries forever and may disable the webhook
+                    $parked = SubscriptionEvent::where('event_type', 'payment.unresolved')->where('after->payment_id', $paymentId)->exists();
+                    $this->refuseRefund($paymentId, $refundId, $parked ? 'refund for a payment parked as unresolved (no subscription exists)' : 'no local subscription found for payment id (will retry)', $paise, $currency, $eventId);
+                    return $parked ? SubscriptionPaymentService::OUTCOME_PERMANENT : SubscriptionPaymentService::OUTCOME_TRANSIENT;
+                }
 
                 $refunds = SubscriptionEvent::where('shop_subscription_id', $sub->id)->whereIn('event_type', self::REFUND_EVENTS);
                 if ((clone $refunds)->where('after->refund_id', $refundId)->exists()) { return SubscriptionPaymentService::OUTCOME_APPLIED; }

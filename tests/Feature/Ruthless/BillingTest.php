@@ -62,6 +62,18 @@ class BillingTest extends AdminTestCase
         $this->assertSame(['refund.invalid'], $this->types());
     }
 
+    public function test_refund_for_an_unresolved_payment_is_answered_permanently_not_retried_forever(): void
+    {
+        // Rule: a payment parked as payment.unresolved (e.g. amount mismatch) never gets a subscription. If an admin then
+        // refunds it in Razorpay, the refund webhook must be answered 200 (evidence kept), not 500 forever — Razorpay
+        // retries a failing endpoint and eventually disables the webhook, which would drop real payment events.
+        $this->assertSame(0, ShopSubscription::count());
+        \App\Models\Platform\SubscriptionEvent::create(['shop_subscription_id' => null, 'shop_id' => null, 'admin_id' => null, 'event_type' => 'payment.unresolved', 'before' => null,
+            'after' => ['order_id' => 'order_x', 'payment_id' => 'pay_unres', 'attempt_count' => 1, 'resolved_at' => null], 'reason' => 'amount mismatch']);
+        $this->refund('pay_unres', 1999900, 'rfnd_u', 'evt_ru')->assertOk()->assertJson(['status' => 'not_applied']);
+        $this->assertContains('refund.invalid', $this->types()); // evidence kept
+        $this->assertSame(0, ShopSubscription::count());
+    }
     public function test_refund_redelivered_after_capture_cancels_the_term(): void
     {
         // Rule: money refunded at Razorpay must end the term. A refund seen before the capture was webhook-ed
