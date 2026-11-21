@@ -67,8 +67,14 @@ class DhiranAttachmentService
             throw new LogicException('File contents do not match its type.');
         }
         // Refuse absurd pixel counts before GD allocates the bitmap (a tiny PNG can decode to gigabytes).
-        if ($realMime !== 'application/pdf' && ($size = @getimagesize($file->getRealPath())) && $size[0] * $size[1] > self::MAX_PIXELS) {
-            throw new LogicException('Image is too large (max 40 megapixels).');
+        if ($realMime !== 'application/pdf') { // check dimensions from the header, before GD ever decodes the bitmap
+            $size = @getimagesize($file->getRealPath());
+            if (! $size || $size[0] < 1 || $size[1] < 1) {
+                throw new LogicException('Image could not be read. Upload a JPG or PNG photo.');
+            }
+            if ($size[0] * $size[1] > self::MAX_PIXELS) {
+                throw new LogicException('Image is too large (max 20 megapixels).');
+            }
         }
         if (! in_array($documentType, DhiranAttachment::DOCUMENT_TYPES, true)) {
             throw new LogicException('Unknown document type.');
@@ -100,7 +106,7 @@ class DhiranAttachmentService
         ]);
     }
 
-    public const MAX_PIXELS = 40_000_000;
+    public const MAX_PIXELS = 20_000_000; // same bound as the profile-photo encoder
 
     /** Longest side of a gallery thumbnail, in pixels. */
     public const THUMB_MAX = 320;
@@ -121,7 +127,12 @@ class DhiranAttachmentService
             return $path;
         }
 
-        $img = @imagecreatefromstring((string) $disk->get($attachment->file_path));
+        $bytes = (string) $disk->get($attachment->file_path);
+        $size = @getimagesizefromstring($bytes);
+        if (! $size || $size[0] * $size[1] > self::MAX_PIXELS) {
+            return null; // never decode an unreadable or oversized stored image just to thumbnail it
+        }
+        $img = @imagecreatefromstring($bytes);
         if ($img === false) {
             return null;
         }
