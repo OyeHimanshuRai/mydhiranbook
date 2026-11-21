@@ -31,7 +31,7 @@ abstract class TestCase extends BaseTestCase
     public function actingAs(\Illuminate\Contracts\Auth\Authenticatable $user, $guard = null)
     {
         $this->app['session']->forget('password_hash_web');
-        if ($this->reportsUnlocked) { $this->app['session']->put('auth.password_confirmed_at', time()); } // reports' password pop-up is covered by ReportPasswordTest
+        if ($this->reportsUnlocked) { $this->app['session']->put(['auth.password_confirmed_at' => time(), 'auth.password_confirmed_for' => $user->getAuthIdentifier()]); } // reports' password pop-up is covered by ReportPasswordTest
         return parent::actingAs($user, $guard);
     }
     protected function setUp(): void { TenantContext::clear(); parent::setUp(); \Illuminate\Support\Facades\Cache::flush(); }

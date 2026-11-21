@@ -57,4 +57,17 @@ class ReportPasswordTest extends TestCase
     {
         $this->post(route('password.confirm.store'), ['password' => 'x'])->assertRedirect('/login');
     }
+
+    /** A confirmation belongs to the user who gave it: another user in the same session must confirm their own password. */
+    public function test_confirmation_does_not_carry_over_to_another_user_in_the_same_session(): void
+    {
+        $a = $this->owner();
+        $b = self::userWithRole($a->shop, ['name' => 'B', 'email' => 'reports-b@example.test', 'password' => 'Other-pass-12345']);
+        $this->actingAs($a)->get('/dhiran/reports/overdue');
+        $this->post(route('password.confirm.store'), ['password' => 'Report-pass-12345'])->assertSessionHasNoErrors();
+        $this->get('/dhiran/reports/overdue')->assertDontSee('Enter your password to open reports');
+
+        $this->actingAs($b)->get('/dhiran/reports/overdue')->assertSee('Enter your password to open reports');
+        $this->post(route('password.confirm.store'), ['password' => 'Report-pass-12345'])->assertSessionHasErrors('password'); // A's password doesn't unlock B
+    }
 }
