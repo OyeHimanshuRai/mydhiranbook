@@ -41,73 +41,8 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             return view('dhiran.activate', compact('settings'));
         }
 
-        $activeLoans = DhiranLoan::where('shop_id', $shopId)->active()->count();
-
-        $overdueLoans = DhiranLoan::where('shop_id', $shopId)->overdue()->count();
-
-        $totalOutstanding = DhiranLoan::where('shop_id', $shopId)
-            ->active()
-            ->selectRaw('COALESCE(SUM(outstanding_principal + outstanding_interest + outstanding_penalty), 0) as total')
-            ->value('total');
-
-        $thisMonthInterest = (float) DhiranPayment::where('shop_id', $shopId)
-            ->whereBetween('payment_date', [now()->startOfMonth()->toDateString(), now()->endOfMonth()->toDateString()])
-            ->sum('interest_component');
-
-        $recentLoans = DhiranLoan::where('shop_id', $shopId)
-            ->with('customer')
-            ->latest()
-            ->limit(10)
-            ->get();
-
-        // The view reads $stats[...]; without it every tile showed 0.
-        $stats = [
-            'active_loans'      => $activeLoans,
-            'overdue_loans'     => $overdueLoans,
-            'total_outstanding' => (float) $totalOutstanding,
-            'month_interest'    => $thisMonthInterest,
-        ];
-
-        // Owner 2026-11-11: the figures a lender runs the day on. Overdue and due-soon counts use the Loans list's own
-        // filters, so each figure's number matches the list its link opens.
-        $open = DhiranLoan::OPEN;
-        $owedSql = 'coalesce(sum(coalesce(outstanding_principal, 0) + coalesce(outstanding_interest, 0) + coalesce(outstanding_penalty, 0)), 0)';
-        $openSums = DhiranLoan::where('shop_id', $shopId)->whereIn('status', $open)->toBase()
-            ->selectRaw("count(*) as n, coalesce(sum(outstanding_principal), 0) as principal, {$owedSql} as owed")->first();
-        $byFilter = function (array $query) use ($shopId, $owedSql) {
-            $filters = \App\Services\Dhiran\DhiranListFilters::fromRequest(Request::create('/', 'GET', $query));
-            $row = $filters->applyToLoans(DhiranLoan::where('shop_id', $shopId), null)->toBase()
-                ->selectRaw("count(*) as n, {$owedSql} as owed")->first();
-
-            return ['n' => (int) $row->n, 'owed' => (float) $row->owed, 'url' => route('dhiran.loans', $query)];
-        };
-        $overdueBands = [];
-        foreach (array_keys(\App\Services\Dhiran\DhiranListFilters::OVERDUE) as $band) {
-            $overdueBands[$band] = $byFilter(['overdue' => $band]);
-        }
-        $held = DhiranLoanItem::query()
-            ->join('dhiran_loans as l', 'l.id', '=', 'dhiran_loan_items.dhiran_loan_id')
-            ->where('l.shop_id', $shopId)->whereIn('l.status', $open)
-            ->where('dhiran_loan_items.status', 'pledged')
-            ->groupBy('dhiran_loan_items.metal_type')
-            ->selectRaw('dhiran_loan_items.metal_type as metal, coalesce(sum(dhiran_loan_items.fine_weight), 0) as fine, coalesce(sum(dhiran_loan_items.market_value), 0) as value')
-            ->toBase()->get()->keyBy('metal');
-
-        $dash = [
-            'open_count'     => (int) $openSums->n,
-            'money_out'      => (float) $openSums->principal,
-            'owed'           => (float) $openSums->owed,
-            'interest_month' => $thisMonthInterest,
-            'overdue'        => $overdueBands,
-            'overdue_count'  => array_sum(array_column($overdueBands, 'n')),
-            'overdue_owed'   => array_sum(array_column($overdueBands, 'owed')),
-            // Owner 2026-11-15: six figures; interest this FY, due in 30 days and awaiting evidence are no longer
-            // computed here (they stay on the Reports and Loans pages).
-            'maturing'       => ['7' => $byFilter(['maturing' => '7'])],
-            'held'           => $held,
-        ];
-
-        return view('dhiran.dashboard', compact('settings', 'stats', 'recentLoans', 'dash'));
+        // Owner 2026-11-21: no dashboard page; the shop's home is the loans list.
+        return redirect()->route('dhiran.loans');
     }
 
     public function activate(Request $request)

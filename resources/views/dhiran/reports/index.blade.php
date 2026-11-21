@@ -5,9 +5,9 @@
             <p class="text-sm text-gray-500 mt-1">Pledge loan analytics and reports</p>
         </div>
         <div class="page-actions">
-            <a href="{{ route('dhiran.dashboard') }}" class="btn btn-secondary btn-sm">
+            <a href="{{ route('dhiran.loans') }}" class="btn btn-secondary btn-sm">
                 <x-icon name="arrow-left" size="14" class="mr-1" />
-                Back to Dashboard
+                Back to Loans
             </a>
         </div>
     </x-dhiran.page-header>

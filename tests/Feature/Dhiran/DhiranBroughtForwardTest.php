@@ -191,7 +191,7 @@ class DhiranBroughtForwardTest extends TestCase
     public function test_the_module_is_its_own_page_found_in_the_menu_and_waits_for_a_paid_plan(): void
     {
         $this->in(fn () => $this->get(self::HOST . '/dhiran/old-loans/create'))->assertOk()->assertSee('name="paper_loan_number"', false);
-        $this->in(fn () => $this->get(self::HOST . '/dhiran'))->assertSee(route('dhiran.old-loans.index'), false);
+        $this->in(fn () => $this->get(self::HOST . '/dhiran/loans'))->assertSee(route('dhiran.old-loans.index'), false);
 
         \Illuminate\Support\Facades\DB::table('shop_subscriptions')->where('shop_id', $this->shop->id)->update(['status'=>'expired']);
         $this->owner = $this->owner->fresh(); // the signed-in user's shop editions were loaded by the requests above

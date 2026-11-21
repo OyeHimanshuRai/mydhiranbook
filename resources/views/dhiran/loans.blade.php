@@ -10,10 +10,6 @@
                 <x-icon name="plus" size="14" class="mr-1" />
                 New Loan
             </a>
-            <a href="{{ route('dhiran.dashboard') }}" class="btn btn-secondary btn-sm">
-                <x-icon name="house" size="14" class="mr-1" />
-                Dashboard
-            </a>
         </div>
     </x-dhiran.page-header>
 

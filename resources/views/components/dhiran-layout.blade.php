@@ -30,7 +30,7 @@
 
         <aside class="dh-sidebar" id="dh-sidebar">
             <div class="dh-sidebar-head">
-                <a href="{{ route('dhiran.dashboard') }}" class="dh-brand" @click="open = false">
+                <a href="{{ route('dhiran.loans') }}" class="dh-brand" @click="open = false">
                     <span class="dh-brand-mark">D</span>
                     <span class="dh-brand-copy">
                         <span class="dh-brand-name">Dhiran</span>
@@ -46,10 +46,6 @@
 
             {{-- Dhiran-only navigation. Pledge-loan links only. --}}
             <nav class="dh-nav">
-                <a href="{{ route('dhiran.dashboard') }}" class="dh-nav-link {{ request()->routeIs('dhiran.dashboard') ? 'active' : '' }}" @click="open = false">
-                    <x-icon name="house" />
-                    <span class="dh-nav-text">Dashboard</span>
-                </a>
                 @if((bool) auth()->user()?->shop_id)
                     <a href="{{ route('dhiran.loans') }}" class="dh-nav-link {{ request()->routeIs('dhiran.loans') || request()->routeIs('dhiran.show') ? 'active' : '' }}" @click="open = false">
                         <x-icon name="credit-card" />

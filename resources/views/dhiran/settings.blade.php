@@ -6,9 +6,9 @@
         </div>
         <div class="page-actions">
             @can("staff.view")<a class="btn btn-secondary btn-sm" href="{{ route('settings.edit',['tab'=>'staff']) }}">Staff & Permissions</a>@endcan
-            <a href="{{ route('dhiran.dashboard') }}" class="btn btn-secondary btn-sm">
+            <a href="{{ route('dhiran.loans') }}" class="btn btn-secondary btn-sm">
                 <x-icon name="arrow-left" size="14" class="mr-1" />
-                Back to Dashboard
+                Back to Loans
             </a>
         </div>
     </x-dhiran.page-header>
@@ -155,7 +155,7 @@
             </div>
 
             <div class="dset-actions">
-                <a href="{{ route('dhiran.dashboard') }}" class="btn btn-secondary btn-sm">Cancel</a>
+                <a href="{{ route('dhiran.loans') }}" class="btn btn-secondary btn-sm">Cancel</a>
                 <button type="submit" class="btn btn-dark btn-sm">
                     <x-icon name="save" size="14" class="mr-1" />
                     Save Settings

@@ -368,16 +368,14 @@ class DhiranLifecycleUiTest extends TestCase
 
     // ── Full Dhiran QA 2026-11-08 ────────────────────────────────────────────────────────────────────────────────
 
-    // The dashboard view read $stats[...] but the controller passed separate variables, so every tile showed 0.
-    public function test_dashboard_tiles_show_the_real_figures(): void
+    // Owner 2026-11-21: no dashboard. /dhiran opens the loans list; a shop that has not activated Dhiran still sees the activation screen.
+    public function test_dhiran_home_opens_the_loans_list_and_activation_still_shows(): void
     {
         [$shop, $owner] = $this->dhiranShopWithOwner('9390000080');
-        $this->makeLoan($shop, ['loan_date' => today()->toDateString(), 'tenure_months' => 6]);
+        $this->actingAs($owner)->get('http://127.0.0.1:8787/dhiran')->assertRedirect(route('dhiran.loans'));
 
-        $html = $this->actingAs($owner)->get('http://127.0.0.1:8787/dhiran')->assertOk()->getContent();
-        // 2026-11-11 figures: open-loan count and money owed (Indian grouping); see DhiranDashboardFiguresTest.
-        $this->assertMatchesRegularExpression('/data-dash="open-count">1</', $html);
-        $this->assertMatchesRegularExpression('/data-dash="owed">₹1,00,000</', $html);
+        \App\Models\Dhiran\DhiranSettings::getForShop($shop->id)->update(['is_enabled' => false]);
+        $this->actingAs($owner)->get('http://127.0.0.1:8787/dhiran')->assertOk()->assertViewIs('dhiran.activate');
     }
 
     // Payment types printed raw ("Pre_closure").
