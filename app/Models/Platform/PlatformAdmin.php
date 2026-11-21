@@ -36,6 +36,12 @@ class PlatformAdmin extends Authenticatable implements CanResetPasswordContract
         'can_manage_plans',
     ];
 
+    /** First TOTP enrolment is allowed only within 24h of creation or the last password reset. */
+    public function mfaEnrolmentOpen(): bool
+    {
+        return $this->two_factor_enabled || max($this->created_at, $this->password_changed_at)->gt(now()->subDay());
+    }
+
     protected function casts(): array
     {
         return [

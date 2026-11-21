@@ -28,15 +28,24 @@ class AuthController
         $this->audit->log($admin,'admin.password_passed',targetId:$admin->id,request:$r);
         return redirect('/admin/mfa');
     }
+    private function enrolmentClosed(Request $r, PlatformAdmin $admin)
+    {
+        if ($admin->mfaEnrolmentOpen()) { return null; }
+        $this->audit->log($admin,'admin.mfa_enrolment_refused',targetId:$admin->id,request:$r);
+        Auth::guard('platform_admin')->logout(); $r->session()->invalidate(); $r->session()->regenerateToken();
+        return redirect('/admin/login')->withErrors(['email'=>'Authenticator setup window has closed. Ask a super admin to reset your password, which reopens it for 24 hours.']);
+    }
     public function mfaForm(Request $r)
     {
         $admin=Auth::guard('platform_admin')->user();
+        if ($closed=$this->enrolmentClosed($r,$admin)) { return $closed; }
         if (!$admin->two_factor_enabled && !$admin->two_factor_secret) { $admin->forceFill(['two_factor_secret'=>$this->totp->generateSecret()])->save(); }
         return view('admin.mfa',['admin'=>$admin]);
     }
     public function mfa(Request $r)
     {
         $data=$r->validate(['code'=>'required|string|max:30']); $admin=Auth::guard('platform_admin')->user();
+        if ($closed=$this->enrolmentClosed($r,$admin)) { return $closed; }
         $result=DB::transaction(function() use($admin,$data) {
             $admin=PlatformAdmin::lockForUpdate()->findOrFail($admin->id);
             $valid=false; $codes=[];

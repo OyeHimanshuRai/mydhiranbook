@@ -644,7 +644,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             [$path, $mime] = [$thumb, 'image/jpeg'];
         }
 
-        return $disk->response($path, $attachment->original_name, ['Content-Type' => $mime], 'inline');
+        return $disk->response($path, $attachment->original_name, ['Content-Type' => $mime, 'Content-Security-Policy' => 'sandbox', 'X-Content-Type-Options' => 'nosniff'], 'inline');
     }
 
     /** Resolve+verify an attachment owner is in the current shop, or 404. */

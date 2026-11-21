@@ -13,7 +13,7 @@ Dhiran is a Laravel 12 app (PHP 8.4, PostgreSQL 16). Everything below was checke
 - PHP 8.4 with FPM and CLI. Required by `composer.json`: `bcmath`, `pdo`, `pdo_pgsql`. Required transitively (composer.lock): `ctype`, `filter`, `hash`, `mbstring`, `openssl`, `session`, `tokenizer`, and for `phpoffice/phpspreadsheet`: `dom`, `fileinfo`, `gd`, `iconv`, `libxml`, `simplexml`, `xml`, `xmlreader`, `xmlwriter`, `zip`, `zlib`. Also `json` (razorpay SDK). Customer photo upload (`CustomerProfilePhotoEncoder`) calls `imagewebp()` and `exif_read_data()`, so build GD with WebP support and install `exif`; without them the encoder takes its fallback branch.
 - PostgreSQL 16.
 - nginx, Composer 2, git (or any way to ship the code).
-- Node is not needed on the server: `public/build/` (Vite output) is committed to git. Node (`npm ci && npm run build`) is only needed if you change `resources/` CSS/JS; commit the rebuilt `public/build/`. Note: `package.json` script `assets:verify` / `build:verify` call `php artisan assets:verify-fresh`, which does not exist in this repo (GAP: use `npm run build` only).
+- Node is not needed on the server: `public/build/` (Vite output) is committed to git. Node (`npm ci && npm run build`) is only needed if you change `resources/` CSS/JS; commit the rebuilt `public/build/`. The `assets:verify`/`build:verify` scripts were removed (their artisan command never existed); use `npm run build`.
 
 ## 3. nginx + PHP-FPM
 
@@ -48,7 +48,7 @@ server {
 }
 ```
 
-Only `public/` is web-reachable. The app does not configure trusted proxies (`bootstrap/app.php`); that is why TLS is terminated by this nginx and signalled with `fastcgi_param HTTPS on`. If you put a separate load balancer in front, GAP: trusted-proxy handling is not configured in code.
+Only `public/` is web-reachable. Trusted proxies come from `TRUSTED_PROXIES` in `.env` (comma list of IPs/CIDRs, or `*`; empty = trust none). With this nginx terminating TLS directly leave it empty and keep `fastcgi_param HTTPS on`; behind a load balancer set it to the balancer's address so `X-Forwarded-Proto` is honoured.
 
 `GET /up` is the Laravel health route (`withRouting(health: '/up')`).
 
@@ -61,7 +61,7 @@ App
 
 Database (config/database.php; only `pgsql` exists)
 - `DB_URL` (leave empty), `DB_HOST`, `DB_PORT` (code default `55439`; set `5432`), `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_SSLMODE` (`.env.example`: `require`; code default `disable`)
-- GAP: `LocalPostgresConnector` always wraps `DB_HOST` in single quotes in the DSN (written for a socket path containing a space). libpq accepts quoted values, but this was not tested against a TCP host here; run `php artisan migrate:status` first.
+- `LocalPostgresConnector` single-quotes `DB_HOST` in the DSN; libpq accepts quoted TCP hosts and socket paths (unit-tested for both). Run `php artisan migrate:status` first as a sanity check.
 
 Session / cache / queue
 - `SESSION_DRIVER=file`, `SESSION_COOKIE`, `SESSION_DOMAIN` (empty), `SESSION_SECURE_COOKIE=true`
@@ -117,7 +117,7 @@ chmod -R u+rwX,g+rwX storage bootstrap/cache
 - Seeder class is `Database\Seeders\PlanSeeder` (also what `DatabaseSeeder` calls). It defines `dhiran_monthly` and `dhiran_yearly`. Do not run `DemoSeeder` in production: it creates demo owners and a synthetic admin (`admin@dhiran.test`).
 - `storage:link` is not needed: `config/filesystems.php` has only the private `local` disk (`storage/app/private`) and `links` is empty. Uploads are served through controllers.
 - `route:cache` was not run here; `routes/web.php` uses controller routes only (no closures found by a text search), but run it once and check `php artisan route:list` on the server.
-- Logs: single file `storage/logs/dhiran.log` (config/logging.php, level debug; no rotation, so configure logrotate).
+- Logs: daily files `storage/logs/dhiran-YYYY-MM-DD.log`, 14 days kept (config/logging.php, level debug); no logrotate needed.
 
 ### Cron
 
@@ -165,9 +165,7 @@ WantedBy=multi-user.target
 
 ## 8. First platform admin
 
-GAP: there is no artisan command or production seeder that creates the first super admin. The only code that creates one is `DemoSeeder` (local demo data, fixed email `admin@dhiran.test`). Admin UI `POST /admin/accounts` only creates `support`-role admins and needs an existing admin with `can_manage_admins`.
-
-Until a command exists, the owner must create the first row in `platform_admins` once (e.g. `php artisan tinker` with `App\Models\Platform\PlatformAdmin::create([... 'role'=>'super_admin', 'is_active'=>true])`, password of at least 12 characters, and no `two_factor_secret`). This path was not executed here; verify it on a staging database. MFA: at first sign-in at `/admin/login` the app generates a TOTP secret for an admin without one and enrolls TOTP (`two_factor_enabled`) on the first valid code, then issues recovery codes. Admin sign-in is password plus TOTP.
+Create the first super admin on the server: `php artisan dhiran:create-admin you@example.com --name="Your Name"`. It prints a random temporary password once. Sign in at `/admin/login` within 24 hours: the app then shows a TOTP secret, enrols TOTP on the first valid code and issues recovery codes. First enrolment is refused after 24 hours from creation or the last password reset; a super admin resets the password (which reopens the window) or re-run the command after removing the row. Admin sign-in is password plus TOTP.
 
 ## 9. Backups
 

@@ -22,7 +22,7 @@ class CustomerProfilePhotoController extends Controller
 
         return Storage::disk('local')->response($photo->file_path, null, [
             'Content-Type' => 'image/webp', 'Cache-Control' => 'private, no-store',
-            'X-Content-Type-Options' => 'nosniff', 'Content-Disposition' => 'inline',
+            'X-Content-Type-Options' => 'nosniff', 'Content-Security-Policy' => 'sandbox', 'Content-Disposition' => 'inline',
         ]);
     }
 

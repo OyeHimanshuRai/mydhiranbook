@@ -59,7 +59,7 @@ class StaffController extends Controller
             // duplicate mobile pass validation and then 500 on the DB constraint.
             'mobile_number' => ['required', new IndianMobileRule(), Rule::unique('users', 'mobile_number')],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')],
-            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+            'password' => ['required', 'confirmed', Password::min(12)->mixedCase()->numbers()],
             'role_id' => [
                 'required',
                 // SECURITY: must scope to THIS shop AND exclude the owner role.
@@ -127,6 +127,9 @@ class StaffController extends Controller
         if ($staff->isShopOwner()) {
             abort(403, 'The shop owner account cannot be managed from staff management.');
         }
+
+        // A non-owner may only manage staff whose CURRENT role they could grant themselves.
+        abort_unless(auth()->user()->canGrant($staff->assignedRole?->permissions()->pluck('permissions.id') ?? []), 403, 'This staff member holds permissions you do not have.');
     }
 
     public function edit(User $staff)
@@ -166,7 +169,7 @@ class StaffController extends Controller
                         ->where('name', '!=', 'owner');
                 }),
             ],
-            'password' => ['nullable', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+            'password' => ['nullable', 'confirmed', Password::min(12)->mixedCase()->numbers()],
         ], [
             'mobile_number.unique' => 'This mobile number is already registered. Each mobile number can belong to only one account.',
         ]);

@@ -10,7 +10,7 @@ class Customer extends Model
     use BelongsToShop, ArchivableParty, CanonicalisesMobileNumbers;
     protected static array $mobileColumns=['mobile'];
     protected $fillable=['shop_id','first_name','last_name','mobile','email','address','pan','id_number','state_code','notes'];
-    protected $casts=['is_active'=>'boolean'];
+    protected $casts=['is_active'=>'boolean','pan'=>'encrypted','id_number'=>'encrypted'];
     public function getNameAttribute(): string { return trim($this->first_name.' '.$this->last_name); }
     public function shop() { return $this->belongsTo(Shop::class); }
     public function profilePhoto() { return $this->hasOne(CustomerProfilePhoto::class); }

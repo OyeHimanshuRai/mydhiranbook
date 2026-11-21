@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 class ShopAuthController
@@ -23,9 +24,11 @@ class ShopAuthController
         $column=filter_var($identity,FILTER_VALIDATE_EMAIL) ? 'email' : 'mobile_number';
         $identity=$column === 'email' ? strtolower($identity) : \App\Support\Mobile::normalize($identity);
         if (!$identity) { throw ValidationException::withMessages(['email'=>'Enter your email address or mobile number.']); }
+        $key='shop-login:'.$identity;
+        if (RateLimiter::tooManyAttempts($key,5)) { throw ValidationException::withMessages(['email'=>'Too many sign-in attempts. Try again in a minute.']); }
         $data=[$column=>$identity,'password'=>$input['password']];
-        if (!Auth::guard('web')->attempt([...$data,'is_active'=>true])) { throw ValidationException::withMessages(['email'=>'These credentials could not be verified.']); }
-        $r->session()->regenerate(); return redirect('/');
+        if (!Auth::guard('web')->attempt([...$data,'is_active'=>true])) { RateLimiter::hit($key,60); throw ValidationException::withMessages(['email'=>'These credentials could not be verified.']); }
+        RateLimiter::clear($key); $r->session()->regenerate(); return redirect('/');
     }
     public function logout(Request $r)
     {
