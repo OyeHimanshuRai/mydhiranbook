@@ -3,7 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Dhiran\DhiranSettings;
 use App\Models\Platform\Plan;
-use App\Models\Platform\ShopSubscription;
+use App\Models\Platform\{PlatformInvoice, ShopSubscription, SubscriptionEvent};
 use App\Models\Shop;
 use App\Models\User;
 use App\Rules\IndianMobileRule;
@@ -51,7 +51,12 @@ class DhiranOnboardingController extends Controller
             TenantContext::runFor($shop->id, fn () => DhiranSettings::getForShop($shop->id)->update(['is_enabled' => true] + (($data['loan_number_prefix'] ?? '') !== '' ? ['loan_number_prefix' => $data['loan_number_prefix']] : [])));
             $owner = $roles->ensureDefaultsForShop($shop->id)['owner'];
             $user->forceFill(['shop_id' => $shop->id, 'role_id' => $owner->id])->save();
-            ShopSubscription::where('user_id', $user->id)->whereNull('shop_id')->where('status', '!=', 'cancelled')->update(['shop_id' => $shop->id]);
+            $subs = ShopSubscription::where('user_id', $user->id)->whereNull('shop_id')->where('status', '!=', 'cancelled');
+            $ids = (clone $subs)->pluck('id');
+            $subs->update(['shop_id' => $shop->id]);
+            // the first-term receipt and payment events belong to the shop too (admin shop page lists them)
+            PlatformInvoice::whereNull('shop_id')->whereIn('shop_subscription_id', $ids)->update(['shop_id' => $shop->id]);
+            SubscriptionEvent::whereNull('shop_id')->whereIn('shop_subscription_id', $ids)->update(['shop_id' => $shop->id]);
             return true;
         });
         if (!$created) { return redirect('/')->with('error', 'Your business could not be created.'); }

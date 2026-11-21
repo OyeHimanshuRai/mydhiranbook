@@ -115,10 +115,10 @@ class SubscriptionPaymentService
     {
         try {
             [$sub, $created] = DB::transaction(function () use ($plan, $cycle, $price, $paymentId, $orderId, $actor, $hint) {
-                $shopId = $actor?->shop_id ?? $hint?->shop_id;
-                // serialise this payer's terms: the shop row, or for a shopless buyer their own user row
+                // re-read the payer under the lock: the actor object may predate onboarding attaching a shop
+                $payer = $actor ? User::whereKey($actor->id)->lockForUpdate()->first() : null;
+                $shopId = $payer?->shop_id ?? $hint?->shop_id;
                 if ($shopId) { Shop::whereKey($shopId)->lockForUpdate()->first(); }
-                elseif ($actor) { User::whereKey($actor->id)->lockForUpdate()->first(); }
                 if ($existing = $this->findExistingSubscription($paymentId)) { return [$existing, false]; }
                 if (ShopSubscription::where('razorpay_order_id', $orderId)->exists()) {
                     throw new \LogicException("Order {$orderId} is already paid by another payment; this one needs a refund.");
@@ -227,24 +227,30 @@ class SubscriptionPaymentService
     {
         $now = now()->toIso8601String();
         $text = 'Captured Razorpay payment not applied, needs admin review: '.$reason;
-        $event = SubscriptionEvent::where('event_type', 'payment.unresolved')->where('after->payment_id', $paymentId)->first();
+        // callback and webhook race: serialise per payment so only one creates the record and alert
+        $created = DB::transaction(function () use ($orderId, $paymentId, $reason, $transient, $now, $text) {
+            DB::statement('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', [$paymentId]);
+            $event = SubscriptionEvent::where('event_type', 'payment.unresolved')->where('after->payment_id', $paymentId)->first();
 
-        if ($event) {
-            $after = $event->after ?? [];
-            if (!empty($after['resolved_at'])) { return; }
-            $after['attempt_count'] = (int) ($after['attempt_count'] ?? 1) + 1;
-            $after['last_failed_at'] = $now;
-            $after['transient'] = $transient;
-            $event->update(['after' => $after, 'reason' => $text]);
-            return;
-        }
+            if ($event) {
+                $after = $event->after ?? [];
+                if (!empty($after['resolved_at'])) { return false; }
+                $after['attempt_count'] = (int) ($after['attempt_count'] ?? 1) + 1;
+                $after['last_failed_at'] = $now;
+                $after['transient'] = $transient;
+                $event->update(['after' => $after, 'reason' => $text]);
+                return false;
+            }
 
-        SubscriptionEvent::create([
-            'shop_subscription_id' => null, 'shop_id' => null, 'admin_id' => null, 'event_type' => 'payment.unresolved', 'before' => null,
-            'after' => ['order_id' => $orderId, 'payment_id' => $paymentId, 'attempt_count' => 1, 'first_failed_at' => $now, 'last_failed_at' => $now, 'transient' => $transient, 'resolved_at' => null],
-            'reason' => $text,
-        ]);
-        Log::critical('Captured payment unresolved, admin review required', ['order_id' => $orderId, 'payment_id' => $paymentId, 'reason' => $reason, 'transient' => $transient]);
+            SubscriptionEvent::create([
+                'shop_subscription_id' => null, 'shop_id' => null, 'admin_id' => null, 'event_type' => 'payment.unresolved', 'before' => null,
+                'after' => ['order_id' => $orderId, 'payment_id' => $paymentId, 'attempt_count' => 1, 'first_failed_at' => $now, 'last_failed_at' => $now, 'transient' => $transient, 'resolved_at' => null],
+                'reason' => $text,
+            ]);
+            Log::critical('Captured payment unresolved, admin review required', ['order_id' => $orderId, 'payment_id' => $paymentId, 'reason' => $reason, 'transient' => $transient]);
+            return true;
+        });
+        if (!$created) { return; }
 
         if ($to = config('billing.alert_email')) {
             try { Mail::to($to)->queue(new UnresolvedPaymentAlert($paymentId, $orderId, $text, $transient)); }
@@ -255,11 +261,14 @@ class SubscriptionPaymentService
     /** Flip an open payment.unresolved record to resolved once its payment applies. */
     private function markPaymentResolved(string $paymentId, ShopSubscription $sub): void
     {
-        $event = SubscriptionEvent::where('event_type', 'payment.unresolved')->where('after->payment_id', $paymentId)->first();
-        $after = $event?->after ?? [];
-        if (!$event || !empty($after['resolved_at'])) { return; }
-        $after['resolved_at'] = now()->toIso8601String();
-        $after['resolved_subscription_id'] = $sub->id;
-        $event->update(['after' => $after, 'reason' => $event->reason.' [RESOLVED, subscription #'.$sub->id.']']);
+        DB::transaction(function () use ($paymentId, $sub) {
+            DB::statement('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', [$paymentId]);
+            $event = SubscriptionEvent::where('event_type', 'payment.unresolved')->where('after->payment_id', $paymentId)->first();
+            $after = $event?->after ?? [];
+            if (!$event || !empty($after['resolved_at'])) { return; }
+            $after['resolved_at'] = now()->toIso8601String();
+            $after['resolved_subscription_id'] = $sub->id;
+            $event->update(['after' => $after, 'reason' => $event->reason.' [RESOLVED, subscription #'.$sub->id.']']);
+        });
     }
 }

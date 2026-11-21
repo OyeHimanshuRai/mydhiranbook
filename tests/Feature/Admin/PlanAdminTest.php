@@ -37,4 +37,10 @@ class PlanAdminTest extends AdminTestCase
         $this->patch('/admin/plans/'.$m->id,['price_monthly'=>1,'grace_days'=>1,'staff_limit'=>1,'max_items'=>1,'is_active'=>1])->assertForbidden();
         $this->assertSame(1852,$m->fresh()->priceFor('monthly'));
     }
+    public function test_prices_must_be_whole_rupees(): void
+    {
+        (new PlanSeeder)->run(); $this->signIn($this->admin()); $plan=Plan::where('code','dhiran_monthly')->firstOrFail();
+        $this->patch('/admin/plans/'.$plan->id,['price_monthly'=>499.50,'grace_days'=>5,'staff_limit'=>4,'max_items'=>1200,'is_active'=>1])->assertSessionHasErrors('price_monthly');
+        $this->assertSame(1852,$plan->fresh()->priceFor('monthly'));
+    }
 }

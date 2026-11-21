@@ -80,7 +80,7 @@ class OnboardingFlowTest extends TestCase
         $this->actingAs($u)->post('/subscription/payment/callback', $this->paidOrder($u))->assertRedirect(route('dhiran.onboarding'));
         $inv = PlatformInvoice::sole(); $this->assertNull($inv->shop_id);
         $this->actingAs($u)->post(route('dhiran.onboarding.store'), $this->biz())->assertRedirect('/');
-        $this->assertNull($inv->fresh()->shop_id);
+        $this->assertSame(Shop::sole()->id, $inv->fresh()->shop_id);
         $this->actingAs($u->fresh())->get(route('subscription.status'))->assertOk()->assertSee($inv->invoice_number);
     }
 

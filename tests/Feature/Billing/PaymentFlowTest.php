@@ -208,4 +208,35 @@ class PaymentFlowTest extends TestCase
         $this->artisan('subscription:reconcile-payments', ['--payment' => $triple['razorpay_payment_id'], '--order' => $triple['razorpay_order_id']])->assertSuccessful();
         $this->assertSame(0, ShopSubscription::count());
     }
+
+    public function test_unresolved_record_is_taken_under_an_advisory_lock_one_row_one_alert(): void
+    {
+        Mail::fake(); config(['billing.alert_email' => 'ops@dhiran.test']);
+        $locks = 0;
+        \Illuminate\Support\Facades\DB::listen(function ($q) use (&$locks) { if (str_contains($q->sql, 'pg_advisory_xact_lock')) { $locks++; } });
+        $svc = app(\App\Services\Billing\SubscriptionPaymentService::class);
+        $svc->recordUnresolvedPayment('order_x', 'pay_x', 'boom'); $svc->recordUnresolvedPayment('order_x', 'pay_x', 'boom');
+        $this->assertSame(1, SubscriptionEvent::where('event_type', 'payment.unresolved')->count());
+        Mail::assertQueued(UnresolvedPaymentAlert::class, 1);
+        $this->assertSame(2, $locks);
+    }
+
+    public function test_actor_who_gained_a_shop_after_loading_extends_that_shop_without_orphan_row(): void
+    {
+        $actor = $this->shoplessUser(); // loaded shopless
+        $shop = \App\Models\Shop::create(['name' => 'Late shop']); $first = self::activeSubscription($shop);
+        \App\Models\User::whereKey($actor->id)->update(['shop_id' => $shop->id]);
+        $sub = app(\App\Services\Billing\SubscriptionPaymentService::class)->createSubscription($this->plan(), 'yearly', 19999.0, 'pay_late', 'order_late', $actor);
+        $this->assertSame($shop->id, $sub->shop_id);
+        $this->assertTrue($sub->starts_at->gt($first->starts_at));
+        $this->assertSame(0, ShopSubscription::whereNull('shop_id')->count());
+    }
+
+    public function test_billing_lookup_indexes_exist(): void
+    {
+        $defs = \Illuminate\Support\Facades\DB::table('pg_indexes')->whereIn('tablename', ['subscription_events', 'shop_subscriptions'])->pluck('indexdef')->implode("\n");
+        foreach (["subscription_events USING btree (shop_subscription_id)", "(after ->> 'payment_id'::text)", "(after ->> 'event_id'::text)", "shop_subscriptions USING btree (user_id)"] as $needle) {
+            $this->assertStringContainsString($needle, $defs);
+        }
+    }
 }
