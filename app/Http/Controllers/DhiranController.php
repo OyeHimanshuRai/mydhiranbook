@@ -42,6 +42,8 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         }
 
         // Owner 2026-11-21: no dashboard page; the shop's home is the loans list.
+        // Keep any notice sent here (e.g. "plan ended" from a blocked New Loan) for the next page.
+        session()->reflash();
         return redirect()->route('dhiran.loans');
     }
 
