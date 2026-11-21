@@ -53,7 +53,7 @@ class OnboardingFlowTest extends TestCase
         $s = DhiranSettings::withoutTenant()->where('shop_id', $shop->id)->sole();
         $this->assertTrue((bool) $s->is_enabled); $this->assertSame('SGF', $s->loan_number_prefix);
         $this->assertSame(6, \App\Models\Role::withoutTenant()->where('shop_id', $shop->id)->count());
-        $this->actingAs($u)->get('/dhiran')->assertOk();
+        $this->actingAs($u)->get('/dhiran')->assertRedirect(route('dhiran.loans')); // no dashboard: home is the loans list
     }
 
     public function test_second_business_for_same_owner_refused(): void

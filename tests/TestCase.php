@@ -27,9 +27,11 @@ abstract class TestCase extends BaseTestCase
         return \App\Models\User::create($attributes+['shop_id'=>$shop->id,'role_id'=>$roles[$role]->id]);
     }
     /** One test session is reused across requests, so a bound password hash from the previous user would log the next one out (AuthenticateSession). */
+    protected bool $reportsUnlocked = true;
     public function actingAs(\Illuminate\Contracts\Auth\Authenticatable $user, $guard = null)
     {
         $this->app['session']->forget('password_hash_web');
+        if ($this->reportsUnlocked) { $this->app['session']->put('auth.password_confirmed_at', time()); } // reports' password pop-up is covered by ReportPasswordTest
         return parent::actingAs($user, $guard);
     }
     protected function setUp(): void { TenantContext::clear(); parent::setUp(); \Illuminate\Support\Facades\Cache::flush(); }

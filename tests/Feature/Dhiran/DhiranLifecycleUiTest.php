@@ -326,8 +326,10 @@ class DhiranLifecycleUiTest extends TestCase
             $left = $this->fresh($loan->id);
             $this->assertEqualsWithDelta(50000, (float) $left->outstanding_principal, 0.01, 'first item released for half');
 
-            // The last item carries all that is left; half of it is not enough.
-            $this->assertEqualsWithDelta($left->totalOutstanding(), $this->service->releaseMinimum($left, $bangle), 0.01);
+            // The last item carries all that is left, plus the minimum interest it settles (1 month at 2% of 100000 = 2000,
+            // none collected on day 0) — the same rule pre-close applies; half of it is not enough.
+            $need = round($left->totalOutstanding() + 2000, 2);
+            $this->assertEqualsWithDelta($need, $this->service->releaseMinimum($left, $bangle), 0.01);
             try {
                 $this->service->releaseItem($left, $bangle, 25000, 'cash', '');
                 $this->fail('Released the last pledged item while half the remaining principal stayed owed.');
@@ -336,9 +338,9 @@ class DhiranLifecycleUiTest extends TestCase
             }
             // The release dialog says what each item needs.
             $dialog = $this->renderShow($shop, $owner, $loan->id);
-            $this->assertStringContainsString('pay at least ₹' . number_format($left->totalOutstanding(), 2), $dialog);
+            $this->assertStringContainsString('pay at least ₹' . number_format($need, 2), $dialog);
 
-            $this->service->releaseItem($this->fresh($loan->id), $bangle, $left->totalOutstanding(), 'cash', '');
+            $this->service->releaseItem($this->fresh($loan->id), $bangle, $need, 'cash', '');
             $this->assertEqualsWithDelta(0, (float) $this->fresh($loan->id)->outstanding_principal, 0.01, 'principal left with no gold held');
         });
     }
@@ -362,7 +364,9 @@ class DhiranLifecycleUiTest extends TestCase
             } catch (\LogicException $e) {
                 $this->assertStringContainsString('needed to release this item', $e->getMessage());
             }
-            $this->assertEqualsWithDelta($loan->totalOutstanding(), $this->service->releaseMinimum($loan, $item), 0.01);
+            // the only item settles the loan: everything owed plus the minimum-interest shortfall (as pre-close charges)
+            $shortfall = max(0, round($loan->minimumInterestAmount() - (float) $loan->total_interest_collected - (float) $loan->outstanding_interest, 2));
+            $this->assertEqualsWithDelta($loan->totalOutstanding() + $shortfall, $this->service->releaseMinimum($loan, $item), 0.01);
         });
     }
 

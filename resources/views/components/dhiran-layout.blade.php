@@ -4,9 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    @if(request()->routeIs('dhiran.product-preferences.*'))
-        <meta name="turbo-cache-control" content="no-cache">
-    @endif
+    {{-- Alpine-rendered pages are not snapshot-safe: restoring a Turbo snapshot re-ran x-for clones without their scope. --}}
+    <meta name="turbo-cache-control" content="no-cache">
     <title>{{ $title ?? 'Dhiran' }}</title>
     @include('partials.favicon')
 

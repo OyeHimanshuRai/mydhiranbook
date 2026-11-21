@@ -79,13 +79,13 @@ use Illuminate\Support\Facades\Route;
             Route::patch('/settings', [\App\Http\Controllers\DhiranController::class, 'updateSettings'])->middleware('can:dhiran.settings')->name('settings.update');
 
             // Reports — reports permission
-            Route::get('/reports', [\App\Http\Controllers\DhiranController::class, 'reports'])->middleware('can:dhiran.reports')->name('reports.index');
-            Route::get('/reports/active', [\App\Http\Controllers\DhiranController::class, 'reportActive'])->middleware('can:dhiran.reports')->name('reports.active');
-            Route::get('/reports/overdue', [\App\Http\Controllers\DhiranController::class, 'reportOverdue'])->middleware('can:dhiran.reports')->name('reports.overdue');
-            Route::get('/reports/interest', [\App\Http\Controllers\DhiranController::class, 'reportInterest'])->middleware('can:dhiran.reports')->name('reports.interest');
-            Route::get('/reports/forfeiture', [\App\Http\Controllers\DhiranController::class, 'reportForfeiture'])->middleware('can:dhiran.reports')->name('reports.forfeiture');
-            Route::get('/reports/cashbook', [\App\Http\Controllers\DhiranController::class, 'reportCashbook'])->middleware('can:dhiran.reports')->name('reports.cashbook');
-            Route::get('/reports/profitability', [\App\Http\Controllers\DhiranController::class, 'reportProfitability'])->middleware('can:dhiran.reports')->name('reports.profitability');
+            Route::get('/reports', [\App\Http\Controllers\DhiranController::class, 'reports'])->middleware(['can:dhiran.reports', 'report.password'])->name('reports.index');
+            Route::get('/reports/active', [\App\Http\Controllers\DhiranController::class, 'reportActive'])->middleware(['can:dhiran.reports', 'report.password'])->name('reports.active');
+            Route::get('/reports/overdue', [\App\Http\Controllers\DhiranController::class, 'reportOverdue'])->middleware(['can:dhiran.reports', 'report.password'])->name('reports.overdue');
+            Route::get('/reports/interest', [\App\Http\Controllers\DhiranController::class, 'reportInterest'])->middleware(['can:dhiran.reports', 'report.password'])->name('reports.interest');
+            Route::get('/reports/forfeiture', [\App\Http\Controllers\DhiranController::class, 'reportForfeiture'])->middleware(['can:dhiran.reports', 'report.password'])->name('reports.forfeiture');
+            Route::get('/reports/cashbook', [\App\Http\Controllers\DhiranController::class, 'reportCashbook'])->middleware(['can:dhiran.reports', 'report.password'])->name('reports.cashbook');
+            Route::get('/reports/profitability', [\App\Http\Controllers\DhiranController::class, 'reportProfitability'])->middleware(['can:dhiran.reports', 'report.password'])->name('reports.profitability');
         });
     });
 

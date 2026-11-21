@@ -6,6 +6,9 @@ Route::post('/login',[Auth::class,'login'])->middleware('throttle:5,1');
 Route::get('/register',[Auth::class,'registerForm']);
 Route::post('/register',[Auth::class,'register'])->middleware('throttle:5,1');
 Route::post('/logout',[Auth::class,'logout'])->name('logout');
+Route::middleware('auth')->group(function () {
+    Route::post('/confirm-password',[\App\Http\Controllers\ConfirmPasswordController::class,'store'])->middleware('throttle:5,1')->name('password.confirm.store');
+});
 Route::get('/forgot-password',[\App\Http\Controllers\PasswordResetController::class,'forgotForm'])->name('password.request');
 Route::post('/forgot-password',[\App\Http\Controllers\PasswordResetController::class,'forgot'])->middleware('throttle:3,1')->name('password.email');
 Route::get('/reset-password/{token}',[\App\Http\Controllers\PasswordResetController::class,'resetForm'])->name('password.reset');

@@ -54,7 +54,6 @@ class DhiranMobileColumnTest extends TestCase
 
             return [
                 'loans' => $ctl->loans($req('/dhiran/loans'))->render(),
-                'dashboard' => $ctl->dashboard()->render(),
                 'active' => $ctl->reportActive($req('/dhiran/reports/active'))->render(),
                 'overdue' => $ctl->reportOverdue($req('/dhiran/reports/overdue'))->render(),
                 'interest' => $ctl->reportInterest($req('/dhiran/reports/interest', ['period' => 'this_fy']))->render(),

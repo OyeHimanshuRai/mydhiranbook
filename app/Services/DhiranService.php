@@ -91,6 +91,37 @@ class DhiranService
         }
     }
 
+    /** Closing collects at least min_interest_months of interest: book any shortfall as interest owed (pre-close and last-item release). */
+    private function applyMinimumInterest(DhiranLoan $loan): void
+    {
+        $minimumInterest = $loan->minimumInterestAmount();
+        $totalInterestCollected = (float) $loan->total_interest_collected + (float) $loan->outstanding_interest;
+
+        if ($totalInterestCollected < $minimumInterest) {
+            $shortfall = round($minimumInterest - $totalInterestCollected, 2);
+            $loan->outstanding_interest = round((float) $loan->outstanding_interest + $shortfall, 2);
+            $loan->save();
+
+            // Ledger entry for minimum interest adjustment
+            DhiranLedgerEntry::record([
+                'shop_id'                 => $loan->shop_id,
+                'dhiran_loan_id'          => $loan->id,
+                'entry_type'              => 'interest_accrual',
+                'direction'               => 'debit',
+                'amount'                  => $shortfall,
+                'balance_after'           => (float) $loan->outstanding_principal,
+                'interest_balance_after'  => (float) $loan->outstanding_interest,
+                'penalty_balance_after'   => (float) $loan->outstanding_penalty,
+                'note'                    => "Minimum interest enforcement: shortfall {$shortfall}",
+                'meta'                    => json_encode([
+                    'min_interest_months' => $loan->min_interest_months,
+                    'minimum_amount'      => $minimumInterest,
+                    'shortfall'           => $shortfall,
+                ]),
+            ]);
+        }
+    }
+
     private function assertOpen(int $shopId, mixed $date): void
     {
         \App\Services\InvoiceAccountingService::assertShopLockForDate($shopId, Carbon::parse($date)->toDateString());
@@ -994,8 +1025,11 @@ class DhiranService
         }
 
         $principalShare = round(((float) $item->market_value / $pledgedValue) * (float) $loan->outstanding_principal, 2);
+        // the last item settles the loan, so it also carries any minimum-interest shortfall (charged on release)
+        $isLast = ! DhiranLoanItem::query()->where('dhiran_loan_id', $loan->id)->where('status', 'pledged')->whereKeyNot($item->id)->exists();
+        $shortfall = $isLast ? max(0.0, round($loan->minimumInterestAmount() - (float) $loan->total_interest_collected - (float) $loan->outstanding_interest, 2)) : 0.0;
 
-        return round((float) $loan->outstanding_penalty + (float) $loan->outstanding_interest + $principalShare, 2);
+        return round((float) $loan->outstanding_penalty + (float) $loan->outstanding_interest + $principalShare + $shortfall, 2);
     }
 
     public function releaseItem(
@@ -1029,10 +1063,14 @@ class DhiranService
             if (! $item || $item->status !== 'pledged') { // re-check under the lock: a stale copy must not release twice
                 throw new LogicException('Only pledged items can be released.');
             }
-            if ($loan->items()->where('status', 'pledged')->whereKeyNot($item->id)->doesntExist()) {
-                $this->assertMaySettle($loan); // releasing the last item settles the loan
-            }
 
+            // releasing the last item settles the loan: lock period applies, and the minimum interest is charged (as pre-close does)
+            if ($loan->items()->where('status', 'pledged')->whereKeyNot($item->id)->doesntExist()) {
+                if (! $loan->canPreClose()) {
+                    throw new LogicException('This release would settle the loan during its lock period. Settlement is allowed once the lock period ends.');
+                }
+                $this->applyMinimumInterest($loan);
+            }
             $required = $this->releaseMinimum($loan, $item);
             $proportionalPrincipal = round($required - (float) $loan->outstanding_penalty - (float) $loan->outstanding_interest, 2);
             if ($paymentAmount < $required) {
@@ -1156,33 +1194,7 @@ class DhiranService
         return DB::transaction(function () use ($loan, $method): ?DhiranPayment {
             $loan = $this->lockActive($loan);
 
-            // ── Enforce minimum interest ─────────────────────
-            $minimumInterest = $loan->minimumInterestAmount();
-            $totalInterestCollected = (float) $loan->total_interest_collected + (float) $loan->outstanding_interest;
-
-            if ($totalInterestCollected < $minimumInterest) {
-                $shortfall = round($minimumInterest - $totalInterestCollected, 2);
-                $loan->outstanding_interest = round((float) $loan->outstanding_interest + $shortfall, 2);
-                $loan->save();
-
-                // Ledger entry for minimum interest adjustment
-                DhiranLedgerEntry::record([
-                    'shop_id'                 => $loan->shop_id,
-                    'dhiran_loan_id'          => $loan->id,
-                    'entry_type'              => 'interest_accrual',
-                    'direction'               => 'debit',
-                    'amount'                  => $shortfall,
-                    'balance_after'           => (float) $loan->outstanding_principal,
-                    'interest_balance_after'  => (float) $loan->outstanding_interest,
-                    'penalty_balance_after'   => (float) $loan->outstanding_penalty,
-                    'note'                    => "Minimum interest enforcement: shortfall {$shortfall}",
-                    'meta'                    => json_encode([
-                        'min_interest_months' => $loan->min_interest_months,
-                        'minimum_amount'      => $minimumInterest,
-                        'shortfall'           => $shortfall,
-                    ]),
-                ]);
-            }
+            $this->applyMinimumInterest($loan);
 
             // ── Pay full outstanding ─────────────────────────
             $totalOutstanding = $loan->totalOutstanding();

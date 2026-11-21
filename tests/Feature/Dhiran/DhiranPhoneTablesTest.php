@@ -55,7 +55,6 @@ class DhiranPhoneTablesTest extends TestCase
             return [
                 'profile' => $ctl->borrowerProfile(Customer::findOrFail($c->id))->render(),
                 'loan' => $ctl->show($loan->refresh())->render(),
-                'dashboard' => $ctl->dashboard()->render(),
                 'cashbook' => $ctl->reportCashbook($req('/dhiran/reports/cashbook'))->render(),
                 'active report' => $ctl->reportActive($req('/dhiran/reports/active'))->render(),
                 'loans list' => $ctl->loans($req('/dhiran/loans'))->render(),

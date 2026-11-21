@@ -12,7 +12,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToPriorityList(Illuminate\Routing\Middleware\SubstituteBindings::class, App\Http\Middleware\UseShop::class);
         $middleware->prependToPriorityList(App\Http\Middleware\UseShop::class, App\Http\Middleware\EnsureShopExists::class);
         $middleware->prependToPriorityList(App\Http\Middleware\EnsureShopExists::class, App\Http\Middleware\EnsureDhiranEmailVerified::class);
-        $middleware->alias(['shop' => App\Http\Middleware\UseShop::class, 'admin.session'=>App\Http\Middleware\AdminSession::class, 'dhiran.verified'=>App\Http\Middleware\EnsureDhiranEmailVerified::class,'shop.exists'=>App\Http\Middleware\EnsureShopExists::class,'dhiran.enabled'=>App\Http\Middleware\EnsureDhiranEnabled::class]);
+        $middleware->alias(['shop' => App\Http\Middleware\UseShop::class, 'admin.session'=>App\Http\Middleware\AdminSession::class, 'dhiran.verified'=>App\Http\Middleware\EnsureDhiranEmailVerified::class,'shop.exists'=>App\Http\Middleware\EnsureShopExists::class,'dhiran.enabled'=>App\Http\Middleware\EnsureDhiranEnabled::class,'report.password'=>App\Http\Middleware\ConfirmReportPassword::class]);
     })->withExceptions(function (Illuminate\Foundation\Configuration\Exceptions $exceptions) {})->create();
 
 if (getenv('APP_ENV') === 'testing' || ($_ENV['APP_ENV'] ?? '') === 'testing') {

@@ -25,4 +25,15 @@ class LapsedNoticeTest extends TestCase
                 ->assertOk()->assertSee('Pledge Loans')->assertSee(EnsureDhiranEnabled::LAPSED);
         }
     }
+
+    /** Alpine-rendered pages are not snapshot-safe: Back must refetch, not restore a snapshot (which threw "item is not defined"). */
+    public function test_shop_pages_opt_out_of_turbo_snapshots(): void
+    {
+        $shop = self::createDhiranShop(['name' => 'Cache shop']);
+        TenantContext::runFor($shop->id, fn () => DhiranSettings::getForShop($shop->id)->update(['is_enabled' => true]));
+        $owner = self::userWithRole($shop, ['name' => 'O', 'email' => 'cache@example.test', 'password' => 'Cache-pass-12345']);
+        foreach (['/dhiran/loans', '/dhiran/create', '/dhiran/borrowers'] as $url) {
+            $this->actingAs($owner)->get($url)->assertOk()->assertSee('<meta name="turbo-cache-control" content="no-cache">', false);
+        }
+    }
 }

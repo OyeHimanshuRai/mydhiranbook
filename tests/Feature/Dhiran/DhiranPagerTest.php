@@ -106,10 +106,8 @@ class DhiranPagerTest extends TestCase
         preg_match_all('/data-sno>(\d+)</', $table, $m);
         $this->assertSame(['21', '22', '23'], $m[1]);
 
-        foreach (['reportActive', 'reportProfitability', 'reportCashbook', 'borrowers', 'dashboard'] as $method) {
-            $html = $method === 'dashboard'
-                ? TenantContext::runFor($this->shop->id, function () { $this->actingAs($this->owner); view()->share('errors', new \Illuminate\Support\ViewErrorBag); return app(DhiranController::class)->dashboard()->render(); })
-                : $this->page($method);
+        foreach (['reportActive', 'reportProfitability', 'reportCashbook', 'borrowers'] as $method) { // no dashboard page any more
+            $html = $this->page($method);
             $this->assertMatchesRegularExpression('/<thead.*?<th[^>]*>#<\/th>/s', $html, "{$method}: # column");
             $this->assertStringContainsString('data-sno>1<', $html, "{$method}: first row is 1");
         }
