@@ -86,8 +86,11 @@ class SubscriptionWebhookService
                 // webhooks arrive out of order: keep evidence and ask Razorpay to redeliver, so the refund applies once the capture lands
                 if (!$sub) {
                     // a payment parked as unresolved never gets a subscription: answer final, or Razorpay retries forever and may disable the webhook
-                    $parked = SubscriptionEvent::where('event_type', 'payment.unresolved')->where('after->payment_id', $paymentId)->exists();
-                    $this->refuseRefund($paymentId, $refundId, $parked ? 'refund for a payment parked as unresolved (no subscription exists)' : 'no local subscription found for payment id (will retry)', $paise, $currency, $eventId);
+                    // only a FINAL park counts (non-transient, not resolved): a transient one is reconciled into a subscription later,
+                    // and the refund must then still be applied, so it keeps being retried
+                    $parked = SubscriptionEvent::where('event_type', 'payment.unresolved')->where('after->payment_id', $paymentId)
+                        ->whereNull('after->resolved_at')->whereRaw("COALESCE((after->>'transient')::boolean, false) = false")->exists();
+                    $this->refuseRefund($paymentId, $refundId, $parked ? 'refund for a payment parked as unresolved (no subscription exists)' : 'no local subscription found for payment id (will retry)', $paise, $currency, $eventId, $parked ? ['refund_of_parked' => true] : []);
                     return $parked ? SubscriptionPaymentService::OUTCOME_PERMANENT : SubscriptionPaymentService::OUTCOME_TRANSIENT;
                 }
 
@@ -128,7 +131,7 @@ class SubscriptionWebhookService
     }
 
     /** Immutable evidence, deduplicated per event id (else refund id). */
-    private function refuseRefund(string $paymentId, string $refundId, string $reason, int $paise, string $currency, string $eventId): string
+    private function refuseRefund(string $paymentId, string $refundId, string $reason, int $paise, string $currency, string $eventId, array $extra = []): string
     {
         $existing = SubscriptionEvent::where('event_type', 'refund.invalid')->where('after->event_id', $eventId)->first();
         if ($existing) {
@@ -141,7 +144,7 @@ class SubscriptionWebhookService
         SubscriptionEvent::create([
             'shop_subscription_id' => null, 'shop_id' => null, 'admin_id' => null, 'event_type' => 'refund.invalid', 'before' => null,
             'after' => ['event_id' => $eventId, 'payment_id' => $paymentId, 'refund_id' => $refundId, 'refund_amount_paise' => $paise, 'currency' => $currency,
-                'attempt_count' => 1, 'first_failed_at' => now()->toIso8601String(), 'last_failed_at' => now()->toIso8601String(), 'resolved_at' => null, 'validation_reason' => $reason],
+                'attempt_count' => 1, 'first_failed_at' => now()->toIso8601String(), 'last_failed_at' => now()->toIso8601String(), 'resolved_at' => null, 'validation_reason' => $reason] + $extra,
             'reason' => 'Razorpay refund refused, validation failed: '.$reason,
         ]);
         Log::critical('Refund refused, validation failed', ['event_id' => $eventId, 'payment_id' => $paymentId, 'refund_id' => $refundId, 'reason' => $reason]);

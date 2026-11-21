@@ -177,6 +177,10 @@ class SubscriptionPaymentService
     public function finalizeCapturedPayment(string $orderId, string $paymentId): ShopSubscription
     {
         if ($existing = $this->findExistingSubscription($paymentId)) { return $existing; }
+        // a refund was already seen for this (parked) payment: never grant a term for refunded money; admin decides
+        if (SubscriptionEvent::where('event_type', 'refund.invalid')->where('after->payment_id', $paymentId)->where('after->refund_of_parked', true)->exists()) {
+            throw new \LogicException('A refund was already issued for this payment; no term granted.');
+        }
 
         ['order' => $order, 'plan' => $plan, 'billing_cycle' => $cycle] = $this->fetchAndValidateOrder($orderId);
         $userId = ((array) ($order->notes ?? []))['user_id'] ?? null;

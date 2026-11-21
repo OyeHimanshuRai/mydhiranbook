@@ -74,6 +74,25 @@ class BillingTest extends AdminTestCase
         $this->assertContains('refund.invalid', $this->types()); // evidence kept
         $this->assertSame(0, ShopSubscription::count());
     }
+    public function test_refund_for_a_transiently_parked_payment_is_still_retried(): void
+    {
+        // Rule: a transient failure (provider hiccup) will be reconciled into a subscription later, so the refund must be
+        // redelivered until it can apply — answering final would leave a refunded term active.
+        \App\Models\Platform\SubscriptionEvent::create(['shop_subscription_id' => null, 'shop_id' => null, 'admin_id' => null, 'event_type' => 'payment.unresolved', 'before' => null,
+            'after' => ['order_id' => 'order_t', 'payment_id' => 'pay_trans', 'attempt_count' => 1, 'transient' => true, 'resolved_at' => null], 'reason' => 'transient: timeout']);
+        $this->refund('pay_trans', 1999900, 'rfnd_t', 'evt_rt')->assertStatus(500)->assertJson(['status' => 'retry']);
+    }
+
+    public function test_a_payment_refunded_while_parked_is_never_granted_by_a_later_capture(): void
+    {
+        // Rule: once a refund was seen for a parked payment, a later capture/reconcile must not grant a term for refunded money.
+        $owner = $this->shopUser(); $t = $this->paidOrder($owner);
+        \App\Models\Platform\SubscriptionEvent::create(['shop_subscription_id' => null, 'shop_id' => null, 'admin_id' => null, 'event_type' => 'payment.unresolved', 'before' => null,
+            'after' => ['order_id' => $t['razorpay_order_id'], 'payment_id' => $t['razorpay_payment_id'], 'attempt_count' => 1, 'transient' => false, 'resolved_at' => null], 'reason' => 'refused']);
+        $this->refund($t['razorpay_payment_id'], 1999900, 'rfnd_p', 'evt_rp')->assertOk()->assertJson(['status' => 'not_applied']);
+        $this->capturedWebhook($t, 'cap_after_refund');
+        $this->assertSame(0, ShopSubscription::count());
+    }
     public function test_refund_redelivered_after_capture_cancels_the_term(): void
     {
         // Rule: money refunded at Razorpay must end the term. A refund seen before the capture was webhook-ed
