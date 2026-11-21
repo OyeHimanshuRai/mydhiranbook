@@ -1577,15 +1577,15 @@ class DhiranService
     public function closeLoan(DhiranLoan $loan): void
     {
         $this->assertActive($loan);
-
-        if ($loan->totalOutstanding() > 0) {
-            throw new LogicException(
-                'Cannot close loan with outstanding balance of ' . $loan->totalOutstanding() . '. Pay in full first.'
-            );
-        }
+        $this->accrueInterest($loan); // never discharge interest that is owed but not yet booked
 
         DB::transaction(function () use ($loan): void {
             $loan = $this->lockActive($loan);
+            if ($loan->totalOutstanding() > 0) { // decided on the locked, freshly accrued row
+                throw new LogicException(
+                    'Cannot close loan with outstanding balance of ' . $loan->totalOutstanding() . '. Pay in full first.'
+                );
+            }
             $this->assertMaySettle($loan); // closing is a settlement too (e.g. after a non-last release paid everything off)
             $this->closeLoanInternal($loan);
         });
