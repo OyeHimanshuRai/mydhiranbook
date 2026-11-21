@@ -93,6 +93,20 @@ class BillingTest extends AdminTestCase
         $this->capturedWebhook($t, 'cap_after_refund');
         $this->assertSame(0, ShopSubscription::count());
     }
+    public function test_redelivered_refund_keeps_the_parked_marker_when_the_park_turns_final(): void
+    {
+        // Rule: the same refund event is first retried (transient park, evidence row without marker), then the park becomes
+        // final; the redelivery must update that evidence row WITH the marker, or a later capture would grant refunded money.
+        $owner = $this->shopUser(); $t = $this->paidOrder($owner);
+        $park = \App\Models\Platform\SubscriptionEvent::create(['shop_subscription_id' => null, 'shop_id' => null, 'admin_id' => null, 'event_type' => 'payment.unresolved', 'before' => null,
+            'after' => ['order_id' => $t['razorpay_order_id'], 'payment_id' => $t['razorpay_payment_id'], 'attempt_count' => 1, 'transient' => true, 'resolved_at' => null], 'reason' => 'transient']);
+        $this->refund($t['razorpay_payment_id'], 1999900, 'rfnd_m', 'evt_rm')->assertStatus(500);
+        $park->update(['after' => array_merge($park->after, ['transient' => false])]);
+        $this->refund($t['razorpay_payment_id'], 1999900, 'rfnd_m', 'evt_rm')->assertOk();
+        $this->capturedWebhook($t, 'cap_m');
+        $this->assertSame(0, ShopSubscription::count());
+    }
+
     public function test_refund_redelivered_after_capture_cancels_the_term(): void
     {
         // Rule: money refunded at Razorpay must end the term. A refund seen before the capture was webhook-ed

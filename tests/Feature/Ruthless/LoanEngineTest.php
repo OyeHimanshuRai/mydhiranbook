@@ -666,6 +666,29 @@ class LoanEngineTest extends TestCase
         $this->refused(fn () => $this->loan(['principal_amount' => 500000], '2026-01-01', [$this->gold(100, 30)]), 'purity 30');
     }
 
+    public function test_paying_everything_via_a_non_last_release_then_closing_cannot_dodge_the_lock_period(): void
+    {
+        // Rule: every way of ending a loan is a settlement. Release item 1 paying the whole balance, then closeLoan():
+        // a loan in its 3-month lock period must stay active.
+        $l = $this->loan(['min_lock_months' => 3], '2026-01-01', [$this->gold(50, 24, 6000, 'A'), $this->gold(50, 24, 6000, 'B')]);
+        $item = DhiranLoanItem::withoutGlobalScopes()->where('dhiran_loan_id', $l->id)->orderBy('id')->first();
+        try {
+            $this->t(fn () => $this->svc->releaseItem($this->fresh($l), $item, 100000, 'cash', ''));
+            $this->t(fn () => $this->svc->closeLoan($this->fresh($l)));
+        } catch (LogicException) {
+        }
+        $this->assertSame('active', $this->fresh($l)->status, 'loan in lock period was closed via release + close');
+    }
+
+    public function test_one_paisa_left_is_not_mistaken_for_a_full_payoff(): void
+    {
+        // Rule: money compares in whole paise. Paying all but one paisa is NOT a settlement, so a locked loan accepts it.
+        $l = $this->loan(['min_lock_months' => 3, 'principal_amount' => 1000]); // 1000 - 999.99 is 0.00999999999999 in float
+        $this->pay($l, 999.99);
+        $this->assertSame('active', $this->fresh($l)->status);
+        $this->assertEqualsWithDelta(0.01, (float) $this->fresh($l)->outstanding_principal, 0.0001);
+    }
+
     // ═════════════════ ILLEGAL STATE TRANSITIONS ═════════════════
 
     private function inState(string $state): DhiranLoan

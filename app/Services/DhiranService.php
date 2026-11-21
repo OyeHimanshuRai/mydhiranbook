@@ -807,7 +807,7 @@ class DhiranService
                     "Payment amount ({$amount}) exceeds total outstanding ({$totalOutstanding}). Overpayment not allowed."
                 );
             }
-            if (round($totalOutstanding, 2) - $amount < 0.01) {
+            if ((int) round($totalOutstanding * 100) - (int) round($amount * 100) < 1) { // whole paise: float subtraction misreads 8.2 - 8.19
                 $this->assertMaySettle($loan);
             }
 
@@ -994,6 +994,7 @@ class DhiranService
             // interest/penalty cleared here — in which case totalOutstanding()
             // hits zero and the loan should close automatically.
             if ($loan->totalOutstanding() < 0.01) {
+                $this->assertMaySettle($loan); // paying the last of the interest/penalty settles the loan
                 $this->closeLoanInternal($loan);
             }
 
@@ -1585,6 +1586,7 @@ class DhiranService
 
         DB::transaction(function () use ($loan): void {
             $loan = $this->lockActive($loan);
+            $this->assertMaySettle($loan); // closing is a settlement too (e.g. after a non-last release paid everything off)
             $this->closeLoanInternal($loan);
         });
     }
