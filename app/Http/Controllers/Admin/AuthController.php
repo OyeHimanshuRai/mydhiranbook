@@ -33,7 +33,7 @@ class AuthController
         if ($admin->mfaEnrolmentOpen()) { return null; }
         $this->audit->log($admin,'admin.mfa_enrolment_refused',targetId:$admin->id,request:$r);
         Auth::guard('platform_admin')->logout(); $r->session()->invalidate(); $r->session()->regenerateToken();
-        return redirect('/admin/login')->withErrors(['email'=>'Authenticator setup window has closed. Ask a super admin to reset your password, which reopens it for 24 hours.']);
+        return redirect('/admin/login')->withErrors(['email'=>'Authenticator setup window has closed. Use "Forgot password" to reset your password, which reopens it for 24 hours.']);
     }
     public function mfaForm(Request $r)
     {
@@ -91,7 +91,7 @@ class AuthController
     {
         $r->validate(['email'=>'required|email','token'=>'required|string','password'=>['required','confirmed',PasswordRule::min(12)]]);
         $result=Password::broker('platform_admins')->reset($r->only('email','token','password','password_confirmation'),function(PlatformAdmin $admin,string $password) use($r) {
-            $admin->forceFill(['password'=>Hash::make($password),'remember_token'=>Str::random(60),'password_changed_at'=>now()])->save();
+            $admin->forceFill(['password'=>Hash::make($password),'remember_token'=>Str::random(60),'password_changed_at'=>now()] + ($admin->two_factor_enabled ? [] : ['two_factor_secret'=>null]))->save(); // a reopened window never reuses a secret shown before
             $this->audit->log($admin,'admin.password_reset',targetId:$admin->id,request:$r);
         });
         if ($result !== Password::PASSWORD_RESET) { throw ValidationException::withMessages(['email'=>'This reset link is invalid or has expired.']); }

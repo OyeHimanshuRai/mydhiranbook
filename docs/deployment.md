@@ -165,7 +165,7 @@ WantedBy=multi-user.target
 
 ## 8. First platform admin
 
-Create the first super admin on the server: `php artisan dhiran:create-admin you@example.com --name="Your Name"`. It prints a random temporary password once. Sign in at `/admin/login` within 24 hours: the app then shows a TOTP secret, enrols TOTP on the first valid code and issues recovery codes. First enrolment is refused after 24 hours from creation or the last password reset; a super admin resets the password (which reopens the window) or re-run the command after removing the row. Admin sign-in is password plus TOTP.
+Create the first super admin on the server: `php artisan dhiran:create-admin you@example.com --name="Your Name"`. It prints a random temporary password once. Sign in at `/admin/login` within 24 hours: the app then shows a TOTP secret, enrols TOTP on the first valid code and issues recovery codes. First enrolment is refused after 24 hours from creation or the last password reset; use "Forgot password" on `/admin/login`: the emailed reset reopens the window and discards any authenticator secret that was shown but never confirmed. Admin sign-in is password plus TOTP.
 
 ## 9. Backups
 
@@ -176,7 +176,7 @@ pg_dump -Fc -h <host> -U <user> <database> > dhiran-$(date +%F).dump
 tar czf dhiran-files-$(date +%F).tgz -C /var/www/dhiran storage/app/private .env
 ```
 
-Restore: `pg_restore -d <new_db> dhiran-YYYY-MM-DD.dump`, unpack `storage/app/private`, then run the verification steps below. Store `.env` backups encrypted; it holds the Razorpay secrets and `APP_KEY` (without the same `APP_KEY`, encrypted columns such as `two_factor_secret` cannot be read). Test a restore before launch.
+Restore: `pg_restore -d <new_db> dhiran-YYYY-MM-DD.dump`, unpack `storage/app/private`, then run the verification steps below. Store `.env` backups encrypted; it holds the Razorpay secrets and `APP_KEY` (without the same `APP_KEY`, encrypted columns cannot be read: admin `two_factor_secret` and borrower PII in `customers.pan`, `customers.id_number`, `dhiran_loans.kyc_pan` — losing the key loses that data; never rotate it without re-encrypting). Test a restore before launch.
 
 ## 10. Upgrade and rollback
 

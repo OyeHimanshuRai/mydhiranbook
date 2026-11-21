@@ -31,6 +31,30 @@ class HardeningTest extends TestCase
         $att=DhiranAttachment::create(['shop_id'=>$shop->id,'owner_type'=>DhiranAttachment::OWNER_LOAN,'owner_id'=>1,'document_type'=>'id_proof_front','file_disk'=>'local','file_path'=>'dhiran/x/a.png','original_name'=>'a.png','mime_type'=>'image/png','size_bytes'=>1]);
         $this->actingAs($owner)->get(route('dhiran.attachments.show',$att))->assertOk()->assertHeader('Content-Security-Policy','sandbox')->assertHeader('X-Content-Type-Options','nosniff');
     }
+    public function test_pdf_attachment_is_not_sandboxed_so_browsers_can_view_it(): void
+    {
+        $shop=self::createDhiranShop(['name'=>'Pdf shop']);
+        $owner=\App\Models\User::create(['name'=>'O','email'=>'pdf@example.test','password'=>'Local-pass-12345','shop_id'=>$shop->id,'role_id'=>app(\App\Services\TenantRoleService::class)->ensureDefaultsForShop($shop->id)['owner']->id]);
+        Storage::fake('local'); Storage::disk('local')->put('dhiran/x/a.pdf','%PDF-1.4');
+        $att=DhiranAttachment::create(['shop_id'=>$shop->id,'owner_type'=>DhiranAttachment::OWNER_LOAN,'owner_id'=>1,'document_type'=>'loan_document','file_disk'=>'local','file_path'=>'dhiran/x/a.pdf','original_name'=>'a.pdf','mime_type'=>'application/pdf','size_bytes'=>8]);
+        $this->actingAs($owner)->get(route('dhiran.attachments.show',$att))->assertOk()->assertHeaderMissing('Content-Security-Policy')->assertHeader('X-Content-Type-Options','nosniff');
+    }
+    public function test_trusted_proxies_come_from_config_at_request_time(): void
+    {
+        $proxied=fn()=>$this->withServerVariables(['REMOTE_ADDR'=>'10.0.0.9'])->withHeaders(['X-Forwarded-Proto'=>'https'])->get('/');
+        config(['app.trusted_proxies'=>'']);
+        $proxied()->assertHeaderMissing('Strict-Transport-Security');
+        config(['app.trusted_proxies'=>'10.0.0.9']);
+        $proxied()->assertHeader('Strict-Transport-Security');
+    }
+    public function test_password_reset_discards_unconfirmed_mfa_secret(): void
+    {
+        $a=$this->adminCreated(now()->subDays(3)->toDateTimeString(),['two_factor_secret'=>app(TotpService::class)->generateSecret()]);
+        $token=\Illuminate\Support\Facades\Password::broker('platform_admins')->createToken($a);
+        $this->post('/admin/reset-password',['email'=>$a->email,'token'=>$token,'password'=>'New-admin-pass-123','password_confirmation'=>'New-admin-pass-123']);
+        $this->assertNull($a->fresh()->two_factor_secret);
+        $this->assertNotNull($a->fresh()->password_changed_at);
+    }
     public function test_mfa_first_enrolment_only_inside_24h_window(): void
     {
         $old=$this->adminCreated(now()->subDays(3)->toDateTimeString());
@@ -81,13 +105,13 @@ class HardeningTest extends TestCase
     {
         $shop=self::createDhiranShop(['name'=>'Login lim']);
         self::userWithRole($shop,['name'=>'O','email'=>'lim@x.test','password'=>'Synthetic-pass-12345']);
-        for($i=0;$i<5;$i++){ RateLimiter::hit('shop-login:lim@x.test',60); }
+        for($i=0;$i<5;$i++){ RateLimiter::hit('shop-login:lim@x.test|127.0.0.1',60); }
         $this->post('/login',['email'=>'LIM@x.test','password'=>'Synthetic-pass-12345'])->assertSessionHasErrors('email');
         $this->assertGuest();
-        RateLimiter::clear('shop-login:lim@x.test');
-        RateLimiter::hit('shop-login:lim@x.test',60);
+        RateLimiter::clear('shop-login:lim@x.test|127.0.0.1');
+        RateLimiter::hit('shop-login:lim@x.test|127.0.0.1',60);
         $this->post('/login',['email'=>'lim@x.test','password'=>'Synthetic-pass-12345'])->assertRedirect('/');
-        $this->assertSame(0,RateLimiter::attempts('shop-login:lim@x.test'));
+        $this->assertSame(0,RateLimiter::attempts('shop-login:lim@x.test|127.0.0.1'));
     }
     public function test_create_admin_command(): void
     {

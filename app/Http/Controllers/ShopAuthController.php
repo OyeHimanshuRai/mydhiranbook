@@ -24,7 +24,7 @@ class ShopAuthController
         $column=filter_var($identity,FILTER_VALIDATE_EMAIL) ? 'email' : 'mobile_number';
         $identity=$column === 'email' ? strtolower($identity) : \App\Support\Mobile::normalize($identity);
         if (!$identity) { throw ValidationException::withMessages(['email'=>'Enter your email address or mobile number.']); }
-        $key='shop-login:'.$identity;
+        $key='shop-login:'.$identity.'|'.$r->ip(); // per account+IP: one attacker can't lock a known account out for everyone
         if (RateLimiter::tooManyAttempts($key,5)) { throw ValidationException::withMessages(['email'=>'Too many sign-in attempts. Try again in a minute.']); }
         $data=[$column=>$identity,'password'=>$input['password']];
         if (!Auth::guard('web')->attempt([...$data,'is_active'=>true])) { RateLimiter::hit($key,60); throw ValidationException::withMessages(['email'=>'These credentials could not be verified.']); }

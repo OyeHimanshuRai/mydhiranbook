@@ -41,7 +41,7 @@ Tick each box; fill the Results table at the end.
 ## Backups, logs, monitoring
 - [ ] Nightly `pg_dump` plus `storage/app/private` and `.env` backup, stored off the server
 - [ ] A restore was tested on a scratch database
-- [ ] `storage/logs/dhiran.log` rotation configured; someone reads it
+- [ ] Someone reads `storage/logs/dhiran-YYYY-MM-DD.log` (daily files, 14 kept)
 - [ ] `/up` monitored; `queue:failed` and `subscription_events` unresolved payments reviewed (`/admin/unresolved-payments`)
 
 ## Admin
