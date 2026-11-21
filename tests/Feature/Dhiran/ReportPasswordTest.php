@@ -70,4 +70,30 @@ class ReportPasswordTest extends TestCase
         $this->actingAs($b)->get('/dhiran/reports/overdue')->assertSee('Enter your password to open reports');
         $this->post(route('password.confirm.store'), ['password' => 'Report-pass-12345'])->assertSessionHasErrors('password'); // A's password doesn't unlock B
     }
+
+    /** List pages stay open, but their CSV exports (whole portfolio / customer book) need the password AND the reports permission. */
+    public function test_list_csv_exports_need_the_password_and_the_reports_permission(): void
+    {
+        $owner = $this->owner();
+        foreach (['/dhiran/loans', '/dhiran/borrowers'] as $url) {
+            $this->actingAs($owner)->get($url)->assertOk()->assertDontSee('Enter your password to open reports'); // plain list unaffected
+        }
+        $this->reportsUnlocked = false;
+        foreach (['/dhiran/loans?export=csv', '/dhiran/borrowers?export=csv'] as $url) {
+            $this->actingAs($owner)->get($url)->assertOk()->assertSee('Enter your password to open reports'); // locked: no CSV
+        }
+        // a role without dhiran.reports is refused even with a valid confirmation
+        $staff = self::userWithRole($owner->shop, ['name' => 'V', 'email' => 'viewer-csv@example.test', 'password' => 'Viewer-pass-12345'], 'viewer');
+        $this->actingAs($staff);
+        $this->app['session']->put(['auth.password_confirmed_at' => time(), 'auth.password_confirmed_for' => $staff->id]);
+        $this->get('/dhiran/loans?export=csv')->assertForbidden();
+        $this->get('/dhiran/loans')->assertOk();
+    }
+
+    public function test_route_ids_longer_than_bigint_are_not_found_not_a_500(): void
+    {
+        $owner = $this->owner();
+        $this->app['session']->put(['auth.password_confirmed_at' => time(), 'auth.password_confirmed_for' => $owner->id]);
+        $this->actingAs($owner)->get('/dhiran/loans/99999999999999999999')->assertNotFound();
+    }
 }

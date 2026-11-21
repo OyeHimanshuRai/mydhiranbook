@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Route;
             Route::get('/attachments/{attachment}', [\App\Http\Controllers\DhiranController::class, 'showAttachment'])->middleware('can:dhiran.view')->name('attachments.show');
 
             // Loan listing & detail — view permission
-            Route::get('/loans', [\App\Http\Controllers\DhiranController::class, 'loans'])->middleware('can:dhiran.view')->name('loans');
+            Route::get('/loans', [\App\Http\Controllers\DhiranController::class, 'loans'])->middleware(['can:dhiran.view', 'report.password:export'])->name('loans');
             Route::get('/loans/{loan}', [\App\Http\Controllers\DhiranController::class, 'show'])->middleware('can:dhiran.view')->name('show');
             // Activate a pending-evidence loan (evidence-gated in the service).
             Route::post('/loans/{loan}/activate', [\App\Http\Controllers\DhiranController::class, 'activateLoan'])->middleware('can:dhiran.create')->name('activate-loan');
@@ -63,8 +63,8 @@ use Illuminate\Support\Facades\Route;
             Route::get('/borrowers/{customer}/photo', [\App\Http\Controllers\CustomerProfilePhotoController::class, 'show'])->middleware('can:dhiran.view')->name('borrowers.photo.show');
             Route::post('/borrowers/{customer}/photo', [\App\Http\Controllers\CustomerProfilePhotoController::class, 'store'])->middleware('can:dhiran.create')->name('borrowers.photo.store');
             Route::delete('/borrowers/{customer}/photo', [\App\Http\Controllers\CustomerProfilePhotoController::class, 'destroy'])->middleware('can:dhiran.create')->name('borrowers.photo.destroy');
-            Route::get('/borrowers', [\App\Http\Controllers\DhiranController::class, 'borrowers'])->middleware('can:dhiran.view')->name('borrowers.index');
-            Route::get('/borrowers/{customer}', [\App\Http\Controllers\DhiranController::class, 'borrowerProfile'])->middleware('can:dhiran.view')->name('borrowers.show');
+            Route::get('/borrowers', [\App\Http\Controllers\DhiranController::class, 'borrowers'])->middleware(['can:dhiran.view', 'report.password:export'])->name('borrowers.index');
+            Route::get('/borrowers/{customer}', [\App\Http\Controllers\DhiranController::class, 'borrowerProfile'])->middleware(['can:dhiran.view', 'report.password:export'])->name('borrowers.show');
 
             // Pledged item detail — view permission. Shop-scoped.
             Route::get('/items/{item}', [\App\Http\Controllers\DhiranController::class, 'itemDetail'])->middleware('can:dhiran.view')->name('items.show');
