@@ -1581,7 +1581,6 @@ class InputsTest extends TestCase
             'prefix with space'     => [['loan_number_prefix' => 'AB CD'], 'loan_number_prefix'],
             'prefix with html'      => [['loan_number_prefix' => '<b>'], 'loan_number_prefix'],
             'prefix 11 chars'       => [['loan_number_prefix' => 'ABCDEFGHIJK'], 'loan_number_prefix'],
-            'terms 5001 chars'      => [['receipt_terms_text' => str_repeat('a', 5001)], 'receipt_terms_text'],
             'unknown fee type'      => [['processing_fee_type' => 'free'], 'processing_fee_type'],
             'reminder days 0'       => [['reminder_days_before_due' => 0], 'reminder_days_before_due'],
         ];
@@ -1590,7 +1589,7 @@ class InputsTest extends TestCase
     #[DataProvider('badSettings')]
     public function test_settings_boundaries_are_enforced(array $over, string $field): void
     {
-        // Rule: rate 0..10, LTV 1..100, max>=min, tenure>=1, grace<=90, prefix [A-Za-z0-9-_]{1,10}, texts <=5000.
+        // Rule: rate 0..10, LTV 1..100, max>=min, tenure>=1, grace<=90, prefix [A-Za-z0-9-_]{1,10}, texts <=5000 (now on the Receipt endpoint).
         $before = DhiranSettings::getForShop($this->shopA->id)->only('default_ltv_ratio', 'loan_number_prefix');
         $this->patchSettings($over)->assertSessionHasErrors($field);
         $this->assertEquals($before, DhiranSettings::getForShop($this->shopA->id)->fresh()->only('default_ltv_ratio', 'loan_number_prefix'));
@@ -1613,8 +1612,8 @@ class InputsTest extends TestCase
     {
         // Rule: stored terms text is escaped on the settings page and on a printed receipt.
         $evil = '</textarea><script>alert(3)</script>';
-        $this->patchSettings(['receipt_terms_text' => $evil, 'closure_certificate_text' => $evil])->assertSessionHasNoErrors();
-        $this->as($this->ownerA, fn () => $this->get(self::HOST . '/dhiran/settings'))->assertOk()->assertDontSee($evil, false);
+        $this->as($this->ownerA, fn () => $this->patch(self::HOST . '/dhiran/settings/receipt', ['receipt_terms_text' => $evil, 'closure_certificate_text' => $evil]))->assertSessionHasNoErrors();
+        $this->as($this->ownerA, fn () => $this->get(self::HOST . '/dhiran/settings/receipt'))->assertOk()->assertDontSee($evil, false);
         $loan = $this->loanFor($this->shopA, $this->cust($this->shopA));
         $this->as($this->ownerA, fn () => $this->get(self::HOST . '/dhiran/loans/' . $loan->id . '/receipt'))->assertOk()->assertDontSee('<script>alert(3)</script>', false);
     }

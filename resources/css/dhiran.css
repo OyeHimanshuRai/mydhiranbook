@@ -3315,3 +3315,11 @@ turbo-frame#dh-results { display: contents; }
 .dh-status--danger  { --dh-status-ink: var(--dh-danger); --dh-status-soft: var(--dh-danger-soft); --dh-status-line: var(--dh-danger-line); }
 .dh-status--info    { --dh-status-ink: var(--dh-blue); --dh-status-soft: color-mix(in srgb, var(--dh-blue) 8%, var(--dh-white)); --dh-status-line: color-mix(in srgb, var(--dh-blue) 25%, var(--dh-white)); }
 .dh-status--muted   { --dh-status-ink: var(--dh-muted); --dh-status-soft: var(--dh-muted-surface); --dh-status-line: color-mix(in srgb, var(--dh-muted) 20%, var(--dh-white)); }
+
+/* Settings sub-navigation (Loan | Receipt | Users & roles | Plan & billing): wraps on phones, 44px touch targets. */
+.dh-app .dh-subnav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.dh-app .dh-subnav-link {
+    display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid var(--dh-line);
+    border-radius: 999px; background: var(--dh-card); color: var(--dh-ink-soft); font-size: 13px; font-weight: 600; text-decoration: none;
+}
+.dh-app .dh-subnav-link[aria-current="page"] { background: var(--dh-highlight); color: var(--dh-on-highlight); border-color: transparent; }

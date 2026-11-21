@@ -68,7 +68,7 @@
                         <x-icon name="chart-no-axes-column" />
                         <span class="dh-nav-text">Reports</span>
                     </a>
-                    <a href="{{ route('dhiran.settings') }}" class="dh-nav-link {{ request()->routeIs('dhiran.settings') ? 'active' : '' }}" @click="open = false">
+                    <a href="{{ route('dhiran.settings') }}" class="dh-nav-link {{ request()->routeIs('dhiran.settings*') ? 'active' : '' }}" @click="open = false">
                         <x-icon name="settings" />
                         <span class="dh-nav-text">Settings</span>
                     </a>

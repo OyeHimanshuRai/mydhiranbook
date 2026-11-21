@@ -1,7 +1,14 @@
-{{-- Receipt fields: a checked switch = printed. Saved as the hidden list by DhiranReceiptSettingsController. --}}
+{{-- Receipt settings: a checked switch = printed (saved as the hidden list), plus the texts printed on the pledge receipt and closure certificate. --}}
+<x-dhiran-layout title="Receipt settings">
+    <x-dhiran.page-header>
+        <div>
+            <h1 class="page-title">Receipt settings</h1>
+            <p class="text-sm text-gray-500 mt-1">What is printed on receipts and certificates</p>
+        </div>
+    </x-dhiran.page-header>
 @php($hidden = $settings->hidden_receipt_fields ?? [])
 <style>
-    .rset { margin-top: 24px; border: 1px solid var(--dset-border, #e5e7eb); border-radius: 12px; padding: 18px 20px; background: var(--dset-card, #fff); }
+    .rset { margin-top: 0; border: 1px solid var(--dset-border, #e5e7eb); border-radius: 12px; padding: 18px 20px; background: var(--dset-card, #fff); }
     .rset-title { font-size: 15px; font-weight: 700; margin: 0 0 4px; }
     .rset-lead { font-size: 12px; color: var(--dset-muted, #6b7280); margin: 0 0 16px; }
     .rset-receipt { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px 28px; margin-bottom: 18px; }
@@ -17,8 +24,10 @@
     .rset-switch input:disabled { opacity: .55; cursor: not-allowed; }
     .rset-note { font-size: 11px; color: var(--dset-muted, #6b7280); margin: 0 0 6px; }
 </style>
+<div class="content-inner dhiran-settings-root">
+<x-dhiran.settings-nav active="receipt" />
 <section class="rset" id="receipt">
-    <h2 class="rset-title">Receipt</h2>
+    <h2 class="rset-title">Receipt fields</h2>
     <p class="rset-lead">Choose what is printed on customer receipts. Switched-off fields are left out and the layout closes up.</p>
     <form method="POST" action="{{ route('dhiran.settings.receipt') }}" data-turbo-frame="_top">
         @csrf
@@ -46,8 +55,21 @@
                 @endforeach
             </div>
         @endforeach
+        <h3 class="rset-receipt-title">Printed texts</h3>
+        <div class="dset-fields" style="margin:12px 0 18px">
+            <div class="dset-field--wide">
+                <label class="dset-label" for="ds-terms">Terms printed on the pledge receipt</label>
+                <textarea id="ds-terms" name="receipt_terms_text" rows="3" maxlength="5000" class="dset-input dset-textarea">{{ old('receipt_terms_text', $settings->receipt_terms_text) }}</textarea>
+            </div>
+            <div class="dset-field--wide">
+                <label class="dset-label" for="ds-closure">Text on the closure certificate</label>
+                <textarea id="ds-closure" name="closure_certificate_text" rows="2" maxlength="5000" class="dset-input dset-textarea">{{ old('closure_certificate_text', $settings->closure_certificate_text) }}</textarea>
+            </div>
+        </div>
         <div class="dset-actions">
-            <button type="submit" class="btn btn-dark btn-sm"><x-icon name="save" size="14" class="mr-1" /> Save receipt fields</button>
+            <button type="submit" class="btn btn-dark btn-sm"><x-icon name="save" size="14" class="mr-1" /> Save receipt settings</button>
         </div>
     </form>
 </section>
+</div>
+</x-dhiran-layout>

@@ -1,6 +1,6 @@
-<x-dhiran-layout title="Staff & Permissions">
-<x-dhiran.page-header><div><h1 class="page-title">Staff & Permissions</h1></div><div class="page-actions"><a class="btn btn-secondary btn-sm" href="{{ route('settings.edit',['tab'=>'staff']) }}">Staff</a>@can('settings.edit')<a class="btn btn-secondary btn-sm" href="{{ route('settings.edit',['tab'=>'roles']) }}">Roles & Permissions</a>@endcan<a class="btn btn-secondary btn-sm" href="{{ route('dhiran.settings') }}">Loan Settings</a></div></x-dhiran.page-header>
-<div class="content-inner"><div class="settings-shell">            @if($activeTab === 'roles')
+<x-dhiran-layout title="Users & roles">
+<x-dhiran.page-header><div><h1 class="page-title">Users & roles</h1></div><div class="page-actions"><a class="btn btn-secondary btn-sm" href="{{ route('settings.edit',['tab'=>'staff']) }}">Staff</a>@can('settings.edit')<a class="btn btn-secondary btn-sm" href="{{ route('settings.edit',['tab'=>'roles']) }}">Roles & Permissions</a>@endcan</div></x-dhiran.page-header>
+<div class="content-inner"><x-dhiran.settings-nav active="users" /><div class="settings-shell">            @if($activeTab === 'roles')
                 <div class="settings-header">
                     <h2 class="settings-title">{{ __('Roles & Permissions') }}</h2>
                     <p class="settings-desc">{{ __('Configure access levels for each role') }}</p>

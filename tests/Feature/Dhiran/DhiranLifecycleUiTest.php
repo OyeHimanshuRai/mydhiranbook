@@ -512,7 +512,7 @@ class DhiranLifecycleUiTest extends TestCase
             'min_loan_amount' => 1000, 'max_loan_amount' => 900000, 'processing_fee_type' => 'percent', 'processing_fee_value' => 1,
             'default_tenure_months' => 9, 'default_min_lock_months' => 0, 'default_min_interest_months' => 1,
             'grace_period_days' => 15, 'forfeiture_notice_days' => 20, 'loan_number_prefix' => 'PL-',
-            'receipt_terms_text' => 'Pay on time.', 'closure_certificate_text' => '', 'sms_reminders_enabled' => '0', 'reminder_days_before_due' => 7,
+            'sms_reminders_enabled' => '0', 'reminder_days_before_due' => 7,
         ]))->assertRedirect()->assertSessionHasNoErrors();
 
         $s = DhiranSettings::getForShop($shop->id)->fresh();

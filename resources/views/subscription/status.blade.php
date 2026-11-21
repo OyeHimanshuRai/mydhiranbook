@@ -1,6 +1,7 @@
-<x-subscription-page title="Subscription">
+<x-subscription-page title="Plan & billing">
 <style>.sub-plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}.sub-plan{background:#fff;border:1px solid #e2e8f0;border-radius:9px;padding:24px}.sub-plan h2{margin:0 0 8px}.sub-price{font-size:30px;font-weight:600}.sub-price small{font-size:14px;font-weight:400;color:#64748b}.sub-plan ul{padding-left:18px;margin:16px 0 20px}.sub-current{background:#fff;border:1px solid #e2e8f0;border-radius:9px;padding:24px;margin-bottom:24px}.sub-current dl{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin:16px 0 0}.sub-current dt{font-size:12px;color:#64748b}.sub-current dd{margin:0;font-weight:600}</style>
 <div class="content-inner">
+    @if($hasShop)<x-dhiran.settings-nav active="billing" />@endif
     <div class="sub-current">
         <h2>Your subscription</h2>
         @if($subscription)

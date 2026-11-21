@@ -1,11 +1,10 @@
-<x-dhiran-layout title="Dhiran Settings">
+<x-dhiran-layout title="Loan settings">
     <x-dhiran.page-header>
         <div>
-            <h1 class="page-title">Dhiran Settings</h1>
+            <h1 class="page-title">Loan settings</h1>
             <p class="text-sm text-gray-500 mt-1">Defaults for new pledge loans</p>
         </div>
         <div class="page-actions">
-            @can("staff.view")<a class="btn btn-secondary btn-sm" href="{{ route('settings.edit',['tab'=>'staff']) }}">Staff & Permissions</a>@endcan
             <a href="{{ route('dhiran.loans') }}" class="btn btn-secondary btn-sm">
                 <x-icon name="arrow-left" size="14" class="mr-1" />
                 Back to Loans
@@ -22,6 +21,7 @@
     @endphp
 
     <div class="content-inner dhiran-settings-root">
+        <x-dhiran.settings-nav active="loan" />
         {{-- Owner 2026-11-11: cards two to a row (Interest | LTV, Limits | Tenure, Printouts | Reminders), fields two to
              a row inside each card, so the page no longer runs down as one long narrow column. --}}
         <form method="POST" action="{{ route('dhiran.settings.update') }}" class="dset-form" data-turbo-frame="_top">
@@ -131,20 +131,12 @@
                 </section>
 
                 <section class="dset-section">
-                    <h2 class="dset-section-title"><x-icon name="printer" /> Loan numbers and printouts</h2>
+                    <h2 class="dset-section-title"><x-icon name="printer" /> Loan numbers</h2>
                     <div class="dset-fields">
                         <div>
                             <label class="dset-label" for="ds-prefix">Loan number prefix</label>
                             <input id="ds-prefix" type="text" maxlength="10" name="loan_number_prefix" class="dset-input" value="{{ $v('loan_number_prefix') }}" placeholder="DH-">
                             <p class="dset-hint">Numbers continue from the last loan.</p>
-                        </div>
-                        <div class="dset-field--wide">
-                            <label class="dset-label" for="ds-terms">Terms printed on the pledge receipt</label>
-                            <textarea id="ds-terms" name="receipt_terms_text" rows="3" maxlength="5000" class="dset-input dset-textarea">{{ $v('receipt_terms_text') }}</textarea>
-                        </div>
-                        <div class="dset-field--wide">
-                            <label class="dset-label" for="ds-closure">Text on the closure certificate</label>
-                            <textarea id="ds-closure" name="closure_certificate_text" rows="2" maxlength="5000" class="dset-input dset-textarea">{{ $v('closure_certificate_text') }}</textarea>
                         </div>
                     </div>
                 </section>
@@ -162,7 +154,5 @@
                 </button>
             </div>
         </form>
-
-        @include('dhiran._receipt-settings')
     </div>
 </x-dhiran-layout>

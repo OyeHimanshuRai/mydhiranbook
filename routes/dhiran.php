@@ -77,6 +77,7 @@ use Illuminate\Support\Facades\Route;
             // Settings — settings permission
             Route::get('/settings', [\App\Http\Controllers\DhiranController::class, 'settings'])->middleware('can:dhiran.settings')->name('settings');
             Route::patch('/settings', [\App\Http\Controllers\DhiranController::class, 'updateSettings'])->middleware('can:dhiran.settings')->name('settings.update');
+            Route::get('/settings/receipt', [\App\Http\Controllers\DhiranReceiptSettingsController::class, 'edit'])->middleware('can:dhiran.settings')->name('settings.receipt.edit');
             Route::patch('/settings/receipt', [\App\Http\Controllers\DhiranReceiptSettingsController::class, 'update'])->middleware('can:dhiran.settings')->name('settings.receipt');
 
             // Reports — reports permission

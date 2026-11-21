@@ -910,8 +910,6 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             'grace_period_days'             => 'required|integer|min:0|max:90',
             'forfeiture_notice_days'        => 'required|integer|min:0|max:365',
             'loan_number_prefix'            => ['nullable', 'string', 'max:10', 'regex:/^[A-Za-z0-9\-_]{1,10}$/'],
-            'receipt_terms_text'            => 'nullable|string|max:5000',
-            'closure_certificate_text'      => 'nullable|string|max:5000',
             'sms_reminders_enabled'         => 'nullable|boolean',
             'reminder_days_before_due'      => 'nullable|integer|min:1|max:30',
         ]);

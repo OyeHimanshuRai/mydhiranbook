@@ -89,7 +89,7 @@ class ReceiptSettingsTest extends TestCase
     {
         [$shop, $owner] = $this->shopWithOwner('9390100003');
         $this->hide($owner, $shop, ['pledge.title']);
-        $html = $this->receiptHtml($owner, $shop, '/dhiran/settings')->assertOk()->getContent();
+        $html = $this->receiptHtml($owner, $shop, '/dhiran/settings/receipt')->assertOk()->getContent();
         $this->assertStringContainsString('value="pledge.shop_name" checked', preg_replace('/\s+/', ' ', $html) ?: '') ;
         $this->assertDoesNotMatchRegularExpression('/value="pledge\.title"\s+checked/', $html);
         $this->assertMatchesRegularExpression('/Loan number.*?checked disabled/s', $html);
