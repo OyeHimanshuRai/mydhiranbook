@@ -406,8 +406,8 @@ function ensureConfirmDialog() {
                 <p class="mt-2 text-sm text-slate-600" data-confirm-message="true"></p>
             </div>
             <div class="p-4 flex items-center justify-end gap-2">
-                <button type="button" class="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 !min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2" data-confirm-cancel="true">Cancel</button>
-                <button type="button" class="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-amber-700 bg-amber-700 text-white hover:bg-amber-800 !min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2" data-confirm-accept="true">Continue</button>
+                <button type="button" class="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 !min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--kh-ink)] focus-visible:ring-offset-2" data-confirm-cancel="true">Cancel</button>
+                <button type="button" class="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-[var(--kh-ink)] bg-[var(--kh-ink)] text-white hover:bg-[var(--kh-ink-2)] !min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--kh-ink)] focus-visible:ring-offset-2" data-confirm-accept="true">Continue</button>
             </div>
         </div>
     `;
@@ -856,14 +856,14 @@ function injectSuggestStyles() {
 @keyframes jf-suggest-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 .jf-suggest-item{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f8fafc;transition:background .12s ease,padding-left .12s ease}
 .jf-suggest-item:last-child{border-bottom:none}
-.jf-suggest-item:hover,.jf-suggest-item.active{background:#fffbeb;padding-left:18px}
+.jf-suggest-item:hover,.jf-suggest-item.active{background:var(--kh-ink-soft);padding-left:18px}
 .jf-suggest-item .label{font-size:13px;font-weight:600;color:#0f172a;line-height:1.3}
 .jf-suggest-item .sub{font-size:11px;color:#64748b;line-height:1.3}
-.jf-suggest-item .arrow{margin-left:auto;color:#d4a017;font-size:14px;opacity:.6;transition:opacity .12s}
+.jf-suggest-item .arrow{margin-left:auto;color:var(--kh-ink);font-size:14px;opacity:.6;transition:opacity .12s}
 .jf-suggest-item:hover .arrow,.jf-suggest-item.active .arrow{opacity:1}
 .jf-suggest-empty{padding:16px;text-align:center;font-size:13px;color:#94a3b8}
 .jf-suggest-loading{padding:16px;text-align:center;font-size:13px;color:#94a3b8}
-.jf-suggest mark{background:#fef3c7;color:#92400e;border-radius:2px;padding:0 2px;font-weight:600}
+.jf-suggest mark{background:var(--kh-ink-soft);color:var(--kh-ink);border-radius:2px;padding:0 2px;font-weight:600}
 `;
     document.head.appendChild(style);
 }

@@ -1,68 +1,66 @@
-/* ==== Dhiran colour tokens: the ONLY place Dhiran colours are written (owner 2026-11-08: dark navy + bright gold).
-   Every rule below refers to these; tints are color-mix() of a token. ==== */
+/* ==== Dhiran role tokens (--dh-*): names the stylesheets use, valued from the Bahi-khata palette in khata-tokens.css (owner 2026-11-22).
+   No yellow or gold anywhere. Every rule refers to these; tints are color-mix() of a token. ==== */
 :root {
     /* palette */
-    --dh-navy: #0f1b2d;
-    --dh-navy-hover: #1b2b44;
-    --dh-gold-bright: #f5b301;
-    --dh-gold-bright-hover: #e2a400;
-    --dh-blue: #1d4ed8;
-    --dh-blue-hover: #1e40af;
+    --dh-navy: var(--kh-ink);
+    --dh-navy-hover: var(--kh-ink-2);
+    --dh-blue: var(--kh-ink);
+    --dh-blue-hover: var(--kh-ink-2);
     --dh-white: #ffffff;
 
     /* roles */
-    --dh-accent: var(--dh-navy);                 /* dark buttons, accent text, icons, borders */
-    --dh-accent-hover: var(--dh-navy-hover);
+    --dh-accent: var(--kh-ink);                  /* ink buttons, accent text, icons, borders */
+    --dh-accent-hover: var(--kh-ink-2);
     --dh-on-accent: var(--dh-white);
-    --dh-highlight: var(--dh-gold-bright);       /* the main action and highlights */
-    --dh-highlight-hover: var(--dh-gold-bright-hover);
-    --dh-on-highlight: var(--dh-navy);
-    --dh-accent-soft: color-mix(in srgb, var(--dh-highlight) 12%, var(--dh-white));
-    --dh-accent-line: color-mix(in srgb, var(--dh-highlight) 45%, var(--dh-white));
+    --dh-highlight: var(--kh-ink);               /* the main action: the ink button */
+    --dh-highlight-hover: var(--kh-ink-2);
+    --dh-on-highlight: var(--dh-white);
+    --dh-accent-soft: var(--kh-ink-soft);
+    --dh-accent-line: var(--kh-ink-line);
     --dh-link: var(--dh-blue);
     --dh-link-hover: var(--dh-blue-hover);
     --dh-focus: var(--dh-blue);
 
     /* text and surfaces */
-    --dh-ink: #0f172a;
-    --dh-ink-soft: #334155;
-    --dh-muted: #5b6b80;   /* readable (4.5+) on white and on the tinted panels */
-    --dh-subtle: #6b7a8f;
-    --dh-line: #e2e8f0;
+    --dh-ink: var(--kh-text);
+    --dh-ink-soft: var(--kh-text-2);
+    --dh-muted: var(--kh-text-3);   /* readable (4.5+) on white and on the tinted panels */
+    --dh-subtle: var(--kh-text-3);
+    --dh-line: var(--kh-rule);
     --dh-border: var(--dh-line);
-    --dh-line-soft: #eef2f6;
-    --dh-bg: #f6f7f9;
+    --dh-line-soft: var(--kh-rule-soft);
+    --dh-bg: var(--kh-paper);
     --dh-header: var(--dh-white);
     --dh-card: var(--dh-white);
     --dh-raised: var(--dh-white);
-    --dh-muted-surface: #f3f5f8;
+    --dh-muted-surface: var(--kh-wash);
     --dh-field: var(--dh-white);
-    --dh-field-border: #cbd5e1;
-    --dh-table-head: #eaeff5;   /* header band, clearly apart from white rows */
-    --dh-row-hover: #f8fafc;
+    --dh-field-border: var(--kh-field-edge);
+    --dh-table-head: var(--kh-wash);   /* header band, clearly apart from white rows */
+    --dh-row-hover: var(--kh-ink-soft);
 
-    /* sidebar (dark) */
-    --dh-sidebar: var(--dh-navy);
-    --dh-sidebar-ink: #cbd5e1;
-    --dh-sidebar-ink-strong: var(--dh-white);
-    --dh-sidebar-muted: #8a97ab;
-    --dh-sidebar-line: color-mix(in srgb, var(--dh-white) 10%, transparent);
-    --dh-sidebar-hover: color-mix(in srgb, var(--dh-white) 7%, transparent);
-    --dh-sidebar-active: color-mix(in srgb, var(--dh-highlight) 16%, transparent);
-    --dh-sidebar-active-ink: var(--dh-highlight);
+    /* sidebar (the oxblood cloth) */
+    --dh-sidebar: var(--kh-cloth);
+    --dh-sidebar-ink: var(--kh-on-cloth);
+    --dh-sidebar-ink-strong: var(--kh-on-cloth);
+    --dh-sidebar-muted: var(--kh-on-cloth-soft);
+    --dh-sidebar-line: var(--kh-cloth-line);
+    --dh-sidebar-hover: color-mix(in srgb, var(--dh-white) 9%, transparent);
+    --dh-sidebar-active: var(--kh-cloth-lift);
+    --dh-sidebar-active-ink: var(--kh-on-cloth);
 
     /* status */
-    --dh-danger: #b91c1c;
-    --dh-danger-soft: #fef2f2;
-    --dh-danger-line: #fecaca;
-    --dh-success: #047857;
-    --dh-success-soft: #ecfdf5;
-    --dh-success-line: #a7f3d0;
-    --dh-warning-ink: #92400e;
-    --dh-warning-soft: #fef3c7;
-    --dh-warning-line: #fde68a;
-    --dh-icon: var(--dh-navy);
-    --dh-icon-soft: #e8edf5;
+    --dh-danger: var(--kh-err);
+    --dh-danger-soft: var(--kh-err-soft);
+    --dh-danger-line: var(--kh-err-line);
+    --dh-success: var(--kh-ok);
+    --dh-success-soft: var(--kh-ok-soft);
+    --dh-success-line: var(--kh-ok-line);
+    --dh-warning-ink: var(--kh-warn-text);
+    --dh-warning-soft: var(--dh-white);       /* warning is text + outline, never a fill */
+    --dh-warning-line: var(--kh-warn-line);
+    --dh-icon: var(--kh-ink);
+    --dh-icon-soft: var(--kh-ink-soft);
 
     /* printed documents */
     --dh-doc-tint: color-mix(in srgb, var(--dh-accent) 5%, var(--dh-white));
@@ -71,22 +69,22 @@
     /* effects */
     --dh-shadow-tint: var(--dh-navy);
     --dh-scrim-tint: var(--dh-navy);
-    --dh-scrollbar-thumb: var(--dh-highlight);
-    --dh-scrollbar-track: var(--dh-muted-surface);
-    --dh-shadow: 0 8px 22px color-mix(in srgb, var(--dh-shadow-tint) 6%, transparent);
-    --dh-shadow-soft: 0 1px 2px color-mix(in srgb, var(--dh-shadow-tint) 6%, transparent);
+    --dh-scrollbar-thumb: var(--kh-scroll-thumb);
+    --dh-scrollbar-track: transparent;
+    --dh-shadow: none;                 /* flat: only toasts and dialogs lift */
+    --dh-shadow-soft: none;
 
     /* cards: one look for every panel, KPI tile and table card */
     --dh-card-border: var(--dh-line);
-    --dh-card-shadow: 0 1px 2px color-mix(in srgb, var(--dh-shadow-tint) 6%, transparent), 0 6px 16px color-mix(in srgb, var(--dh-shadow-tint) 5%, transparent);
+    --dh-card-shadow: none;
 
     /* layout, shape and motion (not colour) */
     --dh-content-max: 1680px;   /* every Dhiran page, lists and detail pages alike; fills a 1920px screen beside the
                                    sidebar so tables have room for one value per column (owner 2026-11-11) */
     --dh-form-max: 1100px;      /* long settings-style forms */
-    --dh-card-radius: 14px;
-    --dh-radius: 14px;
-    --dh-radius-sm: 10px;
+    --dh-card-radius: var(--kh-radius);
+    --dh-radius: var(--kh-radius);
+    --dh-radius-sm: var(--kh-radius-sm);
     --dh-ease: cubic-bezier(0.23, 1, 0.32, 1);
     --dh-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }

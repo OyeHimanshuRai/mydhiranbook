@@ -104,7 +104,7 @@
                     <p class="text-sm font-semibold text-slate-800">{{ $borrower->name }}</p>
                     <p class="text-sm text-slate-500">{{ \App\Support\Mobile::forDisplay($borrower->mobile) ?: '—' }}</p>
                     <p class="text-xs text-slate-400 font-mono mt-0.5">{{ $borrower->customer_code }}</p>
-                    <a href="{{ route('dhiran.borrowers.show', $borrower) }}" class="inline-flex items-center mt-3 text-sm font-semibold text-amber-700 hover:text-amber-800">View customer profile →</a>
+                    <a href="{{ route('dhiran.borrowers.show', $borrower) }}" class="inline-flex items-center mt-3 text-sm font-semibold text-[var(--kh-ink)] hover:text-[var(--kh-ink-2)]">View customer profile →</a>
                 </div>
                 @endif
 
@@ -119,7 +119,7 @@
                         <div class="flex justify-between"><dt class="text-slate-500">Outstanding</dt><dd class="text-slate-800 font-medium">₹{{ number_format($loan->totalOutstanding(), 2) }}</dd></div>
                         <div class="flex justify-between"><dt class="text-slate-500">Maturity</dt><dd class="text-slate-800">{{ $loan->maturity_date?->format('d M Y') ?? '—' }}</dd></div>
                     </dl>
-                    <a href="{{ route('dhiran.show', $loan) }}" class="inline-flex items-center mt-3 text-sm font-semibold text-amber-700 hover:text-amber-800">View loan →</a>
+                    <a href="{{ route('dhiran.show', $loan) }}" class="inline-flex items-center mt-3 text-sm font-semibold text-[var(--kh-ink)] hover:text-[var(--kh-ink-2)]">View loan →</a>
                 </div>
                 @endif
 
@@ -128,7 +128,7 @@
                     <h3 class="text-[11px] uppercase tracking-[0.16em] text-slate-400 mb-3">History</h3>
                     <ul class="space-y-3">
                         <li class="flex items-start gap-3">
-                            <span class="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-amber-500"></span>
+                            <span class="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-[var(--kh-ink)]"></span>
                             <div><p class="text-sm text-slate-800">Pledged</p><p class="text-xs text-slate-400">{{ $item->created_at?->format('d M Y, g:i A') }}</p></div>
                         </li>
                         @if($item->released_at)

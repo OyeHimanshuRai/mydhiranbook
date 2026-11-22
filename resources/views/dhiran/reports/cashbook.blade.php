@@ -64,7 +64,7 @@
                                 <td data-label="Date" data-cell="title" class="whitespace-nowrap">{{ $entry->entry_date?->format('d M Y') ?? '-' }}</td>
                                 <td data-label="Loan #" class="whitespace-nowrap">
                                     @if($entry->loan)
-                                        <a href="{{ route('dhiran.show', $entry->loan) }}" class="font-mono font-medium text-slate-700 hover:text-amber-700">{{ $entry->loan->loan_number }}</a>
+                                        <a href="{{ route('dhiran.show', $entry->loan) }}" class="font-mono font-medium text-slate-700 hover:text-[var(--kh-ink-2)]">{{ $entry->loan->loan_number }}</a>
                                     @else
                                         -
                                     @endif

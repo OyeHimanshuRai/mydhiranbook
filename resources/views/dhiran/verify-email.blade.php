@@ -2,10 +2,10 @@
 <h1>Verify your email.</h1><p class="lede">Verify your email to continue. It is also how you reset your password if you ever forget it.</p>
 <form id="step1" novalidate>
 <x-site.field name="email" label="Email address" type="email" :value="$user->email ?? ''" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="you@example.com" />
-<button type="submit" id="sendBtn" class="ui-btn ui-btn--gold ui-btn--block ui-submit">Send verification code</button></form>
+<button type="submit" id="sendBtn" class="ui-btn ui-btn--block ui-submit">Send verification code</button></form>
 <form id="step2" novalidate hidden>
 <div class="ui-field"><div class="ui-field-top"><label for="otp">Enter the 6-digit code</label></div><div class="ui-input"><input id="otp" class="ui-otp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" placeholder="000000" aria-describedby="msg"></div></div>
-<button type="submit" id="verifyBtn" class="ui-btn ui-btn--gold ui-btn--block ui-submit">Verify &amp; continue</button>
+<button type="submit" id="verifyBtn" class="ui-btn ui-btn--block ui-submit">Verify &amp; continue</button>
 <div class="auth-links"><button type="button" class="linkbtn" id="resendBtn">Resend code</button><button type="button" class="linkbtn" id="backBtn">Change email</button></div></form>
 <div id="msg" class="ui-hint" aria-live="polite" style="font-size:var(--fs-sm)"></div>
 <div class="auth-alt"><span>Signed in as {{ \App\Support\Mobile::forDisplay($user->mobile_number) }}</span>

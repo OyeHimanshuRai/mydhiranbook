@@ -1,3 +1,4 @@
+@import "./khata-tokens.css";
 @import './dhiran-staff.css';
 @import "./dhiran-tokens.css";
 @import "./ui-tokens.css";
@@ -10,188 +11,21 @@
         * { box-sizing: border-box; }
         body {
             margin: 0;
-            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            font-family: var(--kh-font);
             background: var(--dh-bg);
             color: var(--dh-ink);
         }
-        .dh-flash {
-            border-radius: 12px;
-            padding: 12px 16px;
-            margin-bottom: 18px;
-            font-size: 14px; font-weight: 600;
-        }
-        .dh-flash-success { background: var(--dh-success-soft); color: var(--dh-success); border: 1px solid var(--dh-success-line); }
-        .dh-flash-error { background: var(--dh-danger-soft); color: var(--dh-danger); border: 1px solid var(--dh-danger-line); }
     
 
 /* ---- migrated from resources/views/dhiran/dashboard.blade.php ---- */
-
-        .dhiran-dash {
-            --dd-ink: var(--dh-ink);
-            --dd-muted: var(--dh-muted);
-            --dd-gold: var(--dh-highlight);
-            --dd-gold-deep: var(--dh-accent);
-            --dd-line: var(--dh-line);
-            --dd-card: var(--dh-card);
-            --dd-shadow: 0 8px 22px color-mix(in srgb, var(--dh-shadow-tint) 5.5%, transparent);
-            padding-top: 18px;
-        }
     
 
 /* ---- migrated from resources/views/dhiran/create.blade.php ---- */
 
-        .dh-label {
-            display: flex; align-items: center; gap: 6px;
-            font-size: 12px; font-weight: 600;
-            color: var(--dh-ink-soft); margin-bottom: 6px;
-        }
-        .dh-label svg { width: 14px; height: 14px; color: var(--dh-muted); flex-shrink: 0; }
-        .dh-input, .dh-select, .dh-textarea {
-            width: 100%; padding: 10px 12px; font-size: 13px; font-weight: 500;
-            border: 1.5px solid var(--dh-border); border-radius: 10px;
-            background: var(--dh-bg); color: var(--dh-ink);
-            transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
-        }
-        .dh-input:focus, .dh-select:focus, .dh-textarea:focus {
-            outline: none; border-color: var(--dh-accent); background: var(--dh-card);
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--dh-focus) 12%, transparent);
-        }
-        .dh-input::placeholder, .dh-textarea::placeholder { color: var(--dh-subtle); font-weight: 400; }
-        .dh-select {
-            appearance: none; -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: right 12px center;
-            padding-right: 36px; cursor: pointer;
-        }
-        .dh-textarea { resize: vertical; min-height: 72px; line-height: 1.5; }
-        .dh-cost-wrap { position: relative; }
-        .dh-cost-wrap .dh-cost-symbol {
-            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
-            font-size: 13px; font-weight: 600; color: var(--dh-muted);
-        }
-        .dh-cost-wrap .dh-input { padding-left: 28px; }
-        .dh-section-title {
-            font-size: 14px; font-weight: 700; color: var(--dh-ink);
-            display: flex; align-items: center; gap: 8px;
-            margin-bottom: 16px; padding-bottom: 8px;
-            border-bottom: 1px solid var(--dh-border);
-        }
-        .dh-section-title svg { width: 16px; height: 16px; color: var(--dh-accent); }
-        .dh-item-row {
-            background: var(--dh-muted-surface);
-            border: 1px solid var(--dh-border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            position: relative;
-        }
-        .dh-item-remove {
-            position: absolute; top: 8px; right: 8px;
-            width: 28px; height: 28px;
-            display: flex; align-items: center; justify-content: center;
-            border: 1px solid var(--dh-danger-line); border-radius: 8px;
-            background: var(--dh-danger-soft); color: var(--dh-danger); cursor: pointer;
-            transition: background 0.15s;
-        }
-        .dh-item-remove:hover { background: var(--dh-danger-soft); }
-        .dh-item-remove svg { width: 14px; height: 14px; }
-        .dh-add-item-btn {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 8px 16px; font-size: 12px; font-weight: 600;
-            border: 1.5px dashed var(--dh-border); border-radius: 10px;
-            background: transparent; color: var(--dh-accent); cursor: pointer;
-            transition: border-color 0.15s, background 0.15s;
-        }
-        .dh-add-item-btn:hover { border-color: var(--dh-accent); background: var(--dh-accent-soft); }
-        .dh-add-item-btn svg { width: 14px; height: 14px; }
-        .dh-calc-field {
-            background: var(--dh-accent-soft); border-color: var(--dh-accent-line);
-        }
-        .dh-summary-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 8px 0; font-size: 13px;
-        }
-        .dh-summary-label { color: var(--dh-muted); font-weight: 500; }
-        .dh-summary-value { color: var(--dh-ink); font-weight: 700; }
-
         /* Customer dropdown */
-        .dh-dd-wrap { position: relative; z-index: 2; }
-        .dh-dd-wrap.dd-open { z-index: 34; }
-        .dh-dd-trigger {
-            width: 100%; padding: 10px 36px 10px 12px; font-size: 13px; font-weight: 500;
-            border: 1.5px solid var(--dh-border); border-radius: 10px;
-            background: var(--dh-bg); color: var(--dh-ink); cursor: pointer;
-            transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
-            text-align: left; position: relative;
-        }
-        .dh-dd-trigger:focus { outline: none; border-color: var(--dh-accent); background: var(--dh-card); box-shadow: 0 0 0 3px color-mix(in srgb, var(--dh-focus) 12%, transparent); }
-        .dh-dd-trigger.open { border-color: var(--dh-accent); background: var(--dh-card); box-shadow: 0 0 0 3px color-mix(in srgb, var(--dh-focus) 12%, transparent); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-        .dh-dd-trigger::after {
-            content: ''; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-            width: 16px; height: 16px;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: center; transition: transform .15s;
-        }
-        .dh-dd-trigger.open::after { transform: translateY(-50%) rotate(180deg); }
-        .dh-dd-placeholder { color: var(--dh-subtle); font-weight: 400; }
-        .dh-dd-panel {
-            display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 18;
-            background: var(--dh-card); border: 1.5px solid var(--dh-accent); border-top: none;
-            border-radius: 0 0 10px 10px;
-            box-shadow: 0 12px 28px color-mix(in srgb, var(--dh-shadow-tint) 10%, transparent); max-height: 220px; overflow: hidden;
-        }
-        .dh-dd-panel.open { display: block; }
-        .dh-dd-search {
-            width: 100%; padding: 8px 12px 8px 34px; font-size: 12px; font-weight: 400;
-            border: none; border-bottom: 1px solid var(--dh-line-soft); background: var(--dh-raised);
-            color: var(--dh-ink); outline: none;
-        }
-        .dh-dd-search::placeholder { color: var(--dh-subtle); }
-        .dh-dd-search-icon { position: absolute; left: 12px; top: 8px; color: var(--dh-muted); }
-        .dh-dd-list { max-height: 170px; overflow-y: auto; }
-        .dh-dd-opt {
-            padding: 8px 12px; cursor: pointer; transition: background .1s;
-            border-bottom: 1px solid var(--dh-line-soft);
-        }
-        .dh-dd-opt:last-child { border-bottom: none; }
-        .dh-dd-opt:hover, .dh-dd-opt.active { background: var(--dh-accent-soft); }
-        .dh-dd-opt-name { font-size: 13px; font-weight: 600; color: var(--dh-ink); }
-        .dh-dd-opt-sub { font-size: 11px; color: var(--dh-muted); margin-top: 1px; }
-        .dh-dd-empty { padding: 14px; text-align: center; color: var(--dh-muted); font-size: 12px; }
 
         /* Inline "add new borrower" affordance + form. */
         [x-cloak] { display: none !important; }
-        .dh-dd-add {
-            display: flex; align-items: center; gap: 7px;
-            width: 100%; padding: 10px 12px;
-            border: none; border-top: 1px solid var(--dh-line);
-            background: var(--dh-raised); color: var(--dh-accent);
-            font-size: 12px; font-weight: 700; cursor: pointer;
-        }
-        .dh-dd-add:hover { background: var(--dh-accent-soft); }
-        .dh-borrower-form {
-            padding: 12px;
-            border-top: 1px solid var(--dh-line);
-            background: var(--dh-card);
-        }
-        .dh-borrower-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-        }
-        .dh-borrower-input {
-            width: 100%; padding: 8px 10px;
-            border: 1px solid var(--dh-line); border-radius: 8px;
-            font-size: 12px; background: var(--dh-card);
-        }
-        .dh-borrower-input:focus { outline: none; border-color: var(--dh-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--dh-focus) 12%, transparent); }
-        .dh-borrower-input--wide { grid-column: 1 / -1; }
-        .dh-borrower-error { margin: 8px 0 0; color: var(--dh-danger); font-size: 12px; font-weight: 600; }
-        .dh-borrower-save {
-            margin-top: 10px; width: 100%;
-            padding: 9px 12px; border: none; border-radius: 9px;
-            background: var(--dh-highlight);
-            color: var(--dh-on-highlight); font-size: 13px; font-weight: 700; cursor: pointer;
-        }
-        .dh-borrower-save:disabled { opacity: .6; cursor: not-allowed; }
     
 
 /* ---- migrated from resources/views/dhiran/show.blade.php ---- */
@@ -200,43 +34,8 @@
             --ds-ink: var(--dh-ink);
             --ds-muted: var(--dh-muted);
             --ds-border: var(--dh-line);
-            --ds-gold: var(--dh-accent);
+            --ds-accent: var(--dh-accent);
             --ds-shadow: 0 8px 22px color-mix(in srgb, var(--dh-shadow-tint) 5.5%, transparent);
-        }
-        .ds-fin-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-        .ds-fin-card {
-            background: var(--dh-card);
-            border: 1px solid var(--ds-border);
-            border-radius: 14px;
-            padding: 14px;
-            box-shadow: var(--ds-shadow);
-        }
-        .ds-fin-label {
-            font-size: 11px; font-weight: 600;
-            text-transform: uppercase; letter-spacing: 0.18em;
-            color: var(--ds-muted); margin-bottom: 4px;
-        }
-        .ds-fin-value {
-            font-size: 20px; font-weight: 700; color: var(--ds-ink);
-        }
-        .ds-info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 12px;
-        }
-        .ds-info-item-label {
-            font-size: 11px; font-weight: 600;
-            text-transform: uppercase; letter-spacing: 0.1em;
-            color: var(--ds-muted);
-        }
-        .ds-info-item-value {
-            font-size: 14px; font-weight: 600; color: var(--ds-ink);
-            margin-top: 2px;
         }
     
 
@@ -250,41 +49,17 @@
             --dset-bg: var(--dh-raised);
             --dset-accent: var(--dh-accent);
         }
-        .dset-label {
-            display: flex; align-items: center; gap: 6px;
-            font-size: 12px; font-weight: 600;
-            color: var(--dset-ink-soft); margin-bottom: 6px;
-        }
-        .dset-input, .dset-select {
+        .dset-input {
             width: 100%; padding: 10px 12px; font-size: 13px; font-weight: 500;
             border: 1.5px solid var(--dset-border); border-radius: 10px;
             background: var(--dset-bg); color: var(--dset-ink);
             transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
         }
-        .dset-input:focus, .dset-select:focus {
+        .dset-input:focus {
             outline: none; border-color: var(--dset-accent); background: var(--dh-card);
             box-shadow: 0 0 0 3px color-mix(in srgb, var(--dh-focus) 12%, transparent);
         }
         .dset-input::placeholder { color: var(--dh-subtle); font-weight: 400; }
-        .dset-select {
-            appearance: none; -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: right 12px center;
-            padding-right: 36px; cursor: pointer;
-        }
-        .dset-section {
-            margin-bottom: 32px;
-        }
-        .dset-section-title {
-            font-size: 14px; font-weight: 700; color: var(--dset-ink);
-            display: flex; align-items: center; gap: 8px;
-            margin-bottom: 16px; padding-bottom: 8px;
-            border-bottom: 1px solid var(--dset-border);
-        }
-        .dset-section-title svg { width: 16px; height: 16px; color: var(--dset-accent); }
-        .dset-hint {
-            font-size: 11px; color: var(--dset-muted); margin-top: 4px;
-        }
     
 
 /* ---- migrated from resources/views/dhiran/activate.blade.php ---- */
@@ -292,8 +67,8 @@
         .dhiran-activate-root {
             --da-ink: var(--dh-ink);
             --da-muted: var(--dh-muted);
-            --da-gold: var(--dh-highlight);
-            --da-gold-deep: var(--dh-accent);
+            --da-accent: var(--dh-highlight);
+            --da-accent-deep: var(--dh-accent);
             --da-line: var(--dh-line);
             --da-card: var(--dh-card);
             --da-shadow: 0 8px 22px color-mix(in srgb, var(--dh-shadow-tint) 5.5%, transparent);
@@ -316,7 +91,7 @@
         .da-hero-icon svg {
             width: 36px;
             height: 36px;
-            color: var(--da-gold-deep);
+            color: var(--da-accent-deep);
         }
         .da-hero-title {
             font-size: 24px;
@@ -377,7 +152,7 @@
             padding: 14px 32px;
             border: none;
             border-radius: 12px;
-            background: var(--da-gold);
+            background: var(--da-accent);
             color: var(--dh-on-highlight);
             font-size: 15px;
             font-weight: 700;
@@ -427,100 +202,9 @@
     
 
 /* ---- migrated from resources/views/dhiran/onboarding/create.blade.php ---- */
-
-        .dob-wrap { max-width: 560px; margin: 12px auto 0; }
-        .dob-head { text-align: center; margin-bottom: 24px; }
-        .dob-head h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 6px; }
-        .dob-head p { color: var(--dh-muted); font-size: 15px; margin: 0; }
-        .dob-card {
-            background: var(--dh-card);
-            border: 1px solid var(--dh-line);
-            border-radius: 18px;
-            box-shadow: 0 14px 36px color-mix(in srgb, var(--dh-shadow-tint) 8%, transparent);
-            padding: 26px;
-        }
-        .dob-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .dob-field { display: flex; flex-direction: column; gap: 6px; }
-        .dob-field.full { grid-column: 1 / -1; }
-        .dob-field label { font-size: 13px; font-weight: 700; color: var(--dh-ink-soft); }
-        .dob-field .opt { color: var(--dh-muted); font-weight: 500; }
-        .dob-field input {
-            width: 100%;
-            padding: 11px 13px;
-            border: 1px solid var(--dh-line);
-            border-radius: 10px;
-            font-size: 14px;
-            background: var(--dh-card);
-            transition: border-color 150ms var(--dh-ease), box-shadow 150ms var(--dh-ease);
-        }
-        .dob-field input:focus {
-            outline: 0;
-            border-color: var(--dh-highlight);
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--dh-highlight) 16%, transparent);
-        }
-        .dob-err { color: var(--dh-danger); font-size: 12px; font-weight: 600; }
-        .dob-foot { margin-top: 22px; }
-        .dob-btn {
-            width: 100%;
-            padding: 14px 18px;
-            border: 0; border-radius: 12px;
-            background: var(--dh-highlight);
-            color: var(--dh-on-highlight); font-size: 15px; font-weight: 700;
-            cursor: pointer;
-            transition: transform 150ms var(--dh-ease);
-            box-shadow: 0 8px 20px color-mix(in srgb, var(--dh-focus) 28%, transparent);
-        }
-        .dob-btn:active { transform: scale(0.97); }
-        @media (max-width: 560px) { .dob-grid { grid-template-columns: 1fr; } }
     
 
 /* ---- migrated from resources/views/dhiran/onboarding/plans.blade.php ---- */
-
-        .dop-wrap { max-width: 480px; margin: 12px auto 0; }
-        .dop-head { text-align: center; margin-bottom: 26px; }
-        .dop-head h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 6px; }
-        .dop-head p { color: var(--dh-muted); font-size: 15px; margin: 0; }
-        .dop-card {
-            background: var(--dh-card);
-            border: 1px solid var(--dh-line);
-            border-radius: 18px;
-            box-shadow: 0 14px 36px color-mix(in srgb, var(--dh-shadow-tint) 8%, transparent);
-            overflow: hidden;
-        }
-        .dop-card-top {
-            padding: 24px 26px 20px;
-            background: linear-gradient(135deg, var(--dh-accent-soft), var(--dh-card));
-            border-bottom: 1px solid var(--dh-line);
-        }
-        .dop-badge {
-            display: inline-block;
-            font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
-            text-transform: uppercase;
-            color: var(--dh-accent);
-            background: var(--dh-accent-soft);
-            padding: 4px 10px; border-radius: 999px;
-            margin-bottom: 12px;
-        }
-        .dop-plan-name { font-size: 19px; font-weight: 700; margin: 0 0 4px; }
-        .dop-price { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; }
-        .dop-price .amt { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; }
-        .dop-price .per { color: var(--dh-muted); font-size: 14px; font-weight: 600; }
-        .dop-feat { list-style: none; padding: 22px 26px; margin: 0; display: flex; flex-direction: column; gap: 12px; }
-        .dop-feat li { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--dh-ink-soft); }
-        .dop-feat svg { width: 18px; height: 18px; color: var(--dh-accent); flex-shrink: 0; margin-top: 1px; }
-        .dop-foot { padding: 0 26px 26px; }
-        .dop-btn {
-            width: 100%;
-            padding: 14px 18px;
-            border: 0; border-radius: 12px;
-            background: var(--dh-highlight);
-            color: var(--dh-on-highlight); font-size: 15px; font-weight: 700;
-            cursor: pointer;
-            transition: transform 150ms var(--dh-ease), box-shadow 150ms var(--dh-ease);
-            box-shadow: 0 8px 20px color-mix(in srgb, var(--dh-focus) 28%, transparent);
-        }
-        .dop-btn:active { transform: scale(0.97); }
-        .dop-note { text-align: center; color: var(--dh-muted); font-size: 12px; margin-top: 14px; }
     
 
 /* ---- Dhiran shared overrides ---- */
@@ -530,24 +214,13 @@
 
 .dh-app {
     margin: 0;
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: var(--kh-font);
     background: var(--dh-bg);
     color: var(--dh-ink);
     overflow-x: hidden;
 }
 .content-inner { max-width: 1180px; margin: 0 auto; width: 100%; }
-.dh-flash {
-    border-radius: 12px;
-    padding: 12px 16px;
-    margin-bottom: 18px;
-    font-size: 14px;
-    font-weight: 600;
-}
-.dh-flash-success { background: var(--dh-success-soft); color: var(--dh-success); border: 1px solid var(--dh-success-line); }
-.dh-flash-error { background: var(--dh-danger-soft); color: var(--dh-danger); border: 1px solid var(--dh-danger-line); }
-.dh-flash-warning { background: var(--dh-warning-soft); color: var(--dh-warning-ink); border: 1px solid var(--dh-warning-line); }
-.page-actions,
-.dh-action-bar {
+.page-actions {
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -555,8 +228,7 @@
     flex-wrap: wrap;
     min-width: 0;
 }
-.header-badge,
-.dh-badge {
+.header-badge {
     display: inline-flex;
     align-items: center;
     border-radius: 999px;
@@ -572,8 +244,7 @@
     flex: 0 0 auto;
 }
 
-.btn,
-.dh-btn {
+.btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -594,102 +265,39 @@
 .btn-sm { min-height: 38px; padding: 8px 12px; font-size: 12px; }
 .btn svg { flex-shrink: 0; }
 .btn-primary,
-.btn-dark,
-.dh-btn-primary {
+.btn-dark {
     border-color: var(--dh-accent);
     background: var(--dh-accent);
     color: var(--dh-on-accent);
 }
-.btn-secondary,
-.dh-btn-secondary {
+.btn-secondary {
     border-color: var(--dh-line);
     background: var(--dh-raised);
     color: var(--dh-ink-soft);
 }
 .btn-success { border-color: var(--dh-success); background: var(--dh-success); color: var(--dh-on-accent); }
-.btn-danger,
-.dh-btn-danger { border-color: var(--dh-danger); background: var(--dh-danger); color: var(--dh-on-accent); }
-.btn[disabled],
-.dh-btn[disabled] { opacity: .58; cursor: not-allowed; }
+.btn-danger { border-color: var(--dh-danger); background: var(--dh-danger); color: var(--dh-on-accent); }
+.btn[disabled] { opacity: .58; cursor: not-allowed; }
 @media (hover: hover) and (pointer: fine) {
-    .btn-secondary:hover,
-    .dh-btn-secondary:hover { background: var(--dh-muted-surface); color: var(--dh-ink); }
+    .btn-secondary:hover { background: var(--dh-muted-surface); color: var(--dh-ink); }
     .btn-primary:hover,
-    .btn-dark:hover,
-    .dh-btn-primary:hover { background: var(--dh-accent-hover); border-color: var(--dh-accent-hover); }
+    .btn-dark:hover { background: var(--dh-accent-hover); border-color: var(--dh-accent-hover); }
 }
 
-.dh-card,
-.dd-kpi-card,
-.ds-fin-card,
-.dset-card,
-.dset-section,
 .da-feature-card,
-.dob-card,
-.dp-plan-card,
 .dr-report-card {
     background: var(--dh-card);
     border: 1px solid var(--dh-line);
     border-radius: var(--dh-radius);
     box-shadow: var(--dh-shadow);
 }
-.dh-card { padding: 18px; }
-.dh-kpi-grid,
-.dd-kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-    margin-bottom: 20px;
-}
-.dd-kpi-card {
-    position: relative;
-    min-width: 0;
-    padding: 14px;
-    overflow: hidden;
-}
-.dd-kpi-inner {
-    min-width: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 34px;
-    grid-template-areas: "text icon";
-    align-items: start;
-    gap: 10px;
-}
-.dd-kpi-inner > div:not(.dd-kpi-icon) {
-    grid-area: text;
-    min-width: 0;
-}
-.dd-kpi-icon {
-    grid-area: icon;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    flex-shrink: 0;
-}
-.dd-kpi-icon svg { width: 16px; height: 16px; }
-.dd-kpi-label,
-.dh-label-upper,
-.ds-fin-label,
-.ds-info-item-label {
+.dh-label-upper {
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.10em;
     color: var(--dh-muted);
 }
-.dd-kpi-value {
-    margin-top: 5px;
-    font-size: 22px;
-    line-height: 1.08;
-    font-weight: 700;
-    color: var(--dh-ink);
-    font-variant-numeric: tabular-nums;
-    overflow-wrap: anywhere;
-}
-.dd-quick-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }
 
 .dh-filter-card {
     border: 1px solid var(--dh-line);
@@ -707,22 +315,7 @@
 }
 .dh-filter-field { flex: 1 1 180px; min-width: 0; }
 .dh-filter-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
-.dh-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--dh-ink-soft);
-    margin-bottom: 6px;
-}
-.dh-label svg { width: 14px; height: 14px; color: var(--dh-muted); flex-shrink: 0; }
-.dh-input,
-.dh-select,
-.dh-textarea,
 .dset-input,
-.dset-select,
 .dset-textarea,
 .dh-form-control {
     width: 100%;
@@ -736,11 +329,7 @@
     color: var(--dh-ink);
     box-shadow: inset 0 1px 2px color-mix(in srgb, var(--dh-shadow-tint) 4.5%, transparent);
 }
-.dh-input:focus,
-.dh-select:focus,
-.dh-textarea:focus,
 .dset-input:focus,
-.dset-select:focus,
 .dset-textarea:focus,
 .dh-form-control:focus {
     outline: none;
@@ -748,9 +337,6 @@
     background: var(--dh-card);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--dh-focus) 12%, transparent), inset 0 1px 2px color-mix(in srgb, var(--dh-shadow-tint) 3%, transparent);
 }
-.dh-input::placeholder,
-.dh-textarea::placeholder { color: var(--dh-subtle); font-weight: 400; }
-.dh-select,
 .dh-native-select {
     appearance: none;
     -webkit-appearance: none;
@@ -760,545 +346,13 @@
     padding-right: 36px;
     cursor: pointer;
 }
-.dh-textarea,
 .dset-textarea { resize: vertical; min-height: 72px; line-height: 1.5; }
-.dh-cost-wrap { position: relative; }
-.dh-cost-wrap .dh-cost-symbol {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--dh-muted);
-}
-.dh-cost-wrap .dh-input { padding-left: 28px; }
-.dh-section-title,
-.dset-section-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--dh-ink);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 16px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--dh-line);
-}
-.dh-section-title svg { width: 16px; height: 16px; color: var(--dh-accent); }
-
-.dh-dd-wrap { position: relative; z-index: 2; }
-.dh-dd-wrap.dd-open { z-index: 34; }
-.dh-dd-trigger {
-    width: 100%;
-    min-height: 42px;
-    padding: 10px 36px 10px 12px;
-    font-size: 13px;
-    font-weight: 500;
-    border: 1.5px solid var(--dh-field-border);
-    border-radius: 10px;
-    background: var(--dh-field);
-    color: var(--dh-ink);
-    cursor: pointer;
-    text-align: left;
-    position: relative;
-    box-shadow: inset 0 1px 2px color-mix(in srgb, var(--dh-shadow-tint) 4.5%, transparent);
-}
-.dh-dd-trigger > span {
-    min-width: 0;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.dh-dd-trigger:focus,
-.dh-dd-trigger.open {
-    outline: none;
-    border-color: var(--dh-accent);
-    background: var(--dh-card);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--dh-focus) 12%, transparent), inset 0 1px 2px color-mix(in srgb, var(--dh-shadow-tint) 3%, transparent);
-}
-.dh-dd-trigger.open { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
-.dh-dd-trigger::after {
-    content: '';
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: center;
-}
-.dh-dd-trigger.open::after { transform: translateY(-50%) rotate(180deg); }
-.dh-dd-placeholder { color: var(--dh-subtle); font-weight: 400; }
-.dh-dd-value { font-weight: 600; color: var(--dh-ink); }
-.dh-dd-panel {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    z-index: 18;
-    background: var(--dh-card);
-    border: 1.5px solid var(--dh-accent);
-    border-top: none;
-    border-radius: 0 0 10px 10px;
-    box-shadow: 0 12px 28px color-mix(in srgb, var(--dh-shadow-tint) 10%, transparent);
-    max-height: min(420px, 70vh);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-}
-.dh-dd-panel.open { display: block; }
-.dh-dd-search-wrap {
-    position: relative;
-    padding: 10px;
-    border-bottom: 1px solid var(--dh-line-soft);
-    background: var(--dh-card);
-}
-.dh-dd-search {
-    width: 100%;
-    min-height: 40px;
-    padding: 8px 12px 8px 34px;
-    font-size: 13px;
-    border: 1px solid var(--dh-field-border);
-    border-radius: 10px;
-    background: var(--dh-field);
-    color: var(--dh-ink);
-    outline: none;
-    box-shadow: inset 0 1px 2px color-mix(in srgb, var(--dh-shadow-tint) 4.5%, transparent);
-}
-.dh-dd-search:focus {
-    border-color: var(--dh-accent);
-    background: var(--dh-card);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--dh-focus) 12%, transparent), inset 0 1px 2px color-mix(in srgb, var(--dh-shadow-tint) 3%, transparent);
-}
-.dh-dd-search-icon {
-    position: absolute;
-    left: 22px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--dh-muted);
-    pointer-events: none;
-}
-.dh-dd-list { max-height: 170px; overflow-y: auto; }
-.dh-dd-opt {
-    display: block;
-    width: 100%;
-    padding: 8px 12px;
-    cursor: pointer;
-    border: 0;
-    border-bottom: 1px solid var(--dh-line-soft);
-    background: transparent;
-    text-align: left;
-}
-.dh-dd-opt:hover,
-.dh-dd-opt.active { background: var(--dh-row-hover); }
-.dh-dd-opt-muted { cursor: default; color: var(--dh-muted); }
-.dh-dd-opt-name,
-.dh-dd-opt-sub {
-    display: block;
-}
-.dh-dd-opt-name { font-size: 13px; font-weight: 600; color: var(--dh-ink); }
-.dh-dd-opt-sub { font-size: 11px; color: var(--dh-muted); margin-top: 1px; }
-.dh-dd-add {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    width: 100%;
-    padding: 10px 12px;
-    border: none;
-    border-top: 1px solid var(--dh-line);
-    background: var(--dh-raised);
-    color: var(--dh-accent);
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.dh-customer-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    width: 100%;
-}
-
-.dh-customer-search-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) max-content;
-    gap: 12px;
-    align-items: end;
-    width: 100%;
-}
-
-.dh-customer-search-box {
-    min-width: 0;
-    position: relative;
-    z-index: 2;
-    width: 100%;
-}
-
-.dh-customer-search-control {
-    position: relative;
-    width: 100%;
-}
-
-.dh-customer-search-icon {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--dh-muted);
-    pointer-events: none;
-}
-
-.dh-customer-search-input {
-    width: 100%;
-    min-height: 44px;
-    padding: 10px 12px 10px 40px;
-    border: 1px solid var(--dh-field-border);
-    border-radius: 12px;
-    background: var(--dh-field);
-    color: var(--dh-ink);
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 1.3;
-    outline: none;
-    box-shadow: inset 0 1px 2px color-mix(in srgb, var(--dh-shadow-tint) 4.5%, transparent);
-}
-
-.dh-customer-search-input::placeholder {
-    color: var(--dh-subtle);
-    font-weight: 400;
-}
-
-.dh-customer-search-input:focus,
-.dh-customer-search-control.open .dh-customer-search-input {
-    border-color: var(--dh-accent);
-    background: var(--dh-card);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--dh-focus) 12%, transparent), inset 0 1px 2px color-mix(in srgb, var(--dh-shadow-tint) 3%, transparent);
-}
-
-.dh-customer-results-panel {
-    top: calc(100% + 6px);
-    border: 1px solid var(--dh-accent);
-    border-radius: 12px;
-    box-shadow: 0 14px 34px color-mix(in srgb, var(--dh-shadow-tint) 14%, transparent);
-    overflow: hidden;
-}
-
-.dh-customer-add-btn {
-    min-height: 44px !important;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    padding: 0 16px !important;
-    border: 1px solid var(--dh-accent) !important;
-    border-radius: 12px !important;
-    background: var(--dh-highlight) !important;
-    color: var(--dh-on-highlight) !important;
-    font-size: 13px;
-    font-weight: 700;
-    white-space: nowrap;
-    cursor: pointer;
-    box-shadow: 0 8px 18px color-mix(in srgb, var(--dh-focus) 18%, transparent);
-}
-
-.dh-customer-add-btn:hover {
-    background: var(--dh-accent);
-}
-
-.dh-customer-details-layout {
-    margin-top: 10px;
-}
-
-.dh-selected-customer-card,
-.dh-selected-customer-empty {
-    min-width: 0;
-    border: 1px solid var(--dh-line);
-    border-radius: 14px;
-    background: var(--dh-raised);
-}
-
-.dh-selected-customer-card {
-    padding: 14px;
-}
-
-.dh-selected-customer-empty {
-    display: flex;
-    align-items: center;
-    min-height: 124px;
-    padding: 16px;
-}
-
-.dh-selected-customer-empty p {
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.45;
-    color: var(--dh-muted);
-}
-
-.dh-selected-customer-head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--dh-line-soft);
-}
-
-.dh-selected-customer-avatar {
-    width: 42px;
-    height: 42px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 42px;
-    border-radius: 12px;
-    background: var(--dh-highlight);
-    color: var(--dh-on-highlight);
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0;
-}
-
-.dh-selected-customer-name {
-    margin: 0;
-    font-size: 15px;
-    line-height: 1.25;
-    font-weight: 700;
-    color: var(--dh-ink);
-}
-
-.dh-selected-customer-sub {
-    margin: 3px 0 0;
-    font-size: 12px;
-    line-height: 1.35;
-    color: var(--dh-muted);
-}
-
-.dh-selected-customer-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px 14px;
-    margin: 12px 0 0;
-}
-
-.dh-selected-customer-grid dt {
-    margin: 0 0 3px;
-    font-size: 11px;
-    line-height: 1.2;
-    font-weight: 700;
-    color: var(--dh-muted);
-    text-transform: uppercase;
-    letter-spacing: .08em;
-}
-
-.dh-selected-customer-grid dd {
-    margin: 0;
-    min-width: 0;
-    overflow-wrap: anywhere;
-    font-size: 13px;
-    line-height: 1.35;
-    font-weight: 500;
-    color: var(--dh-ink);
-}
-
-.dh-selected-customer-address {
-    grid-column: 1 / -1;
-}
-
-.dh-borrower-form { padding: 12px; border-top: 1px solid var(--dh-line); background: var(--dh-card); }
-.dh-borrower-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.dh-borrower-input {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid var(--dh-field-border);
-    border-radius: 8px;
-    font-size: 12px;
-    background: var(--dh-field);
-    box-shadow: inset 0 1px 2px color-mix(in srgb, var(--dh-shadow-tint) 4.5%, transparent);
-}
-.dh-borrower-input--wide { grid-column: 1 / -1; }
-.dh-borrower-error { margin: 8px 0 0; color: var(--dh-danger); font-size: 12px; font-weight: 600; }
-.dh-borrower-save {
-    margin-top: 10px;
-    width: 100%;
-    min-height: 42px;
-    padding: 9px 12px;
-    border: none;
-    border-radius: 9px;
-    background: var(--dh-accent);
-    color: var(--dh-on-accent);
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-}
-.dh-borrower-save:disabled { opacity: .6; cursor: not-allowed; }
 
 html:has(body.dh-modal-open),
 body.dh-modal-open {
     overflow: hidden;
     overscroll-behavior: none;
 }
-
-.dh-borrower-modal {
-    position: fixed;
-    inset: 0;
-    z-index: 1400;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 18px;
-    background: color-mix(in srgb, var(--dh-scrim-tint) 48%, transparent);
-    overscroll-behavior: contain;
-    pointer-events: auto;
-}
-
-.dh-borrower-modal-card {
-    width: min(720px, 100%);
-    max-height: min(86dvh, 720px);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border: 1px solid var(--dh-line);
-    border-radius: 18px;
-    background: var(--dh-card);
-    box-shadow: 0 24px 58px color-mix(in srgb, var(--dh-shadow-tint) 24%, transparent);
-}
-
-.dh-borrower-modal-head,
-.dh-borrower-modal-foot {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    padding: 18px 20px;
-}
-
-.dh-borrower-modal-head {
-    border-bottom: 1px solid var(--dh-line);
-    background: var(--dh-raised);
-}
-
-.dh-borrower-modal-head h2 {
-    margin: 0;
-    font-size: 18px;
-    line-height: 1.2;
-    font-weight: 700;
-    color: var(--dh-ink);
-}
-
-.dh-borrower-modal-head p {
-    margin: 4px 0 0;
-    font-size: 13px;
-    line-height: 1.4;
-    color: var(--dh-muted);
-}
-
-.dh-borrower-modal-close {
-    width: 38px;
-    height: 38px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 38px;
-    border: 1px solid var(--dh-line);
-    border-radius: 10px;
-    background: var(--dh-card);
-    color: var(--dh-ink-soft);
-    cursor: pointer;
-}
-
-.dh-borrower-modal-close svg { width: 18px; height: 18px; }
-
-.dh-borrower-modal-body {
-    min-height: 0;
-    overflow-y: auto;
-    padding: 20px;
-}
-
-.dh-borrower-modal-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 0;
-}
-
-.dh-borrower-modal-field > span {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--dh-ink-soft);
-}
-
-.dh-borrower-modal-address {
-    min-height: 92px;
-    resize: vertical;
-}
-
-.dh-borrower-modal-foot {
-    border-top: 1px solid var(--dh-line);
-    background: var(--dh-muted-surface);
-}
-
-.dh-borrower-modal-foot .dh-borrower-save {
-    width: auto;
-    min-width: 160px;
-    min-height: 40px;
-    margin-top: 0;
-    position: static;
-    box-shadow: none;
-}
-
-.dh-item-row {
-    background: var(--dh-muted-surface);
-    border: 1px solid var(--dh-field-border);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
-    position: relative;
-}
-.dh-item-remove {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 34px;
-    height: 34px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--dh-danger-line);
-    border-radius: 9px;
-    background: var(--dh-danger-soft);
-    color: var(--dh-danger);
-    cursor: pointer;
-}
-.dh-item-remove svg { width: 14px; height: 14px; }
-.dh-add-item-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    min-height: 40px;
-    padding: 8px 16px;
-    font-size: 12px;
-    font-weight: 600;
-    border: 1.5px dashed var(--dh-line);
-    border-radius: 10px;
-    background: transparent;
-    color: var(--dh-accent);
-    cursor: pointer;
-}
-.dh-calc-field { background: var(--dh-accent-soft); border-color: var(--dh-accent-line); }
-.dh-summary-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    font-size: 13px;
-}
-.dh-summary-label { color: var(--dh-muted); font-weight: 500; }
-.dh-summary-value { color: var(--dh-ink); font-weight: 700; }
 
 .dh-table-card {
     border: 1px solid var(--dh-field-border);
@@ -1311,22 +365,6 @@ body.dh-modal-open {
 .dh-table { width: 100%; border-collapse: collapse; }
 .dh-table tr:last-child td { border-bottom: 0; }
 /* Phones: every Dhiran table stacks with the dh-stack layout (field left, value right); no separate card copies. */
-
-.ds-fin-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-    gap: 12px;
-    margin-bottom: 24px;
-}
-.ds-fin-card { padding: 14px; }
-.ds-fin-card-primary { border-color: var(--dh-accent); }
-.ds-fin-value { font-size: 20px; font-weight: 700; color: var(--dh-ink); }
-.ds-info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 12px;
-}
-.ds-info-item-value { font-size: 14px; font-weight: 600; color: var(--dh-ink); margin-top: 2px; }
 
 .dh-upload-form {
     display: grid;
@@ -1346,15 +384,6 @@ body.dh-modal-open {
     font-size: 13px;
     box-shadow: inset 0 1px 2px color-mix(in srgb, var(--dh-shadow-tint) 4.5%, transparent);
 }
-.dh-attachment-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    min-width: 0;
-}
-.dh-attachment-row > div { min-width: 0; }
-.dh-attachment-name { overflow-wrap: anywhere; }
 
 .dh-dialog {
     border: 1px solid var(--dh-line);
@@ -1369,141 +398,10 @@ body.dh-modal-open {
     box-shadow: 0 24px 56px color-mix(in srgb, var(--dh-shadow-tint) 18%, transparent);
 }
 .dh-dialog::backdrop { background: color-mix(in srgb, var(--dh-scrim-tint) 42%, transparent); }
-.dh-dialog-body { padding: 20px; overflow-y: auto; max-height: calc(86dvh - 74px); }
-.dh-dialog-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    padding: 14px 20px;
-    border-top: 1px solid var(--dh-line);
-    background: var(--dh-muted-surface);
-}
 
-body:has(.dh-auth-panel) {
-    background: var(--dh-bg);
-}
-.form-card:has(.dh-auth-panel) {
-    background: var(--dh-card);
-    border-color: var(--dh-line);
-    box-shadow: var(--dh-shadow);
-}
-.form-card:has(.dh-auth-panel)::before {
-    background: linear-gradient(90deg, transparent, var(--dh-highlight), var(--dh-accent-line), transparent);
-}
-.form-card:has(.dh-auth-panel) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="hidden"]), select, textarea) {
-    background: var(--dh-field);
-    border-color: var(--dh-field-border);
-    box-shadow: inset 0 1px 2px color-mix(in srgb, var(--dh-shadow-tint) 4.5%, transparent);
-}
-.form-card:has(.dh-auth-panel) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="hidden"]), select, textarea):focus {
-    background: var(--dh-card);
-    border-color: var(--dh-accent);
-}
-.form-card:has(.dh-auth-panel) button[type="submit"] {
-    background: var(--dh-accent) !important;
-    color: var(--dh-on-accent) !important;
-    box-shadow: none !important;
-}
-.dh-auth-panel .form-card { border-radius: 18px; }
-.dh-auth-title { font-size: 22px; line-height: 1.2; font-weight: 700; color: var(--dh-ink); text-align: center; margin: 0 0 6px; }
-.dh-auth-copy { font-size: 14px; line-height: 1.55; color: var(--dh-muted); text-align: center; margin: 0 0 22px; }
-.dh-auth-link { font-weight: 700; color: var(--dh-accent); text-decoration: none; }
-.dh-auth-helper { margin-top: 6px; font-size: 12px; line-height: 1.45; color: var(--dh-muted); }
-
-.dh-verify-body {
-    margin: 0;
-    min-height: 100dvh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background: var(--dh-bg);
-    color: var(--dh-ink);
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-}
-.dh-verify-body .card {
-    width: 100%;
-    max-width: 440px;
-    background: var(--dh-card);
-    border: 1px solid var(--dh-line);
-    border-radius: 18px;
-    box-shadow: 0 14px 38px color-mix(in srgb, var(--dh-shadow-tint) 8%, transparent);
-    padding: 32px 28px;
-}
-.dh-verify-body .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
-.dh-verify-body .brand-mark {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: var(--dh-highlight);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--dh-on-highlight);
-    font-weight: 700;
-    font-size: 18px;
-}
-.dh-verify-body .brand-name { font-weight: 700; font-size: 18px; letter-spacing: -0.01em; }
-.dh-verify-body h1 { font-size: 20px; margin: 8px 0 4px; }
-.dh-verify-body .sub { font-size: 14px; color: var(--dh-muted); line-height: 1.5; margin-bottom: 20px; }
-.dh-verify-body label { display: block; font-size: 12px; font-weight: 600; color: var(--dh-ink-soft); margin-bottom: 6px; }
-.dh-verify-body input {
-    width: 100%;
-    padding: 11px 13px;
-    font-size: 14px;
-    border: 1.5px solid var(--dh-field-border);
-    border-radius: 11px;
-    background: var(--dh-field);
-    color: var(--dh-ink);
-    box-shadow: inset 0 1px 2px color-mix(in srgb, var(--dh-shadow-tint) 4.5%, transparent);
-}
-.dh-verify-body input:focus { outline: none; border-color: var(--dh-highlight); background: var(--dh-card); box-shadow: 0 0 0 3px color-mix(in srgb, var(--dh-focus) 12%, transparent); }
-.dh-verify-body .btn { width: 100%; margin-top: 14px; }
-.dh-verify-body .btn-link {
-    background: none;
-    border: none;
-    color: var(--dh-accent);
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    padding: 0;
-    margin-top: 12px;
-}
-.dh-btn-link-spaced { margin-left: 14px; }
-.dh-verify-body .msg { font-size: 13px; margin-top: 12px; padding: 9px 12px; border-radius: 9px; }
-.dh-verify-body .msg.ok { background: var(--dh-success-soft); color: var(--dh-success); border: 1px solid var(--dh-success-line); }
-.dh-verify-body .msg.err { background: var(--dh-danger-soft); color: var(--dh-danger); border: 1px solid var(--dh-danger-line); }
-.dh-verify-body .step2 { display: none; }
-.dh-verify-body .foot {
-    margin-top: 18px;
-    padding-top: 16px;
-    border-top: 1px solid var(--dh-line);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-}
-.dh-verify-body .foot form { margin: 0; }
-.dh-verify-body .foot button { background: none; border: none; color: var(--dh-muted); font-size: 12px; cursor: pointer; }
-.dh-verify-mobile { font-size: 12px; color: var(--dh-muted); }
-
-.da-hero,
-.dob-card,
-.dp-plan-card { padding: 22px; }
-.da-hero-title,
-.dob-title,
-.dp-title { color: var(--dh-ink); font-size: 24px; line-height: 1.2; font-weight: 700; margin: 0; }
-.da-hero-copy,
-.dob-copy,
-.dp-copy,
+.da-hero { padding: 22px; }
+.da-hero-title { color: var(--dh-ink); font-size: 24px; line-height: 1.2; font-weight: 700; margin: 0; }
 .da-feature-card-desc { color: var(--dh-muted); font-size: 14px; line-height: 1.6; }
-.dp-price { font-size: 32px; font-weight: 700; color: var(--dh-ink); }
-
-.dset-card,
-.dset-section { padding: 18px; }
-.dset-section-last { margin-bottom: 0; }
-.dset-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.dset-hint { color: var(--dh-muted); font-size: 12px; line-height: 1.45; margin-top: 5px; }
 
 .dr-report-grid {
     display: grid;
@@ -1517,20 +415,9 @@ body:has(.dh-auth-panel) {
 .dh-app .shadow-sm { box-shadow: var(--dh-card-shadow) !important; }
 .dh-app .rounded-lg { border-radius: 12px !important; }
 .dh-app .bg-white { background-color: var(--dh-card) !important; }
-.dh-app .border-gray-200,
 .dh-app .border-slate-200 { border-color: var(--dh-line) !important; }
-.dh-app .bg-gray-50,
 .dh-app .bg-slate-50 { background-color: var(--dh-table-head) !important; }
-.dh-app .bg-slate-100,
-.dh-app .bg-gray-100 { background-color: var(--dh-muted-surface) !important; }
-.dh-app .hover\:bg-gray-50:hover,
-.dh-app .hover\:bg-slate-50:hover,
-.dh-app .hover\:bg-slate-50\/70:hover { background-color: var(--dh-row-hover) !important; }
-.dh-app .divide-gray-200 > :not([hidden]) ~ :not([hidden]),
-.dh-app .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
-    border-color: var(--dh-line-soft) !important;
-}
-.dh-app .border-gray-300,
+.dh-app .bg-slate-100 { background-color: var(--dh-muted-surface) !important; }
 .dh-app .border-slate-300 { border-color: var(--dh-line) !important; }
 .dh-app :is(input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="hidden"]), select, textarea) {
     background-color: var(--dh-field);
@@ -1562,19 +449,13 @@ body:has(.dh-auth-panel) {
 }
 .dh-app .text-gray-500,
 .dh-app .text-slate-500 { color: var(--dh-muted) !important; }
-.dh-app .text-gray-900,
 .dh-app .text-slate-900 { color: var(--dh-ink) !important; }
-.dh-app .text-blue-600,
-.dh-app .text-blue-700,
 .dh-app .text-sky-700,
 .dh-app .text-violet-700 { color: var(--dh-accent) !important; }
-.dh-app .bg-blue-100,
 .dh-app .bg-sky-100,
 .dh-app .bg-violet-100 { background-color: var(--dh-accent-soft) !important; }
 .dh-app .text-green-600,
-.dh-app .text-green-700,
 .dh-app .text-emerald-700 { color: var(--dh-success) !important; }
-.dh-app .bg-green-100,
 .dh-app .bg-emerald-100 { background-color: var(--dh-success-soft) !important; }
 .dh-app table a { color: var(--dh-accent); }
 /* Links show hover by colour, never an underline (owner 2026-11-08); 0,2,1 also beats Tailwind's hover:underline. */
@@ -1584,8 +465,7 @@ body:has(.dh-auth-panel) {
 .dh-app dialog { margin: auto; }
 
 @media (max-width: 900px) {
-    .page-actions .btn,
-    .dh-action-bar .btn {
+    .page-actions .btn {
         flex: 0 0 auto;
         min-height: 40px;
         white-space: nowrap;
@@ -1593,8 +473,7 @@ body:has(.dh-auth-panel) {
 }
 
 @media (max-width: 720px) {
-    .page-actions .btn,
-    .dh-action-bar .btn {
+    .page-actions .btn {
         min-height: 34px;
         max-width: 100%;
         justify-content: center;
@@ -1606,8 +485,7 @@ body:has(.dh-auth-panel) {
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-    .page-actions .btn svg,
-    .dh-action-bar .btn svg {
+    .page-actions .btn svg {
         width: 13px;
         height: 13px;
     }
@@ -1622,55 +500,12 @@ body:has(.dh-auth-panel) {
         width: 13px;
         height: 13px;
     }
-    .dd-quick-actions {
-        gap: 8px;
-        margin-bottom: 18px;
-    }
     .dh-filter-row,
     .dh-upload-form { grid-template-columns: 1fr; display: grid; }
     .dh-filter-actions,
     .dh-upload-form .btn { width: 100%; }
     .dh-filter-actions .btn,
     .dh-upload-form .btn { flex: 1; width: 100%; }
-    .dh-kpi-grid { grid-template-columns: 1fr; gap: 10px; }
-    .dd-kpi-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 9px;
-        margin-bottom: 16px;
-    }
-    .dd-kpi-card {
-        min-height: 82px;
-        padding: 10px;
-        border-radius: 13px;
-    }
-    .dd-kpi-inner {
-        grid-template-columns: minmax(0, 1fr) 26px;
-        gap: 7px;
-    }
-    .dd-kpi-icon {
-        width: 26px;
-        height: 26px;
-        border-radius: 8px;
-    }
-    .dd-kpi-icon svg {
-        width: 13px;
-        height: 13px;
-    }
-    .dd-kpi-label {
-        font-size: 10px;
-        line-height: 1.15;
-        letter-spacing: 0.08em;
-        overflow-wrap: anywhere;
-    }
-    .dd-kpi-value {
-        margin-top: 6px;
-        font-size: 17px;
-        line-height: 1.08;
-        font-weight: 700;
-    }
-    .dset-grid,
-    .dh-borrower-grid { grid-template-columns: 1fr; }
-    .dh-item-row .grid,
     .dhiran-create-form .grid { grid-template-columns: 1fr !important; }
     .dhiran-create-form {
         max-width: 100%;
@@ -1680,35 +515,11 @@ body:has(.dh-auth-panel) {
         border-radius: 14px !important;
         padding: 14px !important;
     }
-    .dhiran-create-form .dh-section-title {
-        margin-bottom: 12px;
-        padding-bottom: 7px;
-        font-size: 14px;
-    }
     .dhiran-create-form .grid {
         gap: 10px !important;
     }
     .dhiran-create-form .grid > div:empty {
         display: none;
-    }
-    .dhiran-create-form .dh-item-row {
-        padding: 12px;
-        border-radius: 12px;
-    }
-    .dhiran-create-form .dh-item-remove {
-        top: 10px;
-        right: 10px;
-    }
-    .dhiran-create-form .dh-item-row:has(.dh-item-remove:not([style*="display: none"])) .grid:first-of-type {
-        padding-top: 26px;
-    }
-    .dhiran-create-form .dh-summary-row {
-        align-items: flex-start;
-        gap: 12px;
-    }
-    .dhiran-create-form .dh-summary-value {
-        text-align: right;
-        overflow-wrap: anywhere;
     }
     .dhiran-create-form > .flex.justify-end {
         position: sticky;
@@ -1725,67 +536,16 @@ body:has(.dh-auth-panel) {
         flex: 1 1 0;
         min-height: 42px;
     }
-    .dh-dd-wrap.dd-open {
-        z-index: 1110;
-    }
-    .dh-dd-panel {
-        position: fixed;
-        left: 12px;
-        right: 12px;
-        top: auto;
-        bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-        z-index: 1110;
-        max-height: min(82dvh, 680px);
-        border: 1.5px solid var(--dh-line);
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 18px 46px color-mix(in srgb, var(--dh-shadow-tint) 18%, transparent);
-    }
-    .dh-dd-panel.open {
-        display: flex;
-        flex-direction: column;
-    }
-    .dh-dd-list {
-        flex: 1 1 auto;
-        min-height: 88px;
-        max-height: min(34dvh, 240px);
-    }
-    .dh-dd-add {
-        flex: 0 0 auto;
-        min-height: 44px;
-    }
-    .dh-borrower-form {
-        flex: 1 1 auto;
-        min-height: 0;
-        max-height: min(46dvh, 380px);
-        overflow-y: auto;
-        overscroll-behavior: contain;
-        padding: 12px;
-    }
-    .dh-borrower-input {
-        min-height: 42px;
-        font-size: 13px;
-    }
-    .dh-borrower-save {
-        position: sticky;
-        bottom: 0;
-        min-height: 44px;
-        box-shadow: 0 -8px 18px color-mix(in srgb, var(--dh-white) 92%, transparent);
-    }
     .dh-dialog { width: calc(100vw - 24px); max-height: 88dvh; }
-    .dh-dialog-footer { flex-direction: column-reverse; }
-    .dh-dialog-footer .btn { width: 100%; min-height: 44px; }
 }
 
 @media (max-width: 360px) {
-    .header-badge,
-    .dh-badge {
+    .header-badge {
         min-height: 25px;
         padding: 4px 8px;
         font-size: 11px;
     }
-    .btn,
-    .dh-btn { padding-left: 10px; padding-right: 10px; }
+    .btn { padding-left: 10px; padding-right: 10px; }
 }
 
 /* Final Dhiran create-page guardrails: keep legacy migrated rules from
@@ -1799,36 +559,8 @@ body:has(.dh-auth-panel) {
 
 .dh-app .dhiran-create-form,
 .dh-app .dhiran-create-form .grid,
-.dh-app .dhiran-create-form .grid > div,
-.dh-app .dhiran-create-form .dh-dd-wrap {
+.dh-app .dhiran-create-form .grid > div {
     overflow: visible !important;
-}
-
-.dh-app .dhiran-create-form .dh-dd-wrap.dd-open {
-    z-index: 1200 !important;
-}
-
-.dh-app .dhiran-create-form .dh-dd-panel {
-    z-index: 1201 !important;
-}
-
-.dh-app .dhiran-create-form :is(.dh-input, .dh-select, .dh-textarea, .dh-dd-trigger, .dh-dd-search, .dh-borrower-input) {
-    background-color: var(--dh-raised) !important;
-    border-color: var(--dh-field-border) !important;
-    border-radius: 9px !important;
-    box-shadow: inset 0 1px 2px color-mix(in srgb, var(--dh-shadow-tint) 5.5%, transparent) !important;
-}
-
-.dh-app .dhiran-create-form :is(.dh-input, .dh-select, .dh-textarea, .dh-dd-search, .dh-borrower-input):focus,
-.dh-app .dhiran-create-form .dh-dd-trigger:focus,
-.dh-app .dhiran-create-form .dh-dd-trigger.open {
-    background-color: var(--dh-card) !important;
-    border-color: var(--dh-accent) !important;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--dh-focus) 12%, transparent), inset 0 1px 2px color-mix(in srgb, var(--dh-shadow-tint) 3%, transparent) !important;
-}
-
-.dh-app .dhiran-create-form .dh-dd-search-wrap {
-    background: var(--dh-raised) !important;
 }
 
 @media (max-width: 720px) {
@@ -1846,42 +578,6 @@ body:has(.dh-auth-panel) {
         padding: 12px !important;
     }
 
-    .dh-customer-stack { gap: 12px; }
-
-    .dh-customer-details-layout {
-        margin-top: 8px;
-    }
-
-    .dh-customer-search-row {
-        grid-template-columns: minmax(0, 1fr) 48px;
-        gap: 8px;
-        width: 100%;
-    }
-
-    .dh-customer-search-input {
-        min-height: 44px;
-        padding-right: 10px;
-    }
-
-    .dh-customer-add-btn {
-        width: 48px;
-        min-width: 48px;
-        padding: 0;
-        gap: 0;
-    }
-
-    .dh-customer-add-btn span {
-        display: none;
-    }
-
-    .dh-selected-customer-card {
-        padding: 12px;
-    }
-
-    .dh-selected-customer-grid {
-        gap: 10px 12px;
-    }
-
     .dh-app .dhiran-create-form > .flex.justify-end {
         margin-inline: -12px;
         padding-inline: 12px;
@@ -1892,7 +588,7 @@ body:has(.dh-auth-panel) {
    rendered type scale consistent across dashboard, loans, borrowers, reports,
    settings, auth, and mobile cards. */
 .dh-app {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: var(--kh-font);
     font-size: 14px;
     line-height: 1.5;
     font-weight: 400;
@@ -1912,65 +608,6 @@ body:has(.dh-auth-panel) {
     color: var(--dh-ink);
 }
 
-.dh-app :is(h2, .dh-section-title, .dset-section-title, .dr-report-title, .dh-auth-title) {
-    font-size: var(--fl-fs-h2);
-    line-height: 1.3;
-    font-weight: 600;
-    letter-spacing: 0;
-    color: var(--dh-ink);
-}
-
-.dh-app :is(h3, .dh-mobile-title, .dh-dd-opt-name, .dh-selected-customer-name) {
-    font-size: 14px;
-    line-height: 1.35;
-    font-weight: 600;
-    letter-spacing: 0;
-    color: var(--dh-ink);
-}
-
-.dh-app :is(p, td, dd, li, .dh-mobile-value, .dh-summary-value, .ds-info-item-value, .receipt-detail-value) {
-    font-size: 13px;
-    line-height: 1.45;
-    font-weight: 500;
-    letter-spacing: 0;
-}
-
-.dh-app :is(.page-subtitle, .dh-page-header p, .dh-mobile-meta, .dh-auth-copy, .dh-auth-helper, .dr-report-desc, .dh-dd-opt-sub, .dh-selected-customer-sub, .dh-selected-customer-empty p, .dset-hint) {
-    font-size: 13px;
-    line-height: 1.45;
-    font-weight: 400;
-    letter-spacing: 0;
-    color: var(--dh-muted);
-}
-
-.dh-app :is(.dh-label, label, th, dt, .header-badge, .dh-badge, .dd-kpi-label, .dh-label-upper, .ds-fin-label, .ds-info-item-label, .dh-mobile-label) {
-    font-size: 12px;
-    line-height: 1.25;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    color: var(--dh-muted);
-}
-
-.dh-app :is(.dh-input, .dh-select, .dh-textarea, .dh-form-control, .dset-input, .dset-select, .dset-textarea, .dh-dd-trigger, .dh-dd-search, .dh-customer-search-input, .dh-borrower-input) {
-    font-size: 14px;
-    line-height: 1.35;
-    font-weight: 400;
-    letter-spacing: 0;
-    color: var(--dh-ink);
-}
-
-.dh-app :is(.btn, .dh-btn, .dh-borrower-save, .dh-customer-add-btn, .dh-dd-add, .dh-add-item-btn, .dh-logout, .dh-auth-link, a) {
-    font-weight: 600;
-    letter-spacing: 0;
-}
-
-.dh-app :is(.dd-kpi-value, .ds-fin-value) {
-    font-size: 20px;
-    line-height: 1.15;
-    font-weight: 700;
-    letter-spacing: 0;
-}
-
 .dh-app :is(.dh-table th, table th) {
     font-size: 12px;
     font-weight: 600;
@@ -1985,7 +622,6 @@ body:has(.dh-auth-panel) {
 }
 
 .dh-app :is(.font-medium, .font-semibold) { font-weight: 600 !important; }
-.dh-app :is(.font-bold, .font-extrabold, .font-black) { font-weight: 700 !important; }
 .dh-app .text-xs { font-size: 12px !important; line-height: 1.35 !important; }
 .dh-app .text-sm { font-size: 13px !important; line-height: 1.45 !important; }
 .dh-app .text-base { font-size: 14px !important; line-height: 1.45 !important; }
@@ -1994,80 +630,31 @@ body:has(.dh-auth-panel) {
 .dh-app .text-2xl { font-size: 20px !important; line-height: 1.2 !important; }
 .dh-app [class*="text-[10px]"] { font-size: 11px !important; line-height: 1.35 !important; }
 .dh-app [class*="text-[11px]"] { font-size: 12px !important; line-height: 1.35 !important; }
-.dh-app [class*="tracking-["],
-.dh-app .tracking-wider,
-.dh-app .tracking-widest {
+.dh-app [class*="tracking-["] {
     letter-spacing: 0.04em !important;
 }
 
 .dh-app :is(.font-mono, code) {
     font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 }
-
-@media (max-width: 720px) {
-    
-
-    .dh-app :is(h2, .dh-section-title, .dset-section-title, .dr-report-title, .dh-auth-title) {
-        font-size: var(--fl-fs-h2);
-    }
-
-    .dh-app :is(.dd-kpi-value, .ds-fin-value) {
-        font-size: 18px;
-    }
-}
-/* One scrollbar look for mouse users; touch screens keep their own thin overlay bar (a styled bar is a fat classic bar
-   on Android and ate 14px of a 360px screen). */
-.dh-html { --sb-thumb-color: var(--dh-scrollbar-thumb); --sb-track-color: var(--dh-muted-surface); --sb-size: 12px; }
-@media (hover: hover) and (pointer: fine) {
-    .dh-html::-webkit-scrollbar,
-    .dh-app *::-webkit-scrollbar { width: var(--sb-size); height: var(--sb-size); }
-    .dh-html::-webkit-scrollbar-track,
-    .dh-app *::-webkit-scrollbar-track,
-    .dh-html::-webkit-scrollbar-corner,
-    .dh-app *::-webkit-scrollbar-corner { background: var(--sb-track-color); }
-    .dh-html::-webkit-scrollbar-thumb,
-    .dh-app *::-webkit-scrollbar-thumb { background: var(--sb-thumb-color); border-radius: 3px; }
-}
-@media (pointer: coarse), (max-width: 767px) {
-    .dh-html, .dh-app * { scrollbar-width: thin; scrollbar-color: auto; }
-}
-@media (forced-colors: active) { .dh-html, .dh-app * { scrollbar-color: auto; } }
-
-/* Buttons: gold for the main action (navy text), navy for the others. */
-.btn-primary,
-.dh-btn-primary,
-.dh-app .dh-header-mobile-fab-nav :is(.btn-primary, .dh-btn-primary) {
+/* Buttons: the ink button is the main action. */
+.btn-primary {
     border-color: var(--dh-highlight) !important;
     background: var(--dh-highlight) !important;
     color: var(--dh-on-highlight) !important;
 }
-.btn-primary:hover,
-.dh-btn-primary:hover { border-color: var(--dh-highlight-hover) !important; background: var(--dh-highlight-hover) !important; }
+.btn-primary:hover { border-color: var(--dh-highlight-hover) !important; background: var(--dh-highlight-hover) !important; }
 .btn-dark,
-.dh-borrower-save,
 .dh-app .dh-header-mobile-fab-nav .btn-dark {
     border-color: var(--dh-accent) !important;
     background: var(--dh-accent) !important;
     color: var(--dh-on-accent) !important;
 }
-.btn-dark:hover,
-.dh-borrower-save:hover { border-color: var(--dh-accent-hover) !important; background: var(--dh-accent-hover) !important; }
-.dh-customer-add-btn {
-    border-color: var(--dh-accent) !important;
-    background: var(--dh-accent) !important;
-    color: var(--dh-on-accent) !important;
-    box-shadow: none;
-}
-.dh-customer-add-btn:hover { background: var(--dh-accent-hover) !important; }
-.form-card:has(.dh-auth-panel) button[type="submit"] {
-    background: var(--dh-highlight) !important;
-    color: var(--dh-on-highlight) !important;
-}
+.btn-dark:hover { border-color: var(--dh-accent-hover) !important; background: var(--dh-accent-hover) !important; }
 
 /* Links: blue on light surfaces. Row action buttons keep their own colours (the old "table a" rule painted the
    view icon the same colour as its button, so it vanished). */
-.dh-app table a:not(.jf-row-action):not(.btn),
-.dh-auth-link { color: var(--dh-link) !important; } /* outranks the !important colour-class mappings */
+.dh-app table a:not(.jf-row-action):not(.btn) { color: var(--dh-link) !important; } /* outranks the !important colour-class mappings */
 .dh-app table a:not(.jf-row-action):not(.btn):hover { color: var(--dh-link-hover) !important; }
 .dh-app .jf-row-action { color: var(--jf-ra-fg); }
 .dh-app .jf-row-action--view { --jf-ra-bg: var(--dh-accent); --jf-ra-line: var(--dh-accent); --jf-ra-fg: var(--dh-on-accent); }
@@ -2076,37 +663,13 @@ body:has(.dh-auth-panel) {
 .dh-app :is(a, button, input, select, textarea, summary):focus-visible { outline: 2px solid var(--dh-focus); outline-offset: 2px; }
 
 /* Colour utility classes used in Dhiran pages, mapped onto tokens. */
-.dh-app .text-amber-700,
-.dh-app .text-blue-600,
-.dh-app .text-blue-700,
 .dh-app .text-sky-700 { color: var(--dh-link) !important; }
-.dh-app .hover\:text-amber-700:hover,
-.dh-app .hover\:text-amber-800:hover { color: var(--dh-link-hover) !important; }
-.dh-app .text-amber-500 { color: var(--dh-subtle) !important; }
-.dh-app .text-amber-600,
-.dh-app .text-amber-800,
-.dh-app .text-amber-900,
-.dh-app .text-yellow-800 { color: var(--dh-warning-ink) !important; }
-.dh-app .bg-amber-50,
-.dh-app .bg-amber-100,
-.dh-app .bg-yellow-50,
-.dh-app .bg-yellow-100,
-.dh-app .hover\:bg-amber-100:hover { background-color: var(--dh-warning-soft) !important; }
-.dh-app .bg-amber-500 { background-color: var(--dh-highlight) !important; }
-.dh-app .border-amber-200 { border-color: var(--dh-warning-line) !important; }
-.dh-app .border-amber-500 { border-color: var(--dh-highlight) !important; }
-.dh-app .focus\:border-amber-500:focus { border-color: var(--dh-focus) !important; }
-.dh-app .focus\:ring-amber-500:focus,
-.dh-app .focus\:ring-amber-500\/15:focus { --tw-ring-color: color-mix(in srgb, var(--dh-focus) 15%, transparent) !important; }
 /* Icon chips (dashboard KPIs, report cards, feature cards). */
-.dh-app :is(.bg-amber-100, .bg-violet-100):is(.text-amber-700, .text-violet-700) { background-color: var(--dh-icon-soft) !important; color: var(--dh-icon) !important; }
+.dh-app .bg-violet-100.text-violet-700 { background-color: var(--dh-icon-soft) !important; color: var(--dh-icon) !important; }
 .dh-app .text-violet-700 { color: var(--dh-icon) !important; }
 .dh-app .bg-violet-100,
-.dh-app .bg-blue-100,
 .dh-app .bg-sky-100 { background-color: var(--dh-icon-soft) !important; }
-.dh-app .ds-fin-value.text-amber-700 { color: var(--dh-ink) !important; }
 /* Light grey helper text was too faint to read (2.6 and lower). */
-.dh-app :is(.text-slate-300, .text-slate-400, .text-gray-300, .text-gray-400) { color: var(--dh-muted) !important; }
 
 /* Phones: text links in tables, cards and details were 16-19px tall; give them a tappable height (24px+). The New
    Loan action bar no longer stretches past the page edge (its negative margins assumed a different padding). */
@@ -2127,17 +690,10 @@ body:has(.dh-auth-panel) {
     --app-card-border: var(--dh-card-border);
 }
 .dh-app .dhiran-settings-root > form { max-width: var(--dh-form-max); }
-.dh-app .dh-card,
-.dh-app .dd-kpi-card,
-.dh-app .ds-fin-card,
-.dh-app .dset-card,
 .dh-app .da-feature-card,
-.dh-app .dob-card,
-.dh-app .dp-plan-card,
 .dh-app .dr-report-card,
 .dh-app .dh-filter-card,
 .dh-app .dh-table-card,
-.dh-app .dh-mobile-card,
 .dh-app div.rounded-2xl.border,
 .dh-app div.rounded-xl.border.bg-white,
 .dh-app div.rounded-lg.bg-white.shadow-sm,
@@ -2147,7 +703,6 @@ body:has(.dh-auth-panel) {
     border-radius: var(--dh-card-radius);
     box-shadow: var(--dh-card-shadow);
 }
-.dh-app .ds-fin-card-primary { border-color: var(--dh-accent); }
 /* Lists (owner 2026-11-08, Customers "incomplete"): the shared list layout stretched the table box to the window,
    so a short list sat at the top of a big empty white box. Short lists end at their last row; long ones still stop
    at the window and scroll inside. The box clips its corners so the header band follows the rounding. */
@@ -2189,8 +744,6 @@ body:has(.dh-auth-panel) {
 
 /* The rest of the retail colour classes still used in Dhiran views, onto Dhiran tokens (a frontend test fails when a
    view uses one that is not mapped here or above). */
-.dh-app :is(.text-slate-600, .text-slate-700, .text-gray-600, .text-gray-700) { color: var(--dh-ink-soft) !important; }
-.dh-app :is(.text-slate-800, .text-gray-800) { color: var(--dh-ink) !important; }
 .dh-app .border-slate-100 { border-color: var(--dh-line-soft) !important; }
 .dh-app .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: var(--dh-line-soft) !important; }
 .dh-app .bg-slate-400 { background-color: var(--dh-subtle) !important; }
@@ -2198,12 +751,7 @@ body:has(.dh-auth-panel) {
 .dh-app :is(.bg-red-50, .bg-red-100) { background-color: var(--dh-danger-soft) !important; }
 .dh-app .border-red-200 { border-color: var(--dh-danger-line) !important; }
 .dh-app .bg-red-500 { background-color: var(--dh-danger) !important; }
-.dh-app :is(.text-emerald-800, .text-green-800) { color: var(--dh-success) !important; }
-.dh-app :is(.bg-emerald-50, .bg-green-50) { background-color: var(--dh-success-soft) !important; }
-.dh-app :is(.border-emerald-200, .border-green-200) { border-color: var(--dh-success-line) !important; }
 .dh-app .bg-emerald-500 { background-color: var(--dh-success) !important; }
-.dh-app .text-sky-800 { color: var(--dh-accent) !important; }
-.dh-app .text-amber-800\/80 { color: color-mix(in srgb, var(--dh-warning-ink) 80%, transparent) !important; }
 
 /* ── Filters (owner 2026-11-08: modern) ─────────────────────────────────────────────────────────────────────
    Search + Filters button; active filters as removable chips; the choices are tap chips in a panel that is a
@@ -2338,25 +886,6 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; } /* the page be
 
 /* Settings (owner 2026-11-11): cards two to a row, fields two to a row inside each card, compact inputs, and the
    Save bar stays in reach at the bottom. One card per row on phones. */
-.dh-app .dset-form { margin-inline: auto; }
-.dh-app .dset-board { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: stretch; }
-.dh-app .dset-board > .dset-section { margin: 0; }
-.dh-app .dset-section .dset-section-title { margin-bottom: 12px; }
-.dh-app .dset-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px 16px; align-content: start; }
-.dh-app .dset-section :is(.dset-input, .dset-select) { min-height: 38px; padding-block: 7px; }
-.dh-app .dset-section .dset-textarea { min-height: 60px; }
-.dh-app .dset-actions {
-    position: sticky; bottom: 0; z-index: 5; display: flex; justify-content: flex-end; gap: 12px;
-    margin-top: 16px; padding: 12px 16px; border: 1px solid var(--dh-card-border); border-radius: var(--dh-card-radius);
-    background: var(--dh-card); box-shadow: var(--dh-card-shadow);
-}
-@media (min-width: 640px) {
-    .dh-app .dset-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .dh-app .dset-field--wide { grid-column: 1 / -1; }
-}
-@media (min-width: 1024px) {
-    .dh-app .dset-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
 
 /* Customer contact column: a tap-to-call number. */
 .dh-app a.dh-tel { color: var(--dh-link); font-weight: 600; font-variant-numeric: tabular-nums; text-decoration: none; }
@@ -2412,8 +941,6 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; } /* the page be
 }
 
 /* New Loan: how much the pledged items allow, under Principal; a warning when the amount is outside the limits. */
-.dh-principal-limit { margin-top: 6px; font-size: 12px; line-height: 1.4; color: var(--dh-muted); }
-.dh-principal-limit.is-problem { color: var(--dh-danger); font-weight: 600; }
 
 /* Phones, outside the list pages (they stack by container width, below): tables tagged dh-stack become one card per row; each cell shows its column name (data-label, written in
    the view) on the left and its value on the right. No sideways swipe. */
@@ -2489,7 +1016,7 @@ turbo-frame#dh-results { display: contents; }
     display: flex; align-items: center; flex: 1 1 auto; min-width: 0; min-height: var(--tap); padding: 0 var(--sp-2);
     border-radius: var(--r-sm); color: var(--dh-sidebar-ink-strong); text-decoration: none;
 }
-/* The binding wordmark: "dhiran." in a serif, the full stop in gold. */
+/* The binding wordmark: "dhiran." in a serif, the full stop in ink. */
 .dh-wordmark { font: 700 clamp(1.375rem, 1.2rem + 0.5vw, 1.625rem)/1 var(--font-display); letter-spacing: -0.01em; white-space: nowrap; }
 .dh-wordmark span { color: var(--dh-highlight); }
 .dh-sidebar-close {
@@ -2537,7 +1064,7 @@ turbo-frame#dh-results { display: contents; }
     font-weight: 700; letter-spacing: -0.01em; overflow-wrap: break-word; text-wrap: balance;
 }
 .page-subtitle, .dh-page-header p { display: none; margin: 2px 0 0; color: var(--dh-muted); font-size: var(--fl-fs-body); line-height: 1.35; }
-.dh-app .page-actions, .dh-app .dh-action-bar { display: flex; width: auto; max-width: none; flex: 0 1 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--sp-2); min-width: 0; }
+.dh-app .page-actions { display: flex; width: auto; max-width: none; flex: 0 1 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--sp-2); min-width: 0; }
 .dh-header-toggle {
     display: none; align-items: center; justify-content: center; flex: none; width: var(--tap); height: var(--tap); padding: 0;
     border: 1px solid var(--dh-line); border-radius: var(--r-md); background: var(--dh-card); color: var(--dh-ink); cursor: pointer;
@@ -2548,7 +1075,6 @@ turbo-frame#dh-results { display: contents; }
 .dh-content { flex: 1 0 auto; min-width: 0; }
 /* The page padding lives on .dh-scroll alone: app.css gave .content-inner its own 32px, which doubled it. */
 .dh-app .content-inner { padding: 0; }
-.dh-flash { margin-bottom: var(--sp-4); }
 
 /* Footer: one slim legal line at the end of the scroll area; never over content or the phone action button. */
 .dh-footer {
@@ -2633,10 +1159,6 @@ turbo-frame#dh-results { display: contents; }
     transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out), visibility 0s linear 150ms;
 }
 .dh-header-mobile-fab-shell.is-open .dh-header-mobile-fab-nav { visibility: visible; opacity: 1; transform: none; transition-delay: 0s; }
-.dh-app .dh-header-mobile-fab-nav :is(a, button, .header-badge, .dh-badge) {
-    justify-content: flex-start; width: 100%; min-height: var(--tap); padding: 0 var(--sp-3); border: 0; border-radius: var(--r-sm);
-    background: transparent; color: var(--dh-ink); font-size: var(--fl-fs-body); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
 .dh-app .dh-header-mobile-fab-nav :is(a, button):hover { background: var(--dh-muted-surface); }
 .dh-app .dh-header-mobile-fab-nav :is(a, button) svg { width: 18px; height: 18px; flex: none; }
 .dh-header-mobile-fab-nav form { margin: 0; }
@@ -2654,9 +1176,6 @@ turbo-frame#dh-results { display: contents; }
 
 /* Controls (owner 2026-11-22): height comes from min-height (44px up to tablet width, 40px on desktop), never from font
    size; side padding is fluid. Labels stay on one line, so a row of buttons wraps instead of squeezing them. */
-.dh-app :is(.btn, .btn-sm, .dh-btn) {
-    min-height: var(--fl-ctl-h); padding-inline: var(--fl-btn-px); font-size: var(--fl-fs-body); line-height: var(--fl-lh-head); white-space: nowrap;
-}
 .dh-app .page-actions .btn, .dh-app .btn-sm svg { flex: none; }
 @media (max-width: 1023.98px), (pointer: coarse) {
     .dh-app :is(.dh-fchip, .dh-fbar-clearall, .dh-tab, .dh-fopt span, .dh-pager-select, .dh-subnav-link) { min-height: 44px; }
@@ -2798,8 +1317,6 @@ turbo-frame#dh-results { display: contents; }
 .dh-app .dh-stat-value { margin: 2px 0 0; color: var(--dh-ink); font-size: var(--fl-fs-h2); font-weight: 700; line-height: var(--fl-lh-head); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .dh-app .dh-stat-cur { margin-right: 2px; font-weight: 600; }
 .dh-app .dh-stat-sub { margin: 2px 0 0; color: var(--dh-muted); font-size: var(--fl-fs-meta); line-height: 1.35; }
-.dh-app .dh-stat--success .dh-stat-value { color: var(--dh-success); }
-.dh-app .dh-stat--danger .dh-stat-value { color: var(--dh-danger); }
 @media (max-width: 480px) {
     .dh-app .dh-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); margin-bottom: var(--sp-4); }
     .dh-app .dh-stat { padding: var(--sp-3); }

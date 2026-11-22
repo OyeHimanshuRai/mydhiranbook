@@ -9,8 +9,6 @@
     <title>{{ $title ?? 'Dhiran' }}</title>
     @include('partials.favicon')
 
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/css/dhiran.css', 'resources/js/app.js'])
 
     {{-- Dhiran shell — a dedicated, Dhiran-only navigation surface. Only

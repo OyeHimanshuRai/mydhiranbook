@@ -1,3 +1,4 @@
+@import "./khata-tokens.css";
 /* Platform admin panel (owner-only). Vite entry; colour tokens in dhiran-tokens.css, spacing/type/tap in ui-tokens.css.
    Component classes are prefixed adm-. Mobile-first: tables become stacked cards under 720px, the sidebar a drawer under 1024px. */
 @import "./dhiran-tokens.css";
@@ -17,7 +18,6 @@
 .adm .num, .adm td.num { font-variant-numeric: tabular-nums; }
 .adm-muted { color: var(--dh-muted); }
 .adm-wrap { overflow-wrap: anywhere; min-width: 0; }
-.adm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .adm-skip { position: absolute; left: -999px; top: 0; z-index: 60; background: var(--dh-navy); color: #fff !important; padding: var(--sp-3) var(--sp-4); }
 .adm-skip:focus { left: var(--sp-2); top: var(--sp-2); }
 
@@ -51,7 +51,7 @@
     .js .adm-side { position: fixed; inset: 0 auto 0 0; width: min(300px, 86vw); z-index: 50; overflow-y: auto; visibility: hidden; transform: translateX(-100%);
         transition: transform .2s var(--ease-out), visibility 0s .2s; }
     .js .adm-side.is-open { visibility: visible; transform: none; transition-delay: 0s; }
-    .js .adm-scrim.is-open { display: block; position: fixed; inset: 0; z-index: 40; background: color-mix(in srgb, var(--dh-navy) 55%, transparent); }
+    .js .adm-scrim.is-open { display: block; position: fixed; inset: 0; z-index: 40; background: color-mix(in srgb, var(--kh-cloth-deep) 55%, transparent); }
     .adm-side .adm-foot { display: none; }
     .adm-nav { flex-direction: row; flex-wrap: wrap; }
     .js .adm-nav { flex-direction: column; }
@@ -140,7 +140,6 @@
 .adm-check input { flex: none; width: 24px; height: 24px; min-height: 0 !important; margin: 0; accent-color: var(--dh-navy); cursor: pointer; }
 .adm-form-inline { display: grid; gap: var(--sp-3); }
 @media (min-width: 640px) { .adm-form-inline { grid-template-columns: minmax(180px, 1fr) auto; align-items: end; } }
-.adm-warn { display: block; margin: var(--sp-3) 0; padding: var(--sp-3) var(--sp-4); border: 1px solid var(--dh-danger-line); border-radius: var(--r-sm); background: var(--dh-danger-soft); color: #991b1b; font-size: var(--fs-sm); }
 
 /* ---- detail list ---- */
 .adm-dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: var(--sp-4) var(--sp-5); margin: 0; }
@@ -171,7 +170,7 @@ td.adm-empty strong { display: block; color: var(--dh-ink); font-size: var(--fs-
     .adm-table tbody tr:first-child { border-top: 0; }
     .adm-table td { display: grid; grid-template-columns: minmax(84px, 34%) minmax(0, 1fr); gap: var(--sp-3); padding: var(--sp-1) 0; border: 0; }
     .adm-table td[data-label]::before { content: attr(data-label); font-size: var(--fs-xs); font-weight: 700; color: var(--dh-muted); padding-top: 2px; }
-    .adm-table td.adm-key, .adm-table td.adm-empty, .adm-table td.adm-full { display: block; }
+    .adm-table td.adm-key, .adm-table td.adm-empty { display: block; }
     .adm-table td.adm-key { order: -1; font-size: var(--fs-md); padding-bottom: var(--sp-2); }
     .adm-table td.adm-key::before { display: none; }
     .adm-table .r { text-align: left; }
@@ -191,7 +190,7 @@ td.adm-empty strong { display: block; color: var(--dh-ink); font-size: var(--fs-
 .adm-person form { margin-top: var(--sp-4); }
 
 /* ---- auth pages (login, MFA, forgot, reset) ---- */
-.adm-auth { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--sp-5) var(--sp-4); background: var(--dh-navy); }
+.adm-auth { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--sp-5) var(--sp-4); background: var(--kh-cloth); }
 .adm-auth-card { width: 100%; max-width: 440px; background: var(--dh-white); border-radius: var(--r-lg); padding: var(--sp-6) var(--sp-5); box-shadow: 0 18px 48px color-mix(in srgb, #000 35%, transparent); }
 @media (min-width: 480px) { .adm-auth-card { padding: var(--sp-6); } }
 .adm-auth-brand { display: block; margin-bottom: var(--sp-5); text-align: center; font: 400 38px/1 var(--font-display); letter-spacing: -.02em; color: var(--dh-sidebar-ink-strong) !important; text-decoration: none; }

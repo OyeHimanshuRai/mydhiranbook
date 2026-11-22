@@ -10,6 +10,6 @@
     </ul>
     <form method="post" action="{{ route('subscription.choose') }}" data-turbo="false" data-once>@csrf
         <input type="hidden" name="plan_id" value="{{ $plan->id }}"><input type="hidden" name="billing_cycle" value="{{ $yearly ? 'yearly' : 'monthly' }}">
-        <button class="ui-btn ui-btn--gold" data-busy="Please wait…">{{ $label }}</button>
+        <button class="ui-btn" data-busy="Please wait…">{{ $label }}</button>
     </form>
 </div>

@@ -66,7 +66,7 @@
                                     <td data-label="Customer" data-cell="title">
                                         <span class="inline-flex items-center gap-3">
                                             <x-customer-avatar :customer="$borrower" />
-                                            <a href="{{ route('dhiran.borrowers.show', $borrower) }}" class="font-medium text-slate-800 hover:text-amber-700">{{ $borrower->name }}</a>
+                                            <a href="{{ route('dhiran.borrowers.show', $borrower) }}" class="font-medium text-slate-800 hover:text-[var(--kh-ink-2)]">{{ $borrower->name }}</a>
                                         </span>
                                     </td>
                                     <td data-label="Code" data-low="1" class="font-mono">{{ $borrower->customer_code ?: '—' }}</td>

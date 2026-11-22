@@ -71,8 +71,6 @@
 .dh-app .st-error svg { flex: none; margin-top: 1px; }
 
 /* Errors summary at the top of a failed form */
-.dh-app .st-alert { display: flex; gap: var(--sp-3); align-items: flex-start; padding: var(--sp-3) var(--sp-4); border: 1px solid var(--dh-danger-line); border-radius: var(--r-md); background: var(--dh-danger-soft); color: var(--dh-danger); font-size: var(--fl-fs-body); font-weight: 600; }
-.dh-app .st-alert svg { flex: none; margin-top: 2px; }
 .dh-app .st-notice { display: flex; gap: var(--sp-3); align-items: flex-start; padding: var(--sp-3) var(--sp-4); border: 1px solid var(--dh-line); border-radius: var(--r-md); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fl-fs-body); }
 .dh-app .st-notice svg { flex: none; margin-top: 2px; }
 
@@ -119,8 +117,8 @@
 .dh-app .st-meter-figure { margin: 0; font-size: var(--fl-fs-body); color: var(--dh-ink-soft); }
 .dh-app .st-meter-figure strong { font-size: var(--fl-fs-h2); color: var(--dh-ink); font-variant-numeric: tabular-nums; }
 .dh-app .st-bar { height: 8px; border-radius: var(--r-pill); background: var(--dh-muted-surface); overflow: hidden; border: 1px solid var(--dh-line); }
-.dh-app .st-bar > span { display: block; height: 100%; width: var(--w, 0%); background: var(--dh-success); }
-.dh-app .st-bar.is-warn > span { background: var(--dh-gold-bright-hover); }
+.dh-app .st-bar > span { display: block; height: 100%; width: var(--w, 0%); background: var(--kh-ink); }
+.dh-app .st-bar.is-warn > span { background: var(--kh-ink); }
 .dh-app .st-bar.is-full > span { background: var(--dh-danger); }
 
 .dh-app .st-rows { list-style: none; margin: 0; padding: 0; }
@@ -138,7 +136,6 @@
 .dh-app .st-row-acts { grid-area: acts; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin-top: var(--sp-2); }
 .dh-app .st-row-acts form { margin: 0; }
 .dh-app .st-row-acts .btn { min-height: var(--fl-ctl-h); }
-.dh-app .st-row-note { font-size: 0.875rem; color: var(--dh-muted); }
 @media (min-width: 640px) {
     .dh-app .st-row { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "avatar main acts" "avatar meta acts"; }
     .dh-app .st-row-acts { margin-top: 0; justify-content: flex-end; }
@@ -154,7 +151,7 @@
     font: inherit; font-weight: 700; color: var(--dh-ink-soft); background: var(--dh-card); border: 1.5px solid var(--ui-field-edge); border-radius: var(--r-sm); cursor: pointer;
 }
 .dh-app .st-role-btn small { font-size: 0.75rem; font-weight: 500; color: var(--dh-muted); }
-.dh-app .st-role-btn[aria-pressed="true"] { color: var(--dh-on-highlight); background: var(--dh-accent-soft); border-color: var(--dh-gold-bright-hover); box-shadow: inset 0 0 0 1px var(--dh-gold-bright-hover); }
+.dh-app .st-role-btn[aria-pressed="true"] { color: var(--dh-on-highlight); background: var(--dh-accent-soft); border-color: var(--kh-ink); box-shadow: inset 0 0 0 1px var(--kh-ink); }
 .dh-app .st-perm-group { margin: 0; padding: 0; border: 0; min-width: 0; }
 .dh-app .st-perm-group + .st-perm-group { margin-top: var(--sp-5); }
 .dh-app .st-perm-group > legend { float: left; width: 100%; padding: 0 0 var(--sp-2); margin: 0; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dh-muted); }
@@ -179,7 +176,7 @@
 .dh-app .st-choice > span { display: block; height: 100%; min-height: 48px; padding: var(--sp-3); border: 1.5px solid var(--ui-field-edge); border-radius: var(--r-sm); background: var(--dh-card); }
 .dh-app .st-choice b { display: block; font-size: var(--fl-fs-body); color: var(--dh-ink); }
 .dh-app .st-choice small { display: block; margin-top: var(--sp-1); font-size: 0.8125rem; line-height: 1.4; color: var(--dh-muted); }
-.dh-app .st-choice input:checked + span { border-color: var(--dh-gold-bright-hover); background: var(--dh-accent-soft); box-shadow: inset 0 0 0 1px var(--dh-gold-bright-hover); }
+.dh-app .st-choice input:checked + span { border-color: var(--kh-ink); background: var(--dh-accent-soft); box-shadow: inset 0 0 0 1px var(--kh-ink); }
 .dh-app .st-choice input:focus-visible + span { outline: 2px solid var(--dh-focus); outline-offset: 2px; }
 
 /* ---- Plan & billing ---- */

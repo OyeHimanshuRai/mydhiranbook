@@ -46,7 +46,7 @@
                                 <x-dhiran.sno :rows="$payments" :n="$loop->iteration" />
                                 <td data-label="Date" class="whitespace-nowrap">{{ $payment->payment_date?->format('d M Y') ?? '-' }}</td>
                                 <td data-label="Loan #" data-cell="title" class="whitespace-nowrap">
-                                    <a href="{{ route('dhiran.show', $payment->loan) }}" class="font-mono font-medium text-slate-700 hover:text-amber-700">{{ $payment->loan?->loan_number ?? '-' }}</a>
+                                    <a href="{{ route('dhiran.show', $payment->loan) }}" class="font-mono font-medium text-slate-700 hover:text-[var(--kh-ink-2)]">{{ $payment->loan?->loan_number ?? '-' }}</a>
                                 </td>
                                 <td data-label="Customer" class="font-medium text-slate-700">{{ $payment->loan?->customer?->name ?? '-' }}</td>
                                 <x-dhiran.mobile-cell :number="$payment->loan?->customer?->mobile" />

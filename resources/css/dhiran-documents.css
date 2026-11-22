@@ -6,7 +6,7 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             font-size: 12px;
             color: var(--dh-ink);
             background: var(--dh-card);
@@ -19,27 +19,12 @@
         }
 
         /* Header */
-        .receipt-header {
-            text-align: center;
-            border-bottom: 2px solid var(--dh-ink);
-            padding-bottom: 16px;
-            margin-bottom: 20px;
-        }
         .receipt-shop-name {
             font-size: 22px;
             font-weight: 700;
             color: var(--dh-ink);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-        }
-        .receipt-shop-address {
-            font-size: 11px;
-            color: var(--dh-ink-soft);
-            margin-top: 4px;
-        }
-        .receipt-shop-phone {
-            font-size: 11px;
-            color: var(--dh-ink-soft);
         }
         .receipt-title {
             font-size: 16px;
@@ -51,125 +36,16 @@
         }
 
         /* Loan Details Grid */
-        .receipt-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px 24px;
-            margin-bottom: 20px;
-            font-size: 12px;
-        }
-        .receipt-detail-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 8px;
-        }
-        .receipt-detail-label {
-            font-weight: 600;
-            color: var(--dh-ink-soft);
-        }
-        .receipt-detail-value {
-            font-weight: 600;
-            color: var(--dh-ink);
-            text-align: right;
-        }
 
         /* Items Table */
-        .receipt-items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-            font-size: 11px;
-        }
-        .receipt-items-table th {
-            background: var(--dh-muted-surface);
-            padding: 8px 10px;
-            text-align: left;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--dh-ink-soft);
-            border-bottom: 1px solid var(--dh-field-border);
-        }
-        .receipt-items-table td {
-            padding: 8px 10px;
-            border-bottom: 1px solid var(--dh-line);
-            color: var(--dh-ink);
-        }
-        .receipt-items-table .text-right { text-align: right; }
-        .receipt-items-table .text-center { text-align: center; }
-        .receipt-items-table tfoot td {
-            font-weight: 700;
-            border-top: 2px solid var(--dh-field-border);
-            border-bottom: none;
-        }
 
         /* Summary */
-        .receipt-summary {
-            border: 1px solid var(--dh-field-border);
-            border-radius: 8px;
-            padding: 14px 18px;
-            margin-bottom: 20px;
-        }
-        .receipt-summary-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 4px 0;
-            font-size: 12px;
-        }
-        .receipt-summary-row.total {
-            border-top: 1px solid var(--dh-field-border);
-            margin-top: 6px;
-            padding-top: 8px;
-            font-size: 14px;
-            font-weight: 700;
-        }
 
         /* Terms */
-        .receipt-terms {
-            margin-bottom: 24px;
-        }
-        .receipt-terms-title {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--dh-ink-soft);
-            margin-bottom: 6px;
-        }
-        .receipt-terms-content {
-            font-size: 10px;
-            color: var(--dh-muted);
-            line-height: 1.6;
-            white-space: pre-line;
-        }
 
         /* Signatures */
-        .receipt-signatures {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
-            margin-top: 48px;
-            padding-top: 16px;
-        }
-        .receipt-sig-line {
-            border-top: 1px solid var(--dh-ink);
-            padding-top: 6px;
-            text-align: center;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--dh-ink-soft);
-        }
 
         /* Footer */
-        .receipt-footer {
-            text-align: center;
-            margin-top: 24px;
-            padding-top: 12px;
-            border-top: 1px solid var(--dh-line);
-            font-size: 10px;
-            color: var(--dh-subtle);
-        }
 
         /* Print overrides */
         @media print {
@@ -180,13 +56,6 @@
         }
 
         /* Screen-only print button */
-        .receipt-print-bar {
-            text-align: center;
-            padding: 16px;
-            background: var(--dh-muted-surface);
-            border-bottom: 1px solid var(--dh-line);
-            margin-bottom: 24px;
-        }
         .receipt-print-btn {
             display: inline-flex;
             align-items: center;
@@ -221,7 +90,7 @@
         }
 
         body {
-            font-family: 'Plus Jakarta Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: var(--bg);
             margin: 0;
             padding: 26px 16px;
@@ -338,27 +207,6 @@
         .ledger-total span { font-size: 12px; font-weight: 700; color: var(--dh-accent); letter-spacing: 0.04em; text-transform: uppercase; }
         .ledger-total strong { font-size: 23px; color: var(--accent); letter-spacing: -0.02em; }
 
-        .balance-section {
-            border: 1px solid var(--line-soft);
-            border-radius: 12px;
-            overflow: hidden;
-            background: var(--dh-card);
-            margin-bottom: 14px;
-        }
-
-        .balance-row {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            gap: 14px;
-            align-items: center;
-            padding: 10px 14px;
-            border-top: 1px solid var(--line-soft);
-            font-size: 13px;
-        }
-
-        .balance-row:first-child { border-top: none; }
-        .balance-row strong { font-weight: 700; color: var(--ink); }
-
         .signature-row { display: flex; justify-content: space-between; gap: 40px; margin-top: 30px; padding-top: 14px; }
         .signature-block { text-align: center; min-width: 160px; }
         .signature-line { border-top: 1px solid var(--ink); padding-top: 8px; font-size: 12px; font-weight: 600; color: var(--muted); }
@@ -395,7 +243,7 @@
             body { background: var(--dh-card); padding: 0 !important; }
             .receipt-page { max-width: none; }
             .receipt { border: none; border-radius: 0; padding: 0; box-shadow: none; }
-            .receipt-head, .detail-card, .meta-box, .ledger, .balance-section { break-inside: avoid; }
+            .receipt-head, .detail-card, .meta-box, .ledger { break-inside: avoid; }
             .actions { display: none; }
         }
     
@@ -417,7 +265,7 @@
         }
 
         body {
-            font-family: 'Plus Jakarta Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: var(--bg);
             margin: 0;
             padding: 26px 16px;
@@ -766,7 +614,7 @@
         }
 
         body {
-            font-family: 'Plus Jakarta Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: var(--bg);
             margin: 0;
             padding: 26px 16px;
@@ -963,10 +811,9 @@
     margin: 0;
     background: var(--dh-muted-surface);
     color: var(--dh-doc-ink);
-    font-family: 'Plus Jakarta Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
-.dh-doc-page,
 .receipt-page {
     max-width: 800px;
     margin: 0 auto;
@@ -983,13 +830,11 @@
 }
 
 .receipt-container { padding: 24px; }
-.receipt-head,
-.receipt-header {
+.receipt-head {
     padding: 18px 20px 16px;
     border-bottom: 1px solid var(--dh-doc-line);
     background: linear-gradient(180deg, var(--dh-card) 0%, var(--dh-accent-soft) 100%);
 }
-.receipt-header { text-align: center; }
 .brand-mark {
     display: inline-flex;
     align-items: center;
@@ -1011,8 +856,6 @@
     color: var(--dh-doc-ink);
     letter-spacing: -0.01em;
 }
-.receipt-shop-address,
-.receipt-shop-phone,
 .shop-meta,
 .receipt-sub {
     font-size: 12px;
@@ -1025,55 +868,13 @@
     color: var(--dh-doc-ink);
 }
 .receipt-body { padding: 20px; }
-.receipt-section,
-.receipt-block { padding: 16px 20px; border-bottom: 1px solid var(--dh-doc-line); }
-.receipt-section-title {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--dh-doc-muted);
-    margin-bottom: 10px;
-}
-.receipt-details {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px 24px;
-    margin-bottom: 20px;
-    font-size: 12px;
-}
-.receipt-detail-row,
-.balance-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-}
-.receipt-detail-label,
-.balance-label {
-    font-weight: 600;
-    color: var(--dh-ink-soft);
-}
-.receipt-detail-value,
-.balance-value {
-    font-weight: 600;
-    color: var(--dh-doc-ink);
-    text-align: right;
-}
-.dh-doc-balance-total { background: var(--dh-doc-soft); }
-.dh-doc-strong { font-weight: 700; }
-.dh-doc-item-meta { font-size: 9px; color: var(--dh-doc-muted); }
-.dh-doc-sign-meta { font-weight: 400; font-size: 10px; }
 
-.receipt-items-table,
-.receipt-table,
 .items-table {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 20px;
     font-size: 11px;
 }
-.receipt-items-table th,
-.receipt-table th,
 .items-table th {
     background: var(--dh-muted-surface);
     padding: 8px 10px;
@@ -1084,8 +885,6 @@
     color: var(--dh-ink-soft);
     border: 1px solid var(--dh-doc-line);
 }
-.receipt-items-table td,
-.receipt-table td,
 .items-table td {
     padding: 8px 10px;
     border: 1px solid var(--dh-doc-line);
@@ -1097,7 +896,6 @@
 .small { font-size: 11px; color: var(--dh-doc-muted); }
 
 .receipt-print-btn,
-.print-btn,
 .btn {
     display: inline-flex;
     align-items: center;
@@ -1114,8 +912,7 @@
     cursor: pointer;
     text-decoration: none;
 }
-.receipt-print-btn,
-.print-btn {
+.receipt-print-btn {
     position: fixed;
     top: 18px;
     right: 18px;
@@ -1129,7 +926,7 @@
    same Dhiran font and normal web weights instead of mixed legacy rules. */
 .dh-doc-body,
 .dh-doc-body body {
-    font-family: 'Plus Jakarta Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     font-size: 12px;
     line-height: 1.5;
     font-weight: 400;
@@ -1143,25 +940,7 @@
     letter-spacing: 0;
 }
 
-.dh-doc-body :is(.receipt-section-title, .detail-label, .meta-box-label, th) {
-    font-size: 11px;
-    line-height: 1.3;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-}
-
-.dh-doc-body :is(td, p, .detail-text, .receipt-detail-row, .balance-row, .ledger-row) {
-    font-size: 12px;
-    line-height: 1.5;
-    font-weight: 400;
-}
-
-.dh-doc-body :is(strong, .receipt-detail-label, .receipt-detail-value, .balance-label, .balance-value, .dh-doc-strong) {
-    font-weight: 600;
-}
-
 @media (max-width: 640px) {
-    .dh-doc-page,
     .receipt-page { padding: 14px; }
     .receipt-head {
         display: block;
@@ -1169,9 +948,7 @@
     }
     .receipt-title,
     .receipt-sub { text-align: left; }
-    .receipt-details { grid-template-columns: 1fr; }
-    .receipt-print-btn,
-    .print-btn {
+    .receipt-print-btn {
         position: static;
         width: calc(100% - 28px);
         margin: 14px;
@@ -1179,15 +956,12 @@
 }
 
 @media print {
-    .receipt-print-btn,
-    .print-btn,
-    .no-print { display: none !important; }
+    .receipt-print-btn { display: none !important; }
     .dh-doc-body,
     body {
         background: var(--dh-card) !important;
         padding: 0 !important;
     }
-    .dh-doc-page,
     .receipt-page {
         max-width: none;
         padding: 0;

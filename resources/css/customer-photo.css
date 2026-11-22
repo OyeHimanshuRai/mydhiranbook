@@ -8,7 +8,7 @@
     overflow: hidden;
     border: 1px solid var(--jf-border);
     border-radius: var(--jf-radius-md);
-    background: var(--jf-gold-soft);
+    background: var(--kh-ink-soft);
     color: var(--jf-warn-ink);
     font-size: 14px;
     font-weight: 700;
@@ -25,7 +25,7 @@
 .customer-photo .btn { min-height: 36px; }
 .customer-photo .customer-photo-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; border-radius: var(--jf-radius-md); flex: 0 0 40px; }
 .customer-photo-icon svg { width: 19px; height: 19px; }
-.customer-photo-icon:focus-visible { outline: 2px solid var(--jf-gold-deep); outline-offset: 3px; }
+.customer-photo-icon:focus-visible { outline: 2px solid var(--kh-focus); outline-offset: 3px; }
 .customer-photo .customer-photo-switch { width: 44px; height: 44px; flex-basis: 44px; }
 .customer-photo .customer-photo-switch svg { width: 22px; height: 22px; }
 .customer-photo .customer-photo__remove { color: var(--jf-danger-ink); border-color: var(--jf-danger-border); }

@@ -9,7 +9,7 @@
                 <x-site.field name="password" label="Password" password required autofocus autocomplete="current-password" />
                 <div class="ui-modal-actions">
                     <a href="{{ route('dhiran.loans') }}" class="ui-btn ui-btn--ghost">Cancel</a>
-                    <button type="submit" class="ui-btn ui-btn--gold" data-busy="Checking…">Open reports</button>
+                    <button type="submit" class="ui-btn" data-busy="Checking…">Open reports</button>
                 </div>
             </form>
         </div>

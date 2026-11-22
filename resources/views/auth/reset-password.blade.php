@@ -4,6 +4,6 @@
 <x-site.field name="email" label="Email address" type="email" :value="old('email', $email)" required autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" />
 <x-site.field name="password" label="New password" password required minlength="12" autocomplete="new-password" hint="At least 12 characters." />
 <x-site.field name="password_confirmation" label="Confirm new password" password required autocomplete="new-password" />
-<button class="ui-btn ui-btn--gold ui-btn--block ui-submit" data-busy="Resetting…">Reset password</button></form>
+<button class="ui-btn ui-btn--block ui-submit" data-busy="Resetting…">Reset password</button></form>
 <div class="auth-alt"><a href="/login">Back to sign in</a></div>
 @endsection

@@ -1,3 +1,4 @@
+@import "./khata-tokens.css";
 /* Public site, auth, onboarding and checkout pages. Mobile-first; tokens in ui-tokens.css / dhiran-tokens.css.
    Component classes are prefixed (ui-, site-, auth-, ck-) so they are safe inside the app shell too;
    element resets live under .site (the standalone page body) only. */
@@ -17,7 +18,7 @@
 .site-main { flex: 1 0 auto; width: 100%; }
 [hidden] { display: none !important; }
 .site :is(a, button, input, summary):focus-visible, .ui-modal :is(a, button, input):focus-visible { outline: var(--focus); outline-offset: 2px; }
-.skip { position: absolute; left: -999px; top: 0; z-index: 60; background: var(--dh-navy); color: #fff !important; padding: var(--sp-3) var(--sp-4); }
+.skip { position: absolute; left: -999px; top: 0; z-index: 60; background: var(--kh-ink); color: #fff !important; padding: var(--sp-3) var(--sp-4); }
 .skip:focus { left: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .site *, .ui-modal * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
@@ -25,7 +26,7 @@
 /* ---- brand ---- */
 .brand { font-family: var(--font-display); font-size: 30px; letter-spacing: -1px; line-height: 1; color: inherit; text-decoration: none; display: inline-flex; align-items: center; min-height: var(--tap); }
 .site a.brand, .site a.brand:hover { text-decoration: none; color: inherit; }
-.brand span { color: var(--dh-gold-bright); }
+.brand span { color: var(--kh-on-cloth-soft); }
 .ui-eyebrow { text-transform: uppercase; letter-spacing: .14em; font-size: var(--fs-xs); font-weight: 700; color: var(--ui-eyebrow-ink); margin: 0 0 var(--sp-3); }
 
 /* ---- buttons (a or button) ---- */
@@ -34,8 +35,6 @@
     text-decoration: none; cursor: pointer; transition: background .15s var(--ease-out), box-shadow .15s var(--ease-out); }
 .site a.ui-btn { color: #fff; } .site a.ui-btn:hover { text-decoration: none; color: #fff; }
 .ui-btn:hover { background: var(--dh-navy-hover); }
-.ui-btn--gold, .site a.ui-btn--gold { background: var(--dh-gold-bright); border-color: var(--dh-gold-bright); color: var(--dh-navy); }
-.ui-btn--gold:hover, .site a.ui-btn--gold:hover { background: var(--dh-gold-bright-hover); border-color: var(--dh-gold-bright-hover); color: var(--dh-navy); }
 .ui-btn--ghost, .site a.ui-btn--ghost { background: transparent; color: var(--dh-navy); border-color: var(--ui-field-edge); }
 .ui-btn--ghost:hover, .site a.ui-btn--ghost:hover { background: var(--dh-muted-surface); color: var(--dh-navy); }
 .ui-btn--onnavy, .site a.ui-btn--onnavy { background: transparent; color: #fff; border-color: color-mix(in srgb, #fff 45%, transparent); }
@@ -61,7 +60,7 @@
 .ui-input input::placeholder { color: #75849a; }
 .ui-input input:hover { border-color: var(--dh-ink-soft); }
 .ui-input input:focus { outline: none; border-color: var(--dh-navy); box-shadow: var(--ring); }
-.ui-input input[type="password"], .ui-input input.has-reveal { padding-right: 76px; }
+.ui-input input[type="password"] { padding-right: 76px; }
 .ui-field.has-err input { border-color: var(--dh-danger); background: var(--dh-danger-soft); }
 .ui-hint { margin: var(--sp-2) 0 0 !important; font-size: var(--fs-xs); color: var(--dh-muted); }
 .ui-err { margin: var(--sp-2) 0 0 !important; font-size: var(--fs-sm); font-weight: 600; color: var(--dh-danger); }
@@ -83,15 +82,15 @@
 .ui-card { background: var(--dh-card); border: 1px solid var(--dh-card-border); border-radius: var(--r-md); padding: var(--sp-5); box-shadow: var(--dh-card-shadow); min-width: 0; }
 
 /* ---- header (public) ---- */
-.site-head { position: sticky; top: 0; z-index: 40; background: var(--dh-navy); color: #fff; padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left); border-bottom: 1px solid color-mix(in srgb, #fff 8%, transparent); }
+.site-head { position: sticky; top: 0; z-index: 40; background: var(--kh-cloth); color: #fff; padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left); border-bottom: 1px solid color-mix(in srgb, #fff 8%, transparent); }
 .site-head-in { max-width: 1120px; margin: auto; padding: var(--sp-1) var(--sp-4); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0 var(--sp-5); }
 .site-nav { display: flex; align-items: center; gap: var(--sp-1) var(--sp-4); flex-wrap: wrap; }
 .site-head .site-nav a:not(.ui-btn) { color: var(--ui-on-navy-soft); display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 var(--sp-1); text-decoration: none; }
 .site-head .site-nav a:not(.ui-btn):hover, .site-head .site-nav a[aria-current] { color: #fff; }
-.site-head .site-nav a[aria-current] { box-shadow: inset 0 -2px var(--dh-gold-bright); }
+.site-head .site-nav a[aria-current] { box-shadow: inset 0 -2px #fff; }
 .site-burger { display: none; min-height: var(--tap); padding: 0 var(--sp-4); border: 1.5px solid color-mix(in srgb, #fff 40%, transparent); border-radius: var(--r-sm); background: transparent; color: #fff; font: 650 var(--fs-sm)/1 var(--font-body); cursor: pointer; }
 .site-head .ui-btn--sm { min-height: 40px; padding: 6px 16px; font-size: var(--fs-sm); }
-.site-head :is(a, button):focus-visible { outline-color: var(--dh-gold-bright); }
+.site-head :is(a, button):focus-visible { outline-color: var(--kh-focus-on-cloth); }
 @media (max-width: 720px) {
     .js .site-burger { display: inline-flex; align-items: center; }
     .js .site-nav { display: none; flex-basis: 100%; flex-direction: column; align-items: stretch; padding: var(--sp-2) 0 var(--sp-4); gap: 0; }
@@ -119,8 +118,7 @@
 
 /* ---- public bands, hero, cards ---- */
 .site .hero { position: relative; overflow: hidden; color: #fff; background:
-    radial-gradient(60% 80% at 100% 0%, color-mix(in srgb, var(--dh-gold-bright) 16%, transparent), transparent 70%),
-    repeating-linear-gradient(to bottom, transparent 0 39px, color-mix(in srgb, #fff 4%, transparent) 39px 40px), var(--dh-navy); }
+    repeating-linear-gradient(to bottom, transparent 0 39px, color-mix(in srgb, #fff 7%, transparent) 39px 40px), var(--kh-cloth); }
 .hero-in { max-width: 1120px; margin: auto; padding: var(--sp-7) var(--sp-4) calc(var(--sp-7) + var(--sp-4)); display: grid; gap: var(--sp-6) var(--sp-7); align-items: center; }
 .site .hero h1 { font-size: var(--fs-3xl); margin-bottom: var(--sp-4); max-width: 14em; }
 .site .hero .lead { font-size: var(--fs-lg); color: var(--ui-on-navy-soft); max-width: 36em; }
@@ -175,15 +173,14 @@
 /* ---- auth: split screen; brand panel becomes a compact header on <=900px ---- */
 .site.auth { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); background: var(--dh-bg); }
 .auth-brand { position: relative; overflow: hidden; background:
-    radial-gradient(70% 50% at 100% 0%, color-mix(in srgb, var(--dh-gold-bright) 14%, transparent), transparent 70%),
-    repeating-linear-gradient(to bottom, transparent 0 39px, color-mix(in srgb, #fff 4%, transparent) 39px 40px), var(--dh-navy);
+    repeating-linear-gradient(to bottom, transparent 0 39px, color-mix(in srgb, #fff 7%, transparent) 39px 40px), var(--kh-cloth);
     color: #fff; padding: var(--sp-6) clamp(32px, 7vw, 88px); display: flex; flex-direction: column; justify-content: space-between; gap: var(--sp-7); min-height: 100vh; min-height: 100dvh; position: sticky; top: 0; align-self: start; }
-.auth-brand::before { content: ""; position: absolute; top: 0; bottom: 0; left: clamp(20px, 4.5vw, 56px); width: 1px; background: color-mix(in srgb, var(--dh-gold-bright) 55%, transparent); }
+.auth-brand::before { content: ""; position: absolute; top: 0; bottom: 0; left: clamp(20px, 4.5vw, 56px); width: 1px; background: color-mix(in srgb, #fff 38%, transparent); }
 .auth-brand .brand { font-size: 38px; color: #fff; }
 .auth-brand h2 { font-family: var(--font-display); font-weight: 400; font-size: clamp(36px, 4.4vw, 58px); letter-spacing: -.02em; line-height: 1.08; margin: var(--sp-5) 0 var(--sp-4); max-width: 9em; }
 .auth-brand h2 + p { color: var(--ui-on-navy-soft); max-width: 24em; margin: 0; }
-.auth-rule { height: 3px; width: 60px; background: var(--dh-gold-bright); }
-.auth-brand .ui-eyebrow { color: var(--dh-gold-bright); margin: 0; }
+.auth-rule { height: 1px; width: 60px; background: var(--kh-on-cloth-soft); }
+.auth-brand .ui-eyebrow { color: var(--kh-on-cloth-soft); margin: 0; }
 .auth-side { display: flex; flex-direction: column; min-width: 0; min-height: 100vh; min-height: 100dvh; }
 .auth-main { flex: 1 0 auto; display: flex; padding: var(--sp-7) max(var(--sp-5), env(safe-area-inset-right)) var(--sp-6) max(var(--sp-5), env(safe-area-inset-left)); }
 .auth-card { width: 100%; max-width: 440px; margin: auto; }
@@ -234,10 +231,10 @@
 .ck-actions .ui-btn { flex: 1 1 200px; }
 .ck-grid { display: grid; grid-template-columns: 1fr; gap: 0 var(--sp-4); }
 @media (min-width: 560px) { .ck-grid { grid-template-columns: 1fr 1fr; } .ck-grid .ui-field--wide { grid-column: 1 / -1; } }
-.ck-form .ui-field label .opt, .ui-field .opt { font-weight: 400; color: var(--dh-muted); }
+.ui-field .opt { font-weight: 400; color: var(--dh-muted); }
 
 /* ---- report password pop-up (shown inside the app shell) ---- */
-.ui-modal { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: var(--sp-4); background: color-mix(in srgb, var(--dh-navy) 60%, transparent); overflow-y: auto; }
+.ui-modal { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: var(--sp-4); background: color-mix(in srgb, var(--kh-cloth-deep) 60%, transparent); overflow-y: auto; }
 .ui-modal-card { width: 100%; max-width: 400px; background: #fff; border-radius: var(--r-md); padding: var(--sp-5); box-shadow: 0 24px 60px color-mix(in srgb, #000 30%, transparent); }
 .ui-modal-card h2 { font-size: var(--fs-lg); margin: 0 0 var(--sp-1); }
 .ui-modal-card p { margin: 0; color: var(--dh-muted); font-size: var(--fs-sm); }

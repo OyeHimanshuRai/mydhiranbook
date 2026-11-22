@@ -4,21 +4,21 @@
     /* spacing scale */
     --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px;
     /* radius */
-    --r-sm: 8px; --r-md: 12px; --r-lg: 18px; --r-pill: 999px;
+    --r-sm: 4px; --r-md: 6px; --r-lg: 6px; --r-pill: 999px;   /* khata: 6px components, hairlines, flat */
     /* type */
-    --font-body: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Roboto, sans-serif;
-    --font-display: Georgia, "Times New Roman", serif;
+    --font-body: var(--kh-font);
+    --font-display: var(--kh-font-serif);
     --fs-xs: 12px; --fs-sm: 14px; --fs-md: 16px; --fs-lg: 18px;
     --fs-xl: clamp(22px, 4vw, 28px); --fs-2xl: clamp(28px, 5.5vw, 40px); --fs-3xl: clamp(34px, 7vw, 58px);
     --lh-tight: 1.2; --lh-body: 1.6;
     --measure: 68ch;
     /* touch + focus */
     --tap: 44px;
-    --focus: 3px solid var(--dh-focus);
-    --ring: 0 0 0 4px color-mix(in srgb, var(--dh-focus) 22%, transparent);
+    --focus: 2px solid var(--kh-focus);
+    --ring: var(--kh-ring);
     /* form + text colours that clear WCAG AA on white (4.5:1 text, 3:1 field edges) */
-    --ui-field-edge: #8493a8;
-    --ui-eyebrow-ink: #7a5a0a;
-    --ui-on-navy-soft: #c3cfde;
+    --ui-field-edge: var(--kh-field-edge);
+    --ui-eyebrow-ink: var(--kh-cloth);
+    --ui-on-navy-soft: var(--kh-on-cloth-soft);
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }

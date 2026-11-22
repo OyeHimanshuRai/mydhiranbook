@@ -44,7 +44,7 @@
             </div>
             <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div class="flex items-center gap-3">
-                    <div class="bg-amber-100 text-amber-700 rounded-xl p-2.5">
+                    <div class="bg-[var(--kh-ink-soft)] text-[var(--kh-ink)] rounded-xl p-2.5">
                         <x-icon name="circle-dollar-sign" class="w-5 h-5" />
                     </div>
                     <div>
@@ -87,7 +87,7 @@
                             <tr class="hover:bg-slate-50/70">
                                 <x-dhiran.sno :rows="$loans ?? null" :n="$loop->iteration" />
                                 <td data-label="Loan #" class="pl-6 pr-4 py-4 whitespace-nowrap">
-                                    <a href="{{ route('dhiran.show', $loan) }}" class="font-mono font-medium text-slate-700 hover:text-amber-700">{{ $loan->loan_number }}</a>
+                                    <a href="{{ route('dhiran.show', $loan) }}" class="font-mono font-medium text-slate-700 hover:text-[var(--kh-ink-2)]">{{ $loan->loan_number }}</a>
                                 </td>
                                 <td data-label="Date" class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">{{ $loan->loan_date->format('d M Y') }}</td>
                                 <td data-label="Principal" class="px-4 py-4 whitespace-nowrap text-sm text-right text-slate-700">{{ $currencySymbol ?? '₹' }}{{ number_format($loan->principal_amount, 2) }}</td>

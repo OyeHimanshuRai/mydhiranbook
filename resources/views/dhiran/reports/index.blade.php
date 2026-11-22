@@ -58,7 +58,7 @@
                 <div class="dr-report-desc">Loans past maturity date with days overdue and penalty accrued.</div>
             </a>
             <a href="{{ route('dhiran.reports.index', ['type' => 'interest']) }}" class="dr-report-card">
-                <div class="dr-report-icon bg-amber-100 text-amber-700">
+                <div class="dr-report-icon bg-[var(--kh-ink-soft)] text-[var(--kh-ink)]">
                     <x-icon name="calculator" />
                 </div>
                 <div class="dr-report-title">Interest Collection Report</div>

@@ -28,18 +28,25 @@ export default {
         },
         extend: {
             fontFamily: {
-                sans: ['"Plus Jakarta Sans"', ...defaultTheme.fontFamily.sans],
+                sans: ['system-ui', '"Noto Sans"', '"Segoe UI"', 'Roboto', '"Noto Sans Devanagari"', 'sans-serif'],
             },
             colors: {
                 brand: {
-                    50: '#fffbeb',
-                    100: '#fef3c7',
-                    200: '#fde68a',
-                    300: '#fcd34d',
-                    400: '#fbbf24',
-                    500: '#f59e0b',
-                    600: '#d97706',
-                    700: '#b45309',
+                    50: '#f1f3f8', 100: '#e3e7f0', 200: '#c6cee0', 300: '#9aa8c4',
+                    400: '#5a6e95', 500: '#2c3f66', 600: '#1a2a4a', 700: '#101c36',
+                },
+                // No yellow in Dhiran: a stray amber/yellow/orange utility paints in the ink ramp, never in a yellow.
+                amber: {
+                    50: '#f1f3f8', 100: '#e3e7f0', 200: '#c6cee0', 300: '#9aa8c4',
+                    400: '#5a6e95', 500: '#2c3f66', 600: '#1a2a4a', 700: '#101c36',
+                },
+                yellow: {
+                    50: '#f1f3f8', 100: '#e3e7f0', 200: '#c6cee0', 300: '#9aa8c4',
+                    400: '#5a6e95', 500: '#2c3f66', 600: '#1a2a4a', 700: '#101c36',
+                },
+                orange: {
+                    50: '#f1f3f8', 100: '#e3e7f0', 200: '#c6cee0', 300: '#9aa8c4',
+                    400: '#5a6e95', 500: '#2c3f66', 600: '#1a2a4a', 700: '#101c36',
                 },
                 surface: {
                     DEFAULT: '#ffffff',

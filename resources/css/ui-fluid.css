@@ -26,24 +26,3 @@
 @media (max-width: 767.98px) {
     .dh-app :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]) { font-size: 16px; }
 }
-
-/* ── Toasts (flash messages float over the page; they never push it) ─────────────────────────────────
-   Runtime: resources/js/toast.js + app.js. Mounted once by components/dhiran-layout (#global-toast).
-   Solid tone colours with AA contrast, no side stripe, 44px tall, tap/click or Esc dismisses. */
-.global-toast {
-    min-height: 44px;
-    align-items: center;
-    padding: 10px 14px 10px 16px;
-    border: 0;
-    border-radius: 12px;
-    background: #14213d;
-    box-shadow: 0 10px 30px rgba(15, 27, 45, .28), 0 2px 6px rgba(15, 27, 45, .16);
-    font-size: clamp(0.875rem, 0.84rem + 0.2vw, 0.9375rem);
-    font-weight: 600;
-    cursor: pointer;
-}
-.global-toast.is-visible::after { content: "\00d7"; margin-left: auto; padding-left: 12px; font-size: 1.4em; line-height: 1; opacity: .85; }
-#global-toast[data-tone="success"] { background: #166534; }
-#global-toast[data-tone="warning"] { background: #92400e; }
-#global-toast[data-tone="error"] { background: #b91c1c; }
-@media (prefers-reduced-motion: reduce) { .global-toast { transition: none; } }

@@ -1,0 +1,104 @@
+/* Bahi-khata tokens: the ONLY place the Dhiran palette is written (owner 2026-11-22).
+   The oxblood cloth carries the shell, the pages are white, the ink is blue-black, the margin line is red.
+   No yellow or gold anywhere. Old token names (--dh-*, --jf-*) are remapped to these at the bottom of this file. */
+:root {
+    /* cloth (shell: rail, top bar, auth brand panel) */
+    --kh-cloth: #7a1a1d;
+    --kh-cloth-deep: #5a1215;
+    --kh-cloth-lift: #8c2a2d;                 /* active/hover fill on the cloth */
+    --kh-on-cloth: #ffffff;
+    --kh-on-cloth-soft: #f0d9d9;              /* secondary text on the cloth, 8:1 */
+    --kh-cloth-line: rgba(255, 255, 255, .22);
+
+    /* pages */
+    --kh-paper: #fbfbfc;
+    --kh-panel: #ffffff;
+    --kh-wash: #f3f4f7;                       /* quiet tint: table head, muted panels */
+
+    /* ink */
+    --kh-text: #1d2230;                       /* graphite */
+    --kh-text-2: #444c5e;
+    --kh-text-3: #5b6477;                     /* faintest readable text, 5.9:1 on white */
+    --kh-ink: #1a2a4a;                        /* blue-black: figures, links, primary buttons */
+    --kh-ink-2: #101c36;                      /* hover/pressed */
+    --kh-ink-soft: #eef1f7;                   /* ink tint: selected rows, soft fills */
+    --kh-ink-line: #c6cee0;
+
+    /* ledger rules */
+    --kh-margin: #c9484d;                     /* red margin line, hairline only */
+    --kh-rule: #d9dce3;
+    --kh-rule-soft: #e8eaef;
+    --kh-field-edge: #7d8698;                 /* 3.6:1 on white */
+
+    /* status: word + tone, never colour alone */
+    --kh-ok: #1f6f4a;
+    --kh-ok-soft: #e9f4ee;
+    --kh-ok-line: #b8d8c6;
+    --kh-err: #b3261e;
+    --kh-err-soft: #fcefee;
+    --kh-err-line: #f0c4c1;
+    --kh-warn-text: #8a4700;                  /* deep brass-brown: text, outline and icon only, never a fill (33 deg, outside the yellow band) */
+    --kh-warn-line: #d9ae86;
+    --kh-warn-solid: #7d4200;                 /* the one solid use: the warning toast */
+    --kh-info: #1d4f91;
+    --kh-info-soft: #eaf1fb;
+    --kh-info-line: #bcd0ec;
+
+    /* focus: ink ring with a white gap; white ring on the cloth */
+    --kh-focus: var(--kh-ink);
+    --kh-focus-on-cloth: #ffffff;
+    --kh-ring: 0 0 0 2px #fff, 0 0 0 4px var(--kh-ink);
+
+    /* shape and type */
+    --kh-radius: 6px;
+    --kh-radius-sm: 4px;
+    --kh-hair: 1px;
+    --kh-font: system-ui, "Noto Sans", "Segoe UI", Roboto, "Noto Sans Devanagari", sans-serif;
+    --kh-font-serif: Georgia, "Times New Roman", serif;
+    --kh-fs-label: 0.75rem;                   /* 12px ledger labels */
+    --kh-label-track: 0.06em;
+
+    /* control sizes come from ui-fluid.css (44px touch, 40px desktop) */
+    --kh-ctl-h: var(--fl-ctl-h, 44px);
+    --kh-pad: var(--fl-card-pad, 16px);
+    --kh-gap: var(--fl-gap, 12px);
+
+    /* effects: flat. Only toasts and dialogs lift. */
+    --kh-lift: 0 12px 32px rgba(26, 17, 20, .22), 0 2px 6px rgba(26, 17, 20, .12);
+    --kh-scroll-thumb: color-mix(in srgb, var(--kh-ink) 35%, transparent);
+    --kh-scroll-thumb-hover: color-mix(in srgb, var(--kh-ink) 55%, transparent);
+}
+
+/* ==== Legacy names, remapped. Older rules and the other engineers' stylesheets keep working; nothing below is a yellow. ==== */
+:root {
+    --dh-gold-bright: var(--kh-ink);
+    --dh-gold-bright-hover: var(--kh-ink-2);
+    --jf-gold: var(--kh-ink);
+    --jf-gold-deep: var(--kh-ink);
+    --jf-gold-glow: var(--kh-ink-2);
+    --jf-gold-soft: var(--kh-ink-soft);
+    --jf-gold-soft-strong: var(--kh-ink-line);
+    --jf-gold-warm: var(--kh-ink);
+    --jf-gold-warm-2: var(--kh-ink-2);
+    --settings-gold: var(--kh-ink);
+    --jf-brand-50: #f1f3f8;
+    --jf-brand-100: #e3e7f0;
+    --jf-brand-200: #c6cee0;
+    --jf-brand-300: #9aa8c4;
+    --jf-brand-400: #5a6e95;
+    --jf-brand-500: #2c3f66;
+    --jf-brand-600: var(--kh-ink);
+    --jf-brand-700: var(--kh-ink-2);
+}
+
+/* ==== Browser surfaces: scrollbar, selection, caret, form accents. One neutral thin scrollbar everywhere; no coloured scroll or progress indicator. ==== */
+html, body, * { scrollbar-width: thin; scrollbar-color: var(--kh-scroll-thumb) transparent; }
+@supports not (scrollbar-color: auto) {
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--kh-scroll-thumb); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--kh-scroll-thumb-hover); }
+}
+@media (forced-colors: active) { html, body, * { scrollbar-color: auto; } }
+::selection { background: var(--kh-ink); color: #fff; }
+input, textarea, select { caret-color: var(--kh-ink); accent-color: var(--kh-ink); }

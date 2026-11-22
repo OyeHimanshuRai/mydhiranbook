@@ -7,7 +7,7 @@
         <p class="lede">One payment through Razorpay. It does not renew by itself. The price is set on our server.</p>
         @if($testMode)<p class="ui-notice">Razorpay test mode: no real money moves.</p>@endif
         <p id="pay-error" class="ui-notice ui-notice--error" role="alert" hidden></p>
-        <div class="ck-actions"><button type="button" id="pay-btn" class="ui-btn ui-btn--gold">Pay ₹{{ number_format($price) }}</button><a href="{{ route('subscription.status') }}" class="ui-btn ui-btn--ghost">Back</a></div>
+        <div class="ck-actions"><button type="button" id="pay-btn" class="ui-btn">Pay ₹{{ number_format($price) }}</button><a href="{{ route('subscription.status') }}" class="ui-btn ui-btn--ghost">Back</a></div>
         <form id="pay-return" method="post" action="{{ route('subscription.payment.callback') }}" data-turbo="false" hidden>@csrf
             <input name="razorpay_order_id"><input name="razorpay_payment_id"><input name="razorpay_signature">
         </form>
