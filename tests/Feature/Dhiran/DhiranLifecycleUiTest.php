@@ -280,7 +280,8 @@ class DhiranLifecycleUiTest extends TestCase
 
         $shown = TenantContext::runFor($shop->id, fn () => $this->actingAs($owner)
             ->get("http://127.0.0.1:8787/dhiran/loans/{$loan->id}")->getContent());
-        $this->assertMatchesRegularExpression('/dh-flash-error">[^<]*payment amount/i', $shown);
+        // refusals are TOASTS now: the layout hands the message to the toast runtime through a flash meta tag
+        $this->assertMatchesRegularExpression('/<meta name="flash-error" content="[^"]*payment amount/i', $shown);
     }
 
     // An item's release share was its loan value over the loan's total *market* value, so with a 75% LTV releasing the

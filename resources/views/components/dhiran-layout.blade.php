@@ -131,21 +131,18 @@
             @endif
 
             <div class="dh-scroll">
-                @if(session('success'))
-                    <div class="dh-flash dh-flash-success">{{ session('success') }}</div>
-                @endif
-                @if(session('error'))
-                    <div class="dh-flash dh-flash-error">{{ session('error') }}</div>
-                @elseif(isset($errors) && $errors->any())
-                    {{-- Dhiran dialogs have no inline field errors: show the refusal so a rejected form is never silent. --}}
-                    <div class="dh-flash dh-flash-error">{{ $errors->first() }}</div>
-                @endif
+                {{-- Flash messages are TOASTS (resources/js/toast.js reads these tags): they float over the page, never push it. --}}
+                @if(session('success'))<meta name="flash-success" content="{{ session('success') }}">@endif
+                @if(session('warning'))<meta name="flash-warning" content="{{ session('warning') }}">@endif
+                @if(session('error'))<meta name="flash-error" content="{{ session('error') }}">
+                @elseif(isset($errors) && $errors->any())<meta name="flash-error" content="{{ $errors->first() }}">@endif
 
                 <div class="dh-content">{!! $slotMarkup !!}</div>
                 <x-dhiran.footer />
             </div>
         </main>
     </div>
+    <div id="global-toast" class="global-toast" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true"></div>
     @stack('scripts')
 </body>
 </html>

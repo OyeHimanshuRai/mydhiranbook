@@ -13,7 +13,7 @@ export function toastSettings(durationOrTone = 4000, duration) {
 // next (no return policy yet, for one), so it stays up twice as long as a confirmation.
 const FLASHES = [
     ['flash-success', 'success', 4000],
-    ['flash-error', 'error', 4000],
+    ['flash-error', 'error', 8000],
     ['flash-warning', 'warning', 8000],
 ];
 

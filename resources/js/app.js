@@ -177,6 +177,16 @@ function settleToast() {
 document.addEventListener('scroll', settleToast, { capture: true, passive: true });
 window.addEventListener('resize', settleToast);
 
+// A toast can always be dismissed: tap/click it, or press Escape.
+document.addEventListener('click', (event) => {
+    const toast = document.getElementById('global-toast');
+    if (toast && toast.classList.contains('is-visible') && toast.contains(event.target)) hideToast(toast);
+});
+document.addEventListener('keydown', (event) => {
+    const toast = document.getElementById('global-toast');
+    if (event.key === 'Escape' && toast && toast.classList.contains('is-visible')) hideToast(toast);
+});
+
 // Turbo keeps a copy of the page for Back/Forward. A toast still showing would be kept
 // in it and come back for good: the timer that hides it belongs to the page that was left.
 document.addEventListener('turbo:before-cache', () => {
