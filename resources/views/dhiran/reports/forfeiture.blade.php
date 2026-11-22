@@ -6,7 +6,6 @@
         </div>
         <div class="page-actions">
             <x-dhiran.export-button />
-            <span class="header-badge">{{ $loans->count() }} Forfeited</span>
             <x-dhiran.btn-collapse icon="printer" label="Print" onclick="window.print()" />
         </div>
     </x-dhiran.page-header>
