@@ -119,34 +119,129 @@ class RequiredMarkersTest extends TestCase
         }
     }
 
-    public function test_new_loan_stars_what_the_server_requires_and_leaves_the_rest_bare(): void
+    /** Rule names whose rule list has a plain, unconditional `required`. */
+    private function requiredIn(array $rules): array
+    {
+        $names = [];
+        foreach ($rules as $name => $rule) {
+            $parts = is_string($rule) ? explode('|', $rule) : array_filter($rule, 'is_string');
+            if (in_array('required', $parts, true)) {
+                $names[] = $name;
+            }
+        }
+        sort($names);
+
+        return $names;
+    }
+
+    /** The <input>/<select>/<textarea> tag whose id (or Alpine :id expression) is $id. */
+    private function tagOf(string $html, string $id): string
+    {
+        $this->assertSame(1, preg_match('~<(?:input|select|textarea)\b[^>]*\s:?id="' . preg_quote($id, '~') . '"[^>]*>~', $html, $m), "control $id found");
+
+        return $m[0];
+    }
+
+    private function assertNoRequiredRule(string $html, array $ids): void
+    {
+        foreach ($ids as $id) {
+            $this->assertDoesNotMatchRegularExpression('~\s:?(aria-)?required\b~', $this->tagOf($html, $id), "$id is nullable on the server: no required, no aria-required");
+            $this->assertDoesNotMatchRegularExpression('~<label[^>]*for="' . preg_quote($id, '~') . '"[^>]*>[^<]*(<[^/][^>]*>[^<]*)*ui-req~', $html, "$id has no star");
+        }
+    }
+
+    /** Field names whose label carries a star (items.*.x for the repeated pledged-item fields). */
+    private function starredNames(string $html): array
+    {
+        preg_match_all('~<label[^>]*\s:?for="([^"]+)"[^>]*>(.*?)</label>~s', $html, $labels, PREG_SET_ORDER);
+        $names = [];
+        foreach ($labels as [, $for, $inner]) {
+            if (! str_contains($inner, 'ui-req')) {
+                continue;
+            }
+            $tag = $this->tagOf($html, $for);
+            $names[] = match (true) {
+                preg_match('~\s:name="(?:\'items\[\'\+index\+\'\]|`items\[\$\{i\}\])\[(\w+)\]~', $tag, $m) === 1 => 'items.*.' . $m[1],
+                preg_match('~\sname="([^"]+)"~', $tag, $m) === 1 => $m[1],
+                $for === 'fm-customer-search' => 'customer_id',
+                default => preg_replace('~^nb-~', '', $for),
+            };
+        }
+        sort($names);
+
+        return array_values(array_unique($names));
+    }
+
+    public function test_every_star_matches_an_unconditional_server_required_rule(): void
+    {
+        $collateral = $this->requiredIn(\App\Services\Dhiran\DhiranCollateral::rules());
+        $oldLoanRules = \App\Services\Dhiran\DhiranOldLoans::rules([], $this->shop->id);
+        $oldLoan = array_values(array_diff($this->requiredIn($oldLoanRules), ['items']));
+        $this->assertContains('items.*.description', $collateral);
+
+        $settings = ['default_interest_rate_monthly', 'default_interest_type', 'default_penalty_rate_monthly', 'default_min_interest_months', 'default_ltv_ratio',
+            'high_value_threshold', 'high_value_ltv_ratio', 'min_loan_amount', 'max_loan_amount', 'processing_fee_type', 'processing_fee_value',
+            'default_tenure_months', 'default_min_lock_months', 'grace_period_days', 'forfeiture_notice_days'];
+        sort($settings);
+
+        // Form => what its controller validates as plain `required` (DhiranController::store/storeCustomer/updateSettings, StaffController::store, ShopAuthController::register, DhiranOnboardingController).
+        $table = [
+            '/dhiran/create' => ['customer_id', 'first_name', 'items.*.description', 'mobile', 'principal_amount'], // first_name, mobile: the add-borrower dialog posts to storeCustomer
+            '/dhiran/old-loans/create' => $oldLoan,
+            '/dhiran/borrowers/create' => ['first_name', 'mobile'],
+            '/dhiran/settings' => $settings,
+            '/staff/create' => ['mobile_number', 'name', 'password'],
+        ];
+        foreach ($table as $path => $expected) {
+            sort($expected);
+            $html = $this->page($path);
+            $this->assertSame($expected, $this->starredNames($html), "starred fields on $path");
+        }
+
+        $this->assertSame(['email', 'mobile', 'name', 'password'], $this->starredNames($this->get('/register')->getContent()), 'ShopAuthController::register');
+        $new = $this->newOwner();
+        $this->paidShopless($new);
+        $this->assertSame(['address', 'name', 'phone'], $this->starredNames($this->actingAs($new)->get(route('dhiran.onboarding'))->getContent()), 'DhiranOnboardingController::store');
+    }
+
+    public function test_nullable_new_loan_fields_carry_no_star_and_no_required_attribute(): void
     {
         $html = $this->page('/dhiran/create');
 
-        foreach (['Borrower', 'Principal amount', 'Description'] as $label) {
-            $this->assertStringContainsString(self::STAR, $this->labelOf($html, $label), "$label is starred");
+        $this->assertNoRequiredRule($html, ['interest_rate_monthly', 'interest_type', 'tenure_months', 'penalty_rate_monthly', 'gold_rate_on_date', 'notes',
+            "'it-metal-' + index", "'it-purity-' + index", "'it-rate-' + index", "'it-value-' + index", "'it-gross-' + index", "'it-stone-' + index", "'it-huid-' + index"]);
+        foreach (['principal_amount', "'it-desc-' + index"] as $id) {
+            $this->assertMatchesRegularExpression('~\saria-required="true"~', $this->tagOf($html, $id));
         }
-        $this->assertMatchesRegularExpression('~id="principal_amount"[^>]*aria-required="true"|aria-required="true"[^>]*id="principal_amount"~', $html);
-        $this->assertMatchesRegularExpression('~id="fm-customer-search"~', $html);
-        foreach (['Notes', 'Penalty rate', 'Stone weight', 'HUID', 'Last name', 'PAN'] as $label) {
-            $this->assertStringNotContainsString('ui-req', $this->labelOf($html, $label), "$label has no star");
-        }
-        $this->assertDoesNotMatchRegularExpression('~<textarea[^>]*id="notes"[^>]*aria-required~', $html);
-        $this->assertSame(2, substr_count($html, self::LEGEND), 'one legend on the form and one on the add-borrower dialog');
+        $this->assertStringContainsString(self::STAR, $this->labelOf($html, 'Principal amount'));
+        $this->assertStringContainsString(self::STAR, $this->labelOf($html, 'Borrower'));
+        $this->assertStringNotContainsString(self::LEGEND, $html, 'the star explains itself: no legend line');
     }
 
-    public function test_every_mixed_form_has_the_legend_and_every_all_required_form_has_neither_stars_nor_legend(): void
+    public function test_nullable_old_loan_fields_carry_no_star_and_no_required_attribute(): void
     {
-        foreach (['/dhiran/old-loans/create', '/dhiran/borrowers/create', '/dhiran/settings', '/staff/create'] as $path) {
-            $this->assertStringContainsString(self::LEGEND, $this->page($path), "legend on $path");
+        $html = $this->page('/dhiran/old-loans/create');
+
+        $this->assertNoRequiredRule($html, ['customer_id', 'borrower_first_name', 'borrower_mobile', 'borrower_pan', 'unpaid_interest', 'penalty_rate_monthly',
+            'gold_rate_on_date', "'oi-purity-' + i", "'oi-gross-' + i", "'oi-rate-' + i", "'oi-value-' + i", 'notes']);
+        foreach (['paper_loan_number', 'interest_type', 'tenure_months'] as $id) {
+            $this->assertMatchesRegularExpression('~\saria-required="true"~', $this->tagOf($html, $id));
         }
-        foreach (['/dhiran/old-loans/upload', '/dhiran/settings/receipt'] as $path) { // one required file / no required field
+    }
+
+    public function test_no_legend_line_anywhere_and_forms_with_no_required_rule_carry_no_star(): void
+    {
+        foreach (['/dhiran/create', '/dhiran/old-loans/create', '/dhiran/borrowers/create', '/dhiran/settings', '/staff/create'] as $path) {
             $html = $this->page($path);
-            $this->assertStringNotContainsString('ui-req', $html, "no marker on $path");
+            $this->assertStringNotContainsString(self::LEGEND, $html, "no legend on $path");
+            $this->assertDoesNotMatchRegularExpression('~\*\s*Required~', strip_tags($this->visible($html)), "no \"* Required\" line on $path");
         }
-        foreach (['/login', '/register', '/forgot-password', '/admin/login', '/admin/forgot-password'] as $path) {
-            $html = $this->get($path)->getContent();
-            $this->assertStringNotContainsString('ui-req', $this->visible($html), "no star or legend on $path");
+        $this->assertStringNotContainsString(self::LEGEND, $this->get('/register')->getContent());
+        foreach (['/dhiran/old-loans/upload', '/dhiran/settings/receipt'] as $path) { // one required file / no required field
+            $this->assertStringNotContainsString('ui-req', $this->page($path), "no marker on $path");
+        }
+        foreach (['/login', '/forgot-password', '/admin/login', '/admin/forgot-password'] as $path) {
+            $this->assertStringNotContainsString('ui-req', $this->visible($this->get($path)->getContent()), "no star or legend on $path");
         }
     }
 
@@ -167,10 +262,13 @@ class RequiredMarkersTest extends TestCase
     public function test_staff_form_marks_password_only_when_adding(): void
     {
         $html = $this->page('/staff/create');
-        foreach (['Full name', 'Mobile number', 'Password', 'Confirm password'] as $label) {
+        foreach (['Full name', 'Mobile number', 'Password'] as $label) {
             $this->assertStringContainsString(self::STAR, $this->labelOf($html, $label), "$label is starred when adding");
         }
-        $this->assertStringNotContainsString('ui-req', $this->labelOf($html, 'Email'));
+        foreach (['Email', 'Confirm password'] as $label) {
+            $this->assertStringNotContainsString('ui-req', $this->labelOf($html, $label), "$label is not a required rule on the server");
+        }
+        $this->assertStringContainsString(self::STAR, $this->labelOf($html, 'Mobile number'));
         $this->assertMatchesRegularExpression('~id="name"[^>]*aria-required="true"~', $html);
         $this->assertDoesNotMatchRegularExpression('~id="email"[^>]*aria-required~', $html);
 
@@ -192,12 +290,16 @@ class RequiredMarkersTest extends TestCase
     public function test_registration_and_onboarding(): void
     {
         $register = $this->get('/register')->getContent();
-        $this->assertStringNotContainsString('ui-req', $this->visible($register), 'every register field is required, so no star and no legend');
+        $this->assertStringNotContainsString(self::LEGEND, $register);
+        foreach (['Your name', 'Email address', 'Mobile number', 'Password'] as $label) {
+            $this->assertStringContainsString(self::STAR, $this->labelOf($register, $label));
+        }
+        $this->assertStringNotContainsString('ui-req', $this->labelOf($register, 'Confirm password'), 'confirmed is not a plain required rule');
 
         $new = $this->newOwner();
         $this->paidShopless($new);
         $html = $this->actingAs($new)->get(route('dhiran.onboarding'))->assertOk()->getContent();
-        $this->assertStringContainsString(self::LEGEND, $html);
+        $this->assertStringNotContainsString(self::LEGEND, $html);
         foreach (['Business name', 'Business phone', 'Business address'] as $label) {
             $this->assertStringContainsString(self::STAR, $this->labelOf($html, $label));
         }
@@ -221,10 +323,14 @@ class RequiredMarkersTest extends TestCase
             $this->assertMatchesRegularExpression('~id="' . $id . '"[^>]*aria-required="true"~', $html);
         }
         $dialog = fn (string $id) => preg_match('~<dialog id="' . $id . '".*?</dialog>~s', $html, $m) ? $m[0] : '';
-        foreach (['payInterestModal', 'repayModal', 'releaseItemModal', 'renewModal'] as $id) {
-            $this->assertStringContainsString(self::LEGEND, $dialog($id), "$id mixes required and unmarked fields");
+        foreach (['payInterestModal', 'repayModal', 'releaseItemModal'] as $id) {
+            $this->assertStringNotContainsString(self::LEGEND, $dialog($id), "no legend in $id");
         }
-        $this->assertStringNotContainsString('ui-req', $dialog('precloseModal'), 'only a payment method: nothing to mark');
+        foreach (['precloseModal', 'renewModal'] as $id) {
+            $this->assertStringNotContainsString('ui-req', $dialog($id), 'nothing in it is required by the server');
+            $this->assertDoesNotMatchRegularExpression('~\s:?(aria-)?required\b~', $dialog($id), "$id adds no rule of its own");
+        }
+        $this->assertDoesNotMatchRegularExpression('~\s:?(aria-)?required\b~', $this->tagOf($html, 'rn-tenure'));
     }
 
     public function test_admin_plan_form_stars_the_numbers_and_not_the_reason(): void
@@ -234,13 +340,22 @@ class RequiredMarkersTest extends TestCase
 
         $this->assertMatchesRegularExpression('~<label for="plan-\d+-price_monthly">Monthly price \(₹\) <span class="ui-req" aria-hidden="true">\*</span></label>~', $html);
         $this->assertMatchesRegularExpression('~<label for="plan-\d+-reason">Reason</label>~', $html);
-        $this->assertStringContainsString(self::LEGEND, $html);
+        $this->assertMatchesRegularExpression('~<label for="plan-\d+-price_yearly">Yearly price \(₹\)</label>~', $html, 'nullable on the server');
+        $this->assertDoesNotMatchRegularExpression('~\s:?(aria-)?required\b~', $this->tagOf($html, preg_match('~id="(plan-\d+-price_yearly)"~', $html, $m) ? $m[1] : 'none'));
+        $this->assertStringNotContainsString(self::LEGEND, $html);
     }
 
-    public function test_admin_all_required_forms_carry_no_marker(): void
+    public function test_admin_forms_follow_the_server_rules(): void
     {
         $this->seedAdminAndPlans();
-        foreach (['/admin/accounts', '/admin/shops/' . $this->shop->id, '/admin/unresolved-payments'] as $path) {
+        PlatformAdmin::create(['name' => 'Support', 'email' => 'support@example.test', 'password' => 'Admin-pass-12345', 'role' => 'support', 'is_active' => true]);
+        $accounts = $this->get('/admin/accounts')->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('~<label for="admin-\d+-is_active">Access <span class="ui-req"~', $accounts);
+        $this->assertStringNotContainsString(self::LEGEND, $accounts);
+        $reset = $this->app['view']->make('admin.reset', ['token' => 't', 'email' => 'a@example.test'])->render();
+        $this->assertStringNotContainsString(self::LEGEND, $reset);
+        $this->assertStringNotContainsString('ui-req', $this->labelOf($reset, 'Confirm password'));
+        foreach (['/admin/shops/' . $this->shop->id, '/admin/unresolved-payments'] as $path) {
             $this->assertStringNotContainsString('ui-req', $this->visible($this->get($path)->assertOk()->getContent()), $path);
         }
     }

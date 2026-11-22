@@ -23,7 +23,6 @@
             @method('PATCH')
 
             <div class="st-stack" data-settings-board>
-                <x-req-legend />
                 <x-settings.panel title="Interest" desc="Applied to every new loan.">
                     <div class="st-grid">
                         <x-settings.field name="default_interest_rate_monthly" id="ds-rate" label="Monthly interest rate" type="number" inputmode="decimal" step="0.01" min="0" max="10" req required suffix="% per month" :value="$num('default_interest_rate_monthly')" />

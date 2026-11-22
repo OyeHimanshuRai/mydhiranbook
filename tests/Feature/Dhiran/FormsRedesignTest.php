@@ -78,14 +78,14 @@ class FormsRedesignTest extends TestCase
         $this->assertStringContainsString('name="processing_fee"', $html);
     }
 
-    public function test_new_loan_has_steps_item_cards_totals_bar_and_the_submit_inside_it(): void
+    public function test_new_loan_has_sections_item_cards_totals_bar_and_the_submit_inside_it(): void
     {
         $html = $this->page('/dhiran/create');
 
         foreach (['fm-step-customer', 'fm-step-items', 'fm-step-terms', 'fm-step-kyc'] as $step) {
-            $this->assertStringContainsString('id="' . $step . '"', $html);
-            $this->assertStringContainsString('href="#' . $step . '"', $html, 'step strip links to it');
+            $this->assertStringContainsString('id="' . $step . '"', $html); // sections stay (validation errors focus them)
         }
+        $this->assertStringNotContainsString('fm-steps', $html, 'the numbered step cards on top were removed (owner)');
         $this->assertStringContainsString('x-for="(item, index) in items"', $html);
         $this->assertStringContainsString('<fieldset class="fm-item"', $html);
         $this->assertMatchesRegularExpression('/data-principal-limit[^>]*x-text="principalHint"/', $html);
@@ -154,9 +154,11 @@ class FormsRedesignTest extends TestCase
         $loc = $this->in(fn () => $this->post(self::HOST . '/dhiran/old-loans/upload', ['file' => UploadedFile::fake()->createWithContent('book.csv', $csv)]))->assertRedirect()->headers->get('Location');
         $review = $this->in(fn () => $this->get($loc))->assertOk()->getContent();
 
-        $this->assertStringContainsString('class="fm-table"', $review);
-        $this->assertMatchesRegularExpression('/data-ticket="T-1"[^>]*data-ok="1".*?fm-badge--ok[^>]*>.*?Ready/s', $review);
-        $this->assertMatchesRegularExpression('/data-ticket="T-2"[^>]*data-ok="0".*?fm-badge--bad[^>]*>.*?Will be skipped/s', $review);
+        $this->assertStringContainsString('class="jf-table dh-stack"', $review, 'the shared ledger table');
+        $this->assertStringNotContainsString('min-w-[900px]', $review, 'no sideways scroll');
+        $this->assertMatchesRegularExpression('/data-ticket="T-1"[^>]*data-ok="1".*?dh-status--success[^>]*>Ready/s', $review);
+        $this->assertMatchesRegularExpression('/data-ticket="T-2"[^>]*data-ok="0".*?dh-status--danger[^>]*>Will be skipped/s', $review);
+        $this->assertStringContainsString('data-low="2"', $review, 'least important column is dropped before the table scrolls');
         $this->assertStringContainsString('data-label="Ticket #"', $review, 'phone cards read their labels from the cells');
         $this->assertMatchesRegularExpression('/<div class="fm-bar".*?action="[^"]*old-loans\/upload\/[^"]*".*?Bring in 1 loan/s', $review);
         $this->assertStringContainsString('name="idempotency_key"', $review);

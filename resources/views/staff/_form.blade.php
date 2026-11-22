@@ -10,7 +10,6 @@
     @if($editing) @method('PUT') @endif
 
     <div class="st-stack">
-        <x-req-legend />
         <x-settings.panel title="Who they are" desc="Their name and the number they sign in with.">
             <div class="st-grid">
                 <x-settings.field name="name" id="name" label="Full name" wide req required autocomplete="off" placeholder="Full name" :value="old('name', $user?->name)" />
@@ -39,7 +38,7 @@
         <x-settings.panel :title="$editing ? 'Change password' : 'Password'" :desc="$editing ? 'Leave both fields empty to keep the current password.' : 'At least 12 characters with upper and lower case letters and a number. Share it with them in person.'">
             <div class="st-grid">
                 <x-settings.field name="password" id="password" :label="$editing ? 'New password' : 'Password'" type="password" :req="! $editing" :required="! $editing" autocomplete="new-password" minlength="6" />
-                <x-settings.field name="password_confirmation" id="password_confirmation" :label="$editing ? 'Confirm new password' : 'Confirm password'" type="password" :req="! $editing" :required="! $editing" autocomplete="new-password" />
+                <x-settings.field name="password_confirmation" id="password_confirmation" :label="$editing ? 'Confirm new password' : 'Confirm password'" type="password" autocomplete="new-password" />
             </div>
         </x-settings.panel>
     </div>

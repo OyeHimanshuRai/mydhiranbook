@@ -4,7 +4,7 @@
 <div class="adm-split"><section class="adm-panel"><div class="adm-panel-head"><h2>Administrators</h2></div><ul class="adm-people">
 @foreach($admins as $a)@php $f='admin-'.$a->id; @endphp<li class="adm-person"><div class="adm-person-top"><div><strong class="adm-wrap">{{ $a->name }}</strong><span class="adm-sub adm-wrap">{{ $a->email }} · {{ $a->role }}</span></div>@include('admin._badge',['s'=>$a->two_factor_enabled?'enabled':'pending','label'=>$a->two_factor_enabled?'MFA enabled':'Enrollment required'])</div>
 @if(!$a->isSuperAdmin())<form method="post" action="/admin/accounts/{{ $a->id }}">@csrf @method('PATCH')<input type="hidden" name="_form" value="{{ $f }}">
-@include('admin._field',['name'=>'is_active','label'=>'Access','form'=>$f,'options'=>['1'=>'Active','0'=>'Inactive'],'value'=>$a->is_active?'1':'0','help'=>'Inactive admins cannot sign in.'])
+@include('admin._field',['name'=>'is_active','req'=>true,'label'=>'Access','form'=>$f,'options'=>['1'=>'Active','0'=>'Inactive'],'value'=>$a->is_active?'1':'0','help'=>'Inactive admins cannot sign in.'])
 <fieldset class="adm-set" style="margin-top:var(--sp-3)"><legend class="adm-legend">Permissions</legend>@foreach($perms as $permission=>$label)<label class="adm-check"><input type="checkbox" name="permissions[]" value="{{ $permission }}" @checked($a->hasPermission($permission))> {{ $label }}</label>@endforeach</fieldset>
 <div class="adm-actions" style="margin-top:var(--sp-3)"><button class="adm-btn adm-btn--ghost">Save access</button></div></form>@else<p class="adm-hint">Full platform access</p>@endif</li>@endforeach
 </ul></section>

@@ -48,7 +48,6 @@
                     </div>
                 </header>
                 <div class="fm-card-body">
-                    <x-req-legend />
                     <div class="fm-grid">
                         @foreach($fields as [$f, $label, $type, $req, $max, $extra])
                             <div class="fm-field">

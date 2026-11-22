@@ -3,7 +3,6 @@
         <h1>Set up your Dhiran business</h1>
         <p class="lede">Just a few details to get your pledge loan shop ready.</p>
         <form method="POST" action="{{ route('dhiran.onboarding.store') }}" data-turbo="false" data-once class="ui-card">@csrf
-            <x-req-legend />
             <div class="ck-grid">
                 <x-site.field wide name="name" label="Business name" req :value="old('name')" required autofocus maxlength="255" autocomplete="organization" placeholder="e.g. Sharma Gold Finance" />
                 <x-site.field name="phone" label="Business phone" type="tel" req :value="old('phone')" required inputmode="numeric" maxlength="16" autocomplete="tel" placeholder="10-digit number" />
