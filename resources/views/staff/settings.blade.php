@@ -17,34 +17,61 @@
         return __(in_array($verb, ['view', 'create', 'edit', 'delete'], true) ? $words[$verb] . ' ' . ($area === 'dhiran' ? 'loans' : $area) : $words[$verb]);
     };
     $firstEditable = $roles->first(fn ($r) => $r->name !== 'owner' && $r->id !== $myRoleId) ?? $roles->first();
+    $firstEditable = $roles->first(fn ($r) => $r->name !== 'owner' && $r->id !== $myRoleId) ?? $roles->first();
+    $requestedRole = (int) request()->query('role');
+    // After a save the controller redirects to ?tab=roles with this exact flash: land on the role that was just saved.
+    $savedRole = $roles->first(fn ($r) => session('success') === "Permissions for {$r->display_name} updated successfully.");
+    $initialRole = ($roles->firstWhere('id', $requestedRole) ?? $savedRole ?? $firstEditable)?->id;
 @endphp
 <div class="content-inner">
 <x-dhiran.settings-nav active="users" switcher />
 <x-settings.live />
-<div class="st-page">
-    <nav class="st-tabs" aria-label="Users and roles views">
-        <a class="st-tab" href="{{ route('settings.edit', ['tab' => 'staff']) }}" @if($activeTab === 'staff') aria-current="page" @endif>Staff</a>
-        @can('settings.edit')<a class="st-tab" href="{{ route('settings.edit', ['tab' => 'roles']) }}" @if($activeTab === 'roles') aria-current="page" @endif>Roles &amp; permissions</a>@endcan
-    </nav>
+<div class="st-page" x-data="{
+         tab: @js($activeTab), role: @js((string) $initialRole),
+         show(t) { this.tab = t; this.sync(); },
+         pick(id) { this.role = id; this.sync(); },
+         // The address always matches what is shown, so refresh and shared links land on the same tab and role. No request, no Turbo visit.
+         sync() { const u = new URL(location.href); u.searchParams.set('tab', this.tab); this.tab === 'roles' ? u.searchParams.set('role', this.role) : u.searchParams.delete('role'); history.replaceState(history.state, '', u); },
+         nav(e) {
+             const tabs = [...e.currentTarget.querySelectorAll('[role=tab]')], i = tabs.indexOf(document.activeElement), n = tabs.length;
+             const j = { ArrowRight: (i + 1) % n, ArrowDown: (i + 1) % n, ArrowLeft: (i - 1 + n) % n, ArrowUp: (i - 1 + n) % n, Home: 0, End: n - 1 }[e.key];
+             if (i < 0 || j === undefined) return;
+             e.preventDefault(); tabs[j].focus({ preventScroll: true }); tabs[j].click();
+         }
+     }">
+    {{-- Without JavaScript the tabs are plain links (the server renders the chosen tab); with it they are buttons that switch panels in place. --}}
+    <noscript><style>.st-tablist { display: none; }</style>
+        <nav class="st-tabs" aria-label="Users and roles views">
+            <a class="st-tab" href="{{ route('settings.edit', ['tab' => 'staff']) }}">Staff</a>
+            @can('settings.edit')<a class="st-tab" href="{{ route('settings.edit', ['tab' => 'roles']) }}">Roles &amp; permissions</a>@endcan
+        </nav>
+    </noscript>
+    <div class="st-tabs st-tablist" role="tablist" aria-label="Users and roles" @keydown="nav($event)">
+        <button type="button" class="st-tab" role="tab" id="tab-staff" aria-controls="pane-staff" aria-selected="{{ $activeTab === 'staff' ? 'true' : 'false' }}" tabindex="{{ $activeTab === 'staff' ? 0 : -1 }}"
+                :aria-selected="tab === 'staff'" :tabindex="tab === 'staff' ? 0 : -1" @click="show('staff')">Staff</button>
+        @can('settings.edit')
+            <button type="button" class="st-tab" role="tab" id="tab-roles" aria-controls="pane-roles" aria-selected="{{ $activeTab === 'roles' ? 'true' : 'false' }}" tabindex="{{ $activeTab === 'roles' ? 0 : -1 }}"
+                    :aria-selected="tab === 'roles'" :tabindex="tab === 'roles' ? 0 : -1" @click="show('roles')">Roles &amp; permissions</button>
+        @endcan
+    </div>
 
-    @if($activeTab === 'roles')
+    @can('settings.edit')
+    <section id="pane-roles" role="tabpanel" aria-labelledby="tab-roles" class="st-stack" @if($activeTab !== 'roles') hidden @endif :hidden="tab !== 'roles'">
         <p class="st-lead">Choose a role, then switch on what people in that role may do. A change applies to everyone who holds the role.</p>
 
-        <div class="st-stack" x-data="{
-                 role: @js((string) $firstEditable?->id),
-                 init() { try { const r = sessionStorage.getItem('st-role'); if (r && this.$el.querySelector('[data-role-pane=\'' + r + '\']')) this.role = r; } catch (e) {} },
-                 remember(id) { try { sessionStorage.setItem('st-role', id); } catch (e) {} }
-             }">
-            <div class="st-roles" role="group" aria-label="Role to change">
+        <div class="st-stack">
+            <div class="st-roles" role="tablist" aria-label="Role to change" @keydown="nav($event)">
                 @foreach($roles as $role)
-                    <button type="button" class="st-role-btn" aria-pressed="{{ $role->id === $firstEditable?->id ? 'true' : 'false' }}"
-                            :aria-pressed="role === '{{ $role->id }}'" @click="role = '{{ $role->id }}'">
+                    <button type="button" class="st-role-btn" role="tab" id="role-tab-{{ $role->id }}" aria-controls="role-pane-{{ $role->id }}"
+                            aria-selected="{{ $role->id === $initialRole ? 'true' : 'false' }}" tabindex="{{ $role->id === $initialRole ? 0 : -1 }}"
+                            :aria-selected="role === '{{ $role->id }}'" :tabindex="role === '{{ $role->id }}' ? 0 : -1" @click="pick('{{ $role->id }}')">
                         {{ __($role->display_name) }}
                         <small>{{ $role->name === 'owner' ? 'All permissions' : $role->permissions->count() . ' of ' . $totalPerms . ' on' }}</small>
                     </button>
                 @endforeach
             </div>
 
+            <div class="st-formstack">
             @foreach($roles as $role)
                 @php
                     $isOwner = $role->name === 'owner';
@@ -52,9 +79,12 @@
                     $locked = $isOwner || $isMine; // own role: read-only, the server refuses the save
                     $granted = $role->permissions->pluck('id');
                 @endphp
+                {{-- All role forms stay mounted in one grid cell (the cell is as tall as the tallest), so switching never moves the page and keeps unsaved toggles. --}}
                 <form method="POST" action="{{ route('settings.update.role', $role) }}" data-turbo-frame="_top" data-role-pane="{{ $role->id }}"
-                      @unless($role->id === $firstEditable?->id) hidden @endunless :hidden="role !== '{{ $role->id }}'"
-                      x-data="{ dirty: false, saving: false }" @input="dirty = true" @change="dirty = true" @submit="saving = true, remember('{{ $role->id }}')"
+                      id="role-pane-{{ $role->id }}" role="tabpanel" aria-labelledby="role-tab-{{ $role->id }}"
+                      @if($role->id !== $initialRole) class="is-off" inert aria-hidden="true" @endif
+                      :class="{ 'is-off': role !== '{{ $role->id }}' }" :inert="role !== '{{ $role->id }}'" :aria-hidden="role !== '{{ $role->id }}'"
+                      x-data="{ dirty: false, saving: false }" @input="dirty = true" @change="dirty = true" @submit="saving = true"
                       @beforeunload.window="if (dirty && !saving) $event.preventDefault()">
                     @csrf
                     @method('PATCH')
@@ -90,10 +120,12 @@
                     </div>
                 </form>
             @endforeach
+            </div>
         </div>
-    @endif
+    </section>
+    @endcan
 
-    @if($activeTab === 'staff')
+    <section id="pane-staff" role="tabpanel" aria-labelledby="tab-staff" class="st-stack" @if($activeTab !== 'staff') hidden @endif :hidden="tab !== 'staff'">
         @php
             $atLimit = $staffLimit !== -1 && $staffCount >= $staffLimit;
             $pct = $staffLimit > 0 ? min(100, round($staffCount / $staffLimit * 100)) : 0;
@@ -186,7 +218,7 @@
                 </ul>
             @endif
         </section>
-    @endif
+    </section>
 </div>
 </div>
 </x-dhiran-layout>

@@ -231,4 +231,31 @@ class SettingsSubPagesTest extends TestCase
         $this->assertStringContainsString('st-plans', $html);
         $this->assertMatchesRegularExpression('/>(Choose a plan|Renew)</', $html);
     }
+
+    /** Tabs and roles switch in place: both panels are in the server HTML, tab controls are buttons, the first paint already shows the asked tab and role. */
+    public function test_users_roles_tabs_are_buttons_with_both_panels_in_the_first_paint(): void
+    {
+        $shop = $this->shop();
+        $owner = $this->owner($shop);
+        foreach (['staff' => ['true', 'false'], 'roles' => ['false', 'true']] as $tab => [$staffSel, $rolesSel]) {
+            $html = $this->page($owner, '/settings?tab=' . $tab)->assertOk()->getContent();
+            $this->assertMatchesRegularExpression('/<button type="button" class="st-tab" role="tab" id="tab-staff" aria-controls="pane-staff" aria-selected="' . $staffSel . '"/', $html, $tab);
+            $this->assertMatchesRegularExpression('/<button type="button" class="st-tab" role="tab" id="tab-roles" aria-controls="pane-roles" aria-selected="' . $rolesSel . '"/', $html, $tab);
+            $this->assertStringContainsString('role="tablist"', $html);
+            // no <a> tab links in the JS path (the plain links live in <noscript>)
+            $js = preg_replace('/<noscript>.*?<\/noscript>/s', '', $html);
+            $this->assertDoesNotMatchRegularExpression('/<a [^>]*class="st-tab"/', $js);
+            $this->assertStringContainsString('id="pane-staff" role="tabpanel"', $html);
+            $this->assertStringContainsString('id="pane-roles" role="tabpanel"', $html);
+            // the inactive panel is hidden in the server HTML, so there is no flash of the wrong tab
+            $this->assertMatchesRegularExpression('/id="pane-' . ($tab === 'staff' ? 'roles' : 'staff') . '"[^>]*\shidden/', $html, $tab);
+            $this->assertDoesNotMatchRegularExpression('/id="pane-' . $tab . '"[^>]*\shidden/', $html, $tab);
+        }
+        // role deep link: that role's tab is selected and its form is the only one not inert
+        $role = Role::withoutGlobalScopes()->where('shop_id', $shop->id)->where('name', 'manager')->first() ?? Role::withoutGlobalScopes()->where('shop_id', $shop->id)->where('name', '!=', 'owner')->firstOrFail();
+        $html = $this->page($owner, '/settings?tab=roles&role=' . $role->id)->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/id="role-tab-' . $role->id . '"[^>]*aria-selected="true"/', $html);
+        preg_match_all('/<form [^>]*role="tabpanel"[^>]*>/', $html, $forms);
+        $this->assertCount(1, array_filter($forms[0], fn ($tag) => ! str_contains($tag, ' inert')), 'exactly one role form is live');
+    }
 }
