@@ -161,4 +161,74 @@ class SettingsSubPagesTest extends TestCase
         $this->assertSame(['Loan settings', 'Receipt settings'], $all);
         $this->page($user, '/settings')->assertForbidden();
     }
+
+    /** Loan, Users & roles and Plan & billing: one form (or panel set), the title switcher with the open page marked, a save action. */
+    public function test_loan_users_and_billing_pages_use_the_title_switcher_and_the_card_system(): void
+    {
+        $owner = $this->owner($this->shop());
+        foreach (['/dhiran/settings' => 'Loan settings', '/settings?tab=staff' => 'Users & roles', '/subscription/status' => 'Plan & billing'] as $path => $label) {
+            $html = $this->page($owner, $path)->assertOk()->getContent();
+            $this->assertMatchesRegularExpression('/<button[^>]*data-section-switch[^>]*>.*?data-section-label>' . preg_quote(htmlspecialchars($label, ENT_QUOTES), '/') . '</s', $html, $path);
+            $this->assertMatchesRegularExpression('/<nav class="dh-subnav"\s+id="settings-sections"\s+data-section-list/', $html, $path);
+            $this->assertMatchesRegularExpression('/<a [^>]*aria-current="page"[^>]*>\s*' . preg_quote(htmlspecialchars($label, ENT_QUOTES), '/') . '\s*<\/a>/', $this->nav($html), $path);
+            $this->assertStringContainsString('class="st-page"', $html, $path);
+            $this->assertStringContainsString('class="st-panel"', $html, $path);
+            $this->assertStringContainsString('role="status"', $html, "$path announces its flash");
+        }
+    }
+
+    public function test_users_roles_tab_has_one_form_per_role_with_labelled_permission_rows(): void
+    {
+        $shop = $this->shop();
+        $owner = $this->owner($shop);
+        $html = $this->page($owner, '/settings?tab=roles')->assertOk()->getContent();
+        $this->assertStringContainsString('aria-label="Role to change"', $html);
+        $this->assertStringContainsString('class="st-role-btn"', $html);
+        // every non-owner role posts to its own endpoint, one save button each; the owner role is locked and has none
+        preg_match_all('/<form method="POST" action="[^"]*\/settings\/roles\/\d+"/', $html, $forms);
+        $roles = Role::withoutGlobalScopes()->where('shop_id', $shop->id)->get();
+        $this->assertCount($roles->count(), $forms[0], 'one form per role');
+        $this->assertStringContainsString('Owner permissions are locked', $html);
+        // each permission is a shared switch row (label wrapping its own role="switch" checkbox), so the whole row is the tap target
+        $this->assertGreaterThan(0, preg_match_all('/<label class="ui-switch-row" for="perm-\d+-\d+">.*?role="switch"[^>]*name="permissions\[\]"/s', $html));
+    }
+
+    public function test_staff_list_rows_have_role_badge_and_icon_only_edit_with_a_name(): void
+    {
+        $shop = $this->shop();
+        $owner = $this->owner($shop);
+        $staff = $this->userWith($shop, ['dhiran.view']);
+        $staff->forceFill(['name' => 'Asha Verma'])->save();
+        $html = $this->page($owner, '/settings?tab=staff')->assertOk()->getContent();
+        $this->assertStringContainsString('class="st-row', $html);
+        $this->assertStringContainsString('Asha Verma', $html);
+        $this->assertStringContainsString('class="st-badge', $html);
+        $this->assertStringContainsString('aria-label="Edit Asha Verma"', $html);
+        $this->assertStringContainsString('aria-label="Remove Asha Verma"', $html);
+    }
+
+    public function test_staff_forms_are_labelled_with_one_save_and_keep_their_field_names(): void
+    {
+        $shop = $this->shop();
+        $owner = $this->owner($shop);
+        $staff = $this->userWith($shop, ['dhiran.view']);
+        foreach (['/staff/create', '/staff/' . $staff->id . '/edit'] as $path) {
+            $html = $this->page($owner, $path)->assertOk()->getContent();
+            foreach (['name', 'mobile_number', 'email', 'password', 'password_confirmation'] as $field) {
+                $this->assertStringContainsString('name="' . $field . '"', $html, "$path $field");
+                $this->assertStringContainsString('for="' . $field . '"', $html, "$path label for $field");
+            }
+            $this->assertStringContainsString('name="role_id"', $html);
+            $this->assertStringContainsString('inputmode="numeric"', $html);
+            $this->assertSame(1, preg_match_all('/type="submit" class="btn btn-dark btn-sm"/', $html), "$path one save");
+        }
+    }
+
+    public function test_plan_page_in_the_app_shell_shows_plan_badge_and_renew_choices(): void
+    {
+        $owner = $this->owner($this->shop());
+        $html = $this->page($owner, '/subscription/status')->assertOk()->getContent();
+        $this->assertStringContainsString('st-plans', $html);
+        $this->assertMatchesRegularExpression('/>(Choose a plan|Renew)</', $html);
+    }
 }

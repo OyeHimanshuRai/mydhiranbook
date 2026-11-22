@@ -1,158 +1,82 @@
 <x-dhiran-layout title="Loan settings">
+    @vite('resources/css/dhiran-settings.css')
     <x-dhiran.page-header>
-        <div>
-            <h1 class="page-title">Loan settings</h1>
-            <p class="text-sm text-gray-500 mt-1">Defaults for new pledge loans</p>
-        </div>
-        <div class="page-actions">
-            <a href="{{ route('dhiran.loans') }}" class="btn btn-secondary btn-sm">
-                <x-icon name="arrow-left" size="14" class="mr-1" />
-                Back to Loans
-            </a>
-        </div>
+        <x-dhiran.settings-nav active="loan" as="title" />
     </x-dhiran.page-header>
 
     {{-- Every field here is a DhiranSettings column that loans read (2026-11-08: the old form used names the save did not
          accept, so it never saved, and showed placeholder values). Existing loans keep their own terms. --}}
     @php
         $v = fn (string $key, $fallback = null) => old($key, $settings->{$key} ?? $fallback);
+        // 2.50 shows as 2.5, 5000000.00 as 5000000: the stored number, not padded zeros.
         $num = fn (string $key) => is_numeric($v($key)) ? rtrim(rtrim(number_format((float) $v($key), 2, '.', ''), '0'), '.') : $v($key);
-        $err = fn (string $key) => $errors->first($key);
     @endphp
 
-    <div class="content-inner dhiran-settings-root">
-        <x-dhiran.settings-nav active="loan" />
-        {{-- Owner 2026-11-11: cards two to a row (Interest | LTV, Limits | Tenure, Printouts | Reminders), fields two to
-             a row inside each card, so the page no longer runs down as one long narrow column. --}}
-        <form method="POST" action="{{ route('dhiran.settings.update') }}" class="dset-form" data-turbo-frame="_top">
+    <div class="content-inner">
+        <x-dhiran.settings-nav active="loan" switcher />
+        <x-settings.live />
+        <p class="st-lead">Defaults for every new pledge loan. Loans already made keep the terms they were made with.</p>
+        <form method="POST" action="{{ route('dhiran.settings.update') }}" class="st-page" data-turbo-frame="_top"
+              x-data="{ dirty: {{ session()->hasOldInput() ? 'true' : 'false' }}, saving: false }" @input="dirty = true" @change="dirty = true" @submit="saving = true"
+              @beforeunload.window="if (dirty && !saving) $event.preventDefault()">
             @csrf
             @method('PATCH')
 
-                @if($errors->any())
-                    <div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{{ $errors->first() }}</div>
-                @endif
-
-            <div class="dset-board" data-settings-board>
-                <section class="dset-section">
-                    <h2 class="dset-section-title"><x-icon name="calculator" /> Interest</h2>
-                    <div class="dset-fields">
-                        <div>
-                            <label class="dset-label" for="ds-rate">Monthly interest rate (%)</label>
-                            <input id="ds-rate" type="number" step="0.01" min="0" max="10" required name="default_interest_rate_monthly" class="dset-input" value="{{ $num('default_interest_rate_monthly') }}">
-                        </div>
-                        <div>
-                            <label class="dset-label" for="ds-type">Interest type</label>
-                            <select id="ds-type" name="default_interest_type" class="dset-select">
-                                @foreach(['flat' => 'Flat (Simple)', 'daily' => 'Daily', 'compound' => 'Compound'] as $value => $label)
-                                    <option value="{{ $value }}" @selected($v('default_interest_type', 'flat') === $value)>{{ $label }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="dset-label" for="ds-penalty">Penalty rate (%/month)</label>
-                            <input id="ds-penalty" type="number" step="0.01" min="0" max="10" required name="default_penalty_rate_monthly" class="dset-input" value="{{ $num('default_penalty_rate_monthly') }}">
-                        </div>
-                        <div>
-                            <label class="dset-label" for="ds-minint">Minimum interest (months)</label>
-                            <input id="ds-minint" type="number" min="0" max="12" required name="default_min_interest_months" class="dset-input" value="{{ $v('default_min_interest_months') }}">
-                            <p class="dset-hint">Charged even if the loan is closed or renewed sooner.</p>
-                        </div>
+            <div class="st-stack" data-settings-board>
+                <x-settings.panel title="Interest" desc="Applied to every new loan.">
+                    <div class="st-grid">
+                        <x-settings.field name="default_interest_rate_monthly" id="ds-rate" label="Monthly interest rate" type="number" inputmode="decimal" step="0.01" min="0" max="10" required suffix="% per month" :value="$num('default_interest_rate_monthly')" />
+                        <x-settings.field name="default_interest_type" id="ds-type" label="Interest type" type="select">
+                            @foreach(['flat' => 'Flat (Simple)', 'daily' => 'Daily', 'compound' => 'Compound'] as $value => $label)
+                                <option value="{{ $value }}" @selected($v('default_interest_type', 'flat') === $value)>{{ $label }}</option>
+                            @endforeach
+                        </x-settings.field>
+                        <x-settings.field name="default_penalty_rate_monthly" id="ds-penalty" label="Penalty rate" type="number" inputmode="decimal" step="0.01" min="0" max="10" required suffix="% per month" :value="$num('default_penalty_rate_monthly')" />
+                        <x-settings.field name="default_min_interest_months" id="ds-minint" label="Minimum interest" type="number" inputmode="numeric" min="0" max="12" step="1" required suffix="months" :value="$v('default_min_interest_months')" hint="Charged even if the loan is closed or renewed sooner." />
                     </div>
-                </section>
+                </x-settings.panel>
 
-                <section class="dset-section">
-                    <h2 class="dset-section-title"><x-icon name="trending-up" /> Loan value (LTV)</h2>
-                    <div class="dset-fields">
-                        <div>
-                            <label class="dset-label" for="ds-ltv">Loan value (% of market value)</label>
-                            <input id="ds-ltv" type="number" step="0.01" min="1" max="100" required name="default_ltv_ratio" class="dset-input" value="{{ $num('default_ltv_ratio') }}">
-                        </div>
-                        <div>
-                            <label class="dset-label" for="ds-hv-threshold">Large loans from (₹)</label>
-                            <input id="ds-hv-threshold" type="number" step="0.01" min="0" required name="high_value_threshold" class="dset-input" value="{{ $num('high_value_threshold') }}">
-                        </div>
-                        <div>
-                            <label class="dset-label" for="ds-hv-ltv">Large-loan value (%)</label>
-                            <input id="ds-hv-ltv" type="number" step="0.01" min="1" max="100" required name="high_value_ltv_ratio" class="dset-input" value="{{ $num('high_value_ltv_ratio') }}">
-                            <p class="dset-hint">Used instead of the normal % for loans of this size or more.</p>
-                        </div>
+                <x-settings.panel title="Loan value (LTV)" desc="How much you lend against the market value of the pledged items.">
+                    <div class="st-grid">
+                        <x-settings.field name="default_ltv_ratio" id="ds-ltv" label="Loan value" type="number" inputmode="decimal" step="0.01" min="1" max="100" required suffix="% of market value" :value="$num('default_ltv_ratio')" />
+                        <x-settings.field name="high_value_threshold" id="ds-hv-threshold" label="Large loans from" type="number" inputmode="decimal" step="0.01" min="0" required prefix="₹" inr :value="$num('high_value_threshold')" />
+                        <x-settings.field name="high_value_ltv_ratio" id="ds-hv-ltv" label="Large-loan value" type="number" inputmode="decimal" step="0.01" min="1" max="100" required suffix="%" :value="$num('high_value_ltv_ratio')" hint="Used instead of the normal % for loans of this size or more." />
                     </div>
-                </section>
+                </x-settings.panel>
 
-                <section class="dset-section">
-                    <h2 class="dset-section-title"><x-icon name="circle-dollar-sign" /> Loan limits and fee</h2>
-                    <div class="dset-fields">
-                        <div>
-                            <label class="dset-label" for="ds-min">Minimum loan (₹)</label>
-                            <input id="ds-min" type="number" step="0.01" min="0" required name="min_loan_amount" class="dset-input" value="{{ $num('min_loan_amount') }}">
-                        </div>
-                        <div>
-                            <label class="dset-label" for="ds-max">Maximum loan (₹)</label>
-                            <input id="ds-max" type="number" step="0.01" min="0" required name="max_loan_amount" class="dset-input" value="{{ $num('max_loan_amount') }}">
-                        </div>
-                        <div>
-                            <label class="dset-label" for="ds-fee-type">Processing fee</label>
-                            <select id="ds-fee-type" name="processing_fee_type" class="dset-select">
-                                <option value="flat" @selected($v('processing_fee_type', 'flat') === 'flat')>Fixed amount (₹)</option>
-                                <option value="percent" @selected($v('processing_fee_type') === 'percent')>% of the loan</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="dset-label" for="ds-fee">Fee value</label>
-                            <input id="ds-fee" type="number" step="0.01" min="0" required name="processing_fee_value" class="dset-input" value="{{ $num('processing_fee_value') }}">
-                            <p class="dset-hint">0 for no fee.</p>
-                        </div>
+                <x-settings.panel title="Loan limits and fee" desc="The smallest and largest loan a clerk can make, and the fee taken at the start.">
+                    <div class="st-grid">
+                        <x-settings.field name="min_loan_amount" id="ds-min" label="Minimum loan" type="number" inputmode="decimal" step="0.01" min="0" required prefix="₹" inr :value="$num('min_loan_amount')" />
+                        <x-settings.field name="max_loan_amount" id="ds-max" label="Maximum loan" type="number" inputmode="decimal" step="0.01" min="0" required prefix="₹" inr :value="$num('max_loan_amount')" />
+                        <x-settings.field name="processing_fee_type" id="ds-fee-type" label="Processing fee" type="select">
+                            <option value="flat" @selected($v('processing_fee_type', 'flat') === 'flat')>Fixed amount (₹)</option>
+                            <option value="percent" @selected($v('processing_fee_type') === 'percent')>% of the loan</option>
+                        </x-settings.field>
+                        <x-settings.field name="processing_fee_value" id="ds-fee" label="Fee value" type="number" inputmode="decimal" step="0.01" min="0" required :value="$num('processing_fee_value')" hint="In rupees or percent, as set in Processing fee. 0 for no fee." />
                     </div>
-                </section>
+                </x-settings.panel>
 
-                <section class="dset-section">
-                    <h2 class="dset-section-title"><x-icon name="calendar" /> Tenure and forfeiture</h2>
-                    <div class="dset-fields">
-                        <div>
-                            <label class="dset-label" for="ds-tenure">Tenure (months)</label>
-                            <input id="ds-tenure" type="number" min="1" max="60" required name="default_tenure_months" class="dset-input" value="{{ $v('default_tenure_months') }}">
-                        </div>
-                        <div>
-                            <label class="dset-label" for="ds-lock">Lock-in (months)</label>
-                            <input id="ds-lock" type="number" min="0" max="60" required name="default_min_lock_months" class="dset-input" value="{{ $v('default_min_lock_months') }}">
-                            <p class="dset-hint">The loan cannot be closed early before this.</p>
-                        </div>
-                        <div>
-                            <label class="dset-label" for="ds-grace">Grace period (days)</label>
-                            <input id="ds-grace" type="number" min="0" max="90" required name="grace_period_days" class="dset-input" value="{{ $v('grace_period_days') }}">
-                            <p class="dset-hint">Days after maturity before penalty applies and a forfeiture notice can be sent.</p>
-                        </div>
-                        <div>
-                            <label class="dset-label" for="ds-notice">Forfeiture notice period (days)</label>
-                            <input id="ds-notice" type="number" min="0" max="365" required name="forfeiture_notice_days" class="dset-input" value="{{ $v('forfeiture_notice_days') }}">
-                            <p class="dset-hint">Days the customer gets to pay after the notice, before forfeiture.</p>
-                        </div>
+                <x-settings.panel title="Tenure and forfeiture" desc="How long a loan runs, and what happens when it is not repaid.">
+                    <div class="st-grid">
+                        <x-settings.field name="default_tenure_months" id="ds-tenure" label="Tenure" type="number" inputmode="numeric" min="1" max="60" step="1" required suffix="months" :value="$v('default_tenure_months')" />
+                        <x-settings.field name="default_min_lock_months" id="ds-lock" label="Lock-in" type="number" inputmode="numeric" min="0" max="60" step="1" required suffix="months" :value="$v('default_min_lock_months')" hint="The loan cannot be closed early before this." />
+                        <x-settings.field name="grace_period_days" id="ds-grace" label="Grace period" type="number" inputmode="numeric" min="0" max="90" step="1" required suffix="days" :value="$v('grace_period_days')" hint="Days after maturity before penalty applies and a forfeiture notice can be sent." />
+                        <x-settings.field name="forfeiture_notice_days" id="ds-notice" label="Forfeiture notice period" type="number" inputmode="numeric" min="0" max="365" step="1" required suffix="days" :value="$v('forfeiture_notice_days')" hint="Days the customer gets to pay after the notice, before forfeiture." />
                     </div>
-                </section>
+                </x-settings.panel>
 
-                <section class="dset-section">
-                    <h2 class="dset-section-title"><x-icon name="printer" /> Loan numbers</h2>
-                    <div class="dset-fields">
-                        <div>
-                            <label class="dset-label" for="ds-prefix">Loan number prefix</label>
-                            <input id="ds-prefix" type="text" maxlength="10" name="loan_number_prefix" class="dset-input" value="{{ $v('loan_number_prefix') }}" placeholder="DH-">
-                            <p class="dset-hint">Numbers continue from the last loan.</p>
-                        </div>
+                <x-settings.panel title="Loan numbers" desc="The text shown before each loan number.">
+                    <div class="st-grid">
+                        <x-settings.field name="loan_number_prefix" id="ds-prefix" label="Loan number prefix" type="text" maxlength="10" placeholder="DH-" autocomplete="off" :value="$v('loan_number_prefix')" hint="Numbers continue from the last loan." />
                     </div>
-                </section>
+                </x-settings.panel>
 
                 {{-- Owner 2026-11-12: no SMS reminder card. Nothing sends SMS yet (the reminder job's send step is a TODO),
                      so offering "Due-date reminders: On" misled owners. Saving without the field turns the old switch off.
                      ponytail: bring the card back with a real sender (provider + approved templates). --}}
             </div>
 
-            <div class="dset-actions">
-                <a href="{{ route('dhiran.loans') }}" class="btn btn-secondary btn-sm">Cancel</a>
-                <button type="submit" class="btn btn-dark btn-sm">
-                    <x-icon name="save" size="14" class="mr-1" />
-                    Save Settings
-                </button>
-            </div>
+            <x-settings.savebar label="Save settings" :cancel-href="route('dhiran.loans')" />
         </form>
     </div>
 </x-dhiran-layout>

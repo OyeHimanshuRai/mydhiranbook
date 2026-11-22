@@ -37,7 +37,7 @@ class QueuedRenewalTest extends AdminTestCase
         $this->term($shop, today()->subMonths(11)->toDateString(), today()->addDays(30)->toDateString());
         $this->term($shop, today()->addDays(30)->toDateString(), today()->addDays(395)->toDateString());
         $html = $this->actingAs($owner)->get('/subscription/status')->assertOk()->getContent();
-        $this->assertMatchesRegularExpression('/:\s*active/', $html);
+        $this->assertStringContainsString('st-badge--ok">Active<', $html);
         $this->assertStringNotContainsString('expired', $html);
         $this->assertStringContainsString('Renewal queued', $html);
         $this->assertStringContainsString(today()->addDays(30)->format('d M Y'), $html);
@@ -49,7 +49,7 @@ class QueuedRenewalTest extends AdminTestCase
         $live = $this->term($shop, today()->subMonths(2)->toDateString(), today()->addMonths(10)->toDateString());
         $this->term($shop, today()->addMonths(10)->toDateString(), today()->addMonths(22)->toDateString(), 'cancelled');
         $html = $this->actingAs($owner)->get('/subscription/status')->assertOk()->getContent();
-        $this->assertMatchesRegularExpression('/:\s*active/', $html);
+        $this->assertStringContainsString('st-badge--ok">Active<', $html);
         $this->assertStringContainsString($live->ends_at->format('d M Y'), $html);
         $this->assertStringNotContainsString('Renewal queued', $html);
     }

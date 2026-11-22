@@ -36,7 +36,7 @@
     ]
   },
   "resources/css/dhiran-settings.css": {
-    "file": "assets/dhiran-settings-Br6a5qEZ.css",
+    "file": "assets/dhiran-settings-CO0BwSSi.css",
     "src": "resources/css/dhiran-settings.css",
     "isEntry": true,
     "name": "dhiran-settings",
@@ -45,7 +45,7 @@
     ]
   },
   "resources/css/dhiran.css": {
-    "file": "assets/dhiran-Bq8UvegD.css",
+    "file": "assets/dhiran-OjK76TSp.css",
     "src": "resources/css/dhiran.css",
     "isEntry": true,
     "name": "dhiran",
@@ -63,7 +63,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-u_hwq68v.js",
+    "file": "assets/app-BAQBl6zA.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true

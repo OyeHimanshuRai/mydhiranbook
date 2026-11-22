@@ -14,8 +14,8 @@ class StaffParityTest extends TestCase
         $shop=self::createDhiranShop(['name'=>'Synthetic staff shop']);
         $roles=app(TenantRoleService::class)->ensureDefaultsForShop($shop->id);
         $owner=User::create(['shop_id'=>$shop->id,'role_id'=>$roles['owner']->id,'name'=>'Synthetic Owner','email'=>'owner@staff.test','password'=>'Synthetic-pass-12345']);
-        $this->actingAs($owner)->get('/settings?tab=staff')->assertOk()->assertSee('Staff Members');
-        $this->get('/settings?tab=roles')->assertOk()->assertSee('dhiran.create');
+        $this->actingAs($owner)->get('/settings?tab=staff')->assertOk()->assertSee('Staff members');
+        $this->get('/settings?tab=roles')->assertOk()->assertSee('Create loans');
         $this->get('/staff/create')->assertOk()->assertSee('Add Staff Member')->assertSee('Used for login');
         $this->post('/staff',['name'=>'Synthetic Clerk','mobile_number'=>'9000000082','password'=>'Synthetic-pass-12345','password_confirmation'=>'Synthetic-pass-12345','role_id'=>$roles['staff']->id])->assertRedirect();
         $staff=User::where('mobile_number','9000000082')->firstOrFail();

@@ -13,14 +13,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Owner 2026-11-11: Dhiran Settings ran down the page as one narrow column with wide inputs. The sections are cards
- * two to a row (Interest beside Loan value (LTV), and so on), with their fields two to a row inside each card.
+ * Loan settings: five cards from one spacing scale, each with a heading and a one-line description; fields one column on phones,
+ * two from 900px. Every control is labelled, wired to its hint/error, and posted to the same endpoint under the same names.
  */
 class DhiranSettingsLayoutTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_settings_sections_sit_two_to_a_row_with_compact_fields(): void
+    public function test_settings_are_five_described_cards_with_labelled_fields(): void
     {
         $shop = self::createDhiranShop([
             'name' => 'Pawn Co', 'shop_type' => 'dhiran', 'phone' => '9390012000',
@@ -44,17 +44,35 @@ class DhiranSettingsLayoutTest extends TestCase
         });
 
         $board = substr($html, strpos($html, 'data-settings-board'));
-        preg_match_all('/<section class="dset-section"[^>]*>\s*<h2 class="dset-section-title">.*?<\/svg>\s*([^<]+)</s', $board, $m);
+        preg_match_all('/<h2 class="st-title"[^>]*>([^<]+)</', $board, $m);
         $this->assertSame(
             // 2026-11-12: the Reminders card is gone; the receipt texts moved to the Receipt page until something actually sends reminders.
             ['Interest', 'Loan value (LTV)', 'Loan limits and fee', 'Tenure and forfeiture', 'Loan numbers'],
             array_map('trim', $m[1]),
-            'cards in pairs: Interest | LTV, Limits | Tenure, then Loan numbers'
+            'five cards, one heading each'
         );
-        $this->assertSame(5, substr_count($board, 'class="dset-fields"'), 'each card lays its fields out two to a row');
+        $this->assertSame(5, substr_count($board, 'class="st-grid"'), 'each card lays its fields out in one grid (two columns only from 900px, in CSS)');
+        $this->assertSame(5, substr_count($board, 'class="st-desc"'), 'each card says in one line what it is for');
         $this->assertStringNotContainsString('max-w-3xl', $html, 'no narrow single column');
         foreach (['default_interest_rate_monthly', 'default_ltv_ratio', 'high_value_threshold', 'processing_fee_value', 'grace_period_days', 'loan_number_prefix'] as $field) {
             $this->assertStringContainsString('name="' . $field . '"', $board, "still saves {$field}");
         }
+
+        // Labels, hints and errors are wired: every control has a label[for], numbers carry a keypad hint and a unit, and there is one save button.
+        preg_match_all('/<(?:input|select)\b[^>]*\bname="(?!_)[^"]+"[^>]*>/', $board, $controls);
+        $this->assertCount(16, $controls[0], 'all sixteen settings are still posted');
+        foreach ($controls[0] as $tag) {
+            $this->assertMatchesRegularExpression('/\bid="([^"]+)"/', $tag);
+            preg_match('/\bid="([^"]+)"/', $tag, $id);
+            $this->assertStringContainsString('for="' . $id[1] . '"', $board, "label for {$id[1]}");
+            if (str_contains($tag, 'type="number"')) {
+                $this->assertMatchesRegularExpression('/inputmode="(decimal|numeric)"/', $tag, "{$id[1]} opens a number keypad");
+            }
+        }
+        $this->assertStringContainsString('class="st-unit st-unit--pre" aria-hidden="true">₹', $board);
+        $this->assertStringContainsString('% per month', $board);
+        $this->assertSame(1, substr_count($html, 'type="submit" class="btn btn-dark btn-sm"'), 'one save button');
+        $this->assertStringContainsString('Unsaved changes', $html);
+        $this->assertStringContainsString('aria-current="page"', $html, 'the settings nav marks the open page');
     }
 }
