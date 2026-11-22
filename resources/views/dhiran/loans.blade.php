@@ -2,7 +2,7 @@
     $f = $filters ?? \App\Services\Dhiran\DhiranListFilters::fromRequest(request());
     $rupee = fn ($n) => '₹' . \App\Support\IndianNumber::format($n, 2);
 @endphp
-<x-dhiran-layout title="Loans">
+<x-dhiran-layout title="Loans" list>
     <x-dhiran.page-header>
         <div>
             <h1 class="page-title">Pledge Loans</h1>

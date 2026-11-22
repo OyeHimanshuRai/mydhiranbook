@@ -40,12 +40,12 @@ body.dh-app:has(.settings-shell) #global-toast { white-space: pre-line; max-heig
 body.dh-app .settings-shell [data-settings-tab="profile"] :is(input[type="text"], input[type="email"], input[type="password"]) {
     min-height: 44px;
     border-color: var(--settings-border-strong) !important;
-    border-radius: 10px;
+    border-radius: var(--kh-radius);
     background: #fff !important;
 }
 
 body.dh-app .settings-shell [data-settings-tab="materials"] section {
-    border-radius: 14px !important;
+    border-radius: var(--kh-radius) !important;
     border-color: var(--settings-border) !important;
     overflow: hidden;
 }

@@ -1,4 +1,4 @@
-<x-dhiran-layout title="Interest Report">
+<x-dhiran-layout title="Interest Report" list>
     {{-- $totalInterest / $totalPenalty / $footer come from the controller and cover the whole filtered period. --}}
 
     <x-dhiran.page-header>
@@ -51,7 +51,7 @@
                                 <td data-label="Customer" class="font-medium text-slate-700">{{ $payment->loan?->customer?->name ?? '-' }}</td>
                                 <x-dhiran.mobile-cell :number="$payment->loan?->customer?->mobile" />
                                 <td data-label="Amount" class="whitespace-nowrap text-right font-semibold">{{ \App\Support\IndianNumber::rupee((float) $payment->amount, 2) }}</td>
-                                <td data-label="Interest" class="whitespace-nowrap text-right text-green-600">{{ \App\Support\IndianNumber::rupee((float) $payment->interest_component, 2) }}</td>
+                                <td data-label="Interest" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $payment->interest_component, 2) }}</td>
                                 <td data-label="Penalty" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $payment->penalty_component, 2) }}</td>
                                 <td data-label="Principal" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $payment->principal_component, 2) }}</td>
                             </tr>

@@ -14,8 +14,8 @@ use Illuminate\Http\Request;
 use Tests\TestCase;
 
 /**
- * Owner 2026-11-22 (phase 2 UI): every signed-in list page has the one app shell (nav drawer/rail/sidebar, skip link) and exactly
- * one footer; collapsible toolbar buttons keep their text in the page (visually hidden) so screen readers still read it.
+ * Owner 2026-11-22 (phase 2 UI): every signed-in list page has the one app shell (nav drawer/rail/sidebar, skip link) and no footer
+ * (the legal footer lives on the four Settings pages only, see AppShellScrollTest); collapsible toolbar buttons keep their text in the page (visually hidden) so screen readers still read it.
  */
 class DhiranAppShellTest extends TestCase
 {
@@ -57,12 +57,12 @@ class DhiranAppShellTest extends TestCase
         });
     }
 
-    public function test_every_list_page_has_one_shell_and_exactly_one_footer(): void
+    public function test_every_list_page_has_one_shell_and_no_footer(): void
     {
         foreach ($this->pages() as $name => $html) {
             $this->assertSame(1, substr_count($html, '<aside class="dh-sidebar"'), "{$name}: one sidebar/drawer");
             $this->assertSame(1, substr_count($html, 'class="dh-skip"'), "{$name}: one skip link");
-            $this->assertSame(1, substr_count($html, '<footer class="dh-footer"'), "{$name}: exactly one footer");
+            $this->assertSame(0, substr_count($html, '<footer class="dh-footer"'), "{$name}: no footer outside Settings");
             $this->assertSame(1, substr_count($html, 'id="dh-main"'), "{$name}: one main landmark target");
         }
     }

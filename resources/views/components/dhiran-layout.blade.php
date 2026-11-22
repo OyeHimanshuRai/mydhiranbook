@@ -1,8 +1,9 @@
+@props(['title' => null, 'list' => false, 'footer' => false])
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dh-html">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     {{-- Alpine-rendered pages are not snapshot-safe: restoring a Turbo snapshot re-ran x-for clones without their scope. --}}
     <meta name="turbo-cache-control" content="no-cache">
@@ -14,7 +15,7 @@
     {{-- Dhiran shell — a dedicated, Dhiran-only navigation surface. Only
          pledge-loan navigation appears here. --}}
 </head>
-<body class="dh-app">
+<body class="dh-app{{ $list ? ' dh-page--list' : '' }}">
     <a href="#dh-main" class="dh-skip">Skip to content</a>
     {{-- Phones (< 768px): the menu is a slide-in drawer. While it is open the page behind is inert (a real focus trap),
          Esc and the scrim close it, and focus goes back to the button that opened it. Tablets get an icon rail and
@@ -136,7 +137,7 @@
                 @elseif(isset($errors) && $errors->any())<meta name="flash-error" content="{{ $errors->first() }}">@endif
 
                 <div class="dh-content">{!! $slotMarkup !!}</div>
-                <x-dhiran.footer />
+                @if($footer)<x-dhiran.footer />@endif
             </div>
         </main>
     </div>

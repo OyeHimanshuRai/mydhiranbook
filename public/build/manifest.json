@@ -1,6 +1,6 @@
 {
   "resources/css/admin.css": {
-    "file": "assets/admin-mmirosSa.css",
+    "file": "assets/admin-Dfrmlv3X.css",
     "src": "resources/css/admin.css",
     "isEntry": true,
     "name": "admin",
@@ -9,7 +9,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-C9RLZkBb.css",
+    "file": "assets/app-aAqQ4Uw4.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -18,7 +18,7 @@
     ]
   },
   "resources/css/dhiran-detail.css": {
-    "file": "assets/dhiran-detail-B0Y2MJGi.css",
+    "file": "assets/dhiran-detail-B1LkDQyD.css",
     "src": "resources/css/dhiran-detail.css",
     "isEntry": true,
     "name": "dhiran-detail",
@@ -27,7 +27,7 @@
     ]
   },
   "resources/css/dhiran-documents.css": {
-    "file": "assets/dhiran-documents-CPXPlo2-.css",
+    "file": "assets/dhiran-documents-B_hN_2Aj.css",
     "src": "resources/css/dhiran-documents.css",
     "isEntry": true,
     "name": "dhiran-documents",
@@ -36,7 +36,7 @@
     ]
   },
   "resources/css/dhiran-forms.css": {
-    "file": "assets/dhiran-forms-FcHF3JYc.css",
+    "file": "assets/dhiran-forms-wtKcxMs4.css",
     "src": "resources/css/dhiran-forms.css",
     "isEntry": true,
     "name": "dhiran-forms",
@@ -45,7 +45,7 @@
     ]
   },
   "resources/css/dhiran-receipt-settings.css": {
-    "file": "assets/dhiran-receipt-settings-CYXgyhsq.css",
+    "file": "assets/dhiran-receipt-settings-DeUWMgS5.css",
     "src": "resources/css/dhiran-receipt-settings.css",
     "isEntry": true,
     "name": "dhiran-receipt-settings",
@@ -54,7 +54,7 @@
     ]
   },
   "resources/css/dhiran-settings.css": {
-    "file": "assets/dhiran-settings-D_UQtT79.css",
+    "file": "assets/dhiran-settings-DzjxmbNB.css",
     "src": "resources/css/dhiran-settings.css",
     "isEntry": true,
     "name": "dhiran-settings",
@@ -63,7 +63,7 @@
     ]
   },
   "resources/css/dhiran.css": {
-    "file": "assets/dhiran-DxyOZPL1.css",
+    "file": "assets/dhiran-bm39RN-Z.css",
     "src": "resources/css/dhiran.css",
     "isEntry": true,
     "name": "dhiran",
@@ -72,7 +72,7 @@
     ]
   },
   "resources/css/site.css": {
-    "file": "assets/site-1-r_qpnn.css",
+    "file": "assets/site-DXaPevIi.css",
     "src": "resources/css/site.css",
     "isEntry": true,
     "name": "site",

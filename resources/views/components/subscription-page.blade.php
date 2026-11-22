@@ -1,6 +1,6 @@
-@props(['title' => 'Subscription'])
+@props(['title' => 'Subscription', 'footer' => false])
 @if(auth()->user()?->shop_id)
-<x-dhiran-layout :title="$title"><div class="ck-shell">{{ $slot }}</div>@include('site._js')</x-dhiran-layout>
+<x-dhiran-layout :title="$title" :footer="$footer"><div class="ck-shell">{{ $slot }}</div>@include('site._js')</x-dhiran-layout>
 @else
 <!doctype html><html lang="en"><head>@include('site._head', ['title' => $title])</head><body class="site">
 <a class="skip" href="#main">Skip to content</a>

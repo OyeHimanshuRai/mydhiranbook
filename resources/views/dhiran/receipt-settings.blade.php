@@ -7,7 +7,7 @@
     $total = fn ($def) => collect($def['groups'])->sum(fn ($f) => count($f));
     $on = fn ($receipt, $fields) => collect(array_keys($fields))->filter(fn ($k) => in_array("$receipt.$k", $printed, true))->count();
 @endphp
-<x-dhiran-layout title="Receipt settings">
+<x-dhiran-layout title="Receipt settings" footer>
     <x-dhiran.page-header>
         <x-dhiran.settings-nav active="receipt" as="title" />
     </x-dhiran.page-header>

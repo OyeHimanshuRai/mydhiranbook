@@ -1,4 +1,4 @@
-<x-dhiran-layout title="Active Loans Report">
+<x-dhiran-layout title="Active Loans Report" list>
     <x-dhiran.page-header>
         <div>
             <h1 class="page-title">Active Loans Report</h1>
@@ -37,7 +37,7 @@
                             <th scope="col" class="text-right">Outstanding</th>
                             <th scope="col" class="text-right" data-low="1">Interest Rate</th>
                             <th scope="col">Maturity Date</th>
-                            <th scope="col" class="text-center">Days to Maturity</th>
+                            <th scope="col" class="text-center">Days left</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -51,10 +51,10 @@
                                 <x-dhiran.mobile-cell :number="$loan->customer?->mobile" />
                                 <td data-label="Loan Date" data-low="1" class="whitespace-nowrap">{{ $loan->loan_date?->format('d M Y') ?? '-' }}</td>
                                 <td data-label="Principal" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->principal_amount, 2) }}</td>
-                                <td data-label="Outstanding" class="whitespace-nowrap text-right font-semibold {{ $loan->totalOutstanding() > 0 ? 'text-red-600' : 'text-green-600' }}">{{ \App\Support\IndianNumber::rupee($loan->totalOutstanding(), 2) }}</td>
+                                <td data-label="Outstanding" class="whitespace-nowrap text-right font-semibold">{{ \App\Support\IndianNumber::rupee($loan->totalOutstanding(), 2) }}</td>
                                 <td data-label="Interest Rate" data-low="1" class="whitespace-nowrap text-right">{{ number_format((float) $loan->interest_rate_monthly, 2) }}%/mo</td>
                                 <td data-label="Maturity Date" class="whitespace-nowrap">{{ $loan->maturity_date?->format('d M Y') ?? '-' }}</td>
-                                <td data-label="Days to Maturity" data-cell="status" class="whitespace-nowrap text-center">
+                                <td data-label="Days left" data-cell="status" class="whitespace-nowrap text-center">
                                     @if($loan->isOverdue())
                                         <span class="dh-status dh-status--danger">Overdue</span>
                                     @elseif($loan->daysTillMaturity() <= 30)

@@ -1,4 +1,4 @@
-<x-dhiran-layout title="Old Loans">
+<x-dhiran-layout title="Old Loans" list>
     <x-dhiran.page-header>
         <div>
             <h1 class="page-title">Old Loans</h1>
@@ -17,6 +17,7 @@
     <div class="content-inner" data-list-workspace>
         <x-dhiran.filter-panel :groups="$filters" mode="chips" />
 
+        <div class="dh-list-region">
         <div class="dh-table-card" data-list-frame>
             <div class="dh-table-wrap" data-list-scroll tabindex="0" role="region" aria-label="Old loans">
                 <table class="dh-table jf-table dh-stack">
@@ -75,6 +76,7 @@
                 </table>
             </div>
             <x-dhiran.pager :paginator="$loans" noun="old loans" />
+        </div>
         </div>
     </div>
 </x-dhiran-layout>

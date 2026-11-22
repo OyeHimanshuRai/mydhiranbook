@@ -1,4 +1,4 @@
-<x-dhiran-layout title="Cash Book">
+<x-dhiran-layout title="Cash Book" list>
     @php
         // $totals (opening, in, out, net, closing) and $pageStartBalance come from the controller: whole period,
         // every page, starting from the balance before the period. With the in/out filter on, rows skip the other
@@ -22,6 +22,7 @@
         <x-dhiran.filter-bar :filters="$filters ?? \App\Services\Dhiran\DhiranListFilters::fromRequest(request())" :action="route('dhiran.reports.cashbook')" default-period="this_month"
             :fields="['period', 'cash']" />
 
+        <div class="dh-list-region">
         {{-- Summary Cards --}}
         <div class="dh-stats">
             <x-dhiran.stat money label="Opening balance" :value="\App\Support\IndianNumber::format($totals['opening'], 2)" total="opening"
@@ -110,6 +111,7 @@
                 </table>
             </div>
             <x-dhiran.pager :paginator="$entries" noun="entries" />
+        </div>
         </div>
     </div>
 </x-dhiran-layout>

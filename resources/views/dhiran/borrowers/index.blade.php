@@ -1,5 +1,5 @@
 @php($rupee = fn ($n) => '₹' . \App\Support\IndianNumber::format($n, 2))
-<x-dhiran-layout title="Customers">
+<x-dhiran-layout title="Customers" list>
     <x-dhiran.page-header>
         <div>
             <h1 class="page-title">Customers</h1>
@@ -82,9 +82,9 @@
                                         @endif
                                     </td>
                                     <x-dhiran.mobile-cell :number="$borrower->mobile" />
-                                    <td data-label="Active" class="text-center font-medium text-emerald-700">{{ $borrower->active_loans_count }}</td>
+                                    <td data-label="Active" class="text-center font-medium">{{ $borrower->active_loans_count }}</td>
                                     <td data-label="Closed" data-low="2" class="text-center text-slate-500">{{ $borrower->closed_loans_count }}</td>
-                                    <td data-label="Forfeited" data-low="1" class="text-center text-red-600">{{ $borrower->forfeited_loans_count }}</td>
+                                    <td data-label="Forfeited" data-low="1" class="text-center">{{ $borrower->forfeited_loans_count }}</td>
                                     <td data-label="Outstanding" class="whitespace-nowrap text-right font-semibold text-slate-800">{{ $rupee($outstanding[$borrower->id] ?? 0) }}</td>
                                     <td data-label="Actions" data-cell="actions" class="whitespace-nowrap text-center">
                                         <a href="{{ route('dhiran.borrowers.show', $borrower) }}" class="jf-row-action jf-row-action--view dh-act-extra" title="Profile"><x-icon name="eye" size="16" /><span class="dh-act-label">Profile</span></a>

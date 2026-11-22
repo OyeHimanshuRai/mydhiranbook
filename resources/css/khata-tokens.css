@@ -102,3 +102,7 @@ html, body, * { scrollbar-width: thin; scrollbar-color: var(--kh-scroll-thumb) t
 @media (forced-colors: active) { html, body, * { scrollbar-color: auto; } }
 ::selection { background: var(--kh-ink); color: #fff; }
 input, textarea, select { caret-color: var(--kh-ink); accent-color: var(--kh-ink); }
+
+/* ==== Required-field star and legend (shared by every form) ==== */
+.ui-req { margin-inline-start: 2px; color: var(--kh-err); font-size: 1em; font-weight: 600; }
+.ui-req-legend { margin: 0 0 var(--sp-3, 12px); color: var(--kh-text-2); font-size: var(--fs-sm, 0.8125rem); font-weight: 400; line-height: 1.4; }

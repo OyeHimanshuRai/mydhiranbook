@@ -1,4 +1,4 @@
-<x-dhiran-layout title="Profitability Report">
+<x-dhiran-layout title="Profitability Report" list>
     @php
         // $totals covers every loan given in the period, on every page.
         $totalDisbursed = $totals['principal'];
@@ -67,7 +67,7 @@
                                 <td data-label="Customer" data-low="2" class="font-medium text-slate-700">{{ $loan->customer?->name ?? '-' }}</td>
                                 <x-dhiran.mobile-cell :number="$loan->customer?->mobile" low="1" />
                                 <td data-label="Principal" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->principal_amount, 2) }}</td>
-                                <td data-label="Interest Collected" class="whitespace-nowrap text-right text-green-600">{{ \App\Support\IndianNumber::rupee((float) $loan->total_interest_collected, 2) }}</td>
+                                <td data-label="Interest Collected" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->total_interest_collected, 2) }}</td>
                                 <td data-label="Penalty Collected" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->total_penalty_collected, 2) }}</td>
                                 <td data-label="Processing Fee" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->processing_fee, 2) }}</td>
                                 <td data-label="Status" data-cell="status" data-low="2" class="text-center">

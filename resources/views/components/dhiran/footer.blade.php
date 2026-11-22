@@ -1,5 +1,5 @@
-{{-- The signed-in app's one footer (owner 2026-11-22): a slim legal line at the end of the scroll area. Drawn once by
-     <x-dhiran-layout>; pages never add their own. --}}
+{{-- The signed-in app's slim legal line (owner 2026-11-22): shown ONLY on the four Settings pages, at the end of their
+     content. <x-dhiran-layout footer> draws it; every other signed-in page has no footer. --}}
 <footer class="dh-footer">
     <nav aria-label="Legal and help">
         <a href="/terms">Terms</a>

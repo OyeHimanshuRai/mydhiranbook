@@ -1,4 +1,4 @@
-<x-dhiran-layout title="Users & roles">
+<x-dhiran-layout title="Users & roles" footer>
 @vite('resources/css/dhiran-settings.css')
 <x-dhiran.page-header>
     <x-dhiran.settings-nav active="users" as="title" />

@@ -1,4 +1,4 @@
-<x-dhiran-layout title="Forfeiture Report">
+<x-dhiran-layout title="Forfeiture Report" list>
     <x-dhiran.page-header>
         <div>
             <h1 class="page-title">Forfeiture Report</h1>
@@ -26,10 +26,10 @@
                             <th scope="col">Customer</th>
                             <th scope="col" data-low="2">Mobile</th>
                             <th scope="col" class="text-right">Principal</th>
-                            <th scope="col" class="text-right">Written Off Amount</th>
+                            <th scope="col" class="text-right">Written off</th>
                             <th scope="col" class="text-center" data-low="1">Items Count</th>
                             <th scope="col">Forfeiture Date</th>
-                            <th scope="col" data-low="1">Notice Sent Date</th>
+                            <th scope="col" data-low="1">Notice sent</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -46,10 +46,10 @@
                                 <td data-label="Customer" class="font-medium text-slate-700">{{ $loan->customer?->name ?? '-' }}</td>
                                 <x-dhiran.mobile-cell :number="$loan->customer?->mobile" />
                                 <td data-label="Principal" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->principal_amount, 2) }}</td>
-                                <td data-label="Written Off Amount" class="whitespace-nowrap text-right font-semibold text-red-600">{{ \App\Support\IndianNumber::rupee($writtenOff, 2) }}</td>
+                                <td data-label="Written off" class="whitespace-nowrap text-right font-semibold">{{ \App\Support\IndianNumber::rupee($writtenOff, 2) }}</td>
                                 <td data-label="Items Count" data-low="1" class="whitespace-nowrap text-center">{{ $itemsCount }}</td>
                                 <td data-label="Forfeiture Date" class="whitespace-nowrap">{{ $loan->forfeited_at?->format('d M Y') ?? '-' }}</td>
-                                <td data-label="Notice Sent Date" data-low="1" class="whitespace-nowrap">
+                                <td data-label="Notice sent" data-low="1" class="whitespace-nowrap">
                                     @if($loan->forfeiture_notice_sent_at)
                                         {{ $loan->forfeiture_notice_sent_at->format('d M Y') }}
                                     @else

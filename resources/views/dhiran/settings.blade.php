@@ -1,4 +1,4 @@
-<x-dhiran-layout title="Loan settings">
+<x-dhiran-layout title="Loan settings" footer>
     @vite('resources/css/dhiran-settings.css')
     <x-dhiran.page-header>
         <x-dhiran.settings-nav active="loan" as="title" />
@@ -23,45 +23,46 @@
             @method('PATCH')
 
             <div class="st-stack" data-settings-board>
+                <x-req-legend />
                 <x-settings.panel title="Interest" desc="Applied to every new loan.">
                     <div class="st-grid">
-                        <x-settings.field name="default_interest_rate_monthly" id="ds-rate" label="Monthly interest rate" type="number" inputmode="decimal" step="0.01" min="0" max="10" required suffix="% per month" :value="$num('default_interest_rate_monthly')" />
-                        <x-settings.field name="default_interest_type" id="ds-type" label="Interest type" type="select">
+                        <x-settings.field name="default_interest_rate_monthly" id="ds-rate" label="Monthly interest rate" type="number" inputmode="decimal" step="0.01" min="0" max="10" req required suffix="% per month" :value="$num('default_interest_rate_monthly')" />
+                        <x-settings.field name="default_interest_type" id="ds-type" label="Interest type" type="select" req>
                             @foreach(['flat' => 'Flat (Simple)', 'daily' => 'Daily', 'compound' => 'Compound'] as $value => $label)
                                 <option value="{{ $value }}" @selected($v('default_interest_type', 'flat') === $value)>{{ $label }}</option>
                             @endforeach
                         </x-settings.field>
-                        <x-settings.field name="default_penalty_rate_monthly" id="ds-penalty" label="Penalty rate" type="number" inputmode="decimal" step="0.01" min="0" max="10" required suffix="% per month" :value="$num('default_penalty_rate_monthly')" />
-                        <x-settings.field name="default_min_interest_months" id="ds-minint" label="Minimum interest" type="number" inputmode="numeric" min="0" max="12" step="1" required suffix="months" :value="$v('default_min_interest_months')" hint="Charged even if the loan is closed or renewed sooner." />
+                        <x-settings.field name="default_penalty_rate_monthly" id="ds-penalty" label="Penalty rate" type="number" inputmode="decimal" step="0.01" min="0" max="10" req required suffix="% per month" :value="$num('default_penalty_rate_monthly')" />
+                        <x-settings.field name="default_min_interest_months" id="ds-minint" label="Minimum interest" type="number" inputmode="numeric" min="0" max="12" step="1" req required suffix="months" :value="$v('default_min_interest_months')" hint="Charged even if the loan is closed or renewed sooner." />
                     </div>
                 </x-settings.panel>
 
                 <x-settings.panel title="Loan value (LTV)" desc="How much you lend against the market value of the pledged items.">
                     <div class="st-grid">
-                        <x-settings.field name="default_ltv_ratio" id="ds-ltv" label="Loan value" type="number" inputmode="decimal" step="0.01" min="1" max="100" required suffix="% of market value" :value="$num('default_ltv_ratio')" />
-                        <x-settings.field name="high_value_threshold" id="ds-hv-threshold" label="Large loans from" type="number" inputmode="decimal" step="0.01" min="0" required prefix="₹" inr :value="$num('high_value_threshold')" />
-                        <x-settings.field name="high_value_ltv_ratio" id="ds-hv-ltv" label="Large-loan value" type="number" inputmode="decimal" step="0.01" min="1" max="100" required suffix="%" :value="$num('high_value_ltv_ratio')" hint="Used instead of the normal % for loans of this size or more." />
+                        <x-settings.field name="default_ltv_ratio" id="ds-ltv" label="Loan value" type="number" inputmode="decimal" step="0.01" min="1" max="100" req required suffix="% of market value" :value="$num('default_ltv_ratio')" />
+                        <x-settings.field name="high_value_threshold" id="ds-hv-threshold" label="Large loans from" type="number" inputmode="decimal" step="0.01" min="0" req required prefix="₹" inr :value="$num('high_value_threshold')" />
+                        <x-settings.field name="high_value_ltv_ratio" id="ds-hv-ltv" label="Large-loan value" type="number" inputmode="decimal" step="0.01" min="1" max="100" req required suffix="%" :value="$num('high_value_ltv_ratio')" hint="Used instead of the normal % for loans of this size or more." />
                     </div>
                 </x-settings.panel>
 
                 <x-settings.panel title="Loan limits and fee" desc="The smallest and largest loan a clerk can make, and the fee taken at the start.">
                     <div class="st-grid">
-                        <x-settings.field name="min_loan_amount" id="ds-min" label="Minimum loan" type="number" inputmode="decimal" step="0.01" min="0" required prefix="₹" inr :value="$num('min_loan_amount')" />
-                        <x-settings.field name="max_loan_amount" id="ds-max" label="Maximum loan" type="number" inputmode="decimal" step="0.01" min="0" required prefix="₹" inr :value="$num('max_loan_amount')" />
-                        <x-settings.field name="processing_fee_type" id="ds-fee-type" label="Processing fee" type="select">
+                        <x-settings.field name="min_loan_amount" id="ds-min" label="Minimum loan" type="number" inputmode="decimal" step="0.01" min="0" req required prefix="₹" inr :value="$num('min_loan_amount')" />
+                        <x-settings.field name="max_loan_amount" id="ds-max" label="Maximum loan" type="number" inputmode="decimal" step="0.01" min="0" req required prefix="₹" inr :value="$num('max_loan_amount')" />
+                        <x-settings.field name="processing_fee_type" id="ds-fee-type" label="Processing fee" type="select" req>
                             <option value="flat" @selected($v('processing_fee_type', 'flat') === 'flat')>Fixed amount (₹)</option>
                             <option value="percent" @selected($v('processing_fee_type') === 'percent')>% of the loan</option>
                         </x-settings.field>
-                        <x-settings.field name="processing_fee_value" id="ds-fee" label="Fee value" type="number" inputmode="decimal" step="0.01" min="0" required :value="$num('processing_fee_value')" hint="In rupees or percent, as set in Processing fee. 0 for no fee." />
+                        <x-settings.field name="processing_fee_value" id="ds-fee" label="Fee value" type="number" inputmode="decimal" step="0.01" min="0" req required :value="$num('processing_fee_value')" hint="In rupees or percent, as set in Processing fee. 0 for no fee." />
                     </div>
                 </x-settings.panel>
 
                 <x-settings.panel title="Tenure and forfeiture" desc="How long a loan runs, and what happens when it is not repaid.">
                     <div class="st-grid">
-                        <x-settings.field name="default_tenure_months" id="ds-tenure" label="Tenure" type="number" inputmode="numeric" min="1" max="60" step="1" required suffix="months" :value="$v('default_tenure_months')" />
-                        <x-settings.field name="default_min_lock_months" id="ds-lock" label="Lock-in" type="number" inputmode="numeric" min="0" max="60" step="1" required suffix="months" :value="$v('default_min_lock_months')" hint="The loan cannot be closed early before this." />
-                        <x-settings.field name="grace_period_days" id="ds-grace" label="Grace period" type="number" inputmode="numeric" min="0" max="90" step="1" required suffix="days" :value="$v('grace_period_days')" hint="Days after maturity before penalty applies and a forfeiture notice can be sent." />
-                        <x-settings.field name="forfeiture_notice_days" id="ds-notice" label="Forfeiture notice period" type="number" inputmode="numeric" min="0" max="365" step="1" required suffix="days" :value="$v('forfeiture_notice_days')" hint="Days the customer gets to pay after the notice, before forfeiture." />
+                        <x-settings.field name="default_tenure_months" id="ds-tenure" label="Tenure" type="number" inputmode="numeric" min="1" max="60" step="1" req required suffix="months" :value="$v('default_tenure_months')" />
+                        <x-settings.field name="default_min_lock_months" id="ds-lock" label="Lock-in" type="number" inputmode="numeric" min="0" max="60" step="1" req required suffix="months" :value="$v('default_min_lock_months')" hint="The loan cannot be closed early before this." />
+                        <x-settings.field name="grace_period_days" id="ds-grace" label="Grace period" type="number" inputmode="numeric" min="0" max="90" step="1" req required suffix="days" :value="$v('grace_period_days')" hint="Days after maturity before penalty applies and a forfeiture notice can be sent." />
+                        <x-settings.field name="forfeiture_notice_days" id="ds-notice" label="Forfeiture notice period" type="number" inputmode="numeric" min="0" max="365" step="1" req required suffix="days" :value="$v('forfeiture_notice_days')" hint="Days the customer gets to pay after the notice, before forfeiture." />
                     </div>
                 </x-settings.panel>
 

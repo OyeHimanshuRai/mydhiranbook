@@ -1,4 +1,4 @@
-<x-dhiran-layout title="Overdue Report">
+<x-dhiran-layout title="Overdue Report" list>
     <x-dhiran.page-header>
         <div>
             <h1 class="page-title">Overdue Loans Report</h1>
@@ -55,7 +55,7 @@
                                 <td data-label="Customer" class="font-medium text-slate-700">{{ $loan->customer?->name ?? '-' }}</td>
                                 <x-dhiran.mobile-cell :number="$loan->customer?->mobile" />
                                 <td data-label="Principal" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->principal_amount, 2) }}</td>
-                                <td data-label="Outstanding" class="whitespace-nowrap text-right font-semibold text-red-600">{{ \App\Support\IndianNumber::rupee($loan->totalOutstanding(), 2) }}</td>
+                                <td data-label="Outstanding" class="whitespace-nowrap text-right font-semibold">{{ \App\Support\IndianNumber::rupee($loan->totalOutstanding(), 2) }}</td>
                                 <td data-label="Days Overdue" data-cell="status" class="whitespace-nowrap text-center">
                                     @if($daysOverdue > 90)
                                         <span class="dh-status dh-status--danger">{{ $daysOverdue }}d</span>

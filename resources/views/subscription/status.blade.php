@@ -1,4 +1,4 @@
-<x-subscription-page title="Plan & billing">
+<x-subscription-page title="Plan & billing" footer>
 @if($hasShop)
     @vite('resources/css/dhiran-settings.css')
     <x-dhiran.page-header>

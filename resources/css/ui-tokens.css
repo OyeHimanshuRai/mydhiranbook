@@ -4,11 +4,11 @@
     /* spacing scale */
     --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px;
     /* radius */
-    --r-sm: 4px; --r-md: 6px; --r-lg: 6px; --r-pill: 999px;   /* khata: 6px components, hairlines, flat */
+    --r-sm: 6px; --r-md: 6px; --r-lg: 6px; --r-pill: 999px;   /* khata: 6px components, hairlines, flat */
     /* type */
     --font-body: var(--kh-font);
     --font-display: var(--kh-font-serif);
-    --fs-xs: 12px; --fs-sm: 14px; --fs-md: 16px; --fs-lg: 18px;
+    --fs-xs: var(--fs-meta);   /* --fs-sm/md/lg: the fluid scale in ui-fluid.css */
     --fs-xl: clamp(22px, 4vw, 28px); --fs-2xl: clamp(28px, 5.5vw, 40px); --fs-3xl: clamp(34px, 7vw, 58px);
     --lh-tight: 1.2; --lh-body: 1.6;
     --measure: 68ch;
