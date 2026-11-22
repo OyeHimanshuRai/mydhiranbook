@@ -96,4 +96,18 @@ class SiteTest extends TestCase
         $this->get('/pricing')->assertSee('build/assets/site-', false);
         $this->get('/register')->assertSee('build/assets/site-', false);
     }
+
+    /** Shared view code escapes at the sink: a title/description/label with markup is shown as text, never injected. */
+    public function test_shared_head_and_field_escape_their_input(): void
+    {
+        $head = view('site._head', ['title' => '<script>alert(1)</script>', 'description' => '"><script>x</script>'])->render();
+        $this->assertStringNotContainsString('<script>alert(1)</script>', $head);
+        $this->assertStringNotContainsString('"><script>x</script>', $head);
+        $this->assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $head);
+
+        view()->share('errors', new \Illuminate\Support\ViewErrorBag);
+        $field = \Illuminate\Support\Facades\Blade::render('<x-site.field name="n" label="<img src=x onerror=alert(1)>" />');
+        $this->assertStringNotContainsString('<img src=x', $field);
+        $this->assertStringContainsString('&lt;img src=x', $field);
+    }
 }
