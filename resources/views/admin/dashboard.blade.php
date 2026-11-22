@@ -1,11 +1,16 @@
 @extends('admin.layout') @section('title','Platform dashboard') @section('content')
-<div class="heading"><div><p class="eyebrow" style="margin-bottom:10px">CONTROL TOWER</p><h1>Dhiran platform.</h1><p>Shops, subscriptions and platform access.</p></div><span class="badge">MFA verified</span></div>
-<div class="metrics">
-<div class="metric"><span>Shops</span><strong>{{ $stats['shops'] }}</strong><span class="help">{{ $stats['active'] }} active · {{ $stats['suspended'] }} suspended</span></div>
-<div class="metric"><span>Entitled shops</span><strong>{{ $stats['entitled'] }}</strong></div>
-<div class="metric"><span>Paid, business not created</span><strong>{{ $stats['pending'] }}</strong></div>
-<div class="metric"><span>Collected this month</span><strong>₹{{ number_format((float)$stats['collected']) }}</strong></div>
-</div>
+@php $u=auth('platform_admin')->user(); @endphp
+<div class="adm-head"><div><h1>Dashboard</h1><p>Dhiran platform: shops, subscriptions and admin access.</p></div>@include('admin._badge',['s'=>'enabled','label'=>'MFA verified'])</div>
 @if($stats['unresolved'])<div class="notice error" role="alert"><a href="/admin/unresolved-payments">{{ $stats['unresolved'] }} captured payment(s) need review</a></div>@endif
-<section class="panel"><div class="panel-body"><p><a href="/admin/shops">Shops</a> · <a href="/admin/plans">Plans</a> · <a href="/admin/unresolved-payments">Unresolved payments</a></p><p class="muted">{{ $adminCount }} active platform admin(s).</p></div></section>
+<dl class="adm-stats">
+<div class="adm-stat"><dt>Shops</dt><dd>{{ $stats['shops'] }}</dd><small>{{ $stats['active'] }} active · {{ $stats['suspended'] }} suspended</small></div>
+<div class="adm-stat"><dt>Entitled shops</dt><dd>{{ $stats['entitled'] }}</dd><small>Paid or in grace</small></div>
+<div class="adm-stat"><dt>Paid, business not created</dt><dd>{{ $stats['pending'] }}</dd></div>
+<div class="adm-stat"><dt>Collected this month</dt><dd>₹{{ \App\Support\IndianNumber::format((float)$stats['collected'], 2) }}</dd></div>
+</dl>
+<section class="adm-panel"><div class="adm-panel-head"><h2>Go to</h2><p>{{ $adminCount }} active platform admin(s).</p></div><div class="adm-panel-body"><div class="adm-actions" style="margin:0">
+@if($u->hasPermission('can_manage_shops'))<a class="adm-btn adm-btn--ghost" href="/admin/shops">Shops</a>@endif
+@if($u->hasPermission('can_manage_plans'))<a class="adm-btn adm-btn--ghost" href="/admin/plans">Plans</a>@endif
+@if($u->hasPermission('can_manage_subscriptions'))<a class="adm-btn adm-btn--ghost" href="/admin/unresolved-payments">Unresolved payments</a>@endif
+</div></div></section>
 @endsection

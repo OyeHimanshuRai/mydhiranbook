@@ -1,3 +1,8 @@
 @extends('admin.auth') @section('title','Admin sign in') @section('content')
-<p class="admin-auth-eyebrow">PLATFORM ADMIN</p><h2 class="admin-auth-title">Sign in</h2><p class="admin-auth-copy">Use your Dhiran platform credentials.</p><form method="post" action="/admin/login" class="admin-auth-form">@csrf<div><label for="email" class="admin-auth-label">Admin email address</label><input id="email" type="email" name="email" value="{{ old('email') }}" class="admin-auth-input" autocomplete="username" required></div><div><label for="password" class="admin-auth-label">Password</label><input id="password" type="password" name="password" class="admin-auth-input" autocomplete="current-password" required></div><button class="admin-auth-submit">Continue to MFA</button></form><p class="footnote" style="margin-top:20px"><a href="/admin/forgot-password">Forgot password?</a></p><p class="footnote"><a href="/login">Shop sign in →</a></p>
+<h1>Platform sign in</h1><p class="lead">Use your Dhiran platform admin credentials. A second step follows.</p>
+<form method="post" action="/admin/login">@csrf
+@include('admin._field',['name'=>'email','label'=>'Admin email address','type'=>'email','attrs'=>['autocomplete'=>'username','required'=>'required','autocapitalize'=>'off','spellcheck'=>'false']])
+@include('admin._field',['name'=>'password','label'=>'Password','type'=>'password','attrs'=>['autocomplete'=>'current-password','required'=>'required']])
+<button class="adm-btn adm-btn--block">Continue to MFA</button></form>
+<p class="adm-auth-links"><a href="/admin/forgot-password">Forgot password?</a><a href="/login">Shop sign in →</a></p>
 @endsection

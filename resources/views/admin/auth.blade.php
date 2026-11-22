@@ -1,1 +1,22 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>@yield('title') · Dhiran platform</title><link rel="stylesheet" href="/app.css"><link rel="stylesheet" href="/admin.css"></head><body class="admin-auth-shell admin-auth-login-shell"><main class="admin-auth-login-panel"><section class="admin-auth-login-intro"><div><div class="admin-auth-brand-row"><span class="admin-auth-logo" aria-hidden="true">D</span><div><p class="admin-auth-eyebrow">Dhiran</p><h1 class="admin-auth-title">Control Tower</h1></div></div><p class="admin-auth-copy">Independent platform administration</p></div><div class="admin-auth-jewel" aria-hidden="true"><span class="admin-auth-jewel-ring"></span><span class="admin-auth-jewel-gem"></span><span class="admin-auth-jewel-shine"></span></div><div class="admin-auth-access-note">Platform access requires an admin account and MFA.</div></section><section class="admin-auth-card admin-auth-login-card">@include('flash')@yield('content')</section></main></body></html>
+@php $stray = collect($errors->messages())->except(['email', 'password', 'code'])->flatten(); @endphp
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#0f1b2d">
+<title>@yield('title') · Dhiran platform</title>
+<link rel="icon" href="/dhiran-favicon.svg">
+<script>document.documentElement.classList.add('js')</script>
+@vite('resources/css/admin.css')
+</head>
+<body class="adm adm-auth">
+<a href="#main" class="adm-skip">Skip to content</a>
+<a href="/admin/login" class="adm-auth-brand" aria-label="dhiran. platform admin">dhiran<span>.</span></a>
+<main class="adm-auth-card" id="main">
+    @if(session('success'))<div class="notice success" role="status">{{ session('success') }}</div>@endif
+    @if($stray->isNotEmpty())<div class="notice error" role="alert"><ul>@foreach($stray as $m)<li>{{ $m }}</li>@endforeach</ul></div>@endif
+    @yield('content')
+</main>
+<p class="adm-auth-foot">&copy; {{ date('Y') }} Dhiran · Platform admin</p>
+<script>var x=document.querySelector('[aria-invalid=true]');if(x)x.focus();</script>
+</body>
+</html>

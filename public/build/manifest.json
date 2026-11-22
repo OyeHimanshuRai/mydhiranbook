@@ -1,4 +1,13 @@
 {
+  "resources/css/admin.css": {
+    "file": "assets/admin-CKoZTp4g.css",
+    "src": "resources/css/admin.css",
+    "isEntry": true,
+    "name": "admin",
+    "names": [
+      "admin.css"
+    ]
+  },
   "resources/css/app.css": {
     "file": "assets/app-B5yYerYm.css",
     "src": "resources/css/app.css",
@@ -18,7 +27,7 @@
     ]
   },
   "resources/css/dhiran.css": {
-    "file": "assets/dhiran-s8nUtELD.css",
+    "file": "assets/dhiran-DAEVhkJZ.css",
     "src": "resources/css/dhiran.css",
     "isEntry": true,
     "name": "dhiran",

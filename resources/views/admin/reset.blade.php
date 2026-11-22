@@ -1,3 +1,8 @@
 @extends('admin.auth') @section('title','Set new admin password') @section('content')
-<h2 class="admin-auth-title">A new password.</h2><p class="admin-auth-copy">MFA stays enabled after password recovery.</p><form class="admin-auth-form" method="post" action="/admin/reset-password">@csrf<input type="hidden" name="token" value="{{ $token }}"><div><label for="email">Admin email</label><input id="email" name="email" type="email" value="{{ old('email',$email) }}" required></div><div><label for="password">New password · 12+ characters</label><input id="password" type="password" name="password" minlength="12" autocomplete="new-password" required></div><div><label for="password_confirmation">Confirm password</label><input id="password_confirmation" type="password" name="password_confirmation" autocomplete="new-password" required></div><button class="admin-auth-submit">Set password</button></form>
+<h1>Set a new password</h1><p class="lead">MFA stays enabled after password recovery.</p>
+<form method="post" action="/admin/reset-password">@csrf<input type="hidden" name="token" value="{{ $token }}">
+@include('admin._field',['name'=>'email','label'=>'Admin email','type'=>'email','value'=>$email,'attrs'=>['required'=>'required','autocomplete'=>'username','autocapitalize'=>'off','spellcheck'=>'false']])
+@include('admin._field',['name'=>'password','label'=>'New password','type'=>'password','help'=>'At least 12 characters.','attrs'=>['minlength'=>'12','autocomplete'=>'new-password','required'=>'required']])
+@include('admin._field',['name'=>'password_confirmation','label'=>'Confirm password','type'=>'password','attrs'=>['autocomplete'=>'new-password','required'=>'required']])
+<button class="adm-btn adm-btn--block">Set password</button></form>
 @endsection
