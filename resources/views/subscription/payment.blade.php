@@ -1,13 +1,13 @@
 <x-subscription-page title="Payment">
-<div class="content-inner">
-    <div class="sub-current" style="background:#fff;border:1px solid #e2e8f0;border-radius:9px;padding:24px;max-width:520px">
+<div class="ck ck-narrow">
+    <h1>Payment</h1>
+    <div class="ui-card">
         <h2>{{ $plan->name }}</h2>
-        <p class="total" style="font-size:32px;font-weight:600">₹{{ number_format($price) }} <small style="font-size:14px;font-weight:400">/ {{ $cycle === 'yearly' ? 'year' : 'month' }}</small></p>
-        <p class="muted">One payment through Razorpay. It does not renew by itself. The price is set on our server.</p>
-        @if($testMode)<p class="notice">Razorpay test mode: no real money moves.</p>@endif
-        <p id="pay-error" class="notice error" role="alert" hidden></p>
-        <button type="button" id="pay-btn" class="gold">Pay ₹{{ number_format($price) }}</button>
-        <a href="{{ route('subscription.status') }}" class="secondary button" style="margin-left:8px">Back</a>
+        <p class="ck-total">₹{{ number_format($price) }} <small>/ {{ $cycle === 'yearly' ? 'year' : 'month' }}</small></p>
+        <p class="lede">One payment through Razorpay. It does not renew by itself. The price is set on our server.</p>
+        @if($testMode)<p class="ui-notice">Razorpay test mode: no real money moves.</p>@endif
+        <p id="pay-error" class="ui-notice ui-notice--error" role="alert" hidden></p>
+        <div class="ck-actions"><button type="button" id="pay-btn" class="ui-btn ui-btn--gold">Pay ₹{{ number_format($price) }}</button><a href="{{ route('subscription.status') }}" class="ui-btn ui-btn--ghost">Back</a></div>
         <form id="pay-return" method="post" action="{{ route('subscription.payment.callback') }}" data-turbo="false" hidden>@csrf
             <input name="razorpay_order_id"><input name="razorpay_payment_id"><input name="razorpay_signature">
         </form>

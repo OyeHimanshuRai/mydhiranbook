@@ -58,6 +58,38 @@ class SiteTest extends TestCase
         $this->actingAs($this->newOwner())->followingRedirects()->get('/')->assertSee('Choose your Dhiran plan');
     }
 
+    public function test_every_public_auth_and_checkout_page_has_viewport_and_one_shared_footer(): void
+    {
+        (new PlanSeeder)->run();
+        $guest = array_merge(self::PAGES, ['/login', '/register', '/forgot-password', '/reset-password/abc?email=a@b.test']);
+        $pages = array_map(fn ($p) => $this->get($p), $guest);
+        $unverified = $this->newOwner(['email_verified_at' => null]);
+        $pages[] = $this->actingAs($unverified)->get(route('dhiran.verify-email'));
+        $owner = $this->newOwner();
+        foreach ([route('dhiran.plans'), route('subscription.status')] as $url) {
+            $pages[] = $this->actingAs($owner)->get($url);
+        }
+        $paid = $this->newOwner(); $this->paidShopless($paid);
+        $pages[] = $this->actingAs($paid)->get(route('dhiran.onboarding'));
+        foreach ($pages as $r) {
+                        $html = $r->assertOk()->getContent();
+            $this->assertSame(1, substr_count($html, '<footer class="site-footer"'), 'footer count');
+            $this->assertStringContainsString('<meta name="viewport"', $html);
+        }
+        $this->assertCount(14, $pages);
+    }
+
+    public function test_login_fields_are_wired_for_password_managers_and_errors(): void
+    {
+        $this->get('/login')->assertOk()
+            ->assertSee('autocomplete="username"', false)->assertSee('autocomplete="current-password"', false)
+            ->assertSee('data-reveal', false)->assertSee('Forgot password?')->assertDontSee('admin/login', false);
+        foreach (array_merge(self::PAGES, ['/register', '/forgot-password']) as $p) { $this->get($p)->assertDontSee('admin/login', false); }
+        $this->from('/login')->post('/login', ['email' => 'nobody@example.test', 'password' => 'wrong-password-1'])
+            ->assertRedirect('/login');
+        $this->get('/login')->assertSee('id="email-err"', false)->assertSee('aria-invalid="true"', false)->assertSee('aria-describedby="email-err"', false);
+    }
+
     public function test_footer_is_styled_on_shop_layout_pages(): void
     {
         $this->get('/register')->assertSee('site-', false);

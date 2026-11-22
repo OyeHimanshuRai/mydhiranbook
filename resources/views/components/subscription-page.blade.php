@@ -1,11 +1,11 @@
 @props(['title' => 'Subscription'])
 @if(auth()->user()?->shop_id)
-<x-dhiran-layout :title="$title">{{ $slot }}@include('site._footer')</x-dhiran-layout>
+<x-dhiran-layout :title="$title"><div class="ck-shell">{{ $slot }}</div>@include('site._footer')@include('site._js')</x-dhiran-layout>
 @else
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ $title }} · Dhiran</title><link rel="stylesheet" href="/app.css"></head><body><main class="workspace" style="max-width:960px">
-<div class="brand" style="color:inherit;margin-bottom:24px">dhiran<span>.</span></div>
-@include('flash')@if(session('error'))<div class="notice error" role="alert">{{ session('error') }}</div>@endif
-{{ $slot }}
-<form method="post" action="{{ route('logout') }}" style="margin-top:32px">@csrf<button class="secondary small">Sign out</button></form>
-</main>@include('site._footer')</body></html>
+<!doctype html><html lang="en"><head>@include('site._head', ['title' => e($title)])</head><body class="site">
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-head site-head--mini"><div class="site-head-in"><a href="/" class="brand">dhiran<span>.</span></a><form method="post" action="{{ route('logout') }}">@csrf<button class="ui-btn ui-btn--onnavy">Sign out</button></form></div></header>
+<main id="main" class="site-main ck-main">@if(session('success'))<div class="ui-notice ui-notice--success" role="status">{{ session('success') }}</div>@endif @if($errors->any())<div class="ui-notice ui-notice--error" role="alert"><ul class="ck-list">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif @if(session('error'))<div class="ui-notice ui-notice--error" role="alert">{{ session('error') }}</div>@endif
+{{ $slot }}</main>
+@include('site._footer', ['siteCss' => true])@include('site._js')</body></html>
 @endif

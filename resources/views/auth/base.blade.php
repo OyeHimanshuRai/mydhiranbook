@@ -1,1 +1,6 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>@yield('title') · Dhiran</title><link rel="stylesheet" href="/app.css"></head><body><main class="auth-page"><section class="auth-intro"><div class="brand">dhiran<span>.</span></div><div><div class="rule"></div><h1>A clear book.<br>A confident day.</h1><p>Borrowers, pledges and repayments.<br>Every detail, in its place.</p></div><footer class="eyebrow">YOUR INDEPENDENT PLEDGE BOOK</footer></section><section class="auth-form">@include('flash')@yield('content')@include('site._footer')</section></main></body></html>
+@extends('site.layout')
+@section('bodyclass', 'auth')
+@section('shell')
+<aside class="auth-brand"><a href="/" class="brand" aria-label="Dhiran home">dhiran<span>.</span></a><div><div class="auth-rule"></div><h2>A clear book.<br>A confident day.</h2><p>Borrowers, pledges and repayments. Every detail, in its place.</p></div><p class="ui-eyebrow">Your independent pledge book</p></aside>
+<div class="auth-side"><main id="main" class="auth-main"><div class="auth-card">@if(session('success'))<div class="ui-notice ui-notice--success" role="status">{{ session('success') }}</div>@endif @yield('content')</div></main>@include('site._footer', ['siteCss' => true])</div>
+@endsection

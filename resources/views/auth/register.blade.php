@@ -1,6 +1,15 @@
 @extends('auth.base') @section('title','Create an account') @section('content')
-<p class="eyebrow">A FRESH START</p><h1>Your own book.</h1><p class="muted">Create your Dhiran owner account. You choose a plan and set up your business next.</p><form method="post" action="/register">@csrf
-@foreach(['name'=>['Your name','text','name'],'email'=>['Email address','email','email'],'mobile'=>['Mobile number (10 digits)','tel','tel']] as $field=>[$label,$type,$ac])<div class="field"><label for="{{ $field }}">{{ $label }}</label><input id="{{ $field }}" name="{{ $field }}" value="{{ old($field) }}" type="{{ $type }}" autocomplete="{{ $ac }}" required></div>@endforeach
-<div class="field"><label for="password">Password · at least 12 characters</label><input id="password" name="password" type="password" minlength="12" autocomplete="new-password" required></div><div class="field"><label for="password_confirmation">Confirm password</label><input id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" required></div>
-<div class="field"><label><input type="checkbox" name="terms" value="1" required @checked(old('terms'))> I accept the <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</label></div><button class="gold">Create account</button></form><p class="footnote">Already have an account? <a href="/login">Sign in</a></p>
+<h1>Your own book.</h1><p class="lede">Create your Dhiran owner account. You choose a plan and set up your business next.</p>
+<form method="post" action="/register" data-once>@csrf
+<fieldset class="ui-group"><legend>About you</legend>
+<x-site.field name="name" label="Your name" :value="old('name')" required autocomplete="name" />
+<x-site.field name="email" label="Email address" type="email" :value="old('email')" required autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" />
+<x-site.field name="mobile" label="Mobile number" type="tel" :value="old('mobile')" required autocomplete="tel" inputmode="tel" hint="10-digit Indian mobile number." /></fieldset>
+<fieldset class="ui-group"><legend>Secure your account</legend>
+<x-site.field name="password" label="Password" password required minlength="12" autocomplete="new-password" hint="At least 12 characters." />
+<x-site.field name="password_confirmation" label="Confirm password" password required autocomplete="new-password" /></fieldset>
+<label class="ui-check{{ $errors->has('terms') ? ' has-err' : '' }}"><input type="checkbox" name="terms" value="1" required @checked(old('terms')) @if($errors->has('terms')) aria-invalid="true" aria-describedby="terms-err" @endif><span>I accept the <a href="/terms" target="_blank" rel="noopener">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a><span class="sr-only"> (open in new tabs)</span>.</span></label>
+@error('terms')<p id="terms-err" class="ui-err" role="alert">{{ $message }}</p>@enderror
+<button class="ui-btn ui-btn--gold ui-btn--block ui-submit" data-busy="Creating account…">Create account</button></form>
+<div class="auth-alt"><span>Already have an account?</span><a href="/login" class="ui-btn ui-btn--ghost ui-btn--block">Sign in</a></div>
 @endsection

@@ -1,6 +1,9 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>@yield('title') · Dhiran</title><meta name="description" content="@yield('description', 'Dhiran is pledge-loan management software for Indian jewellers and pawn-lending shops.')"><link rel="icon" href="/dhiran-favicon.svg"><link rel="stylesheet" href="/app.css">@vite('resources/css/site.css')</head><body class="site">
+<!doctype html><html lang="en"><head>@include('site._head', ['title' => $__env->yieldContent('title'), 'description' => $__env->yieldContent('description')])</head><body class="site @yield('bodyclass')">
 <a class="skip" href="#main">Skip to content</a>
-<header class="site-head"><a href="/" class="brand">dhiran<span>.</span></a><nav aria-label="Main"><a href="/pricing">Pricing</a><a href="/contact">Contact</a><a href="/login">Sign in</a><a href="/register" class="button gold small">Get started</a></nav></header>
-<main id="main">@yield('content')</main>
+@hasSection('shell')@yield('shell')@else
+<header class="site-head"><div class="site-head-in"><a href="/" class="brand">dhiran<span>.</span></a><button type="button" class="site-burger" data-menu aria-expanded="false" aria-controls="site-nav">Menu</button><nav id="site-nav" class="site-nav" aria-label="Main"><a href="/pricing" @if(request()->is('pricing')) aria-current="page" @endif>Pricing</a><a href="/contact" @if(request()->is('contact')) aria-current="page" @endif>Contact</a><a href="/login">Sign in</a><a href="/register" class="ui-btn ui-btn--gold ui-btn--sm">Get started</a></nav></div></header>
+<main id="main" class="site-main">@yield('content')</main>
 @include('site._footer', ['siteCss' => true])
+@endif
+@include('site._js')@stack('scripts')
 </body></html>
