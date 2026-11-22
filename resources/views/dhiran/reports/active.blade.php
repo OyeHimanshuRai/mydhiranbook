@@ -17,9 +17,9 @@
         <turbo-frame id="dh-results" target="_top">
         {{-- Summary Cards --}}
         <div class="dh-stats">
-            <x-dhiran.stat label="Total Active" :value="$totals['count']" icon="file" total="count" />
-            <x-dhiran.stat money label="Total Principal" :value="\App\Support\IndianNumber::format($totals['principal'], 2)" icon="dollar-sign" total="principal" />
-            <x-dhiran.stat money label="Total Outstanding" :value="\App\Support\IndianNumber::format($totals['outstanding'], 2)" icon="trending-up" total="outstanding" />
+            <x-dhiran.stat label="Total Active" :value="$totals['count']" total="count" />
+            <x-dhiran.stat money label="Total Principal" :value="\App\Support\IndianNumber::format($totals['principal'], 2)" total="principal" />
+            <x-dhiran.stat money label="Total Outstanding" :value="\App\Support\IndianNumber::format($totals['outstanding'], 2)" total="outstanding" />
         </div>
 
         {{-- Table --}}
@@ -50,8 +50,8 @@
                                 <td data-label="Customer" class="font-medium text-slate-700">{{ $loan->customer?->name ?? '-' }}</td>
                                 <x-dhiran.mobile-cell :number="$loan->customer?->mobile" />
                                 <td data-label="Loan Date" data-low="1" class="whitespace-nowrap">{{ $loan->loan_date?->format('d M Y') ?? '-' }}</td>
-                                <td data-label="Principal" class="whitespace-nowrap text-right">₹{{ \App\Support\IndianNumber::format((float) $loan->principal_amount, 2) }}</td>
-                                <td data-label="Outstanding" class="whitespace-nowrap text-right font-semibold {{ $loan->totalOutstanding() > 0 ? 'text-red-600' : 'text-green-600' }}">₹{{ \App\Support\IndianNumber::format($loan->totalOutstanding(), 2) }}</td>
+                                <td data-label="Principal" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->principal_amount, 2) }}</td>
+                                <td data-label="Outstanding" class="whitespace-nowrap text-right font-semibold {{ $loan->totalOutstanding() > 0 ? 'text-red-600' : 'text-green-600' }}">{{ \App\Support\IndianNumber::rupee($loan->totalOutstanding(), 2) }}</td>
                                 <td data-label="Interest Rate" data-low="1" class="whitespace-nowrap text-right">{{ number_format((float) $loan->interest_rate_monthly, 2) }}%/mo</td>
                                 <td data-label="Maturity Date" class="whitespace-nowrap">{{ $loan->maturity_date?->format('d M Y') ?? '-' }}</td>
                                 <td data-label="Days to Maturity" data-cell="status" class="whitespace-nowrap text-center">

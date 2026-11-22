@@ -71,7 +71,7 @@
                                             <a href="{{ route('dhiran.loans') }}" class="btn btn-secondary btn-sm">Clear search and filters</a>
                                         </x-dhiran.empty>
                                     @else
-                                        <x-dhiran.empty icon="dollar-sign" title="No loans yet" text="Pledge loans you create will be listed here.">
+                                        <x-dhiran.empty icon="inbox" title="No loans yet" text="Pledge loans you create will be listed here.">
                                             <a href="{{ route('dhiran.create') }}" class="btn btn-primary btn-sm">Create the first loan</a>
                                         </x-dhiran.empty>
                                     @endif

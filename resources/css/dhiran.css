@@ -1905,15 +1905,15 @@ body:has(.dh-auth-panel) {
 }
 
 .dh-app :is(.page-title, h1) {
-    font-size: 22px;
-    line-height: 1.22;
+    font-size: var(--fl-fs-h1);
+    line-height: var(--fl-lh-head);
     font-weight: 700;
     letter-spacing: 0;
     color: var(--dh-ink);
 }
 
 .dh-app :is(h2, .dh-section-title, .dset-section-title, .dr-report-title, .dh-auth-title) {
-    font-size: 16px;
+    font-size: var(--fl-fs-h2);
     line-height: 1.3;
     font-weight: 600;
     letter-spacing: 0;
@@ -2005,13 +2005,10 @@ body:has(.dh-auth-panel) {
 }
 
 @media (max-width: 720px) {
-    .dh-app :is(.page-title, h1) {
-        font-size: 18px;
-        line-height: 1.2;
-    }
+    
 
     .dh-app :is(h2, .dh-section-title, .dset-section-title, .dr-report-title, .dh-auth-title) {
-        font-size: 15px;
+        font-size: var(--fl-fs-h2);
     }
 
     .dh-app :is(.dd-kpi-value, .ds-fin-value) {
@@ -2507,7 +2504,7 @@ turbo-frame#dh-results { display: contents; }
     transition: background-color 150ms var(--ease-out), color 150ms var(--ease-out);
 }
 .dh-nav-link svg { flex: none; width: 20px; height: 20px; }
-.dh-nav-text { min-width: 0; overflow-wrap: anywhere; }
+.dh-nav-text { min-width: 0; overflow-wrap: break-word; }
 .dh-nav-link:hover { background: var(--dh-sidebar-hover); color: var(--dh-sidebar-ink-strong); }
 .dh-nav-link.active, .dh-nav-link.active:hover { background: var(--dh-sidebar-active); color: var(--dh-sidebar-active-ink); font-weight: 700; }
 .dh-foot { display: grid; gap: var(--sp-2); padding-top: var(--sp-3); border-top: 1px solid var(--dh-sidebar-line); }
@@ -2528,16 +2525,16 @@ turbo-frame#dh-results { display: contents; }
 .dh-main:focus { outline: none; }
 /* Top bar: menu button (phones only), title, page actions. Sticky on phones, where the document scrolls. */
 .dh-page-header, .content-header {
-    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; flex: none; display: flex; flex-wrap: nowrap; align-items: center;
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; flex: none; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
     min-height: var(--dh-head); margin: 0; padding: var(--sp-2) var(--dh-pad);
     background: var(--dh-header); border-bottom: 2px solid var(--dh-highlight); box-shadow: var(--dh-shadow-soft);
 }
 .dh-app .dh-page-header > .dh-page-header-content { display: flex; align-items: center; flex: 1 1 auto; gap: var(--sp-3); min-width: 0; }
 .dh-header-mobile-fab { margin-left: var(--sp-3); }
-.dh-app .dh-page-header-content > :not(.dh-header-toggle):not(.page-actions) { flex: 1 1 auto; min-width: 0; }
+.dh-app .dh-page-header-content > :not(.dh-header-toggle):not(.page-actions) { flex: 1 1 0; min-width: 0; }
 .page-title {
     margin: 0; max-width: 100%; color: var(--dh-ink); font-size: var(--fl-fs-h1); line-height: var(--fl-lh-head);
-    font-weight: 700; letter-spacing: -0.01em; overflow-wrap: anywhere; text-wrap: balance;
+    font-weight: 700; letter-spacing: -0.01em; overflow-wrap: break-word; text-wrap: balance;
 }
 .page-subtitle, .dh-page-header p { display: none; margin: 2px 0 0; color: var(--dh-muted); font-size: var(--fl-fs-body); line-height: 1.35; }
 .dh-app .page-actions, .dh-app .dh-action-bar { display: flex; width: auto; max-width: none; flex: 0 1 auto; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--sp-2); min-width: 0; }
@@ -2591,13 +2588,14 @@ turbo-frame#dh-results { display: contents; }
     .page-actions .dh-header-pinned-action[data-dh-mobile-label] { font-size: 0; gap: 0; }
     .page-actions .dh-header-pinned-action[data-dh-mobile-label]::after { content: attr(data-dh-mobile-label); font-size: var(--fl-fs-body); }
     .page-actions .dh-header-pinned-action[data-dh-mobile-label] svg { margin-right: var(--sp-1) !important; }
-}
-/* Narrow phones: the pinned main action shrinks to its icon so the page title keeps room (its text stays for screen readers). */
-@media (max-width: 400px) {
-    .dh-app .page-actions .btn-primary.dh-header-pinned-action:not([data-dh-mobile-label]) { width: var(--tap); padding: 0; gap: 0; font-size: 0; }
-    .dh-app .page-actions .btn-primary.dh-header-pinned-action svg { width: 20px; height: 20px; margin: 0 !important; }
     .dh-footer { justify-content: center; text-align: center; }
     .dh-footer nav { justify-content: center; }
+}
+/* Narrow phones: pinned actions that have an icon shrink to it so the page title keeps room (their text stays for screen readers). */
+@media (max-width: 400px) {
+    .dh-app .page-actions .dh-header-pinned-action:has(svg) { width: var(--tap); padding: 0; gap: 0; font-size: 0; }
+    .dh-app .page-actions .dh-header-pinned-action:has(svg)::after { content: none; }
+    .dh-app .page-actions .dh-header-pinned-action svg { width: 20px; height: 20px; margin: 0 !important; }
 }
 
 /* ---- tablet (768-1023): the menu stays in view as an icon rail with a label under each icon ---- */
@@ -2623,10 +2621,9 @@ turbo-frame#dh-results { display: contents; }
 }
 @media (min-width: 1024px) { .page-subtitle, .dh-page-header p { display: block; } }
 
-/* Phones: the page's secondary actions sit in a "More actions" menu at the right end of the top bar (the primary
+/* Phones (and tablets with more than three actions): the page's secondary actions sit in a "More actions" menu at the right end of the top bar (the primary
    action stays visible next to the title). Nothing floats over the list, so cards and the footer are never covered. */
-.dh-header-mobile-fab { display: none; flex: none; width: var(--tap); }
-@media (max-width: 640px) { .dh-header-mobile-fab { display: block; } }
+.dh-header-mobile-fab { display: block; flex: none; width: var(--tap); } /* x-show hides it when the page has nothing to fold in */
 .dh-header-mobile-fab-shell { width: var(--tap); }
 .dh-header-mobile-fab-nav {
     position: absolute; top: 100%; right: var(--dh-pad); z-index: 5; display: flex; flex-direction: column; gap: var(--sp-1);
@@ -2728,7 +2725,7 @@ turbo-frame#dh-results { display: contents; }
 @container dhl (min-width: 560px) and (max-width: 899px) { .dh-app table.dh-stack [data-low="2"], .dh-app table.dh-stack .dh-act-extra { display: none; } }
 
 /* Narrow tables: tighter cell padding so the kept columns fit without sideways scrolling. */
-@container dhl (min-width: 560px) and (max-width: 1039px) {
+@container dhl (min-width: 560px) and (max-width: 1239px) {
     .dh-app table.dh-stack > :is(thead, tbody, tfoot) > tr > :is(th, td) { padding-inline: var(--sp-2); }
 }
 
@@ -2791,14 +2788,12 @@ turbo-frame#dh-results { display: contents; }
 .dh-empty-text { margin: 0; max-width: 44ch; color: var(--dh-muted); font-size: var(--fl-fs-body); line-height: var(--fl-lh-body); }
 .dh-empty .btn { margin-top: var(--sp-2); }
 
-/* Summary tiles (report totals): one tile, one grid. Phones show two across and drop the icon. */
+/* Summary tiles (report totals): one tile, one grid; two across on phones, one below 340px. */
 .dh-app .dh-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: var(--sp-3); margin-bottom: var(--sp-5); }
 .dh-app .dh-stat {
-    display: flex; align-items: center; gap: var(--sp-3); min-width: 0; padding: var(--fl-card-pad);
+    min-width: 0; padding: var(--fl-card-pad);
     background: var(--dh-card); border: 1px solid var(--dh-card-border); border-radius: var(--dh-card-radius); box-shadow: var(--dh-card-shadow);
 }
-.dh-app .dh-stat-icon { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: var(--r-sm); background: var(--dh-icon-soft); color: var(--dh-icon); }
-.dh-app .dh-stat-body { min-width: 0; }
 .dh-app .dh-stat-label { margin: 0; color: var(--dh-muted); font-size: var(--fl-fs-meta); font-weight: 600; line-height: 1.3; }
 .dh-app .dh-stat-value { margin: 2px 0 0; color: var(--dh-ink); font-size: var(--fl-fs-h2); font-weight: 700; line-height: var(--fl-lh-head); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .dh-app .dh-stat-cur { margin-right: 2px; font-weight: 600; }
@@ -2808,7 +2803,6 @@ turbo-frame#dh-results { display: contents; }
 @media (max-width: 480px) {
     .dh-app .dh-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2); margin-bottom: var(--sp-4); }
     .dh-app .dh-stat { padding: var(--sp-3); }
-    .dh-app .dh-stat-icon { display: none; }
     .dh-app .dh-stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
 }
 @media (max-width: 340px) { .dh-app .dh-stats { grid-template-columns: minmax(0, 1fr); } }

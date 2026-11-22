@@ -19,8 +19,8 @@
 
         {{-- Summary Cards --}}
         <div class="dh-stats">
-            <x-dhiran.stat money label="Interest Collected" :value="\App\Support\IndianNumber::format($totalInterest, 2)" icon="dollar-sign" tone="success" />
-            <x-dhiran.stat money label="Penalty Collected" :value="\App\Support\IndianNumber::format($totalPenalty, 2)" icon="triangle-alert" />
+            <x-dhiran.stat money label="Interest Collected" :value="\App\Support\IndianNumber::format($totalInterest, 2)" tone="success" />
+            <x-dhiran.stat money label="Penalty Collected" :value="\App\Support\IndianNumber::format($totalPenalty, 2)" />
         </div>
 
         {{-- Table --}}
@@ -50,10 +50,10 @@
                                 </td>
                                 <td data-label="Customer" class="font-medium text-slate-700">{{ $payment->loan?->customer?->name ?? '-' }}</td>
                                 <x-dhiran.mobile-cell :number="$payment->loan?->customer?->mobile" />
-                                <td data-label="Amount" class="whitespace-nowrap text-right font-semibold">₹{{ \App\Support\IndianNumber::format((float) $payment->amount, 2) }}</td>
-                                <td data-label="Interest" class="whitespace-nowrap text-right text-green-600">₹{{ \App\Support\IndianNumber::format((float) $payment->interest_component, 2) }}</td>
-                                <td data-label="Penalty" class="whitespace-nowrap text-right">₹{{ \App\Support\IndianNumber::format((float) $payment->penalty_component, 2) }}</td>
-                                <td data-label="Principal" class="whitespace-nowrap text-right">₹{{ \App\Support\IndianNumber::format((float) $payment->principal_component, 2) }}</td>
+                                <td data-label="Amount" class="whitespace-nowrap text-right font-semibold">{{ \App\Support\IndianNumber::rupee((float) $payment->amount, 2) }}</td>
+                                <td data-label="Interest" class="whitespace-nowrap text-right text-green-600">{{ \App\Support\IndianNumber::rupee((float) $payment->interest_component, 2) }}</td>
+                                <td data-label="Penalty" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $payment->penalty_component, 2) }}</td>
+                                <td data-label="Principal" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $payment->principal_component, 2) }}</td>
                             </tr>
                         @empty
                             <tr>
@@ -71,10 +71,10 @@
                             <td data-low="1"></td>
                             <td colspan="3">Totals ({{ $payments->total() }} payments)</td>
                             <td data-low="2"></td>
-                            <td class="text-right">₹{{ \App\Support\IndianNumber::format($footer['amount'], 2) }}</td>
-                            <td class="text-right">₹{{ \App\Support\IndianNumber::format($footer['interest'], 2) }}</td>
-                            <td class="text-right">₹{{ \App\Support\IndianNumber::format($footer['penalty'], 2) }}</td>
-                            <td class="text-right">₹{{ \App\Support\IndianNumber::format($footer['principal'], 2) }}</td>
+                            <td class="text-right">{{ \App\Support\IndianNumber::rupee($footer['amount'], 2) }}</td>
+                            <td class="text-right">{{ \App\Support\IndianNumber::rupee($footer['interest'], 2) }}</td>
+                            <td class="text-right">{{ \App\Support\IndianNumber::rupee($footer['penalty'], 2) }}</td>
+                            <td class="text-right">{{ \App\Support\IndianNumber::rupee($footer['principal'], 2) }}</td>
                         </tr>
                     </tfoot>
                     @endif

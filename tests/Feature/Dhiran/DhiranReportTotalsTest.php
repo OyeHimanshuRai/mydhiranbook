@@ -91,15 +91,15 @@ class DhiranReportTotalsTest extends TestCase
         $period = array_sum(range(10201, 10232));
 
         $page1 = $this->render('reportCashbook', ['from' => $from->toDateString(), 'to' => now()->toDateString(), 'per_page' => 20]);
-        $this->assertStringContainsString('data-report-total="opening">' . \App\Support\IndianNumber::format($opening, 2) . '<', $page1);
+        $this->assertStringContainsString('data-report-total="opening">' . \App\Support\IndianNumber::format(abs($opening), 2) . '<', $page1);
         $this->assertStringContainsString('data-report-total="out">' . \App\Support\IndianNumber::format($period, 2) . '<', $page1);
-        $this->assertStringContainsString('data-report-total="closing">' . \App\Support\IndianNumber::format($opening - $period, 2) . '<', $page1);
+        $this->assertStringContainsString('data-report-total="closing">' . \App\Support\IndianNumber::format(abs($opening - $period), 2) . '<', $page1);
         $this->assertStringContainsString('page=2', $page1);
 
         // Page 2's first row continues from the 20 rows before it.
         $page2 = $this->render('reportCashbook', ['from' => $from->toDateString(), 'to' => now()->toDateString(), 'per_page' => 20, 'page' => 2]);
         $afterRow21 = $opening - array_sum(range(10201, 10221));
-        $this->assertStringContainsString('data-running-balance>' . \App\Support\IndianNumber::format($afterRow21, 2) . '<', $page2);
+        $this->assertStringContainsString('data-running-balance>' . \App\Support\IndianNumber::rupee($afterRow21, 2) . '<', $page2);
     }
 
     public function test_profitability_has_a_period_picker_pages_and_totals_every_loan(): void

@@ -24,12 +24,12 @@
 
         {{-- Summary Cards --}}
         <div class="dh-stats">
-            <x-dhiran.stat money label="Opening balance" :value="\App\Support\IndianNumber::format($totals['opening'], 2)" icon="wallet" total="opening"
+            <x-dhiran.stat money label="Opening balance" :value="\App\Support\IndianNumber::format($totals['opening'], 2)" total="opening"
                 :sub="'Before ' . \Illuminate\Support\Carbon::parse($fromDate)->format('d M Y')" />
-            <x-dhiran.stat money label="Total inflows" :value="\App\Support\IndianNumber::format($totals['in'], 2)" icon="trending-up" total="in" tone="success" />
-            <x-dhiran.stat money label="Total outflows" :value="\App\Support\IndianNumber::format($totals['out'], 2)" icon="trending-down" total="out" tone="danger" />
-            <x-dhiran.stat money label="Closing balance" :value="\App\Support\IndianNumber::format($totals['closing'], 2)" icon="chart-no-axes-column" total="closing"
-                :tone="$totals['closing'] >= 0 ? null : 'danger'" :sub="'Net ' . \App\Support\IndianNumber::format($totals['net'], 2) . ' in this period'" />
+            <x-dhiran.stat money label="Total inflows" :value="\App\Support\IndianNumber::format($totals['in'], 2)" total="in" tone="success" />
+            <x-dhiran.stat money label="Total outflows" :value="\App\Support\IndianNumber::format($totals['out'], 2)" total="out" tone="danger" />
+            <x-dhiran.stat money label="Closing balance" :value="\App\Support\IndianNumber::format($totals['closing'], 2)" total="closing"
+                :tone="$totals['closing'] >= 0 ? null : 'danger'" :sub="'Net ' . \App\Support\IndianNumber::rupee($totals['net'], 2) . ' in this period'" />
         </div>
 
         {{-- Table --}}
@@ -78,11 +78,11 @@
                                 </td>
                                 <td data-label="Source" data-low="1" class="whitespace-nowrap">{{ ucfirst(str_replace('_', ' ', $entry->source_type ?? '-')) }}</td>
                                 <td data-label="Amount" class="whitespace-nowrap text-right font-semibold {{ $entry->type === 'in' ? 'text-green-600' : 'text-red-600' }}">
-                                    {{ $entry->type === 'in' ? '+' : '-' }}{{ \App\Support\IndianNumber::format((float) $entry->amount, 2) }}
+                                    {{ $entry->type === 'in' ? '+' : '-' }}₹{{ \App\Support\IndianNumber::format((float) $entry->amount, 2) }}
                                 </td>
                                 <td data-label="Method" class="whitespace-nowrap">{{ \App\Models\Dhiran\DhiranPayment::methodLabel($entry->payment_method) }}</td>
                                 <td data-label="Description" data-low="1">{{ $entry->description ?? '-' }}</td>
-                                <td data-label="Running Balance" class="whitespace-nowrap text-right font-medium {{ $runningBalance >= 0 ? '' : 'text-red-600' }}" data-running-balance>{{ $showRunning ? \App\Support\IndianNumber::format($runningBalance, 2) : '—' }}</td>
+                                <td data-label="Running Balance" class="whitespace-nowrap text-right font-medium {{ $runningBalance >= 0 ? '' : 'text-red-600' }}" data-running-balance>{{ $showRunning ? \App\Support\IndianNumber::rupee($runningBalance, 2) : '—' }}</td>
                             </tr>
                         @empty
                             <tr>
@@ -100,10 +100,10 @@
                             <td data-low="1"></td>
                             <td colspan="3">Period totals ({{ $entries->total() }} entries)</td>
                             <td data-low="1"></td>
-                            <td class="text-right">Net: ₹{{ \App\Support\IndianNumber::format($totals['net'], 2) }}</td>
+                            <td class="text-right">Net: {{ \App\Support\IndianNumber::rupee($totals['net'], 2) }}</td>
                             <td></td>
                             <td data-low="1"></td>
-                            <td class="text-right {{ $totals['closing'] >= 0 ? '' : 'text-red-600' }}">Closing: ₹{{ \App\Support\IndianNumber::format($totals['closing'], 2) }}</td>
+                            <td class="text-right {{ $totals['closing'] >= 0 ? '' : 'text-red-600' }}">Closing: {{ \App\Support\IndianNumber::rupee($totals['closing'], 2) }}</td>
                         </tr>
                     </tfoot>
                     @endif

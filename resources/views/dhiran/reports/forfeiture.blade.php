@@ -45,8 +45,8 @@
                                 </td>
                                 <td data-label="Customer" class="font-medium text-slate-700">{{ $loan->customer?->name ?? '-' }}</td>
                                 <x-dhiran.mobile-cell :number="$loan->customer?->mobile" />
-                                <td data-label="Principal" class="whitespace-nowrap text-right">₹{{ \App\Support\IndianNumber::format((float) $loan->principal_amount, 2) }}</td>
-                                <td data-label="Written Off Amount" class="whitespace-nowrap text-right font-semibold text-red-600">₹{{ \App\Support\IndianNumber::format($writtenOff, 2) }}</td>
+                                <td data-label="Principal" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->principal_amount, 2) }}</td>
+                                <td data-label="Written Off Amount" class="whitespace-nowrap text-right font-semibold text-red-600">{{ \App\Support\IndianNumber::rupee($writtenOff, 2) }}</td>
                                 <td data-label="Items Count" data-low="1" class="whitespace-nowrap text-center">{{ $itemsCount }}</td>
                                 <td data-label="Forfeiture Date" class="whitespace-nowrap">{{ $loan->forfeited_at?->format('d M Y') ?? '-' }}</td>
                                 <td data-label="Notice Sent Date" data-low="1" class="whitespace-nowrap">
@@ -74,8 +74,8 @@
                             <td data-low="1"></td>
                             <td colspan="2">Totals ({{ $totals['count'] }} loans)</td>
                             <td data-low="2"></td>
-                            <td class="text-right" data-report-total="principal">₹{{ \App\Support\IndianNumber::format($totals['principal'], 2) }}</td>
-                            <td class="text-right" data-report-total="outstanding">₹{{ \App\Support\IndianNumber::format($totals['outstanding'], 2) }}</td>
+                            <td class="text-right" data-report-total="principal">{{ \App\Support\IndianNumber::rupee($totals['principal'], 2) }}</td>
+                            <td class="text-right" data-report-total="outstanding">{{ \App\Support\IndianNumber::rupee($totals['outstanding'], 2) }}</td>
                             <td data-low="1" class="text-center">{{ $totals['items'] }}</td>
                             <td></td>
                             <td data-low="1"></td>

@@ -17,8 +17,8 @@
         <turbo-frame id="dh-results" target="_top">
         {{-- Summary Cards --}}
         <div class="dh-stats">
-            <x-dhiran.stat label="Total Overdue" :value="$totals['count']" icon="triangle-alert" total="count" />
-            <x-dhiran.stat money label="Total Overdue Amount" :value="\App\Support\IndianNumber::format($totals['outstanding'], 2)" icon="dollar-sign" total="outstanding" tone="danger" />
+            <x-dhiran.stat label="Total Overdue" :value="$totals['count']" total="count" />
+            <x-dhiran.stat money label="Total Overdue Amount" :value="\App\Support\IndianNumber::format($totals['outstanding'], 2)" total="outstanding" tone="danger" />
         </div>
 
         {{-- Table --}}
@@ -54,8 +54,8 @@
                                 </td>
                                 <td data-label="Customer" class="font-medium text-slate-700">{{ $loan->customer?->name ?? '-' }}</td>
                                 <x-dhiran.mobile-cell :number="$loan->customer?->mobile" />
-                                <td data-label="Principal" class="whitespace-nowrap text-right">₹{{ \App\Support\IndianNumber::format((float) $loan->principal_amount, 2) }}</td>
-                                <td data-label="Outstanding" class="whitespace-nowrap text-right font-semibold text-red-600">₹{{ \App\Support\IndianNumber::format($loan->totalOutstanding(), 2) }}</td>
+                                <td data-label="Principal" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->principal_amount, 2) }}</td>
+                                <td data-label="Outstanding" class="whitespace-nowrap text-right font-semibold text-red-600">{{ \App\Support\IndianNumber::rupee($loan->totalOutstanding(), 2) }}</td>
                                 <td data-label="Days Overdue" data-cell="status" class="whitespace-nowrap text-center">
                                     @if($daysOverdue > 90)
                                         <span class="dh-status dh-status--danger">{{ $daysOverdue }}d</span>

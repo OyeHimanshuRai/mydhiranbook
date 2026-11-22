@@ -18,4 +18,12 @@ final class IndianNumber
 
         return $sign . $int . ($dec !== null ? '.' . $dec : '');
     }
+
+    /** Rupee amount for display: sign first, then the symbol, lakh grouping: -1,40,000.00 becomes "-₹1,40,000.00". */
+    public static function rupee(float|int|string|null $n, int $decimals = 2): string
+    {
+        $n = (float) $n;
+
+        return ($n < 0 ? '-' : '') . '₹' . self::format(abs($n), $decimals);
+    }
 }

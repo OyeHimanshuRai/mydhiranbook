@@ -58,7 +58,9 @@
             this.dhHeaderActionsOpen = false;
             this.dhHeaderSource.classList.remove('dh-has-pinned-actions');
 
-            if (!this.dhHeaderMedia.matches) {
+            // Phones fold every secondary action into the More menu; tablets only when the page has more than three (never a wrapped toolbar).
+            const fold = this.dhHeaderMedia.matches || (window.matchMedia('(max-width: 1023.98px)').matches && this.dhHeaderOriginalActions.length > 3);
+            if (!fold) {
                 this.dhHeaderOriginalActions.forEach((el) => {
                     el.classList.remove('dh-header-pinned-action');
                     delete el.dataset.dhMobileLabel;

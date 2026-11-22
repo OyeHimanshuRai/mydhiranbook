@@ -66,15 +66,15 @@
                                 </td>
                                 <td data-label="Customer" data-low="2" class="font-medium text-slate-700">{{ $loan->customer?->name ?? '-' }}</td>
                                 <x-dhiran.mobile-cell :number="$loan->customer?->mobile" low="1" />
-                                <td data-label="Principal" class="whitespace-nowrap text-right">₹{{ \App\Support\IndianNumber::format((float) $loan->principal_amount, 2) }}</td>
-                                <td data-label="Interest Collected" class="whitespace-nowrap text-right text-green-600">₹{{ \App\Support\IndianNumber::format((float) $loan->total_interest_collected, 2) }}</td>
-                                <td data-label="Penalty Collected" class="whitespace-nowrap text-right">₹{{ \App\Support\IndianNumber::format((float) $loan->total_penalty_collected, 2) }}</td>
-                                <td data-label="Processing Fee" class="whitespace-nowrap text-right">₹{{ \App\Support\IndianNumber::format((float) $loan->processing_fee, 2) }}</td>
+                                <td data-label="Principal" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->principal_amount, 2) }}</td>
+                                <td data-label="Interest Collected" class="whitespace-nowrap text-right text-green-600">{{ \App\Support\IndianNumber::rupee((float) $loan->total_interest_collected, 2) }}</td>
+                                <td data-label="Penalty Collected" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->total_penalty_collected, 2) }}</td>
+                                <td data-label="Processing Fee" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->processing_fee, 2) }}</td>
                                 <td data-label="Status" data-cell="status" data-low="2" class="text-center">
                                     <x-dhiran.status :value="$loan->status" />
                                 </td>
                                 <td data-label="Profit/Loss" class="whitespace-nowrap text-right font-semibold {{ $loanProfit >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                    ₹{{ \App\Support\IndianNumber::format($loanProfit, 2) }}
+                                    {{ \App\Support\IndianNumber::rupee($loanProfit, 2) }}
                                 </td>
                             </tr>
                         @empty
@@ -94,12 +94,12 @@
                             <td>Totals ({{ $totals['count'] }} loans)</td>
                             <td data-low="2"></td>
                             <td data-low="1"></td>
-                            <td class="text-right">₹{{ \App\Support\IndianNumber::format($totalDisbursed, 2) }}</td>
-                            <td class="text-right">₹{{ \App\Support\IndianNumber::format($totalInterestEarned, 2) }}</td>
-                            <td class="text-right">₹{{ \App\Support\IndianNumber::format($totalPenalties, 2) }}</td>
-                            <td class="text-right">₹{{ \App\Support\IndianNumber::format($totalProcessingFees, 2) }}</td>
+                            <td class="text-right">{{ \App\Support\IndianNumber::rupee($totalDisbursed, 2) }}</td>
+                            <td class="text-right">{{ \App\Support\IndianNumber::rupee($totalInterestEarned, 2) }}</td>
+                            <td class="text-right">{{ \App\Support\IndianNumber::rupee($totalPenalties, 2) }}</td>
+                            <td class="text-right">{{ \App\Support\IndianNumber::rupee($totalProcessingFees, 2) }}</td>
                             <td data-low="2"></td>
-                            <td class="text-right">₹{{ \App\Support\IndianNumber::format($netProfit, 2) }}</td>
+                            <td class="text-right">{{ \App\Support\IndianNumber::rupee($netProfit, 2) }}</td>
                         </tr>
                     </tfoot>
                     @endif
