@@ -36,7 +36,7 @@
             </fieldset>
         </x-settings.panel>
 
-        <x-settings.panel :title="$editing ? 'Change password' : 'Password'" :desc="$editing ? 'Leave both fields empty to keep the current password.' : 'At least 6 characters. Share it with them in person.'">
+        <x-settings.panel :title="$editing ? 'Change password' : 'Password'" :desc="$editing ? 'Leave both fields empty to keep the current password.' : 'At least 12 characters with upper and lower case letters and a number. Share it with them in person.'">
             <div class="st-grid">
                 <x-settings.field name="password" id="password" :label="$editing ? 'New password' : 'Password'" type="password" :req="! $editing" :required="! $editing" autocomplete="new-password" minlength="6" />
                 <x-settings.field name="password_confirmation" id="password_confirmation" :label="$editing ? 'Confirm new password' : 'Confirm password'" type="password" :req="! $editing" :required="! $editing" autocomplete="new-password" />
