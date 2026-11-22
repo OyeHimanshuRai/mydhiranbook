@@ -56,11 +56,11 @@
 .ui-field-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3); margin-bottom: var(--sp-2); }
 .ui-field label, .ui-group legend { font-size: var(--fs-sm); font-weight: 600; color: var(--dh-ink); }
 .ui-input { position: relative; }
-.ui-input input { width: 100%; min-height: 48px; padding: 11px var(--sp-4); border: 1.5px solid var(--ui-field-edge); border-radius: var(--r-sm);
-    background: var(--dh-field); color: var(--dh-ink); font: var(--fs-md)/1.4 var(--font-body); transition: border-color .15s, box-shadow .15s; }
+.ui-input input { width: 100%; min-height: var(--fl-ctl-h); padding: 0 12px; border: 1px solid var(--kh-field-edge); border-radius: var(--kh-radius);
+    background: var(--dh-field); color: var(--dh-ink); font: 400 var(--fs-base)/1.4 var(--font-body); transition: border-color .15s; }
 .ui-input input::placeholder { color: #75849a; }
 .ui-input input:hover { border-color: var(--dh-ink-soft); }
-.ui-input input:focus { outline: none; border-color: var(--dh-navy); box-shadow: var(--ring); }
+.ui-input input:focus { outline: 2px solid var(--kh-focus); outline-offset: 2px; border-color: var(--kh-ink); }
 .ui-input input[type="password"] { padding-right: 76px; }
 .ui-field.has-err input { border-color: var(--dh-danger); background: var(--dh-danger-soft); }
 .ui-hint { margin: var(--sp-2) 0 0 !important; font-size: var(--fs-xs); color: var(--dh-muted); }

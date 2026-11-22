@@ -111,8 +111,8 @@ class DhiranCustomersListTest extends TestCase
         $this->assertStringContainsString('Cardy K', $table);
         $this->assertStringContainsString(route('dhiran.borrowers.show', $customer), $table);
 
-        // The row's New Loan was a pale tag-like pill; it is the theme's main-action button, like the header one.
-        $this->assertStringContainsString('href="' . route('dhiran.create', ['customer_id' => $customer->id]) . '" class="btn btn-primary btn-sm', $table);
+        // The row's New Loan is an outlined button: the one ink button on the page is the header's New Loan (Bahi-khata, 2026-11-22).
+        $this->assertStringContainsString('href="' . route('dhiran.create', ['customer_id' => $customer->id]) . '" class="btn btn-secondary btn-sm', $table);
     }
 
     public function test_details_can_be_saved_without_a_loan(): void

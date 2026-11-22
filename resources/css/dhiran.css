@@ -1373,11 +1373,13 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 
 /* ==== Badges: a word plus a tone plus a shape, never colour alone ==== */
 .dh-status, .st-badge {
-    display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 8px;
+    width: fit-content; display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 8px;
     border: 1px solid var(--dh-status-line, var(--kh-rule)); border-radius: var(--kh-radius-sm);
     background: var(--dh-status-soft, var(--kh-wash)); color: var(--dh-status-ink, var(--kh-text-2));
-    font: 500 var(--fs-sm)/1.2 var(--kh-font); letter-spacing: 0; white-space: nowrap;
+    font: 500 var(--fs-sm)/1.2 var(--kh-font); letter-spacing: 0; white-space: nowrap; max-width: 100%; overflow-wrap: anywhere;
 }
+/* A badge stays one word-group on one line; on very narrow screens it may wrap rather than touch its neighbour. */
+@media (max-width: 400px) { .dh-status, .st-badge { white-space: normal; } }
 .dh-status::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .dh-status--warning::before { border-radius: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 .dh-status--danger::before { border-radius: 1px; transform: rotate(45deg); width: 6px; height: 6px; }
@@ -1502,7 +1504,7 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 
 
 .dh-app .header-badge { border-radius: var(--kh-radius-sm); background: var(--kh-wash); border-color: var(--kh-rule); color: var(--kh-text-2); font: 500 var(--fs-sm)/1.2 var(--kh-font); }
-@media (min-width: 768px) and (max-width: 1023.98px) { .dh-nav-link, .dh-nav-link.active { font-weight: 500; font-size: var(--fs-meta); } }
+@media (min-width: 768px) and (max-width: 1023.98px) { .dh-nav-link, .dh-nav-link.active, .dh-logout { font-weight: 500; font-size: var(--fs-meta); } }
 
 @media (prefers-reduced-motion: reduce) { .btn, .dh-nav-link { transition: none; } }
 @media print { .dh-table-card::before, .dh-stat::before, .dh-sidebar::after { display: none; } }

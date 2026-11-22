@@ -156,11 +156,6 @@
 .dh-app .dd-table a.dd-tlink--link { text-decoration: none; }
 @media (min-width: 1024px) and (pointer: fine) { .dh-app .dd-table a.dd-tlink { min-height: 36px; } }
 
-/* Ledger skin for the real table: a double rule under the header, a hairline margin line on the left. */
-@container dd (min-width: 860px) {
-    .dh-app .dd-table thead th { border-bottom: 3px double var(--kh-rule, var(--dh-line)); }
-    .dh-app .dd-table :is(th, td):first-child { box-shadow: inset 1px 0 0 var(--kh-margin, var(--dh-line)); }
-}
 
 @container dd (max-width: 859.98px) {
     .dh-app .dd-card.dd-tablecard { overflow: visible; background: transparent; border: 0; box-shadow: none; }

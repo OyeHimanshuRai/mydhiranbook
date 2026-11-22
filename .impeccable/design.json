@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-23T00:00:00Z",
+  "title": "Design System: Dhiran",
+  "extensions": {
+    "colorMeta": {
+      "cloth": { "role": "secondary", "displayName": "Oxblood Cloth", "canonical": "#7a1a1d", "tonalRamp": ["#2a0a0c", "#3d0e10", "#5a1215", "#7a1a1d", "#8c2a2d", "#b0585b", "#d4a0a2", "#f0d9d9"] },
+      "ink": { "role": "primary", "displayName": "Blue-Black Ink", "canonical": "#1a2a4a", "tonalRamp": ["#0b1426", "#101c36", "#1a2a4a", "#2c3f66", "#5a6e95", "#9aa8c4", "#c6cee0", "#eef1f7"] },
+      "margin-red": { "role": "tertiary", "displayName": "Margin Red", "canonical": "#c9484d", "tonalRamp": ["#5a1a1d", "#8a2a2e", "#a83a3f", "#c9484d", "#d77478", "#e4a0a3", "#f0c4c1", "#fcefee"] },
+      "paper": { "role": "neutral", "displayName": "Cool Paper", "canonical": "#fbfbfc", "tonalRamp": ["#1d2230", "#444c5e", "#5b6477", "#7d8698", "#c6cee0", "#d9dce3", "#f3f4f7", "#fbfbfc"] },
+      "ok": { "role": "status", "displayName": "Ledger Green", "canonical": "#1f6f4a", "tonalRamp": ["#0e3825", "#14502f", "#1f6f4a", "#4a8d6c", "#7fb09a", "#b8d8c6", "#e9f4ee", "#f5faf7"] },
+      "error": { "role": "status", "displayName": "Crimson", "canonical": "#b3261e", "tonalRamp": ["#5a130f", "#801d17", "#b3261e", "#c85a54", "#d98d89", "#f0c4c1", "#fcefee", "#fef8f7"] },
+      "warning-text": { "role": "status", "displayName": "Deep Brass-Brown", "canonical": "#8a4700", "tonalRamp": ["#3f2000", "#5f3100", "#7d4200", "#8a4700", "#b0753a", "#d9ae86", "#efd9c3", "#faf1e8"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Wordmark", "purpose": "The serif 'dhiran.' wordmark on the cloth only." },
+      "headline": { "displayName": "Page Title", "purpose": "h1; 700 is reserved for h1 and key figures." },
+      "title": { "displayName": "Section Title", "purpose": "h2 section headings, 600." },
+      "figure": { "displayName": "Key Figure", "purpose": "Large money figures, tabular." },
+      "body": { "displayName": "Body", "purpose": "Fields, buttons, table cells, running text." },
+      "label": { "displayName": "Ledger Label", "purpose": "Table headers only; the one uppercase style." }
+    },
+    "shadows": [
+      { "name": "lift", "value": "0 12px 32px rgba(26,17,20,.22), 0 2px 6px rgba(26,17,20,.12)", "purpose": "Dialogs, filter sheet, toast and phone drawer. Nothing else is shadowed." },
+      { "name": "focus-ring", "value": "0 0 0 2px #fff, 0 0 0 4px #1a2a4a", "purpose": "Ink ring with a white gap; on the cloth the ring is white." }
+    ],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0.23, 1, 0.32, 1)", "purpose": "Colour transitions on controls at 120ms; drawer slide 240ms. Disabled under reduced motion." }
+    ],
+    "breakpoints": [
+      { "name": "phone", "value": "767.98px", "note": "rail becomes a drawer; top bar turns cloth; fields 16px" },
+      { "name": "tablet", "value": "768px to 1023.98px", "note": "icon rail" },
+      { "name": "desktop", "value": "1024px", "note": "40px controls" },
+      { "name": "list-stack", "value": "720px", "note": "tables become stacked row cards" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The next action. Ink fill, one per view.",
+      "html": "<button class=\"ds-btn-primary\">New Loan</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 20px;border:1px solid #1a2a4a;border-radius:6px;background:#1a2a4a;color:#fff;font:600 15px/1.15 system-ui,'Noto Sans',sans-serif;cursor:pointer;transition:background-color 120ms,border-color 120ms}.ds-btn-primary:hover{background:#101c36;border-color:#101c36}.ds-btn-primary:focus-visible{outline:2px solid #1a2a4a;outline-offset:2px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined ink for every non-primary action.",
+      "html": "<button class=\"ds-btn-secondary\">Export</button>",
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 20px;border:1px solid #7d8698;border-radius:6px;background:#fff;color:#1a2a4a;font:600 15px/1.15 system-ui,'Noto Sans',sans-serif;cursor:pointer;transition:background-color 120ms,border-color 120ms}.ds-btn-secondary:hover{background:#eef1f7;border-color:#1a2a4a;color:#101c36}.ds-btn-secondary:focus-visible{outline:2px solid #1a2a4a;outline-offset:2px}"
+    },
+    {
+      "name": "Destructive Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Crimson outline; never a solid fill.",
+      "html": "<button class=\"ds-btn-danger\">Cancel loan</button>",
+      "css": ".ds-btn-danger{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 20px;border:1px solid #b3261e;border-radius:6px;background:#fff;color:#b3261e;font:600 15px/1.15 system-ui,'Noto Sans',sans-serif;cursor:pointer}.ds-btn-danger:hover{background:#fcefee}.ds-btn-danger:focus-visible{outline:2px solid #1a2a4a;outline-offset:2px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "White field with a 3:1 edge and an ink focus ring. Required labels carry a crimson star.",
+      "html": "<label class=\"ds-field\"><span>Customer name<span class=\"ds-req\">*</span></span><input type=\"text\" placeholder=\"Full name\"></label>",
+      "css": ".ds-field{display:grid;gap:6px;font:500 13px/1.3 system-ui,'Noto Sans',sans-serif;color:#444c5e}.ds-req{margin-inline-start:2px;color:#b3261e;font-weight:600}.ds-field input{min-height:44px;padding:0 12px;border:1px solid #7d8698;border-radius:6px;background:#fff;color:#1d2230;font:400 15px/1.3 system-ui,'Noto Sans',sans-serif}.ds-field input::placeholder{color:#5b6477}.ds-field input:hover{border-color:#1a2a4a}.ds-field input:focus{outline:2px solid #1a2a4a;outline-offset:2px;border-color:#1a2a4a}"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Word plus tone plus shape: circle, triangle, diamond or ring.",
+      "html": "<span class=\"ds-badge ds-ok\">Active</span> <span class=\"ds-badge ds-warn\">Due soon</span> <span class=\"ds-badge ds-bad\">Overdue</span> <span class=\"ds-badge ds-mute\">Closed</span>",
+      "css": ".ds-badge{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:0 8px;border:1px solid var(--l);border-radius:4px;background:var(--s);color:var(--c);font:500 13px/1.2 system-ui,'Noto Sans',sans-serif}.ds-badge::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}.ds-ok{--c:#1f6f4a;--s:#e9f4ee;--l:#b8d8c6}.ds-warn{--c:#8a4700;--s:#fff;--l:#d9ae86}.ds-warn::before{border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)}.ds-bad{--c:#b3261e;--s:#fcefee;--l:#f0c4c1}.ds-bad::before{border-radius:1px;transform:rotate(45deg);width:6px;height:6px}.ds-mute{--c:#444c5e;--s:#f3f4f7;--l:#d9dce3}.ds-mute::before{background:transparent;box-shadow:inset 0 0 0 1.5px currentColor}"
+    },
+    {
+      "name": "Ledger Table",
+      "kind": "custom",
+      "refersTo": "ledger-card",
+      "description": "Signature: red margin line in a reserved gutter, 3px double rule under the header and above totals, right-aligned tabular figures.",
+      "html": "<div class=\"ds-ledger\"><table><thead><tr><th>Loan</th><th>Borrower</th><th class=\"r\">Principal</th></tr></thead><tbody><tr><td>DH-0412</td><td>Meena Devi</td><td class=\"r\">45,000</td></tr><tr><td>DH-0413</td><td>R. Sharma</td><td class=\"r\">1,20,000</td></tr></tbody><tfoot><tr><td colspan=\"2\">Total</td><td class=\"r\">1,65,000</td></tr></tfoot></table></div>",
+      "css": ".ds-ledger{position:relative;padding-inline-start:14px;background:#fff;border:1px solid #d9dce3;border-radius:6px;font:400 14px/1.45 system-ui,'Noto Sans',sans-serif;font-variant-numeric:tabular-nums}.ds-ledger::before{content:'';position:absolute;top:0;bottom:0;left:6px;width:1px;background:#c9484d;opacity:.8}.ds-ledger table{width:100%;border-collapse:collapse}.ds-ledger th{padding:10px 12px;text-align:left;color:#444c5e;border-bottom:3px double #5b6477;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}.ds-ledger td{padding:10px 12px;border-bottom:1px solid #e8eaef;color:#1d2230}.ds-ledger tbody tr:hover{background:rgba(26,42,74,.04)}.ds-ledger .r{text-align:right;font-weight:500}.ds-ledger tfoot td{border-top:3px double #5b6477;border-bottom:0;color:#1a2a4a;font-weight:600}"
+    },
+    {
+      "name": "Rail Navigation",
+      "kind": "nav",
+      "refersTo": "nav-link-active",
+      "description": "Oxblood rail with serif wordmark, dotted stitch seam, and a lifted active link.",
+      "html": "<nav class=\"ds-rail\"><div class=\"ds-mark\">dhiran<span>.</span></div><a class=\"ds-nav\" href=\"#\">Loans</a><a class=\"ds-nav on\" href=\"#\">Customers</a><a class=\"ds-nav\" href=\"#\">Reports</a></nav>",
+      "css": ".ds-rail{position:relative;display:grid;gap:4px;width:220px;padding:16px 12px;background:#7a1a1d;color:#fff;font:500 15px/1.2 system-ui,'Noto Sans',sans-serif}.ds-rail::after{content:'';position:absolute;top:8px;bottom:8px;right:5px;border-right:1px dotted rgba(255,255,255,.22)}.ds-mark{margin-bottom:12px;padding-bottom:12px;border-bottom:1px dotted rgba(255,255,255,.22);font:600 26px/1 Georgia,'Times New Roman',serif;letter-spacing:-.01em}.ds-mark span{color:#f0d9d9}.ds-nav{display:block;padding:12px;border-radius:6px;color:#fff;text-decoration:none}.ds-nav:hover{background:rgba(255,255,255,.09)}.ds-nav.on{background:#8c2a2d;font-weight:600;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}.ds-nav:focus-visible{outline:2px solid #fff;outline-offset:2px}"
+    },
+    {
+      "name": "Notice",
+      "kind": "custom",
+      "refersTo": "badge",
+      "description": "Full hairline border; warning is brown text on white, never a yellow fill.",
+      "html": "<div class=\"ds-alert\">Interest is accrued to today.</div> <div class=\"ds-alert ds-alert-warn\">Lock period not over.</div>",
+      "css": ".ds-alert{padding:12px 14px;border:1px solid #bcd0ec;border-radius:6px;background:#eaf1fb;color:#1d4f91;font:400 15px/1.45 system-ui,'Noto Sans',sans-serif}.ds-alert-warn{background:#fff;border-color:#d9ae86;color:#8a4700}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Bahi-khata",
+    "overview": "Dhiran is the shop's own red ledger made software. One committed oxblood cloth holds the shell (rail, phone top bar, auth brand panel); inside it the pages are calm and white, and every money table keeps the ledger's rhythm: a red margin line, a double rule under the header and above totals, figures right-aligned in tabular numerals. The next action is always the one blue-black ink button.\n\nIt is a book opened all day by counter staff and checked from a phone by the owner, so density is steady and calm, never decorative. Accuracy comes first: no figure is rounded or hidden by styling. The system refuses the grey SaaS dashboard with a yellow accent, and the inherited JewelFlow look. There is no yellow or gold anywhere, enforced by tests/Feature/NoYellowTest.php.",
+    "keyCharacteristics": [
+      "Oxblood cloth shell (rail, phone top bar, auth panel); cool-white pages (#fbfbfc) on white panels.",
+      "Blue-black ink carries every action, link, figure and selected state.",
+      "Ledger furniture: red margin line, 3px double rules, 1px dotted stitch seam.",
+      "Flat: hairline borders, 6px radius, shadow only on toast and dialog.",
+      "System fonts with Devanagari fallbacks, no web-font request; one serif wordmark \"dhiran.\".",
+      "Fixed-height app shell: the body never scrolls.",
+      "44px touch targets (40px on desktop), fluid type from 320px to 1440px."
+    ],
+    "rules": [
+      { "name": "The No Yellow Rule", "body": "No yellow or gold fill, text or accent anywhere. Warning is brown text on white with a brown hairline, never a tinted fill. The legacy --jf-gold* and --dh-gold* names are remapped to ink so old rules cannot reintroduce it.", "section": "colors" },
+      { "name": "The Margin Is Hairline Rule", "body": "Red is the cloth and the 1px margin line. It is never a button, link or fill.", "section": "colors" },
+      { "name": "The Ink Is The Next Action Rule", "body": "A filled blue-black control means \"the next step\". One per view; everything else is outlined.", "section": "colors" },
+      { "name": "The Word Plus Tone Rule", "body": "Status is never colour alone: a word, a tone and a shape.", "section": "colors" },
+      { "name": "The Tabular Rule", "body": "All figures, tables, outputs and stat values use tabular numerals; money is right-aligned and a touch heavier than words (500; 600 for key cells).", "section": "typography" },
+      { "name": "The Caps Are For Table Heads Rule", "body": "All-caps appears only on table headers. Field labels, stat labels and legends are sentence case.", "section": "typography" },
+      { "name": "The Three Weights Rule", "body": "400, 500 and 600. 700 only for h1 and key figures.", "section": "typography" },
+      { "name": "The Sixteen On Phones Rule", "body": "Fields are 16px under 768px so iOS does not zoom on focus.", "section": "typography" },
+      { "name": "The Flat Cards Rule", "body": "Cards, tables, stats and fields are flat at rest and on hover. Only overlays lift.", "section": "elevation" },
+      { "name": "The Double Rule Rule", "body": "A 3px double rule in Graphite 3 sits under every table header and above every totals row, with the sum in ink 600.", "section": "elevation" },
+      { "name": "The Stitch Rule", "body": "A 1px dotted seam marks the cloth: inside the rail edge, under the rail head, above the rail foot, and under the desktop top bar in rule grey.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do let the oxblood cloth carry the shell and keep the pages white (#fbfbfc ground, #ffffff panels).",
+      "Do use Blue-Black Ink (#1a2a4a) for the primary action, links, key figures, selected states and the focus ring.",
+      "Do draw the red margin line (#c9484d, 1px) at 6px inside a 14px reserved gutter on money tables, stat cards and report grids.",
+      "Do put a 3px double rule under table headers and above totals, and right-align money in tabular numerals.",
+      "Do pair every status colour with a word and a distinct shape.",
+      "Do size controls with --fl-ctl-h (44px touch, 40px desktop) and text with the fluid scale; keep metadata at 12px or larger.",
+      "Do keep list pages scrolling only inside the list region, with a sticky thead and a pinned pager.",
+      "Do write warnings as #8a4700 text with a #d9ae86 outline on white.",
+      "Do keep colours in khata-tokens.css only; new code uses --kh-*, never a new literal."
+    ],
+    "donts": [
+      "Don't use yellow or gold anywhere; warning is never a filled yellow.",
+      "Don't use red as a button, link or fill; it is cloth and margin line only.",
+      "Don't add shadows to cards, tables, fields or hover states; only overlays lift.",
+      "Don't use gradients, glass, glow or blur.",
+      "Don't use all-caps outside table headers, or text under 12px.",
+      "Don't use a web font; the wordmark serif is the one exception to the system stack.",
+      "Don't let the page body scroll, or add a footer outside the four Settings pages.",
+      "Don't rely on colour alone for status or required fields.",
+      "Don't let the margin line touch cell content; draw it only in the reserved gutter.",
+      "Don't underline links on hover; hover changes colour.",
+      "Don't invent testimonials or stats on public pages."
+    ]
+  }
+}

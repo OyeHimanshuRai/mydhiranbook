@@ -70,8 +70,8 @@
 .adm-head p { margin: var(--sp-2) 0 0; color: var(--dh-muted); max-width: var(--measure); font-size: var(--fs-sm); }
 .adm-back { display: inline-flex; align-items: center; min-height: var(--tap); margin-bottom: var(--sp-1); font-size: var(--fs-sm); font-weight: 600; }
 .adm-search { display: flex; gap: var(--sp-2); width: 100%; max-width: 380px; }
-.adm-search input { flex: 1; min-width: 0; min-height: 48px; padding: 10px var(--sp-4); border: 1.5px solid var(--ui-field-edge); border-radius: var(--r-sm); background: var(--dh-field); color: var(--dh-ink); font: inherit; }
-.adm-search input:focus { outline: none; border-color: var(--dh-navy); box-shadow: var(--ring); }
+.adm-search input { flex: 1; min-width: 0; min-height: var(--fl-ctl-h); padding: 0 12px; border: 1px solid var(--kh-field-edge); border-radius: var(--kh-radius); background: var(--dh-field); color: var(--dh-ink); font: 400 var(--fs-base)/1.4 var(--font-body); }
+.adm-search input:focus { outline: 2px solid var(--kh-focus); outline-offset: 2px; border-color: var(--kh-ink); }
 
 /* ---- panels ---- */
 .adm-panel { background: var(--dh-card); border: 1px solid var(--dh-card-border); border-radius: var(--r-md); box-shadow: var(--dh-card-shadow); margin-bottom: var(--sp-5); min-width: 0; overflow: hidden; }
@@ -103,7 +103,7 @@
 .adm-code { display: block; font: 600 var(--fs-md)/1.8 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; letter-spacing: .08em; overflow-wrap: anywhere; background: var(--dh-white); color: var(--dh-ink); padding: var(--sp-3) var(--sp-4); border: 1px solid var(--dh-line); border-radius: var(--r-sm); margin: var(--sp-2) 0 var(--sp-3); user-select: all; }
 
 /* ---- badges: always carry a word, never colour alone ---- */
-.adm-badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: var(--kh-radius-sm); border: 1px solid var(--dh-line); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fs-xs); font-weight: 600; line-height: 1.6; white-space: nowrap; }
+.adm-badge { width: fit-content; justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: var(--kh-radius-sm); border: 1px solid var(--dh-line); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fs-xs); font-weight: 600; line-height: 1.6; white-space: nowrap; }
 .adm-badge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 .adm-badge--ok { background: var(--dh-success-soft); border-color: var(--dh-success-line); color: var(--kh-ok); }
 .adm-badge--warn { background: var(--kh-panel); border-color: var(--dh-warning-line); color: var(--dh-warning-ink); }
@@ -130,10 +130,10 @@
 @media (min-width: 1100px) { .adm-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .adm-field { min-width: 0; }
 .adm-field label, .adm-legend { display: block; margin-bottom: var(--sp-2); font-size: var(--fs-sm); font-weight: 600; color: var(--dh-ink); }
-.adm-field :is(input:not([type=checkbox]), select, textarea) { width: 100%; min-height: 48px; padding: 10px var(--sp-4); border: 1.5px solid var(--ui-field-edge); border-radius: var(--r-sm); background: var(--dh-field); color: var(--dh-ink); font: inherit; }
+.adm-field :is(input:not([type=checkbox]), select, textarea) { width: 100%; min-height: var(--fl-ctl-h); padding: 0 12px; border: 1px solid var(--kh-field-edge); border-radius: var(--kh-radius); background: var(--dh-field); color: var(--dh-ink); font: 400 var(--fs-base)/1.4 var(--font-body); }
 .adm-field select { padding-right: var(--sp-3); }
 .adm-field :is(input, select, textarea):hover { border-color: var(--dh-ink-soft); }
-.adm-field :is(input, select, textarea):focus { outline: none; border-color: var(--dh-navy); box-shadow: var(--ring); }
+.adm-field :is(input, select, textarea):focus { outline: 2px solid var(--kh-focus); outline-offset: 2px; border-color: var(--kh-ink); }
 .adm-field input::placeholder { color: #75849a; }
 .adm-field.has-err :is(input, select) { border-color: var(--dh-danger); background: var(--dh-danger-soft); }
 .adm-hint { margin: var(--sp-2) 0 0 !important; font-size: var(--fs-xs); color: var(--dh-muted); }
@@ -209,3 +209,11 @@ td.adm-empty strong { display: block; color: var(--dh-ink); font-size: var(--fs-
 .adm-link-btn { border: 0; background: none; padding: 0; color: var(--dh-link); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .adm .adm-auth-foot { margin: var(--sp-5) 0 0; font-size: var(--fs-xs); color: var(--ui-on-navy-soft); text-align: center; }
 .adm-auth .adm-code { font-size: var(--fs-sm); letter-spacing: .06em; }
+
+/* Phones: the admin top bar is cloth like the shop app. */
+@media (max-width: 1023.98px) {
+    .adm-top { background: var(--kh-cloth); border-bottom: 1px dotted var(--kh-cloth-line); }
+    .adm-top .adm-brand, .adm-top .adm-brand span { color: var(--kh-on-cloth) !important; }
+    .adm-top .adm-account > span { color: var(--kh-on-cloth-soft); }
+    .adm-top .adm-burger, .adm-top .adm-btn--ghost { background: transparent; color: var(--kh-on-cloth); border-color: var(--kh-cloth-line); }
+}

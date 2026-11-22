@@ -88,7 +88,7 @@
                                     <td data-label="Outstanding" class="whitespace-nowrap text-right font-semibold text-slate-800">{{ $rupee($outstanding[$borrower->id] ?? 0) }}</td>
                                     <td data-label="Actions" data-cell="actions" class="whitespace-nowrap text-center">
                                         <a href="{{ route('dhiran.borrowers.show', $borrower) }}" class="jf-row-action jf-row-action--view dh-act-extra" title="Profile"><x-icon name="eye" size="16" /><span class="dh-act-label">Profile</span></a>
-                                        <a href="{{ route('dhiran.create', ['customer_id' => $borrower->id]) }}" class="btn btn-primary btn-sm ml-2 align-middle">New Loan</a>
+                                        <a href="{{ route('dhiran.create', ['customer_id' => $borrower->id]) }}" class="btn btn-secondary btn-sm ml-2 align-middle">New Loan</a>
                                     </td>
                                 </tr>
             @if($loop->last)
