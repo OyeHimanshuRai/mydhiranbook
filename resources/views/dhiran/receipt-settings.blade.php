@@ -1,75 +1,151 @@
-{{-- Receipt settings: a checked switch = printed (saved as the hidden list), plus the texts printed on the pledge receipt and closure certificate. --}}
+{{-- Receipt settings: one receipt at a time (Pledge | Payment), each field a switch row inside a titled group. A switched-on
+     field is posted as show[] (the controller stores everything else as hidden). No JS: both receipts stack, all controls still post. --}}
+@php
+    use App\Models\Dhiran\DhiranSettings;
+    $receipts = DhiranSettings::RECEIPT_FIELDS;
+    $lead = ['pledge' => 'Given to the borrower when a loan is made.', 'payment' => 'Given every time a payment is received.'];
+    $total = fn ($def) => collect($def['groups'])->sum(fn ($f) => count($f));
+    $on = fn ($receipt, $fields) => collect(array_keys($fields))->filter(fn ($k) => in_array("$receipt.$k", $printed, true))->count();
+@endphp
 <x-dhiran-layout title="Receipt settings">
     <x-dhiran.page-header>
-        <div>
-            <h1 class="page-title">Receipt settings</h1>
-            <p class="text-sm text-gray-500 mt-1">What is printed on receipts and certificates</p>
-        </div>
+        <x-dhiran.settings-nav active="receipt" as="title" />
     </x-dhiran.page-header>
-@php($hidden = $settings->hidden_receipt_fields ?? [])
-<style>
-    .rset { margin-top: 0; border: 1px solid var(--dset-border, #e5e7eb); border-radius: 12px; padding: 18px 20px; background: var(--dset-card, #fff); }
-    .rset-title { font-size: 15px; font-weight: 700; margin: 0 0 4px; }
-    .rset-lead { font-size: 12px; color: var(--dset-muted, #6b7280); margin: 0 0 16px; }
-    .rset-receipt { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px 28px; margin-bottom: 18px; }
-    .rset-receipt-title { grid-column: 1 / -1; font-size: 13px; font-weight: 700; border-bottom: 1px solid var(--dset-border, #e5e7eb); padding-bottom: 6px; margin: 0; }
-    .rset-group { border: 0; padding: 0; margin: 0; min-width: 0; }
-    .rset-group legend { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--dset-muted, #6b7280); padding: 0; margin-bottom: 6px; }
-    .rset-switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 13px; cursor: pointer; }
-    .rset-switch input { appearance: none; flex: none; width: 34px; height: 20px; border-radius: 10px; background: #cbd5e1; position: relative; cursor: pointer; transition: background .15s; margin: 0; }
-    .rset-switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
-    .rset-switch input:checked { background: #111827; }
-    .rset-switch input:checked::after { transform: translateX(14px); }
-    .rset-switch input:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
-    .rset-switch input:disabled { opacity: .55; cursor: not-allowed; }
-    .rset-note { font-size: 11px; color: var(--dset-muted, #6b7280); margin: 0 0 6px; }
-</style>
-<div class="content-inner dhiran-settings-root">
-<x-dhiran.settings-nav active="receipt" />
-<section class="rset" id="receipt">
-    <h2 class="rset-title">Receipt fields</h2>
-    <p class="rset-lead">Choose what is printed on customer receipts. Switched-off fields are left out and the layout closes up.</p>
-    <form method="POST" action="{{ route('dhiran.settings.receipt') }}" data-turbo-frame="_top">
-        @csrf
-        @method('PATCH')
-        @foreach(\App\Models\Dhiran\DhiranSettings::RECEIPT_FIELDS as $receipt => $def)
-            <div class="rset-receipt">
-                <h3 class="rset-receipt-title">{{ $def['label'] }}</h3>
-                @if($loop->first)
-                    <fieldset class="rset-group">
-                        <legend>Always printed</legend>
-                        <label class="rset-switch"><span>Loan number</span><input type="checkbox" checked disabled></label>
-                        <p class="rset-note">Always shown: it is how a loan is found in the directory.</p>
-                    </fieldset>
-                @endif
+<div class="content-inner dhiran-settings-root rs">
+<x-dhiran.settings-nav active="receipt" switcher />
+<form id="rs-form" class="rs-form" method="POST" action="{{ route('dhiran.settings.receipt') }}" data-turbo-frame="_top"
+      x-data="rsReceiptSettings({{ \Illuminate\Support\Js::from(['dirty' => session()->hasOldInput(), 'saved' => session('success')]) }})"
+      @input="touch($event)" @change="touch($event)" @submit="saving = true" @beforeunload.window="if (dirty && !saving) $event.preventDefault()">
+    @csrf
+    @method('PATCH')
+
+    <p class="rs-lead">Choose what is printed on customer receipts. A field you switch off is left out and the receipt closes up around it.</p>
+
+    <div class="rs-toolbar">
+        <div class="rs-seg" role="tablist" aria-label="Which receipt to change" @keydown.arrow-right.prevent="move(1)" @keydown.arrow-left.prevent="move(-1)">
+            @foreach($receipts as $receipt => $def)
+                <button type="button" role="tab" id="rs-tab-{{ $receipt }}" aria-controls="rs-panel-{{ $receipt }}"
+                        aria-selected="{{ $loop->first ? 'true' : 'false' }}" tabindex="{{ $loop->first ? 0 : -1 }}"
+                        :aria-selected="tab === '{{ $receipt }}'" :tabindex="tab === '{{ $receipt }}' ? 0 : -1" @click="setTab('{{ $receipt }}')">{{ $def['label'] }}</button>
+            @endforeach
+        </div>
+        @if($sampleLoan)
+            <a class="rs-sample" href="{{ route('dhiran.receipt', $sampleLoan) }}" target="_blank" rel="noopener" x-show="tab === 'pledge'"
+               title="Opens the latest loan's receipt with the saved settings">See a sample <x-icon name="external-link" size="16" /><span class="rs-sr"> (opens in a new tab, shows saved settings)</span></a>
+        @endif
+    </div>
+
+    @foreach($receipts as $receipt => $def)
+        <section class="rs-panel" id="rs-panel-{{ $receipt }}" role="tabpanel" aria-labelledby="rs-tab-{{ $receipt }}" data-rs-panel="{{ $receipt }}"
+                 @unless($loop->first) hidden @endunless :hidden="tab !== '{{ $receipt }}'">
+            <div class="rs-panel-head">
+                <h2 class="rs-panel-title">{{ $def['label'] }}</h2>
+                <p class="rs-panel-lead">{{ $lead[$receipt] }} <span class="rs-panel-count" x-text="panelText('{{ $receipt }}')">{{ collect($printed)->filter(fn ($k) => str_starts_with($k, "$receipt."))->count() }} of {{ $total($def) }} fields printed</span></p>
+            </div>
+
+            <div class="rs-locked">
+                <x-dhiran.switch id="rs-{{ $receipt }}-loan_number" label="Loan number" hint="Always printed. It is how a loan is found." :checked="true" locked />
+            </div>
+
+            <div class="rs-groups">
                 @foreach($def['groups'] as $group => $fields)
-                    <fieldset class="rset-group">
-                        <legend>{{ $group }}</legend>
-                        @foreach($fields as $key => $label)
-                            <label class="rset-switch">
-                                <span>{{ $label }}</span>
-                                <input type="checkbox" role="switch" name="show[]" value="{{ $receipt }}.{{ $key }}" @checked(! in_array("$receipt.$key", $hidden, true))>
-                            </label>
-                        @endforeach
-                    </fieldset>
+                    @php($gid = "rs-$receipt-g$loop->index")
+                    <section class="rs-group" role="group" aria-labelledby="{{ $gid }}-t" data-rs-group="{{ $gid }}">
+                        <header class="rs-group-head">
+                            <div class="rs-group-id">
+                                <h3 class="rs-group-title" id="{{ $gid }}-t">{{ $group }}</h3>
+                                <p class="rs-count" x-text="countText('{{ $gid }}')">{{ $on($receipt, $fields) }} of {{ count($fields) }} shown</p>
+                            </div>
+                            @if(count($fields) > 1)
+                                <button type="button" class="rs-master" hidden :hidden="false" @click="master('{{ $gid }}')"><span x-text="allOn('{{ $gid }}') ? 'Hide all' : 'Show all'">{{ $on($receipt, $fields) === count($fields) ? 'Hide all' : 'Show all' }}</span><span class="rs-sr"> in {{ $group }}</span></button>
+                            @endif
+                        </header>
+                        <div class="rs-rows">
+                            @foreach($fields as $key => $label)
+                                <x-dhiran.switch id="rs-{{ $receipt }}-{{ $key }}" name="show[]" value="{{ $receipt }}.{{ $key }}" :label="$label"
+                                                 :hint="$hints[$receipt.'.'.$key] ?? null" :checked="in_array($receipt.'.'.$key, $printed, true)" />
+                            @endforeach
+                        </div>
+                    </section>
                 @endforeach
             </div>
+        </section>
+    @endforeach
+
+    <section class="rs-text" aria-labelledby="rs-text-t">
+        <h2 class="rs-panel-title rs-text-title" id="rs-text-t">Printed text</h2>
+        <p class="rs-panel-lead">Words you write once. They are printed exactly as typed.</p>
+        @foreach([
+            ['terms', 'receipt_terms_text', 'Terms on the pledge receipt', 'Printed under the items when "Terms and conditions" is on, for example your rules on interest and auction.', 5],
+            ['closure', 'closure_certificate_text', 'Text on the closure certificate', 'Printed on the certificate given when a loan is closed.', 3],
+        ] as [$tid, $name, $label, $help, $rows])
+            <div class="rs-field">
+                <label class="rs-field-label" for="rs-{{ $tid }}">{{ $label }}</label>
+                <textarea id="rs-{{ $tid }}" name="{{ $name }}" rows="{{ $rows }}" maxlength="5000" class="dset-input dset-textarea rs-textarea" data-rs-len="{{ $tid }}"
+                          aria-describedby="rs-{{ $tid }}-h @error($name) rs-{{ $tid }}-e @enderror" @error($name) aria-invalid="true" @enderror>{{ old($name, $settings->{$name}) }}</textarea>
+                <p class="rs-field-foot"><span class="rs-help" id="rs-{{ $tid }}-h">{{ $help }}</span><span class="rs-len" aria-hidden="true"><span x-text="(len.{{ $tid }} ?? 0).toLocaleString('en-IN')">{{ number_format(mb_strlen((string) old($name, $settings->{$name})), 0) }}</span> / 5,000</span></p>
+                @error($name)<p class="rs-error" id="rs-{{ $tid }}-e">{{ $message }}</p>@enderror
+            </div>
         @endforeach
-        <h3 class="rset-receipt-title">Printed texts</h3>
-        <div class="dset-fields" style="margin:12px 0 18px">
-            <div class="dset-field--wide">
-                <label class="dset-label" for="ds-terms">Terms printed on the pledge receipt</label>
-                <textarea id="ds-terms" name="receipt_terms_text" rows="3" maxlength="5000" class="dset-input dset-textarea">{{ old('receipt_terms_text', $settings->receipt_terms_text) }}</textarea>
-            </div>
-            <div class="dset-field--wide">
-                <label class="dset-label" for="ds-closure">Text on the closure certificate</label>
-                <textarea id="ds-closure" name="closure_certificate_text" rows="2" maxlength="5000" class="dset-input dset-textarea">{{ old('closure_certificate_text', $settings->closure_certificate_text) }}</textarea>
-            </div>
+    </section>
+
+    <div class="rs-bar">
+        <p class="rs-status" role="status" :class="{ 'is-dirty': dirty }" x-text="message">No changes yet</p>
+        <div class="rs-bar-actions">
+            <button type="button" class="btn btn-secondary rs-discard" hidden :hidden="!dirty" @click="discard()">Discard changes</button>
+            <button type="submit" class="btn btn-primary rs-save"><x-icon name="save" size="16" /> Save changes</button>
         </div>
-        <div class="dset-actions">
-            <button type="submit" class="btn btn-dark btn-sm"><x-icon name="save" size="14" class="mr-1" /> Save receipt settings</button>
-        </div>
-    </form>
-</section>
+    </div>
+</form>
 </div>
+<noscript><style>.rs-seg, .rs-sample, .rs-master { display: none !important; } .rs-panel[hidden] { display: block !important; } .rs-panel-title { position: static !important; width: auto !important; height: auto !important; clip-path: none !important; }</style></noscript>
+
+@push('scripts')
+<script>
+    // Alpine state for the receipt form (global function, so it also works after a Turbo visit).
+    window.rsReceiptSettings = (opts) => ({
+        tab: 'pledge', dirty: !!opts.dirty, saving: false, announce: '', counts: {}, panels: {}, len: {}, base: null,
+        get message() { return this.dirty ? 'Unsaved changes' : (this.announce || 'No changes yet'); },
+        snapshot() { const d = new FormData(this.$root); d.delete('_token'); return new URLSearchParams(d).toString(); },
+        init() {
+            const names = ['pledge', 'payment'];
+            let want = location.hash.slice(1);
+            if (!names.includes(want)) { try { want = sessionStorage.getItem('rs-tab'); } catch (e) { want = null; } }
+            this.tab = names.includes(want) ? want : 'pledge';
+            this.$root.classList.add('rs-tabbed');
+            this.recount();
+            this.base = opts.dirty ? null : this.snapshot();
+            if (opts.saved) setTimeout(() => { this.announce = opts.saved; }, 300); // set after load so the status region is announced
+        },
+        setTab(t) {
+            this.tab = t;
+            try { sessionStorage.setItem('rs-tab', t); history.replaceState(history.state, '', '#' + t); } catch (e) {}
+        },
+        move(step) { const n = ['pledge', 'payment']; const t = n[(n.indexOf(this.tab) + step + n.length) % n.length]; this.setTab(t); this.$nextTick(() => document.getElementById('rs-tab-' + t).focus()); },
+        recount() {
+            const counts = {}, panels = {}, len = {};
+            this.$root.querySelectorAll('[data-rs-group]').forEach((g) => {
+                const boxes = [...g.querySelectorAll('input[name="show[]"]')];
+                counts[g.dataset.rsGroup] = { on: boxes.filter((b) => b.checked).length, total: boxes.length };
+            });
+            this.$root.querySelectorAll('[data-rs-panel]').forEach((p) => {
+                const boxes = [...p.querySelectorAll('input[name="show[]"]')];
+                panels[p.dataset.rsPanel] = { on: boxes.filter((b) => b.checked).length, total: boxes.length };
+            });
+            this.$root.querySelectorAll('[data-rs-len]').forEach((t) => { len[t.dataset.rsLen] = t.value.length; });
+            this.counts = counts; this.panels = panels; this.len = len;
+        },
+        countText(id) { const c = this.counts[id]; return c ? c.on + ' of ' + c.total + ' shown' : ''; },
+        panelText(id) { const c = this.panels[id]; return c ? c.on + ' of ' + c.total + ' fields printed' : ''; },
+        allOn(id) { const c = this.counts[id]; return !!c && c.on === c.total; },
+        master(id) {
+            const turnOn = !this.allOn(id);
+            this.$root.querySelectorAll('[data-rs-group="' + id + '"] input[name="show[]"]').forEach((b) => { b.checked = turnOn; });
+            this.touch();
+        },
+        touch() { this.recount(); this.dirty = this.base === null ? true : this.snapshot() !== this.base; },
+        discard() { this.$root.reset(); this.base = this.snapshot(); this.announce = ''; this.recount(); this.dirty = false; },
+    });
+</script>
+@endpush
 </x-dhiran-layout>

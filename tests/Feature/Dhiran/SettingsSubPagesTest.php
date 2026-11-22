@@ -82,11 +82,20 @@ class SettingsSubPagesTest extends TestCase
         foreach ($pages as $path => $label) {
             $html = $this->page($owner, $path)->assertOk()->getContent();
             [$all, $cur] = $this->items($html);
-            $this->assertSame(['Loan', 'Receipt', 'Users & roles', 'Plan & billing'], $all, $path);
+            $this->assertSame(['Loan settings', 'Receipt settings', 'Users & roles', 'Plan & billing'], $all, $path);
             $this->assertCount(1, $cur, $path);
             $this->assertStringStartsWith(explode(' ', $label)[0], $cur[0], $path);
             $this->assertStringContainsString($label, html_entity_decode(strip_tags($html)), "$path heading");
         }
+    }
+
+    public function test_receipt_page_title_is_the_section_switcher_and_the_links_are_its_list(): void
+    {
+        $owner = $this->owner($this->shop());
+        $html = $this->page($owner, '/dhiran/settings/receipt')->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/<button[^>]*data-section-switch[^>]*aria-controls="settings-sections"[^>]*>.*?data-section-label>Receipt settings</s', $html);
+        $this->assertMatchesRegularExpression('/<nav class="dh-subnav" id="settings-sections" data-section-list/', $html);
+        $this->assertMatchesRegularExpression('/<a [^>]*aria-current="page"[^>]*>\s*Receipt settings\s*<\/a>/', $this->nav($html));
     }
 
     public function test_receipt_page_has_switches_and_terms_textareas(): void
@@ -149,7 +158,7 @@ class SettingsSubPagesTest extends TestCase
     {
         $user = $this->userWith($this->shop(), ['dhiran.view', 'dhiran.settings']);
         [$all] = $this->items($this->page($user, '/dhiran/settings')->assertOk()->getContent());
-        $this->assertSame(['Loan', 'Receipt'], $all);
+        $this->assertSame(['Loan settings', 'Receipt settings'], $all);
         $this->page($user, '/settings')->assertForbidden();
     }
 }
