@@ -96,6 +96,7 @@
                 <table class="dd-table dd-t-rec">
                     <thead>
                         <tr>
+                            <th scope="col" class="dh-sno-th">#</th>
                             <th scope="col">Loan #</th>
                             <th scope="col">Status</th>
                             <th scope="col" class="num">Principal</th>
@@ -108,13 +109,14 @@
                     <tbody>
                         @foreach($loanList as $loan)
                             <tr>
-                                <td data-cell="title" class="strong"><a href="{{ route('dhiran.show', $loan) }}">{{ $loan->loan_number }}</a></td>
+                                <x-dhiran.sno :rows="$loanList" :n="$loop->iteration" />
+                                <td data-cell="title" data-label="Loan #" class="strong"><a href="{{ route('dhiran.show', $loan) }}">{{ $loan->loan_number }}</a></td>
                                 <td data-label="Status"><x-dhiran.status :value="$loan->status" /></td>
                                 <td data-label="Principal" class="num">{{ $rupee($loan->principal_amount) }}</td>
                                 <td data-label="Outstanding" class="num strong">{{ $rupee($loan->totalOutstanding()) }}</td>
                                 <td data-label="Created">{{ $loan->loan_date?->format('d M Y') }}</td>
                                 <td data-label="Maturity">{{ $loan->maturity_date?->format('d M Y') }}</td>
-                                <td data-cell="act"><a href="{{ route('dhiran.show', $loan) }}" class="dd-tlink dd-tlink--link">View loan <span class="dd-sr">{{ $loan->loan_number }}</span></a></td>
+                                <td data-cell="act" data-label="Open"><a href="{{ route('dhiran.show', $loan) }}" class="dd-tlink dd-tlink--link">View loan <span class="dd-sr">{{ $loan->loan_number }}</span></a></td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -158,6 +160,7 @@
                 <table class="dd-table dd-t-pay">
                     <thead>
                         <tr>
+                            <th scope="col" class="dh-sno-th">#</th>
                             <th scope="col">Date</th>
                             <th scope="col">Loan</th>
                             <th scope="col">Type</th>
@@ -171,14 +174,15 @@
                     <tbody>
                         @foreach($payments as $p)
                             <tr>
+                                <x-dhiran.sno :rows="$payments" :n="$loop->iteration" />
                                 <td data-label="Date">{{ optional($p->payment_date)->format('d M Y') ?? $p->created_at->format('d M Y') }}</td>
                                 <td data-label="Loan">@if($p->loan)<a href="{{ route('dhiran.show', $p->loan) }}">{{ $p->loan->loan_number }}</a>@else — @endif</td>
-                                <td data-cell="title" class="strong">{{ ucwords(str_replace('_', ' ', $p->type)) }}</td>
+                                <td data-cell="title" data-label="Type" class="strong">{{ ucwords(str_replace('_', ' ', $p->type)) }}</td>
                                 <td data-label="Principal" class="num">{{ $rupee($p->principal_component) }}</td>
                                 <td data-label="Interest" class="num">{{ $rupee($p->interest_component) }}</td>
                                 <td data-label="Penalty" class="num">{{ $rupee($p->penalty_component) }}</td>
                                 <td data-cell="amount" data-label="Total" class="num strong">{{ $rupee($p->amount) }}</td>
-                                <td data-cell="act">@if($p->loan)<a href="{{ route('dhiran.payment-receipt', [$p->loan, $p]) }}" class="dd-tlink">Receipt</a>@endif</td>
+                                <td data-cell="act" data-label="Receipt">@if($p->loan)<a href="{{ route('dhiran.payment-receipt', [$p->loan, $p]) }}" class="dd-tlink">Receipt</a>@endif</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -195,6 +199,7 @@
             <table class="dd-table dd-t-rec">
                 <thead>
                     <tr>
+                        <th scope="col" class="dh-sno-th">#</th>
                         <th scope="col">Item</th>
                         <th scope="col">Metal</th>
                         <th scope="col">Purity</th>
@@ -209,7 +214,8 @@
                 <tbody>
                     @foreach($allItems as [$item, $loan])
                         <tr>
-                            <td data-cell="title" class="strong"><a href="{{ route('dhiran.items.show', $item) }}">{{ $item->description }}</a></td>
+                            <x-dhiran.sno :rows="null" :n="$loop->iteration" />
+                            <td data-cell="title" data-label="Item" class="strong"><a href="{{ route('dhiran.items.show', $item) }}">{{ $item->description }}</a></td>
                             <td data-label="Metal" class="capitalize">{{ $item->metal_type ?? 'gold' }}</td>
                             <td data-label="Purity">@if(($item->metal_type ?? "gold") === "other")—@else{{ rtrim(rtrim((string) $item->purity, "0"), ".") }}{{ ($item->metal_type ?? "gold") === "silver" ? "" : "K" }}@endif</td>
                             <td data-label="Gross (g)" class="num">{{ number_format($item->gross_weight, 3) }}</td>

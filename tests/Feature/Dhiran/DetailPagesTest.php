@@ -100,7 +100,7 @@ class DetailPagesTest extends TestCase
 
         $this->assertStringContainsString('Evidence required before activation', $html);
         $this->assertMatchesRegularExpression('/<button[^>]*disabled[^>]*>Activate Loan<\/button>/', $html);
-        $this->assertMatchesRegularExpression('/<button[^>]*dd-danger[^>]*>Cancel loan<\/button>/', $html, 'a destructive action keeps its words');
+        $this->assertMatchesRegularExpression('/<button[^>]*btn-danger[^>]*>Cancel loan<\/button>/', $html, 'a destructive action keeps its words');
         $this->assertStringNotContainsString('Pay Interest</button>', substr($html, 0, strpos($html, 'id="payInterestModal"')), 'no payment actions before activation');
     }
 
@@ -109,7 +109,7 @@ class DetailPagesTest extends TestCase
         [$shop, $owner] = $this->shopWithOwner('9390002003');
         $html = $this->show($shop, $owner, $this->loan($shop, $owner)->id);
 
-        $this->assertMatchesRegularExpression('/dd-danger[^>]*>\s*<svg[^>]*>.*?<\/svg>Pre-Close<\/button>/s', $html);
+        $this->assertMatchesRegularExpression('/btn-danger[^>]*>\s*<svg[^>]*>.*?<\/svg>Pre-Close<\/button>/s', $html);
         // The icon-collapse pattern is for print and back only: its text stays in the page for screen readers.
         preg_match_all('/<(?:a|button)[^>]*btn-collapse[^>]*>.*?<\/(?:a|button)>/s', $html, $collapse);
         $this->assertNotEmpty($collapse[0]);

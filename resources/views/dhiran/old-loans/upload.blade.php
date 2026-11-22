@@ -43,7 +43,7 @@
 
             <form method="POST" action="{{ route('dhiran.old-loans.upload.store') }}" enctype="multipart/form-data" data-turbo-frame="_top"
                   class="fm-card" aria-labelledby="up-h-2"
-                  x-data="{ name: '', busy: false }" @submit="busy = !$event.defaultPrevented" @pageshow.window="busy = false" @turbo:submit-end="if (!$event.detail.success) busy = false">
+                  x-data="{ name: '', busy: false }" @submit="busy = !$event.defaultPrevented" @pageshow.window="busy = false">
                 @csrf
                 <header class="fm-card-head">
                     <span class="fm-num" aria-hidden="true">2</span>

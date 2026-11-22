@@ -84,9 +84,6 @@ class DhiranPhoneTablesTest extends TestCase
                         continue; // "nothing here" row
                     }
                     foreach ($cells as $i => $td) {
-                        if ($td->hasAttribute('data-cell') && ! $td->hasAttribute('data-label')) {
-                            continue; // dd-table: the card's title and action cells are named by their content
-                        }
                         $this->assertSame($heads[$i] ?? null, $td->getAttribute('data-label'), "{$page}: cell {$i} label");
                         // Owner 2026-11-11: one piece of data per column, never stacked under another inside a cell.
                         $stacked = $xp->query('.//div|.//p|.//br|.//small', $td)->length;

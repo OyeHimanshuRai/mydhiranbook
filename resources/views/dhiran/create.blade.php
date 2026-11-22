@@ -33,7 +33,7 @@
          @turbo:before-cache.window="document.body.classList.remove('dh-modal-open')"
          @pageshow.window="submitting = false">
 
-        <form method="POST" action="{{ route('dhiran.store') }}" id="fm-form" class="fm-page dhiran-create-form" @submit="prepareSubmit($event)" @turbo:submit-end="if (!$event.detail.success) submitting = false" data-turbo-frame="_top">
+        <form method="POST" action="{{ route('dhiran.store') }}" id="fm-form" class="fm-page dhiran-create-form" @submit="prepareSubmit($event)" data-turbo-frame="_top">
             @csrf <x-dhiran.once />
 
             @if($errors->any())

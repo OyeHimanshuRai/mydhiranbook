@@ -49,7 +49,7 @@
     <div class="content-inner">
         <form method="POST" action="{{ route('dhiran.old-loans.store') }}" id="ol-form" class="fm-page" data-turbo-frame="_top"
               @submit="busy = !$event.defaultPrevented"
-              @pageshow.window="busy = false" @turbo:submit-end="if (!$event.detail.success) busy = false"
+              @pageshow.window="busy = false"
               x-data="{
                   busy: false,
                   customerId: @js((string) old('customer_id', '')),

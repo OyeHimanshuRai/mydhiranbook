@@ -121,7 +121,7 @@
                     @unless($evidence['ok'] ?? false)
                         <p class="dd-reason">Upload both required documents in the Evidence &amp; Documents section below to enable activation.</p>
                     @endunless
-                    <button type="button" class="btn btn-secondary btn-sm dd-danger" onclick="document.getElementById('cancelLoanModal').showModal()">Cancel loan</button>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('cancelLoanModal').showModal()">Cancel loan</button>
                 @endif
 
                 @if($canPay)
@@ -150,7 +150,7 @@
                         @if($canPay || $noticeDue || $canExecute || $canRemove)
                             <p class="dd-group">Close out</p>
                             @if($canPay)
-                                <button type="button" class="btn btn-secondary btn-sm dd-danger" onclick="document.getElementById('precloseModal').showModal()"><x-icon name="circle-x" size="16" />Pre-Close</button>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('precloseModal').showModal()"><x-icon name="circle-x" size="16" />Pre-Close</button>
                             @endif
                             @if($noticeDue)
                                 <form method="POST" action="{{ route('dhiran.send-notice', $loan) }}" data-turbo-frame="_top">
@@ -167,7 +167,7 @@
                                 </form>
                             @endif
                             @if($canRemove)
-                                <button type="button" class="btn btn-secondary btn-sm dd-danger" onclick="document.getElementById('cancelLoanModal').showModal()">Remove old loan (entered by mistake)</button>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('cancelLoanModal').showModal()">Remove old loan (entered by mistake)</button>
                             @endif
                         @endif
                     </div>
@@ -228,6 +228,7 @@
             <table class="dd-table dd-t-rec">
                 <thead>
                     <tr>
+                        <th scope="col" class="dh-sno-th">#</th>
                         <th scope="col">Description</th>
                         <th scope="col">Metal</th>
                         <th scope="col" class="num">Gross Wt</th>
@@ -243,7 +244,8 @@
                 <tbody>
                     @forelse($loan->items ?? [] as $item)
                         <tr>
-                            <td data-cell="title" class="strong"><a href="{{ route('dhiran.items.show', $item) }}">{{ $item->description }}</a></td>
+                            <x-dhiran.sno :rows="null" :n="$loop->iteration" />
+                            <td data-cell="title" data-label="Description" class="strong"><a href="{{ route('dhiran.items.show', $item) }}">{{ $item->description }}</a></td>
                             <td data-label="Metal" class="capitalize">{{ $item->metal_type ?? 'gold' }}</td>
                             <td data-label="Gross Wt" class="num">{{ number_format($item->gross_weight, 3) }}g</td>
                             <td data-label="Net Wt" class="num">{{ number_format($item->net_metal_weight, 3) }}g</td>
@@ -256,7 +258,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="is-empty">
+                            <td colspan="11" class="is-empty">
                                 @if($loan->status === 'renewed' && $loan->renewals->isNotEmpty())
                                     Items moved to {{ $loan->renewals->first()->loan_number }} with the renewal.
                                 @else
@@ -313,6 +315,7 @@
             <table class="dd-table dd-t-pay">
                 <thead>
                     <tr>
+                        <th scope="col" class="dh-sno-th">#</th>
                         <th scope="col">Date</th>
                         <th scope="col">Type</th>
                         <th scope="col" class="num">Amount</th>
@@ -326,17 +329,18 @@
                 <tbody>
                     @forelse($loan->payments ?? [] as $payment)
                         <tr>
+                            <x-dhiran.sno :rows="null" :n="$loop->iteration" />
                             <td data-label="Date">{{ $payment->payment_date ? $payment->payment_date->format('d M Y') : '---' }}</td>
-                            <td data-cell="title" class="strong">{{ $payment->type ? ucwords(str_replace('_', ' ', $payment->type)) : '---' }}</td>
+                            <td data-cell="title" data-label="Type" class="strong">{{ $payment->type ? ucwords(str_replace('_', ' ', $payment->type)) : '---' }}</td>
                             <td data-cell="amount" data-label="Amount" class="num strong">{{ $rupee($payment->amount) }}</td>
                             <td data-label="Principal" class="num">{{ $rupee($payment->principal_component ?? 0) }}</td>
                             <td data-label="Interest" class="num">{{ $rupee($payment->interest_component ?? 0) }}</td>
                             <td data-label="Penalty" class="num">{{ $rupee($payment->penalty_component ?? 0) }}</td>
                             <td data-label="Method"><span class="dd-method">{{ \App\Models\Dhiran\DhiranPayment::methodLabel($payment->payment_method) }}</span></td>
-                            <td data-cell="act"><a href="{{ route('dhiran.payment-receipt', [$loan, $payment]) }}" target="_blank" class="dd-tlink">Print Receipt</a></td>
+                            <td data-cell="act" data-label="Receipt"><a href="{{ route('dhiran.payment-receipt', [$loan, $payment]) }}" target="_blank" class="dd-tlink">Print Receipt</a></td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="is-empty">No payments recorded yet</td></tr>
+                        <tr><td colspan="9" class="is-empty">No payments recorded yet</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -359,7 +363,7 @@
                 @if($removableOld)
                     Use this only if this old loan was entered by mistake. It is marked cancelled and its opening balance withdrawn; nothing goes into the cash book. Enter it again with the right figures. This cannot be undone.
                 @else
-                    Use this when the loan will not go ahead. The cash book gets the ₹{{ number_format((float) $loan->outstanding_principal, 2) }} paid out back in{{ (float) $loan->processing_fee > 0 ? ' and the ₹' . number_format((float) $loan->processing_fee, 2) . ' fee back out' : '' }}, and the items are marked returned to the borrower. This cannot be undone.
+                    Use this when the loan will not go ahead. The cash book gets the {{ $rupee($loan->outstanding_principal) }} paid out back in{{ (float) $loan->processing_fee > 0 ? ' and the ' . $rupee($loan->processing_fee) . ' fee back out' : '' }}, and the items are marked returned to the borrower. This cannot be undone.
                 @endif
             </p>
             <div>

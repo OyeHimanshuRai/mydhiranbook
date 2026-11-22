@@ -41,7 +41,7 @@
 /* ───────── Balance: the total first, then what it is made of ───────── */
 .dd-total { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--sp-1) var(--sp-4); padding: var(--fl-card-pad); border-bottom: 1px solid var(--dh-line-soft); }
 .dh-app .dd-fig-label { font-size: var(--fl-fs-meta); font-weight: 600; line-height: 1.3; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dh-muted); }
-.dh-app .dd-total-value { font-size: clamp(1.625rem, 1.3rem + 1.6vw, 2.25rem); line-height: 1.1; font-weight: 700; color: var(--dh-ink); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.dh-app .dd-total-value { font-size: calc(var(--fl-fs-h1) * 1.25); line-height: 1.1; font-weight: 700; color: var(--dh-ink); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .dd-breakdown { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; }
 .dd-breakdown > div { min-width: 0; padding: var(--sp-3) var(--fl-card-pad); border-top: 1px solid var(--dh-line-soft); }
 .dd-breakdown > div:nth-child(-n+2) { border-top: 0; }
@@ -89,9 +89,6 @@
 .dd-more-list form { display: contents; }
 .dh-app .dd-group { margin: var(--sp-2) 0 0; font-size: var(--fl-fs-meta); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dh-muted); }
 .dh-app .dd-group:first-child { margin-top: 0; }
-.dh-app .dd-actions .btn.dd-danger { background: var(--dh-danger-soft); border-color: var(--dh-danger-line); color: var(--dh-danger); }
-@media (hover: hover) and (pointer: fine) { .dh-app .dd-actions .btn.dd-danger:hover { background: var(--dh-danger-line); color: var(--dh-danger); } }
-.dh-app .dd-actions .btn.btn-danger { background: var(--dh-danger); border-color: var(--dh-danger); color: var(--dh-on-accent); }
 .dd-docs { display: grid; gap: var(--sp-2); }
 .dh-app .dd-actions .btn:disabled { opacity: 1; background: var(--dh-muted-surface); border-color: var(--dh-line); color: var(--dh-muted); }
 .dh-app .dd-reason { margin: 0; font-size: var(--fl-fs-cell); line-height: 1.4; font-weight: 400; color: var(--dh-muted); }
@@ -151,6 +148,7 @@
     .dh-app .dd-table td[data-cell="title"] { grid-column: 1 / -1; order: -3; font-size: var(--fl-fs-h2); font-weight: 700; line-height: var(--fl-lh-head); }
     .dh-app .dd-table td[data-cell="title"]::before { content: none; }
     .dh-app .dd-table td[data-cell="full"] { grid-column: 1 / -1; }
+    .dh-app .dd-table td.dh-sno { display: none; }
     .dh-app .dd-table td.is-empty { grid-column: 1 / -1; padding: var(--sp-5) 0; text-align: center; }
     .dh-app .dd-table td.is-empty::before { content: none; }
     /* payments: type left, amount right, then the pairs */

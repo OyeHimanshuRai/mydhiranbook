@@ -24,7 +24,7 @@
 
     <div class="content-inner">
         <form method="POST" action="{{ route('dhiran.customers.store') }}" id="bc-form" class="fm-page fm-page--narrow"
-              x-data="{ busy: false }" @submit="busy = !$event.defaultPrevented" @pageshow.window="busy = false" @turbo:submit-end="if (!$event.detail.success) busy = false">
+              x-data="{ busy: false }" @submit="busy = !$event.defaultPrevented" @pageshow.window="busy = false">
             @csrf
             @if($errors->any())
                 <div class="fm-alert" role="alert" tabindex="-1" x-init="$nextTick(() => $el.focus())">
