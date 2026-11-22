@@ -75,7 +75,7 @@ class DhiranMetalPurityTest extends TestCase
         });
         $this->assertStringNotContainsString('Gold Purity', $html);
         $this->assertStringNotContainsString('Purity (K)', $html);
-        $this->assertStringContainsString('>Type', $html); // collateral type selector present
+        $this->assertStringContainsString('>Metal<', $html); // collateral metal selector present (label was "Type" before the 2026-11-22 forms redesign)
         // silver purity options exist in the page
         $this->assertStringContainsString('925', $html);
     }

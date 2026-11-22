@@ -1,457 +1,462 @@
 <x-dhiran-layout title="New Loan">
+    @vite('resources/css/dhiran-forms.css')
     <x-dhiran.page-header>
         <div>
             <h1 class="page-title">New Pledge Loan</h1>
             <p class="text-sm text-gray-500 mt-1">Create a new gold &amp; silver pledge loan</p>
         </div>
         <div class="page-actions">
-            <a href="{{ route('dhiran.loans') }}" class="btn btn-secondary btn-sm">
-                <x-icon name="arrow-left" size="14" class="mr-1" />
-                Back to Loans
-            </a>
+            <x-dhiran.btn-collapse icon="arrow-left" label="Back to Loans" :href="route('dhiran.loans')" />
         </div>
     </x-dhiran.page-header>
+
+    @php
+        $sym = $currencySymbol ?? '₹';
+        // Server refusals per pledged item (items.N.field), handed to the Alpine items so each card shows its own.
+        $itemErrors = [];
+        foreach ($errors->getMessages() as $k => $msgs) {
+            if (preg_match('/^items\.(\d+)\./', $k, $m)) { $itemErrors[(int) $m[1]][] = $msgs[0]; }
+        }
+        $fieldIds = ['principal_amount', 'gold_rate_on_date', 'interest_rate_monthly', 'interest_type', 'tenure_months', 'penalty_rate_monthly', 'notes'];
+        $anchorFor = fn ($k) => match (true) {
+            $k === 'customer_id' => 'fm-customer-search',
+            str_starts_with($k, 'items') => 'fm-step-items',
+            in_array($k, ['pan', 'aadhaar'], true) => 'fm-step-kyc',
+            in_array($k, $fieldIds, true) => $k,
+            default => 'fm-form',
+        };
+    @endphp
 
     <div class="content-inner"
          x-data="dhiranCreateForm()"
          x-effect="document.body.classList.toggle('dh-modal-open', newBorrowerOpen)"
-         @turbo:before-cache.window="document.body.classList.remove('dh-modal-open')">
+         @turbo:before-cache.window="document.body.classList.remove('dh-modal-open')"
+         @pageshow.window="submitting = false">
 
-        <form method="POST" action="{{ route('dhiran.store') }}" class="dhiran-create-form max-w-4xl mx-auto space-y-6" @submit="prepareSubmit" data-turbo-frame="_top">
+        <form method="POST" action="{{ route('dhiran.store') }}" id="fm-form" class="fm-page dhiran-create-form" @submit="prepareSubmit($event)" data-turbo-frame="_top">
             @csrf <x-dhiran.once />
 
-            {{-- Customer Section --}}
-            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-visible p-6">
-                <div class="dh-section-title">
-                    <x-icon name="user" />
-                    Customer Details
+            @if($errors->any())
+                <div class="fm-alert" role="alert" tabindex="-1" x-init="$nextTick(() => $el.focus())">
+                    <x-icon name="circle-alert" size="20" />
+                    <div>
+                        <p class="fm-alert-title">The loan was not created. Please fix:</p>
+                        <ul>
+                            @foreach($errors->keys() as $k)
+                                <li><a href="#{{ $anchorFor($k) }}">{{ $errors->first($k) }}</a></li>
+                            @endforeach
+                        </ul>
+                    </div>
                 </div>
+            @endif
 
-                <div class="dh-customer-stack">
-                    <div class="dh-customer-search-row" @click.outside="customerDropdownOpen = false">
-                        <div class="dh-customer-search-box">
-                            <label class="dh-label">
-                                <x-icon name="user" />
-                                Customer *
-                            </label>
-                            <input type="hidden" name="customer_id" :value="customer_id">
-                            <div class="dh-dd-wrap" :class="{ 'dd-open': customerDropdownOpen }">
-                                <div class="dh-customer-search-control" :class="{ open: customerDropdownOpen }">
-                                    <span class="dh-customer-search-icon"><x-icon name="search" size="15" /></span>
-                                    <input type="search"
-                                           class="dh-customer-search-input"
-                                           placeholder="Search borrower by name, mobile, PAN, or ID"
-                                           x-model="customerSearch"
-                                           @focus="customerDropdownOpen = true"
-                                           @input="handleCustomerSearchInput()">
-                                </div>
-                                <div class="dh-dd-panel dh-customer-results-panel" :class="{ open: customerDropdownOpen }">
-                                    <div class="dh-dd-list">
-                                        <template x-for="c in filteredCustomers" :key="c.id">
-                                            <button type="button" class="dh-dd-opt" @click="selectCustomer(c)">
-                                                <span class="dh-dd-opt-name" x-text="c.name"></span>
-                                                <span class="dh-dd-opt-sub" x-text="[c.mobile, c.address].filter(Boolean).join(' · ') || 'No profile details added'"></span>
-                                            </button>
-                                        </template>
-                                        <div x-show="filteredCustomers.length === 0" class="dh-dd-opt dh-dd-opt-muted">
-                                            No borrowers found.
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            @error('customer_id')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
+            <nav class="fm-steps" aria-label="Steps of this form">
+                <ol>
+                    <li><a href="#fm-step-customer"><span class="fm-num" :class="customerDone && 'is-done'"><span x-show="!customerDone">1</span><x-icon name="check" size="14" x-show="customerDone" x-cloak /></span><span class="fm-step-name">Customer</span><span class="fm-sr" x-show="customerDone" x-cloak>, done</span></a></li>
+                    <li><a href="#fm-step-items"><span class="fm-num" :class="itemsDone && 'is-done'"><span x-show="!itemsDone">2</span><x-icon name="check" size="14" x-show="itemsDone" x-cloak /></span><span class="fm-step-name">Items</span><span class="fm-sr" x-show="itemsDone" x-cloak>, done</span></a></li>
+                    <li><a href="#fm-step-terms"><span class="fm-num" :class="termsDone && 'is-done'"><span x-show="!termsDone">3</span><x-icon name="check" size="14" x-show="termsDone" x-cloak /></span><span class="fm-step-name">Terms</span><span class="fm-sr" x-show="termsDone" x-cloak>, done</span></a></li>
+                    <li><a href="#fm-step-kyc"><span class="fm-num">4</span><span class="fm-step-name">KYC &amp; notes</span></a></li>
+                </ol>
+            </nav>
+
+            {{-- 1 Customer --}}
+            <section class="fm-card" id="fm-step-customer" aria-labelledby="fm-h-customer">
+                <header class="fm-card-head">
+                    <span class="fm-num" aria-hidden="true">1</span>
+                    <div>
+                        <h2 class="fm-title" id="fm-h-customer">Customer</h2>
+                        <p class="fm-desc">Who is pledging? Search the borrowers you have saved, or add a new one.</p>
+                    </div>
+                </header>
+                <div class="fm-card-body">
+                    <input type="hidden" name="customer_id" :value="customer_id">
+                    <div class="fm-field fm-combo" @click.outside="customerDropdownOpen = false">
+                        <label class="fm-label" for="fm-customer-search">Borrower</label>
+                        <div class="fm-affix" :class="{ 'is-invalid': {{ $errors->has('customer_id') ? 'true' : 'false' }} && !selectedCustomer }">
+                            <span class="fm-unit fm-unit--pre" aria-hidden="true"><x-icon name="search" size="16" /></span>
+                            <input type="search" id="fm-customer-search" class="fm-control"
+                                   placeholder="Name, mobile or address" autocomplete="off" autocapitalize="off" spellcheck="false"
+                                   role="combobox" aria-autocomplete="list" aria-controls="fm-customer-list" :aria-expanded="customerDropdownOpen.toString()"
+                                   @if($errors->has('customer_id')) aria-invalid="true" aria-describedby="err-customer_id" @endif
+                                   x-model="customerSearch"
+                                   @focus="customerDropdownOpen = true"
+                                   @input="handleCustomerSearchInput()"
+                                   @keydown.escape="customerDropdownOpen = false"
+                                   @keydown.arrow-down.prevent="customerDropdownOpen = true; $nextTick(() => $refs.custList.querySelector('button')?.focus())">
                         </div>
-
-                        <button type="button" class="btn btn-dark btn-sm dh-customer-add-btn" @click="openNewBorrower()" aria-label="Add new borrower" title="Add new borrower">
-                            <x-icon name="plus" size="15" />
-                            <span>Add New Borrower</span>
-                        </button>
+                        <ul class="fm-combo-list" id="fm-customer-list" role="listbox" aria-label="Borrowers" x-ref="custList" x-show="customerDropdownOpen" x-cloak
+                            @keydown.escape="customerDropdownOpen = false; document.getElementById('fm-customer-search').focus()"
+                            @keydown.arrow-down.prevent="$event.target.closest('li')?.nextElementSibling?.querySelector('button')?.focus()"
+                            @keydown.arrow-up.prevent="($event.target.closest('li')?.previousElementSibling?.querySelector('button') || document.getElementById('fm-customer-search'))?.focus()">
+                            <template x-for="c in filteredCustomers" :key="c.id">
+                                <li role="presentation">
+                                    <button type="button" role="option" class="fm-combo-opt" @click="selectCustomer(c)">
+                                        <span class="fm-combo-name" x-text="c.name"></span>
+                                        <span class="fm-combo-sub" x-text="[c.mobile, c.address].filter(Boolean).join(' · ') || 'No profile details added'"></span>
+                                    </button>
+                                </li>
+                            </template>
+                            <li class="fm-combo-none" x-show="filteredCustomers.length === 0" role="presentation" x-text="customers.length === 0 ? 'No borrowers saved yet. Add the first one with the button below.' : 'No borrower matches. Check the spelling or add a new borrower.'"></li>
+                        </ul>
+                        @error('customer_id')
+                            <p class="fm-error" id="err-customer_id" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
+                        @enderror
                     </div>
 
-                    <div class="dh-customer-details-layout">
-                    <div class="dh-selected-customer-card" x-show="selectedCustomer" x-cloak>
-                        <div class="dh-selected-customer-head">
-                            <div class="dh-selected-customer-avatar" x-text="selectedCustomerInitials"></div>
-                            <div>
-                                <p class="dh-selected-customer-name" x-text="selectedCustomer && selectedCustomer.name ? selectedCustomer.name : 'Borrower'"></p>
-                                <p class="dh-selected-customer-sub">Selected borrower profile</p>
-                            </div>
-                        </div>
+                    <button type="button" class="btn btn-secondary fm-add-borrower" @click="openNewBorrower()">
+                        <x-icon name="user-plus" size="16" /> Add new borrower
+                    </button>
 
-                        <dl class="dh-selected-customer-grid">
-                            <div>
-                                <dt>Mobile</dt>
-                                <dd x-text="selectedCustomer && selectedCustomer.mobile ? selectedCustomer.mobile : 'Not added'"></dd>
-                            </div>
-                            <div>
-                                <dt>PAN</dt>
-                                <dd x-text="selectedCustomer && selectedCustomer.pan ? selectedCustomer.pan : 'Not added'"></dd>
-                            </div>
-                            <div>
-                                <dt>ID number</dt>
-                                <dd x-text="selectedCustomer && selectedCustomer.id_number ? selectedCustomer.id_number : 'Not added'"></dd>
-                            </div>
-                            <div>
-                                <dt>State code</dt>
-                                <dd x-text="selectedCustomer && selectedCustomer.state_code ? selectedCustomer.state_code : 'Not added'"></dd>
-                            </div>
-                            <div class="dh-selected-customer-address">
-                                <dt>Address</dt>
-                                <dd x-text="selectedCustomer && selectedCustomer.address ? selectedCustomer.address : 'Not added'"></dd>
-                            </div>
+                    <div class="fm-picked" x-show="selectedCustomer" x-cloak aria-live="polite">
+                        <p class="fm-picked-name" x-text="selectedCustomer && selectedCustomer.name ? selectedCustomer.name : 'Borrower'"></p>
+                        <dl class="fm-facts">
+                            <div><dt>Mobile</dt><dd x-text="selectedCustomer && selectedCustomer.mobile ? selectedCustomer.mobile : 'Not added'"></dd></div>
+                            <div><dt>State code</dt><dd x-text="selectedCustomer && selectedCustomer.state_code ? selectedCustomer.state_code : 'Not added'"></dd></div>
+                            <div class="fm-wide"><dt>Address</dt><dd x-text="selectedCustomer && selectedCustomer.address ? selectedCustomer.address : 'Not added'"></dd></div>
                         </dl>
                     </div>
-
-                    <div class="dh-selected-customer-empty" x-show="!selectedCustomer" x-cloak>
-                        <p>Select an existing borrower or add a new borrower to see their profile details here.</p>
-                    </div>
-                    </div>
+                    <p class="fm-note" x-show="!selectedCustomer" x-cloak>No borrower chosen yet. Their details will show here.</p>
                 </div>
+            </section>
 
-                <input type="hidden" name="pan" x-model="loanPan">
-                <input type="hidden" name="aadhaar" x-model="loanAadhaar">
-                @error('pan')
-                    <p class="mt-3 text-sm text-red-600">{{ $message }}</p>
-                @enderror
-                @error('aadhaar')
-                    <p class="mt-3 text-sm text-red-600">{{ $message }}</p>
-                @enderror
-            </div>
-
-            <div class="dh-borrower-modal"
-                 x-show="newBorrowerOpen"
-                 x-cloak
-                 x-transition.opacity
-                 @keydown.escape.window="closeNewBorrower()"
-                 @keydown.enter.prevent.stop="if (!$event.target.matches('textarea')) saveBorrower()"
-                 @click.self="closeNewBorrower()"
-                 @wheel.self.prevent
-                 @touchmove.self.prevent
-                 role="dialog"
-                 aria-modal="true"
-                 aria-labelledby="dh-borrower-modal-title">
-                <div class="dh-borrower-modal-card" @click.stop>
-                    <div class="dh-borrower-modal-head">
-                        <div>
-                            <h2 id="dh-borrower-modal-title">Add New Borrower</h2>
-                            <p>Create a borrower profile and select it for this pledge loan.</p>
-                        </div>
-                        <button type="button" class="dh-borrower-modal-close" @click="closeNewBorrower()" aria-label="Close borrower form">
-                            <x-icon name="x" />
-                        </button>
+            {{-- 2 Pledged items --}}
+            <section class="fm-card" id="fm-step-items" aria-labelledby="fm-h-items">
+                <header class="fm-card-head">
+                    <span class="fm-num" aria-hidden="true">2</span>
+                    <div>
+                        <h2 class="fm-title" id="fm-h-items">Pledged items</h2>
+                        <p class="fm-desc">One card for each piece the customer leaves with you.</p>
                     </div>
-
-                    <div class="dh-borrower-modal-body">
-                        <div class="dh-borrower-grid">
-                            <label class="dh-borrower-modal-field">
-                                <span>First name *</span>
-                                <input type="text" class="dh-borrower-input" placeholder="First name" x-model="nb.first_name">
-                            </label>
-                            <label class="dh-borrower-modal-field">
-                                <span>Last name</span>
-                                <input type="text" class="dh-borrower-input" placeholder="Last name" x-model="nb.last_name">
-                            </label>
-                            <label class="dh-borrower-modal-field">
-                                <span>Mobile number *</span>
-                                <input type="tel" class="dh-borrower-input" placeholder="10-digit mobile number" maxlength="10" x-model="nb.mobile">
-                            </label>
-                            <label class="dh-borrower-modal-field">
-                                <span>PAN</span>
-                                <input type="text" class="dh-borrower-input" placeholder="ABCDE1234F" maxlength="10" x-model="nb.pan" @input="nb.pan = nb.pan.toUpperCase()">
-                            </label>
-                            <label class="dh-borrower-modal-field">
-                                <span>ID number</span>
-                                <input type="text" class="dh-borrower-input" placeholder="ID number" x-model="nb.id_number">
-                            </label>
-                            <label class="dh-borrower-modal-field">
-                                <span>State code</span>
-                                <input type="text" class="dh-borrower-input" placeholder="State code" x-model="nb.state_code">
-                            </label>
-                            <label class="dh-borrower-modal-field dh-borrower-input--wide">
-                                <span>Address</span>
-                                <textarea class="dh-borrower-input dh-borrower-modal-address" placeholder="Borrower address" rows="3" x-model="nb.address"></textarea>
-                            </label>
-                        </div>
-                        <p class="dh-borrower-error" x-show="nbError" x-text="nbError"></p>
-                    </div>
-
-                    <div class="dh-borrower-modal-foot">
-                        <button type="button" class="btn btn-secondary btn-sm" @click="closeNewBorrower()" :disabled="nbSaving">Cancel</button>
-                        <button type="button" class="dh-borrower-save" @click="saveBorrower()" :disabled="nbSaving">
-                            <span x-text="nbSaving ? 'Saving…' : 'Save borrower'"></span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Pledged Items --}}
-            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-visible p-6">
-                <div class="dh-section-title">
-                    <x-icon name="package" />
-                    Pledged Items
-                </div>
-
-                <template x-for="(item, index) in items" :key="index">
-                    <div class="dh-item-row">
-                        <button type="button" class="dh-item-remove" @click="removeItem(index)" x-show="items.length > 1">
-                            <x-icon name="x" />
-                        </button>
-
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                            <div class="col-span-2">
-                                <label class="dh-label">Description *</label>
-                                <input type="text" :name="'items['+index+'][description]'" x-model="item.description"
-                                       placeholder="e.g. Gold chain, silver anklet" class="dh-input" required>
+                </header>
+                <div class="fm-card-body">
+                    <template x-for="(item, index) in items" :key="index">
+                        <fieldset class="fm-item" :id="'fm-item-' + index" :aria-labelledby="'fm-item-h-' + index">
+                            <div class="fm-item-head">
+                                <h3 :id="'fm-item-h-' + index" x-text="'Item ' + (index + 1)"></h3>
+                                <button type="button" class="btn btn-secondary fm-remove" x-show="items.length > 1" @click="confirmRemove(index)" :aria-label="'Remove item ' + (index + 1)">
+                                    <x-icon name="trash-2" size="16" /> Remove
+                                </button>
                             </div>
-                            <div x-show="item.metal_type !== 'other'">
-                                <label class="dh-label">Gross Weight (g) <span x-show="item.value_mode !== 'appraised'">*</span></label>
-                                <input type="number" step="0.001" :name="'items['+index+'][gross_weight]'" x-model.number="item.gross_weight"
-                                       placeholder="0.000" class="dh-input" :required="item.metal_type !== 'other' && item.value_mode !== 'appraised'" @input="recalcItem(index)">
-                            </div>
-                            <div x-show="item.metal_type !== 'other'">
-                                <label class="dh-label">Stone Weight (g)</label>
-                                <input type="number" step="0.001" :name="'items['+index+'][stone_weight]'" x-model.number="item.stone_weight"
-                                       placeholder="0.000" class="dh-input" @input="recalcItem(index)">
-                            </div>
-                        </div>
+                            <p class="fm-error" role="alert" x-show="itemErr(index)" x-cloak><x-icon name="circle-alert" size="16" /><span x-text="itemErr(index)"></span></p>
 
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-                            <div>
-                                <label class="dh-label">Type *</label>
-                                <select :name="'items['+index+'][metal_type]'" x-model="item.metal_type" class="dh-select" required @change="onMetalChange(index)">
-                                    <option value="gold">Gold</option>
-                                    <option value="silver">Silver</option>
-                                    <option value="other">Other (diamond, platinum, watch…)</option>
-                                </select>
-                            </div>
-                            {{-- Valuation: metal-melt (auto from purity × rate) OR appraised
-                                 (operator enters value). 'Other' is always appraised. --}}
-                            <div x-show="item.metal_type !== 'other'">
-                                <label class="dh-label">Valuation</label>
-                                <select :name="'items['+index+'][value_mode]'" x-model="item.value_mode" class="dh-select" @change="recalcItem(index)">
-                                    <option value="metal">Auto (metal value)</option>
-                                    <option value="appraised">Appraised (enter value)</option>
-                                </select>
-                            </div>
-
-                            {{-- Metal-mode fields (gold/silver, auto valuation) --}}
-                            <template x-if="item.metal_type !== 'other' && item.value_mode !== 'appraised'">
-                                <div>
-                                    <label class="dh-label">Purity *</label>
-                                    <select :name="'items['+index+'][purity]'" x-model.number="item.purity" class="dh-select" required @change="recalcItem(index)">
-                                        <option value="">Select</option>
-                                        <template x-for="opt in purityOptions(item.metal_type)" :key="opt.value">
-                                            {{-- :selected — the options draw after x-model sets the value, so it showed "Select". --}}
-                                            <option :value="opt.value" x-text="opt.label" :selected="Number(opt.value) === Number(item.purity)"></option>
-                                        </template>
+                            <div class="fm-grid">
+                                <div class="fm-field fm-wide">
+                                    <label class="fm-label" :for="'it-desc-' + index">Description</label>
+                                    <input type="text" :id="'it-desc-' + index" :name="'items['+index+'][description]'" x-model="item.description" data-item-desc
+                                           placeholder="e.g. Gold chain, silver anklet" class="fm-control" required autocomplete="off">
+                                </div>
+                                <div class="fm-field">
+                                    <label class="fm-label" :for="'it-metal-' + index">Metal</label>
+                                    <select :id="'it-metal-' + index" :name="'items['+index+'][metal_type]'" x-model="item.metal_type" class="fm-control" required @change="onMetalChange(index)">
+                                        <option value="gold">Gold</option>
+                                        <option value="silver">Silver</option>
+                                        <option value="other">Other (diamond, platinum, watch…)</option>
                                     </select>
                                 </div>
-                            </template>
-                            <template x-if="item.metal_type !== 'other' && item.value_mode !== 'appraised'">
-                                <div>
-                                    <label class="dh-label">Rate/gram at Pledge</label>
-                                    <div class="dh-cost-wrap">
-                                        <span class="dh-cost-symbol">{{ $currencySymbol ?? '₹' }}</span>
-                                        <input type="number" step="0.01" :name="'items['+index+'][rate_per_gram_at_pledge]'" x-model.number="item.rate_per_gram_at_pledge"
-                                               placeholder="0.00" class="dh-input" @input="recalcItem(index)">
+                                {{-- Valuation: metal-melt (auto from purity × rate) OR appraised (operator enters value). 'Other' is always appraised. --}}
+                                <div class="fm-field" x-show="item.metal_type !== 'other'">
+                                    <label class="fm-label" :for="'it-mode-' + index">Valuation</label>
+                                    <select :id="'it-mode-' + index" :name="'items['+index+'][value_mode]'" x-model="item.value_mode" class="fm-control" @change="recalcItem(index)">
+                                        <option value="metal">Auto (metal value)</option>
+                                        <option value="appraised">Appraised (enter value)</option>
+                                    </select>
+                                </div>
+
+                                {{-- Metal-mode fields (gold/silver, auto valuation) --}}
+                                <template x-if="item.metal_type !== 'other' && item.value_mode !== 'appraised'">
+                                    <div class="fm-field">
+                                        <label class="fm-label" :for="'it-purity-' + index">Purity</label>
+                                        <select :id="'it-purity-' + index" :name="'items['+index+'][purity]'" x-model.number="item.purity" class="fm-control" required @change="recalcItem(index)">
+                                            <option value="">Select</option>
+                                            <template x-for="opt in purityOptions(item.metal_type)" :key="opt.value">
+                                                {{-- :selected — the options draw after x-model sets the value, so it showed "Select". --}}
+                                                <option :value="opt.value" x-text="opt.label" :selected="Number(opt.value) === Number(item.purity)"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                </template>
+                                <template x-if="item.metal_type !== 'other' && item.value_mode !== 'appraised'">
+                                    <div class="fm-field">
+                                        <label class="fm-label" :for="'it-rate-' + index">Rate per gram at pledge</label>
+                                        <div class="fm-affix">
+                                            <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
+                                            <input type="number" inputmode="decimal" step="0.01" min="0" :id="'it-rate-' + index" :name="'items['+index+'][rate_per_gram_at_pledge]'" x-model.number="item.rate_per_gram_at_pledge"
+                                                   placeholder="0.00" class="fm-control" @input="recalcItem(index)" @focus="$event.target.select()">
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <div class="fm-field" x-show="item.metal_type === 'other' || item.value_mode === 'appraised'">
+                                    <label class="fm-label" :for="'it-value-' + index">Appraised value</label>
+                                    <div class="fm-affix">
+                                        <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
+                                        <input type="number" inputmode="decimal" step="0.01" min="0" :id="'it-value-' + index" :name="'items['+index+'][market_value]'"
+                                               x-model.number="item.market_value" placeholder="0.00" class="fm-control" @input="recalcItem(index)" @focus="$event.target.select()">
                                     </div>
                                 </div>
-                            </template>
 
-                            <div>
-                                <label class="dh-label">HUID (optional)</label>
-                                <input type="text" :name="'items['+index+'][huid]'" x-model="item.huid"
-                                       placeholder="HUID" class="dh-input" maxlength="12">
-                            </div>
-                        </div>
-
-                        {{-- Weights row: only for metal-valued items. --}}
-                        <div class="grid grid-cols-3 gap-3 mb-3" x-show="item.metal_type !== 'other' && item.value_mode !== 'appraised'">
-                            <div>
-                                <label class="dh-label">Net Metal Wt (g)</label>
-                                <input type="text" readonly class="dh-input dh-calc-field" :value="item.net_metal_weight.toFixed(3)">
-                            </div>
-                            <div>
-                                <label class="dh-label">Fine Weight (g)</label>
-                                <input type="text" readonly class="dh-input dh-calc-field" :value="item.fine_weight.toFixed(3)">
-                            </div>
-                            <div></div>
-                        </div>
-
-                        <div class="grid grid-cols-3 gap-3">
-                            {{-- Market value: read-only (computed) for metal mode, editable for appraised/other. --}}
-                            <div>
-                                <label class="dh-label" x-text="(item.metal_type === 'other' || item.value_mode === 'appraised') ? 'Appraised Value *' : 'Market Value'"></label>
-                                <div class="dh-cost-wrap" x-show="item.metal_type === 'other' || item.value_mode === 'appraised'">
-                                    <span class="dh-cost-symbol">{{ $currencySymbol ?? '₹' }}</span>
-                                    <input type="number" step="0.01" min="0" :name="'items['+index+'][market_value]'"
-                                           x-model.number="item.market_value" placeholder="0.00" class="dh-input" @input="recalcItem(index)">
+                                <div class="fm-wide fm-grid fm-grid--pair" x-show="item.metal_type !== 'other'">
+                                <div class="fm-field">
+                                    <label class="fm-label" :for="'it-gross-' + index">Gross weight</label>
+                                    <div class="fm-affix">
+                                        <input type="number" inputmode="decimal" step="0.001" min="0" :id="'it-gross-' + index" :name="'items['+index+'][gross_weight]'" x-model.number="item.gross_weight"
+                                               placeholder="0.000" class="fm-control" :required="item.metal_type !== 'other' && item.value_mode !== 'appraised'" @input="recalcItem(index)" @focus="$event.target.select()">
+                                        <span class="fm-unit fm-unit--suf">g</span>
+                                    </div>
                                 </div>
-                                <input type="text" readonly class="dh-input dh-calc-field" x-show="item.metal_type !== 'other' && item.value_mode !== 'appraised'"
-                                       :value="'{{ $currencySymbol ?? '₹' }}' + money(item.market_value)">
+                                <div class="fm-field">
+                                    <label class="fm-label" :for="'it-stone-' + index">Stone weight <span class="fm-opt">optional</span></label>
+                                    <div class="fm-affix">
+                                        <input type="number" inputmode="decimal" step="0.001" min="0" :id="'it-stone-' + index" :name="'items['+index+'][stone_weight]'" x-model.number="item.stone_weight"
+                                               placeholder="0.000" class="fm-control" @input="recalcItem(index)" @focus="$event.target.select()">
+                                        <span class="fm-unit fm-unit--suf">g</span>
+                                    </div>
+                                </div>
+                                </div>
+                                <div class="fm-field fm-wide">
+                                    <label class="fm-label" :for="'it-huid-' + index">HUID <span class="fm-opt">optional</span></label>
+                                    <input type="text" :id="'it-huid-' + index" :name="'items['+index+'][huid]'" x-model="item.huid"
+                                           placeholder="6-character hallmark ID" class="fm-control" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false">
+                                </div>
                             </div>
-                            <div>
-                                <label class="dh-label">Loan Value</label>
-                                <input type="text" readonly class="dh-input dh-calc-field"
-                                       :value="'{{ $currencySymbol ?? '₹' }}' + money(item.loan_value)">
-                                <input type="hidden" :name="'items['+index+'][loan_value]'" :value="item.loan_value">
+
+                            {{-- What the item is worth, worked out as you type. --}}
+                            <dl class="fm-readout" aria-live="polite">
+                                <div x-show="item.metal_type !== 'other' && item.value_mode !== 'appraised'"><dt>Net metal weight</dt><dd x-text="item.net_metal_weight.toFixed(3) + ' g'"></dd></div>
+                                <div x-show="item.metal_type !== 'other' && item.value_mode !== 'appraised'"><dt>Fine weight</dt><dd x-text="item.fine_weight.toFixed(3) + ' g'"></dd></div>
+                                <div><dt>Market value</dt><dd x-text="'{{ $sym }}' + money(item.market_value)"></dd></div>
+                                <div><dt>Loan value</dt><dd x-text="'{{ $sym }}' + money(item.loan_value)"></dd></div>
+                            </dl>
+                            <input type="hidden" :name="'items['+index+'][loan_value]'" :value="item.loan_value">
+                            {{-- Hidden carriers so server always gets net/fine even when the weights are hidden (0 for appraised/other). --}}
+                            <input type="hidden" :name="'items['+index+'][net_metal_weight]'" :value="item.net_metal_weight">
+                            <input type="hidden" :name="'items['+index+'][fine_weight]'" :value="item.fine_weight">
+                        </fieldset>
+                    </template>
+
+                    <button type="button" class="btn btn-secondary fm-add-item" @click="addItem(); $nextTick(() => focusItem(items.length - 1))">
+                        <x-icon name="plus" size="16" /> Add another item
+                    </button>
+                </div>
+            </section>
+
+            {{-- 3 Loan terms --}}
+            <section class="fm-card" id="fm-step-terms" aria-labelledby="fm-h-terms">
+                <header class="fm-card-head">
+                    <span class="fm-num" aria-hidden="true">3</span>
+                    <div>
+                        <h2 class="fm-title" id="fm-h-terms">Loan terms</h2>
+                        <p class="fm-desc">Amount, interest and period. Every field is needed unless marked optional.</p>
+                    </div>
+                </header>
+                <div class="fm-card-body">
+                    <div class="fm-grid">
+                        <div class="fm-field fm-wide">
+                            <label for="principal_amount" class="fm-label">Principal amount</label>
+                            <div class="fm-affix fm-affix--lead" :class="{ 'is-invalid': principalProblem }">
+                                <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
+                                <input type="number" inputmode="decimal" step="0.01" name="principal_amount" id="principal_amount"
+                                       x-model.number="principal_amount"
+                                       value="{{ old('principal_amount') }}"
+                                       placeholder="0.00" class="fm-control" required @focus="$event.target.select()"
+                                       :aria-invalid="principalProblem ? 'true' : 'false'" aria-describedby="principal-limit @error('principal_amount') err-principal_amount @enderror">
                             </div>
-                            <div></div>
+                            <p id="principal-limit" class="fm-limit" data-principal-limit :class="principalProblem && 'is-problem'" x-text="principalHint" aria-live="polite"></p>
+                            @error('principal_amount')
+                                <p class="fm-error" id="err-principal_amount" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
+                            @enderror
+                            <dl class="fm-ltv">
+                                <div><dt x-text="'Max loan at ' + ltvPercent + '% LTV'"></dt><dd x-text="'{{ $sym }}' + money(maxPrincipal)"></dd></div>
+                            </dl>
                         </div>
-
-                        {{-- Hidden carriers so server always gets net/fine even when the
-                             weight row is hidden (0 for appraised/other). --}}
-                        <input type="hidden" :name="'items['+index+'][net_metal_weight]'" :value="item.net_metal_weight">
-                        <input type="hidden" :name="'items['+index+'][fine_weight]'" :value="item.fine_weight">
-                    </div>
-                </template>
-
-                <button type="button" class="dh-add-item-btn" @click="addItem()">
-                    <x-icon name="plus" />
-                    Add Item
-                </button>
-            </div>
-
-            {{-- Loan Parameters --}}
-            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-visible p-6">
-                <div class="dh-section-title">
-                    <x-icon name="calculator" />
-                    Loan Parameters
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                    <div>
-                        <label for="principal_amount" class="dh-label">Principal Amount *</label>
-                        <div class="dh-cost-wrap">
-                            <span class="dh-cost-symbol">{{ $currencySymbol ?? '₹' }}</span>
-                            <input type="number" step="0.01" name="principal_amount" id="principal_amount"
-                                   x-model.number="principal_amount"
-                                   value="{{ old('principal_amount') }}"
-                                   placeholder="0.00" class="dh-input" required
-                                   :aria-invalid="principalProblem ? 'true' : 'false'" aria-describedby="principal-limit">
+                        <div class="fm-field">
+                            <label for="interest_rate_monthly" class="fm-label">Interest rate</label>
+                            <div class="fm-affix">
+                                <input type="number" inputmode="decimal" step="0.01" name="interest_rate_monthly" id="interest_rate_monthly"
+                                       x-model.number="interest_rate_monthly"
+                                       value="{{ old('interest_rate_monthly', $defaults['interest_rate_monthly'] ?? '') }}"
+                                       placeholder="e.g. 1.5" class="fm-control" required @focus="$event.target.select()"
+                                       @error('interest_rate_monthly') aria-invalid="true" aria-describedby="err-interest_rate_monthly" @enderror>
+                                <span class="fm-unit fm-unit--suf">% / month</span>
+                            </div>
+                            @error('interest_rate_monthly')
+                                <p class="fm-error" id="err-interest_rate_monthly" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
+                            @enderror
                         </div>
-                        <p id="principal-limit" class="dh-principal-limit" data-principal-limit :class="principalProblem && 'is-problem'" x-text="principalHint" aria-live="polite"></p>
-                        @error('principal_amount')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div>
-                        <label for="gold_rate_on_date" class="dh-label">Gold rate today (per gram)</label>
-                        <div class="dh-cost-wrap">
-                            <span class="dh-cost-symbol">{{ $currencySymbol ?? '₹' }}</span>
-                            <input type="number" step="0.01" name="gold_rate_on_date" id="gold_rate_on_date"
-                                   x-model.number="goldRateOnDate"
-                                   value="{{ old('gold_rate_on_date') }}"
-                                   placeholder="Reference rate" class="dh-input">
+                        <div class="fm-field">
+                            <label for="interest_type" class="fm-label">Interest type</label>
+                            <select name="interest_type" id="interest_type" x-model="interest_type" class="fm-control" required
+                                    @error('interest_type') aria-invalid="true" aria-describedby="err-interest_type" @enderror>
+                                <option value="flat">Flat (Simple)</option>
+                                <option value="daily">Daily</option>
+                                <option value="compound">Compound</option>
+                            </select>
+                            @error('interest_type')
+                                <p class="fm-error" id="err-interest_type" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
+                            @enderror
                         </div>
-                        @error('gold_rate_on_date')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <div class="fm-field">
+                            <label for="tenure_months" class="fm-label">Tenure</label>
+                            <div class="fm-affix">
+                                <input type="number" inputmode="numeric" name="tenure_months" id="tenure_months"
+                                       x-model.number="tenure_months"
+                                       value="{{ old('tenure_months', $defaults['tenure_months'] ?? 6) }}"
+                                       placeholder="6" class="fm-control" required min="1" step="1" @focus="$event.target.select()"
+                                       @error('tenure_months') aria-invalid="true" aria-describedby="err-tenure_months" @enderror>
+                                <span class="fm-unit fm-unit--suf">months</span>
+                            </div>
+                            @error('tenure_months')
+                                <p class="fm-error" id="err-tenure_months" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div class="fm-field">
+                            <label for="penalty_rate_monthly" class="fm-label">Penalty rate <span class="fm-opt">optional</span></label>
+                            <div class="fm-affix">
+                                <input type="number" inputmode="decimal" step="0.01" name="penalty_rate_monthly" id="penalty_rate_monthly"
+                                       x-model.number="penalty_rate_monthly"
+                                       value="{{ old('penalty_rate_monthly', $defaults['penalty_rate_monthly'] ?? '') }}"
+                                       placeholder="e.g. 2.0" class="fm-control" @focus="$event.target.select()"
+                                       @error('penalty_rate_monthly') aria-invalid="true" aria-describedby="err-penalty_rate_monthly" @enderror>
+                                <span class="fm-unit fm-unit--suf">% / month</span>
+                            </div>
+                            @error('penalty_rate_monthly')
+                                <p class="fm-error" id="err-penalty_rate_monthly" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div class="fm-field">
+                            <label for="gold_rate_on_date" class="fm-label">Gold rate today <span class="fm-opt">optional</span></label>
+                            <div class="fm-affix">
+                                <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
+                                <input type="number" inputmode="decimal" step="0.01" name="gold_rate_on_date" id="gold_rate_on_date"
+                                       x-model.number="goldRateOnDate"
+                                       value="{{ old('gold_rate_on_date') }}"
+                                       placeholder="Reference rate" class="fm-control" @focus="$event.target.select()"
+                                       @error('gold_rate_on_date') aria-invalid="true" aria-describedby="err-gold_rate_on_date" @enderror>
+                                <span class="fm-unit fm-unit--suf">/ g</span>
+                            </div>
+                            @error('gold_rate_on_date')
+                                <p class="fm-error" id="err-gold_rate_on_date" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
-                    <div>
-                        <label for="interest_rate_monthly" class="dh-label">Monthly Interest Rate (%) *</label>
-                        <input type="number" step="0.01" name="interest_rate_monthly" id="interest_rate_monthly"
-                               x-model.number="interest_rate_monthly"
-                               value="{{ old('interest_rate_monthly', $defaults['interest_rate_monthly'] ?? '') }}"
-                               placeholder="e.g. 1.5" class="dh-input" required>
-                        @error('interest_rate_monthly')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div>
-                        <label for="interest_type" class="dh-label">Interest Type *</label>
-                        <select name="interest_type" id="interest_type" x-model="interest_type" class="dh-select" required>
-                            <option value="flat">Flat (Simple)</option>
-                            <option value="daily">Daily</option>
-                            <option value="compound">Compound</option>
-                        </select>
-                        @error('interest_type')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label for="tenure_months" class="dh-label">Tenure (Months) *</label>
-                        <input type="number" name="tenure_months" id="tenure_months"
-                               x-model.number="tenure_months"
-                               value="{{ old('tenure_months', $defaults['tenure_months'] ?? 6) }}"
-                               placeholder="6" class="dh-input" required min="1">
-                        @error('tenure_months')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div>
-                        <label for="penalty_rate_monthly" class="dh-label">Penalty Rate Monthly (%)</label>
-                        <input type="number" step="0.01" name="penalty_rate_monthly" id="penalty_rate_monthly"
-                               x-model.number="penalty_rate_monthly"
-                               value="{{ old('penalty_rate_monthly', $defaults['penalty_rate_monthly'] ?? '') }}"
-                               placeholder="e.g. 2.0" class="dh-input">
-                        @error('penalty_rate_monthly')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div>
-                        <label class="dh-label">Processing Fee</label>
-                        <input type="text" readonly class="dh-input dh-calc-field"
-                               :value="'{{ $currencySymbol ?? '₹' }}' + money(processingFee)">
-                        <input type="hidden" name="processing_fee" :value="processingFee">
-                    </div>
+                    <h3 class="fm-sub">Loan summary</h3>
+                    <dl class="fm-sum" aria-live="polite">
+                        <div><dt>Total market value</dt><dd x-text="'{{ $sym }}' + money(totalMarketValue)"></dd></div>
+                        <div><dt>Total loan value (from items)</dt><dd x-text="'{{ $sym }}' + money(totalLoanValue)"></dd></div>
+                        <div class="fm-sum-main"><dt>Principal amount</dt><dd x-text="'{{ $sym }}' + money((principal_amount || 0))"></dd></div>
+                        <div><dt>Monthly interest (approx.)</dt><dd x-text="'{{ $sym }}' + money(monthlyInterest)"></dd></div>
+                        <div>
+                            <dt>Processing fee</dt>
+                            <dd x-text="'{{ $sym }}' + money(processingFee)"></dd>
+                            <input type="hidden" name="processing_fee" :value="processingFee">
+                        </div>
+                    </dl>
                 </div>
-            </div>
+            </section>
 
-            {{-- Summary --}}
-            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-visible p-6">
-                <div class="dh-section-title">
-                    <x-icon name="badge-check" />
-                    Loan Summary
+            {{-- 4 KYC & notes --}}
+            <section class="fm-card" id="fm-step-kyc" aria-labelledby="fm-h-kyc">
+                <header class="fm-card-head">
+                    <span class="fm-num" aria-hidden="true">4</span>
+                    <div>
+                        <h2 class="fm-title" id="fm-h-kyc">KYC &amp; notes</h2>
+                        <p class="fm-desc">PAN and ID come from the borrower's saved profile.</p>
+                    </div>
+                </header>
+                <div class="fm-card-body">
+                    <input type="hidden" name="pan" x-model="loanPan">
+                    <input type="hidden" name="aadhaar" x-model="loanAadhaar">
+                    <dl class="fm-facts">
+                        <div><dt>PAN</dt><dd x-text="loanPan ? loanPan : (selectedCustomer ? 'Not added' : 'Choose a borrower first')"></dd></div>
+                        <div><dt>ID number</dt><dd x-text="loanAadhaar ? loanAadhaar : (selectedCustomer ? 'Not added' : 'Choose a borrower first')"></dd></div>
+                    </dl>
+                    @error('pan')
+                        <p class="fm-error" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
+                    @enderror
+                    @error('aadhaar')
+                        <p class="fm-error" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
+                    @enderror
+                    <div class="fm-field">
+                        <label for="notes" class="fm-label">Notes <span class="fm-opt">optional</span></label>
+                        <textarea name="notes" id="notes" rows="3" placeholder="Anything else to remember about this loan" class="fm-control">{{ old('notes') }}</textarea>
+                    </div>
                 </div>
-                <div class="dh-summary-row">
-                    <span class="dh-summary-label">Total Market Value</span>
-                    <span class="dh-summary-value" x-text="'{{ $currencySymbol ?? '₹' }}' + money(totalMarketValue)"></span>
-                </div>
-                <div class="dh-summary-row">
-                    <span class="dh-summary-label">Total Loan Value (from items)</span>
-                    <span class="dh-summary-value" x-text="'{{ $currencySymbol ?? '₹' }}' + money(totalLoanValue)"></span>
-                </div>
-                <div class="dh-summary-row border-t border-slate-200 pt-2">
-                    <span class="dh-summary-label font-semibold text-slate-900">Principal Amount</span>
-                    <span class="dh-summary-value text-lg" x-text="'{{ $currencySymbol ?? '₹' }}' + money((principal_amount || 0))"></span>
-                </div>
-                <div class="dh-summary-row">
-                    <span class="dh-summary-label">Monthly Interest (approx.)</span>
-                    <span class="dh-summary-value" x-text="'{{ $currencySymbol ?? '₹' }}' + money(monthlyInterest)"></span>
-                </div>
-                <div class="dh-summary-row">
-                    <span class="dh-summary-label">Processing Fee</span>
-                    <span class="dh-summary-value" x-text="'{{ $currencySymbol ?? '₹' }}' + money(processingFee)"></span>
-                </div>
-            </div>
+            </section>
 
-            {{-- Notes --}}
-            <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-visible p-6">
-                <label for="notes" class="dh-label">
-                    <x-icon name="file-text" />
-                    Notes (optional)
-                </label>
-                <textarea name="notes" id="notes" rows="3" placeholder="Any additional notes about this loan..." class="dh-textarea">{{ old('notes') }}</textarea>
-            </div>
-
-            {{-- Submit --}}
-            <div class="flex justify-end gap-3 pb-6">
-                <a href="{{ route('dhiran.loans') }}" class="btn btn-secondary btn-sm">
-                    <x-icon name="x" size="14" class="mr-1" />
-                    Cancel
-                </a>
-                <button type="submit" class="btn btn-primary btn-sm">
-                    <x-icon name="save" size="14" class="mr-1" />
-                    Create Loan
-                </button>
+            {{-- Always in reach: the three figures that matter and the way to finish. --}}
+            <div class="fm-bar" role="region" aria-label="Loan totals and create">
+                <dl class="fm-bar-figs">
+                    <div><dt>Principal</dt><dd x-text="'{{ $sym }}' + money((principal_amount || 0))"></dd></div>
+                    <div><dt>Max loan</dt><dd x-text="'{{ $sym }}' + money(maxPrincipal)"></dd></div>
+                    <div><dt>Items total</dt><dd x-text="'{{ $sym }}' + money(totalMarketValue)"></dd></div>
+                </dl>
+                <div class="fm-bar-acts">
+                    <a href="{{ route('dhiran.loans') }}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary" :disabled="submitting" :aria-busy="submitting.toString()">
+                        <x-icon name="save" size="16" /> <span x-text="submitting ? 'Creating…' : 'Create loan'">Create loan</span>
+                    </button>
+                </div>
             </div>
         </form>
+
+        {{-- Add new borrower: a full-height sheet on phones, a centred dialog from 768px. The native dialog gives the focus trap, Esc and the scrim. --}}
+        <dialog class="fm-dialog" x-ref="nbDialog" aria-labelledby="fm-nb-title"
+                x-effect="newBorrowerOpen ? ($refs.nbDialog.open || $refs.nbDialog.showModal()) : ($refs.nbDialog.open && $refs.nbDialog.close())"
+                @cancel.prevent="closeNewBorrower()"
+                @click.self="closeNewBorrower()"
+                @keydown.enter="if (!$event.target.closest('textarea, button')) { $event.preventDefault(); saveBorrower(); }">
+            <div class="fm-dialog-card">
+                <div class="fm-dialog-head">
+                    <div>
+                        <h2 id="fm-nb-title">Add new borrower</h2>
+                        <p>Saved to your borrowers and chosen for this loan.</p>
+                    </div>
+                    <button type="button" class="btn btn-secondary fm-dialog-x" @click="closeNewBorrower()" :disabled="nbSaving" title="Close">
+                        <x-icon name="x" size="18" /><span class="fm-sr">Close</span>
+                    </button>
+                </div>
+                <div class="fm-dialog-body">
+                    <p class="fm-alert fm-alert--inline" role="alert" x-show="nbError" x-cloak><x-icon name="circle-alert" size="20" /><span x-text="nbError"></span></p>
+                    <div class="fm-grid">
+                        <div class="fm-field">
+                            <label class="fm-label" for="nb-first_name">First name</label>
+                            <input type="text" id="nb-first_name" class="fm-control" x-model="nb.first_name" autocomplete="off" maxlength="255" :aria-invalid="nbField === 'first_name' ? 'true' : null" autofocus>
+                        </div>
+                        <div class="fm-field">
+                            <label class="fm-label" for="nb-last_name">Last name <span class="fm-opt">optional</span></label>
+                            <input type="text" id="nb-last_name" class="fm-control" x-model="nb.last_name" autocomplete="off" maxlength="255">
+                        </div>
+                        <div class="fm-field">
+                            <label class="fm-label" for="nb-mobile">Mobile number</label>
+                            <input type="tel" id="nb-mobile" class="fm-control" inputmode="numeric" placeholder="10 digits" maxlength="10" autocomplete="off" x-model="nb.mobile" :aria-invalid="nbField === 'mobile' ? 'true' : null">
+                        </div>
+                        <div class="fm-field">
+                            <label class="fm-label" for="nb-pan">PAN <span class="fm-opt">optional</span></label>
+                            <input type="text" id="nb-pan" class="fm-control" placeholder="ABCDE1234F" maxlength="10" autocomplete="off" autocapitalize="characters" spellcheck="false" x-model="nb.pan" @input="nb.pan = nb.pan.toUpperCase()">
+                        </div>
+                        <div class="fm-field">
+                            <label class="fm-label" for="nb-id_number">ID number <span class="fm-opt">optional</span></label>
+                            <input type="text" id="nb-id_number" class="fm-control" autocomplete="off" x-model="nb.id_number">
+                        </div>
+                        <div class="fm-field">
+                            <label class="fm-label" for="nb-state_code">State code <span class="fm-opt">optional</span></label>
+                            <input type="text" id="nb-state_code" class="fm-control" autocomplete="off" x-model="nb.state_code">
+                        </div>
+                        <div class="fm-field fm-wide">
+                            <label class="fm-label" for="nb-address">Address <span class="fm-opt">optional</span></label>
+                            <textarea id="nb-address" class="fm-control" rows="3" autocomplete="off" x-model="nb.address"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="fm-dialog-foot">
+                    <button type="button" class="btn btn-secondary" @click="closeNewBorrower()" :disabled="nbSaving">Cancel</button>
+                    <button type="button" class="btn btn-primary" @click="saveBorrower()" :disabled="nbSaving" :aria-busy="nbSaving.toString()">
+                        <span x-text="nbSaving ? 'Saving…' : 'Save borrower'">Save borrower</span>
+                    </button>
+                </div>
+            </div>
+        </dialog>
     </div>
 
     @push('scripts')
@@ -479,6 +484,9 @@
                 // Add Borrower dialog: one state, 'closed' -> 'open' -> 'saving' -> 'closed' (saved) or 'open' (refused).
                 nbState: 'closed',
                 nbError: '',
+                nbField: '',
+                submitting: false,
+                itemErrors: {{ Illuminate\Support\Js::from((object) array_map(fn ($m) => implode(' ', array_unique($m)), $itemErrors)) }},
                 get newBorrowerOpen() {
                     return this.nbState !== 'closed';
                 },
@@ -522,6 +530,10 @@
                 get totalLoanValue() {
                     return this.items.reduce((sum, i) => sum + (i.loan_value || 0), 0);
                 },
+                // Step marks for the strip at the top: a hint of progress, never a gate (the server still validates).
+                get customerDone() { return !!this.selectedCustomer; },
+                get itemsDone() { return this.items.length > 0 && this.items.every(i => (i.description || '').trim() && (i.market_value || 0) > 0); },
+                get termsDone() { return (Number(this.principal_amount) || 0) > 0 && (Number(this.interest_rate_monthly) || 0) > 0 && (Number(this.tenure_months) || 0) > 0 && !this.principalProblem; },
                 // Largest principal the server will accept (mirrors DhiranService::createLoan): the items' market
                 // value at the LTV for the principal's tier (each item rounded to paise), never above the shop's
                 // maximum. A principal at or over the high-value threshold gets the (usually lower) high-value LTV.
@@ -567,12 +579,6 @@
                     }
                 },
 
-                get selectedCustomerInitials() {
-                    const name = (this.selectedCustomer && this.selectedCustomer.name ? this.selectedCustomer.name : '').trim();
-                    if (!name) return 'B';
-                    return name.split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase();
-                },
-
                 get filteredCustomers() {
                     const q = (this.customerSearch || '').toLowerCase();
                     if (!q) return this.customers;
@@ -593,6 +599,7 @@
                 openNewBorrower() {
                     this.customerDropdownOpen = false;
                     this.nbError = '';
+                    this.nbField = '';
                     this.nbState = 'open';
                 },
 
@@ -624,10 +631,19 @@
                     if (!keepExistingKyc || !this.loanAadhaar) this.loanAadhaar = this.aadhaarCandidate(this.selectedCustomer);
                 },
 
+                // Names the field a refusal is about, puts the cursor there and says so (aria-invalid).
+                nbRefuse(message, field) {
+                    this.nbError = message;
+                    this.nbField = field;
+                    const el = document.getElementById('nb-' + field);
+                    if (el) el.focus();
+                },
+
                 async saveBorrower() {
                     this.nbError = '';
-                    if (!this.nb.first_name.trim()) { this.nbError = 'First name is required.'; return; }
-                    if (!/^[0-9]{10}$/.test(this.nb.mobile.trim())) { this.nbError = 'Enter a valid 10-digit mobile number.'; return; }
+                    this.nbField = '';
+                    if (!this.nb.first_name.trim()) { this.nbRefuse('First name is required.', 'first_name'); return; }
+                    if (!/^[0-9]{10}$/.test(this.nb.mobile.trim())) { this.nbRefuse('Enter a valid 10-digit mobile number.', 'mobile'); return; }
                     if (this.nbState !== 'open') return; // one save at a time
                     this.nbState = 'saving';
                     try {
@@ -643,6 +659,7 @@
                         const out = await res.json().catch(() => ({}));
                         if (!res.ok || !out.ok) {
                             this.nbError = (out.errors ? Object.values(out.errors)[0][0] : out.message) || 'Could not save borrower.';
+                            this.nbField = out.errors ? Object.keys(out.errors)[0] : '';
                             return;
                         }
                         const savedCustomer = {
@@ -678,6 +695,14 @@
                         rate_per_gram_at_pledge: 0, huid: '',
                         net_metal_weight: 0, fine_weight: 0, market_value: 0, loan_value: 0
                     });
+                },
+
+                focusItem(index) {
+                    document.getElementById('it-desc-' + index)?.focus();
+                },
+
+                itemErr(index) {
+                    return this.itemErrors[index] || '';
                 },
 
                 // Supported purities per metal (MetalRegistry: gold = karat/24,
@@ -722,6 +747,13 @@
                     }
                 },
 
+                // An item the clerk has typed into is never dropped by a stray tap: ask first.
+                confirmRemove(index) {
+                    const i = this.items[index];
+                    const typed = (i.description || '').trim() || i.gross_weight > 0 || i.market_value > 0;
+                    if (!typed || window.confirm('Remove item ' + (index + 1) + '?')) this.removeItem(index);
+                },
+
                 recalcItem(index) {
                     let item = this.items[index];
                     const appraised = item.metal_type === 'other' || item.value_mode === 'appraised';
@@ -742,9 +774,11 @@
                     item.loan_value = item.market_value * (this.ltvPercent / 100);
                 },
 
-                prepareSubmit() {
+                prepareSubmit(e) {
+                    if (this.submitting) { e.preventDefault(); return; } // one tap = one loan; the key below also guards it server-side
                     // Recalculate all items before submit
                     this.items.forEach((_, i) => this.recalcItem(i));
+                    this.submitting = true;
                 }
             }));
         };

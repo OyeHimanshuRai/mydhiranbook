@@ -1,6 +1,6 @@
 {
   "resources/css/admin.css": {
-    "file": "assets/admin-CKoZTp4g.css",
+    "file": "assets/admin-mmirosSa.css",
     "src": "resources/css/admin.css",
     "isEntry": true,
     "name": "admin",
@@ -9,7 +9,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-B-J90o9U.css",
+    "file": "assets/app-Cn11-Umm.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -17,13 +17,31 @@
       "app.css"
     ]
   },
+  "resources/css/dhiran-detail.css": {
+    "file": "assets/dhiran-detail-C4ksFtv_.css",
+    "src": "resources/css/dhiran-detail.css",
+    "isEntry": true,
+    "name": "dhiran-detail",
+    "names": [
+      "dhiran-detail.css"
+    ]
+  },
   "resources/css/dhiran-documents.css": {
-    "file": "assets/dhiran-documents-Dlkl267J.css",
+    "file": "assets/dhiran-documents-CPXPlo2-.css",
     "src": "resources/css/dhiran-documents.css",
     "isEntry": true,
     "name": "dhiran-documents",
     "names": [
       "dhiran-documents.css"
+    ]
+  },
+  "resources/css/dhiran-forms.css": {
+    "file": "assets/dhiran-forms-DGOQbI3M.css",
+    "src": "resources/css/dhiran-forms.css",
+    "isEntry": true,
+    "name": "dhiran-forms",
+    "names": [
+      "dhiran-forms.css"
     ]
   },
   "resources/css/dhiran-receipt-settings.css": {
@@ -36,7 +54,7 @@
     ]
   },
   "resources/css/dhiran-settings.css": {
-    "file": "assets/dhiran-settings-CO0BwSSi.css",
+    "file": "assets/dhiran-settings-D_UQtT79.css",
     "src": "resources/css/dhiran-settings.css",
     "isEntry": true,
     "name": "dhiran-settings",
@@ -45,7 +63,7 @@
     ]
   },
   "resources/css/dhiran.css": {
-    "file": "assets/dhiran-OjK76TSp.css",
+    "file": "assets/dhiran-CpR5jfNT.css",
     "src": "resources/css/dhiran.css",
     "isEntry": true,
     "name": "dhiran",
@@ -54,7 +72,7 @@
     ]
   },
   "resources/css/site.css": {
-    "file": "assets/site-DSzH7iIw.css",
+    "file": "assets/site-1-r_qpnn.css",
     "src": "resources/css/site.css",
     "isEntry": true,
     "name": "site",
@@ -63,7 +81,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-BAQBl6zA.js",
+    "file": "assets/app-CP_OSjEq.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true
