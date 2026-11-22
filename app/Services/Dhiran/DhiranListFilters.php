@@ -117,7 +117,7 @@ final class DhiranListFilters
             $q = array_diff_key($keep, array_flip($drop));
             return $action . ($q ? '?' . http_build_query($q) : '');
         };
-        $rupees = fn ($v) => '₹' . number_format((float) $v, fmod((float) $v, 1) ? 2 : 0); // same grouping as the rest of Dhiran
+        $rupees = fn ($v) => '₹' . \App\Support\IndianNumber::format($v, fmod((float) $v, 1) ? 2 : 0); // lakh grouping, as everywhere in Dhiran
 
         $chips = [];
         if (isset($keep['period'])) {

@@ -5,10 +5,7 @@
             <p class="text-sm text-gray-500 mt-1">Pledge loan analytics and reports</p>
         </div>
         <div class="page-actions">
-            <a href="{{ route('dhiran.loans') }}" class="btn btn-secondary btn-sm">
-                <x-icon name="arrow-left" size="14" class="mr-1" />
-                Back to Loans
-            </a>
+            <x-dhiran.btn-collapse icon="arrow-left" label="Back to Loans" :href="route('dhiran.loans')" />
         </div>
     </x-dhiran.page-header>
 
@@ -45,7 +42,7 @@
         </div>
 
         {{-- Report Cards Grid --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+        <div class="dr-report-grid">
             <a href="{{ route('dhiran.reports.index', ['type' => 'active']) }}" class="dr-report-card">
                 <div class="dr-report-icon bg-emerald-100 text-emerald-700">
                     <x-icon name="badge-check" />

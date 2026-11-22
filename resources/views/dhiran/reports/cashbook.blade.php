@@ -14,10 +14,7 @@
         </div>
         <div class="page-actions">
             <x-dhiran.export-button />
-            <button type="button" onclick="window.print()" class="btn btn-secondary btn-sm" title="Print">
-                <x-icon name="printer" size="14" />
-                Print
-            </button>
+            <x-dhiran.btn-collapse icon="printer" label="Print" onclick="window.print()" />
         </div>
     </x-dhiran.page-header>
 
@@ -26,46 +23,33 @@
             :fields="['period', 'cash']" />
 
         {{-- Summary Cards --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            @foreach([
-                ['opening', 'Opening balance', 'wallet', 'bg-slate-100', 'text-slate-700', 'Before ' . \Illuminate\Support\Carbon::parse($fromDate)->format('d M Y')],
-                ['in', 'Total inflows', 'trending-up', 'bg-green-100', 'text-green-600', null],
-                ['out', 'Total outflows', 'trending-down', 'bg-red-100', 'text-red-600', null],
-                ['closing', 'Closing balance', 'chart-no-axes-column', 'bg-blue-100', $totals['closing'] >= 0 ? 'text-blue-600' : 'text-red-600', 'Net ' . number_format($totals['net'], 2) . ' in this period'],
-            ] as [$key, $label, $icon, $tint, $ink, $sub])
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 {{ $tint }} flex items-center justify-center rounded-lg">
-                            <x-icon :name="$icon" size="18" :class="$ink" />
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">{{ $label }}</p>
-                            <p class="text-xl font-bold {{ $ink }}" data-report-total="{{ $key }}">{{ number_format($totals[$key], 2) }}</p>
-                            @if($sub)<p class="text-xs text-gray-500 mt-0.5">{{ $sub }}</p>@endif
-                        </div>
-                    </div>
-                </div>
-            @endforeach
+        <div class="dh-stats">
+            <x-dhiran.stat money label="Opening balance" :value="\App\Support\IndianNumber::format($totals['opening'], 2)" icon="wallet" total="opening"
+                :sub="'Before ' . \Illuminate\Support\Carbon::parse($fromDate)->format('d M Y')" />
+            <x-dhiran.stat money label="Total inflows" :value="\App\Support\IndianNumber::format($totals['in'], 2)" icon="trending-up" total="in" tone="success" />
+            <x-dhiran.stat money label="Total outflows" :value="\App\Support\IndianNumber::format($totals['out'], 2)" icon="trending-down" total="out" tone="danger" />
+            <x-dhiran.stat money label="Closing balance" :value="\App\Support\IndianNumber::format($totals['closing'], 2)" icon="chart-no-axes-column" total="closing"
+                :tone="$totals['closing'] >= 0 ? null : 'danger'" :sub="'Net ' . \App\Support\IndianNumber::format($totals['net'], 2) . ' in this period'" />
         </div>
 
         {{-- Table --}}
-        <div class="bg-white rounded-lg shadow-sm" data-list-frame>
-            <div class="overflow-x-auto" data-list-scroll tabindex="0" role="region" aria-label="Dhiran cashbook entries">
-                <table class="w-full border-collapse jf-table dh-stack">
+        <div class="dh-table-card" data-list-frame>
+            <div class="dh-table-wrap" data-list-scroll tabindex="0" role="region" aria-label="Dhiran cashbook entries">
+                <table class="dh-table jf-table dh-stack">
                     <thead>
-                        <tr class="bg-gray-50 border-b">
-                            <th scope="col" class="dh-sno-th">#</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan #</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Running Balance</th>
+                        <tr>
+                            <th scope="col" class="dh-sno-th" data-low="1">#</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Loan #</th>
+                            <th scope="col" class="text-center">Type</th>
+                            <th scope="col" data-low="1">Source</th>
+                            <th scope="col" class="text-right">Amount</th>
+                            <th scope="col">Method</th>
+                            <th scope="col" data-low="1">Description</th>
+                            <th scope="col" class="text-right">Running Balance</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody>
                         @php $runningBalance = $pageStartBalance; @endphp
                         @forelse($entries as $entry)
                             @php
@@ -75,44 +59,51 @@
                                     $runningBalance -= (float) $entry->amount;
                                 }
                             @endphp
-                            <tr class="hover:bg-gray-50">
+                            <tr>
                                 <x-dhiran.sno :rows="$entries" :n="$loop->iteration" />
-                                <td data-label="Date" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $entry->entry_date?->format('d M Y') ?? '-' }}</td>
-                                <td data-label="Loan #" class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                <td data-label="Date" data-cell="title" class="whitespace-nowrap">{{ $entry->entry_date?->format('d M Y') ?? '-' }}</td>
+                                <td data-label="Loan #" class="whitespace-nowrap">
                                     @if($entry->loan)
-                                        <a href="{{ route('dhiran.show', $entry->loan) }}" class="text-blue-600 hover:underline">{{ $entry->loan->loan_number }}</a>
+                                        <a href="{{ route('dhiran.show', $entry->loan) }}" class="font-mono font-medium text-slate-700 hover:text-amber-700">{{ $entry->loan->loan_number }}</a>
                                     @else
                                         -
                                     @endif
                                 </td>
-                                <td data-label="Type" class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                <td data-label="Type" data-cell="status" class="text-center">
                                     @if($entry->type === 'in')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">IN</span>
+                                        <span class="dh-status dh-status--success">IN</span>
                                     @else
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">OUT</span>
+                                        <span class="dh-status dh-status--danger">OUT</span>
                                     @endif
                                 </td>
-                                <td data-label="Source" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ucfirst(str_replace('_', ' ', $entry->source_type ?? '-')) }}</td>
-                                <td data-label="Amount" class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-right {{ $entry->type === 'in' ? 'text-green-600' : 'text-red-600' }}">
-                                    {{ $entry->type === 'in' ? '+' : '-' }}{{ number_format((float) $entry->amount, 2) }}
+                                <td data-label="Source" data-low="1" class="whitespace-nowrap">{{ ucfirst(str_replace('_', ' ', $entry->source_type ?? '-')) }}</td>
+                                <td data-label="Amount" class="whitespace-nowrap text-right font-semibold {{ $entry->type === 'in' ? 'text-green-600' : 'text-red-600' }}">
+                                    {{ $entry->type === 'in' ? '+' : '-' }}{{ \App\Support\IndianNumber::format((float) $entry->amount, 2) }}
                                 </td>
-                                <td data-label="Method" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ \App\Models\Dhiran\DhiranPayment::methodLabel($entry->payment_method) }}</td>
-                                <td data-label="Description" class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{{ $entry->description ?? '-' }}</td>
-                                <td data-label="Running Balance" class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right {{ $runningBalance >= 0 ? 'text-gray-900' : 'text-red-600' }}" data-running-balance>{{ $showRunning ? number_format($runningBalance, 2) : '—' }}</td>
+                                <td data-label="Method" class="whitespace-nowrap">{{ \App\Models\Dhiran\DhiranPayment::methodLabel($entry->payment_method) }}</td>
+                                <td data-label="Description" data-low="1">{{ $entry->description ?? '-' }}</td>
+                                <td data-label="Running Balance" class="whitespace-nowrap text-right font-medium {{ $runningBalance >= 0 ? '' : 'text-red-600' }}" data-running-balance>{{ $showRunning ? \App\Support\IndianNumber::format($runningBalance, 2) : '—' }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="jf-table-empty">No cash entries found for the selected period</td>
+                                <td colspan="9" class="jf-table-empty">
+                                    <x-dhiran.empty icon="inbox" title="No cash entries found" text="No cash moved in the selected period. Widen the date range or clear the filters.">
+                                        <a class="btn btn-secondary btn-sm" href="{{ url()->current() }}">Clear filters</a>
+                                    </x-dhiran.empty>
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
                     @if($entries->count())
                     <tfoot>
-                        <tr class="bg-gray-50 border-t-2 border-gray-300 font-semibold">
-                            <td colspan="5" class="px-6 py-3 text-sm text-gray-700">Period totals ({{ $entries->total() }} entries)</td>
-                            <td class="px-6 py-3 text-sm text-gray-900 text-right">Net: {{ number_format($totals['net'], 2) }}</td>
-                            <td colspan="2" class="px-6 py-3 text-sm text-gray-700 text-right">Closing balance</td>
-                            <td class="px-6 py-3 text-sm font-bold text-right {{ $totals['closing'] >= 0 ? 'text-gray-900' : 'text-red-600' }}">{{ number_format($totals['closing'], 2) }}</td>
+                        <tr>
+                            <td data-low="1"></td>
+                            <td colspan="3">Period totals ({{ $entries->total() }} entries)</td>
+                            <td data-low="1"></td>
+                            <td class="text-right">Net: ₹{{ \App\Support\IndianNumber::format($totals['net'], 2) }}</td>
+                            <td></td>
+                            <td data-low="1"></td>
+                            <td class="text-right {{ $totals['closing'] >= 0 ? '' : 'text-red-600' }}">Closing: ₹{{ \App\Support\IndianNumber::format($totals['closing'], 2) }}</td>
                         </tr>
                     </tfoot>
                     @endif

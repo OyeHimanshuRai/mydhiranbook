@@ -7,10 +7,7 @@
         <div class="page-actions">
             <x-dhiran.export-button />
             <span class="header-badge">{{ $totals['count'] }} Active Loans</span>
-            <button type="button" onclick="window.print()" class="btn btn-secondary btn-sm" title="Print">
-                <x-icon name="printer" size="14" />
-                Print
-            </button>
+            <x-dhiran.btn-collapse icon="printer" label="Print" onclick="window.print()" />
         </div>
     </x-dhiran.page-header>
 
@@ -19,87 +16,61 @@
             :fields="['search', 'period', 'metal', 'amount', 'maturing']" />
         <turbo-frame id="dh-results" target="_top">
         {{-- Summary Cards --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-blue-100 flex items-center justify-center rounded-lg">
-                        <x-icon name="file" size="18" class="text-blue-600" />
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Total Active</p>
-                        <p class="text-xl font-bold text-gray-900" data-report-total="count">{{ $totals['count'] }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-amber-100 flex items-center justify-center rounded-lg">
-                        <x-icon name="dollar-sign" size="18" class="text-amber-600" />
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Total Principal</p>
-                        <p class="text-xl font-bold text-gray-900" data-report-total="principal">{{ number_format($totals['principal'], 2) }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-red-100 flex items-center justify-center rounded-lg">
-                        <x-icon name="trending-up" size="18" class="text-red-600" />
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Total Outstanding</p>
-                        <p class="text-xl font-bold text-gray-900" data-report-total="outstanding">{{ number_format($totals['outstanding'], 2) }}</p>
-                    </div>
-                </div>
-            </div>
+        <div class="dh-stats">
+            <x-dhiran.stat label="Total Active" :value="$totals['count']" icon="file" total="count" />
+            <x-dhiran.stat money label="Total Principal" :value="\App\Support\IndianNumber::format($totals['principal'], 2)" icon="dollar-sign" total="principal" />
+            <x-dhiran.stat money label="Total Outstanding" :value="\App\Support\IndianNumber::format($totals['outstanding'], 2)" icon="trending-up" total="outstanding" />
         </div>
 
         {{-- Table --}}
-        <div class="bg-white rounded-lg shadow-sm" data-list-frame>
-            <div class="overflow-x-auto" data-list-scroll tabindex="0" role="region" aria-label="Active loan records">
-                <table class="w-full border-collapse jf-table dh-stack">
+        <div class="dh-table-card" data-list-frame>
+            <div class="dh-table-wrap" data-list-scroll tabindex="0" role="region" aria-label="Active loan records">
+                <table class="dh-table jf-table dh-stack">
                     <thead>
-                        <tr class="bg-gray-50 border-b">
-                            <th scope="col" class="dh-sno-th">#</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan #</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan Date</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Principal</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Outstanding</th>
-                            <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-right">Interest Rate</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Maturity Date</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Days to Maturity</th>
+                        <tr>
+                            <th scope="col" class="dh-sno-th" data-low="1">#</th>
+                            <th scope="col">Loan #</th>
+                            <th scope="col">Customer</th>
+                            <th scope="col" data-low="2">Mobile</th>
+                            <th scope="col" data-low="1">Loan Date</th>
+                            <th scope="col" class="text-right">Principal</th>
+                            <th scope="col" class="text-right">Outstanding</th>
+                            <th scope="col" class="text-right" data-low="1">Interest Rate</th>
+                            <th scope="col">Maturity Date</th>
+                            <th scope="col" class="text-center">Days to Maturity</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody>
                         @forelse($loans as $loan)
-                            <tr class="hover:bg-gray-50">
+                            <tr>
                                 <x-dhiran.sno :rows="$loans" :n="$loop->iteration" />
-                                <td data-label="Loan #" class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    <a href="{{ route('dhiran.show', $loan) }}" class="text-blue-600 hover:underline">{{ $loan->loan_number }}</a>
+                                <td data-label="Loan #" data-cell="title" class="whitespace-nowrap">
+                                    <a href="{{ route('dhiran.show', $loan) }}" class="font-mono font-medium text-slate-700 hover:text-amber-700">{{ $loan->loan_number }}</a>
                                 </td>
-                                <td data-label="Customer" class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $loan->customer?->name ?? '-' }}</td>
-                                <x-dhiran.mobile-cell :number="$loan->customer?->mobile" class="px-6" />
-                                <td data-label="Loan Date" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $loan->loan_date?->format('d M Y') ?? '-' }}</td>
-                                <td data-label="Principal" class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format((float) $loan->principal_amount, 2) }}</td>
-                                <td data-label="Outstanding" class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-right {{ $loan->totalOutstanding() > 0 ? 'text-red-600' : 'text-green-600' }}">{{ number_format($loan->totalOutstanding(), 2) }}</td>
-                                <td data-label="Interest Rate" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">{{ number_format((float) $loan->interest_rate_monthly, 2) }}%/mo</td>
-                                <td data-label="Maturity Date" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $loan->maturity_date?->format('d M Y') ?? '-' }}</td>
-                                <td data-label="Days to Maturity" class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                <td data-label="Customer" class="font-medium text-slate-700">{{ $loan->customer?->name ?? '-' }}</td>
+                                <x-dhiran.mobile-cell :number="$loan->customer?->mobile" />
+                                <td data-label="Loan Date" data-low="1" class="whitespace-nowrap">{{ $loan->loan_date?->format('d M Y') ?? '-' }}</td>
+                                <td data-label="Principal" class="whitespace-nowrap text-right">₹{{ \App\Support\IndianNumber::format((float) $loan->principal_amount, 2) }}</td>
+                                <td data-label="Outstanding" class="whitespace-nowrap text-right font-semibold {{ $loan->totalOutstanding() > 0 ? 'text-red-600' : 'text-green-600' }}">₹{{ \App\Support\IndianNumber::format($loan->totalOutstanding(), 2) }}</td>
+                                <td data-label="Interest Rate" data-low="1" class="whitespace-nowrap text-right">{{ number_format((float) $loan->interest_rate_monthly, 2) }}%/mo</td>
+                                <td data-label="Maturity Date" class="whitespace-nowrap">{{ $loan->maturity_date?->format('d M Y') ?? '-' }}</td>
+                                <td data-label="Days to Maturity" data-cell="status" class="whitespace-nowrap text-center">
                                     @if($loan->isOverdue())
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Overdue</span>
+                                        <span class="dh-status dh-status--danger">Overdue</span>
                                     @elseif($loan->daysTillMaturity() <= 30)
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">{{ $loan->daysTillMaturity() }}d</span>
+                                        <span class="dh-status dh-status--warning">{{ $loan->daysTillMaturity() }}d</span>
                                     @else
-                                        <span class="text-gray-500">{{ $loan->daysTillMaturity() }}d</span>
+                                        <span class="dh-status dh-status--muted">{{ $loan->daysTillMaturity() }}d</span>
                                     @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="jf-table-empty">No active loans found</td>
+                                <td colspan="10" class="jf-table-empty">
+                                    <x-dhiran.empty icon="search" title="No active loans found" text="Nothing fits the search or filters you chose. Widen the date range or clear the filters.">
+                                        <a class="btn btn-secondary btn-sm" href="{{ url()->current() }}">Clear filters</a>
+                                    </x-dhiran.empty>
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>

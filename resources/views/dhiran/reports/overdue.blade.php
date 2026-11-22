@@ -7,10 +7,7 @@
         <div class="page-actions">
             <x-dhiran.export-button />
             <span class="header-badge">{{ $totals['count'] }} Overdue</span>
-            <button type="button" onclick="window.print()" class="btn btn-secondary btn-sm" title="Print">
-                <x-icon name="printer" size="14" />
-                Print
-            </button>
+            <x-dhiran.btn-collapse icon="printer" label="Print" onclick="window.print()" />
         </div>
     </x-dhiran.page-header>
 
@@ -19,98 +16,70 @@
             :fields="['search', 'metal', 'amount', 'overdue']" />
         <turbo-frame id="dh-results" target="_top">
         {{-- Summary Cards --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-red-100 flex items-center justify-center rounded-lg">
-                        <x-icon name="triangle-alert" size="18" class="text-red-600" />
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Total Overdue</p>
-                        <p class="text-xl font-bold text-gray-900" data-report-total="count">{{ $totals['count'] }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 bg-red-100 flex items-center justify-center rounded-lg">
-                        <x-icon name="dollar-sign" size="18" class="text-red-600" />
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Total Overdue Amount</p>
-                        <p class="text-xl font-bold text-red-600" data-report-total="outstanding">{{ number_format($totals['outstanding'], 2) }}</p>
-                    </div>
-                </div>
-            </div>
+        <div class="dh-stats">
+            <x-dhiran.stat label="Total Overdue" :value="$totals['count']" icon="triangle-alert" total="count" />
+            <x-dhiran.stat money label="Total Overdue Amount" :value="\App\Support\IndianNumber::format($totals['outstanding'], 2)" icon="dollar-sign" total="outstanding" tone="danger" />
         </div>
 
         {{-- Table --}}
-        <div class="bg-white rounded-lg shadow-sm" data-list-frame>
-            <div class="overflow-x-auto" data-list-scroll tabindex="0" role="region" aria-label="Overdue loan records">
-                <table class="w-full border-collapse jf-table dh-stack">
+        <div class="dh-table-card" data-list-frame>
+            <div class="dh-table-wrap" data-list-scroll tabindex="0" role="region" aria-label="Overdue loan records">
+                <table class="dh-table jf-table dh-stack">
                     <thead>
-                        <tr class="bg-gray-50 border-b">
-                            <th scope="col" class="dh-sno-th">#</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan #</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Principal</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Outstanding</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Days Overdue</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Maturity Date</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grace End</th>
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Notice Sent?</th>
+                        <tr>
+                            <th scope="col" class="dh-sno-th" data-low="1">#</th>
+                            <th scope="col">Loan #</th>
+                            <th scope="col">Customer</th>
+                            <th scope="col" data-low="2">Mobile</th>
+                            <th scope="col" class="text-right">Principal</th>
+                            <th scope="col" class="text-right">Outstanding</th>
+                            <th scope="col" class="text-center">Days Overdue</th>
+                            <th scope="col">Maturity Date</th>
+                            <th scope="col" data-low="1">Grace End</th>
+                            <th scope="col" class="text-center">Notice Sent?</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody>
                         @forelse($loans as $loan)
                             @php
                                 $daysOverdue = $loan->daysOverdue();
                                 $graceEnd = ($loan->maturity_date && $loan->grace_period_days)
                                     ? $loan->maturity_date->copy()->addDays($loan->grace_period_days)
                                     : $loan->maturity_date;
-                                $severityClass = '';
-                                if ($daysOverdue > 90) {
-                                    $severityClass = 'bg-red-50';
-                                } elseif ($daysOverdue > 30) {
-                                    $severityClass = 'bg-amber-50';
-                                } elseif ($daysOverdue > 0) {
-                                    $severityClass = 'bg-yellow-50';
-                                }
                             @endphp
-                            <tr class="hover:bg-gray-50 {{ $severityClass }}">
+                            <tr>
                                 <x-dhiran.sno :rows="$loans" :n="$loop->iteration" />
-                                <td data-label="Loan #" class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    <a href="{{ route('dhiran.show', $loan) }}" class="text-blue-600 hover:underline">{{ $loan->loan_number }}</a>
+                                <td data-label="Loan #" data-cell="title" class="whitespace-nowrap">
+                                    <a href="{{ route('dhiran.show', $loan) }}" class="font-mono font-medium text-slate-700 hover:text-amber-700">{{ $loan->loan_number }}</a>
                                 </td>
-                                <td data-label="Customer" class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $loan->customer?->name ?? '-' }}</td>
-                                <x-dhiran.mobile-cell :number="$loan->customer?->mobile" class="px-6" />
-                                <td data-label="Principal" class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{{ number_format((float) $loan->principal_amount, 2) }}</td>
-                                <td data-label="Outstanding" class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-red-600 text-right">{{ number_format($loan->totalOutstanding(), 2) }}</td>
-                                <td data-label="Days Overdue" class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                <td data-label="Customer" class="font-medium text-slate-700">{{ $loan->customer?->name ?? '-' }}</td>
+                                <x-dhiran.mobile-cell :number="$loan->customer?->mobile" />
+                                <td data-label="Principal" class="whitespace-nowrap text-right">₹{{ \App\Support\IndianNumber::format((float) $loan->principal_amount, 2) }}</td>
+                                <td data-label="Outstanding" class="whitespace-nowrap text-right font-semibold text-red-600">₹{{ \App\Support\IndianNumber::format($loan->totalOutstanding(), 2) }}</td>
+                                <td data-label="Days Overdue" data-cell="status" class="whitespace-nowrap text-center">
                                     @if($daysOverdue > 90)
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">{{ $daysOverdue }}d</span>
-                                    @elseif($daysOverdue > 30)
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">{{ $daysOverdue }}d</span>
+                                        <span class="dh-status dh-status--danger">{{ $daysOverdue }}d</span>
                                     @else
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">{{ $daysOverdue }}d</span>
+                                        <span class="dh-status dh-status--warning">{{ $daysOverdue }}d</span>
                                     @endif
                                 </td>
-                                <td data-label="Maturity Date" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $loan->maturity_date?->format('d M Y') ?? '-' }}</td>
-                                <td data-label="Grace End" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $graceEnd?->format('d M Y') ?? '-' }}</td>
-                                <td data-label="Notice Sent?" class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                <td data-label="Maturity Date" class="whitespace-nowrap">{{ $loan->maturity_date?->format('d M Y') ?? '-' }}</td>
+                                <td data-label="Grace End" data-low="1" class="whitespace-nowrap">{{ $graceEnd?->format('d M Y') ?? '-' }}</td>
+                                <td data-label="Notice Sent?" class="whitespace-nowrap text-center">
                                     @if($loan->forfeiture_notice_sent_at)
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            {{ $loan->forfeiture_notice_sent_at->format('d M Y') }}
-                                        </span>
+                                        <span class="dh-status dh-status--success">{{ $loan->forfeiture_notice_sent_at->format('d M Y') }}</span>
                                     @else
-                                        <span class="text-gray-400">No</span>
+                                        <span class="text-slate-400">No</span>
                                     @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="jf-table-empty">No overdue loans found</td>
+                                <td colspan="10" class="jf-table-empty">
+                                    <x-dhiran.empty icon="search" title="No overdue loans found" text="Nothing fits the search or filters you chose. Widen the filters to see more loans.">
+                                        <a class="btn btn-secondary btn-sm" href="{{ url()->current() }}">Clear filters</a>
+                                    </x-dhiran.empty>
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>

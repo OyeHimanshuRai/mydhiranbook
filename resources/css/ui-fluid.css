@@ -1,0 +1,28 @@
+/* Fluid type, control and spacing tokens (owner 2026-11-22: "things must fit the smaller screen perfectly").
+   One scale, 320px to 1440px, shared by the app shell, lists and later phases. Import it; do not redefine values.
+   Never size a control with font-size: use --fl-ctl-h (min-height) and --fl-btn-px (padding). */
+:root {
+    /* type: clamp(min @320px, preferred, max @1440px); metadata never below 12px */
+    --fl-fs-body: clamp(0.875rem, 0.82rem + 0.28vw, 1rem);        /* 14 -> 16 */
+    --fl-fs-cell: clamp(0.8125rem, 0.777rem + 0.179vw, 0.9375rem); /* 13 -> 15 table cells */
+    --fl-fs-meta: 0.75rem;                                         /* 12 floor: labels, hints, badges */
+    --fl-fs-h1: clamp(1.25rem, 1.107rem + 0.714vw, 1.75rem);      /* 20 -> 28 page title */
+    --fl-fs-h2: clamp(1rem, 0.929rem + 0.357vw, 1.25rem);         /* 16 -> 20 section; figures */
+    --fl-fs-h3: clamp(0.875rem, 0.839rem + 0.179vw, 1rem);        /* 14 -> 16 */
+    --fl-lh-body: 1.45;
+    --fl-lh-head: 1.2;
+    /* space */
+    --fl-gutter: clamp(0.75rem, 0.4rem + 2vw, 2rem);              /* page edge: 12px at 320 */
+    --fl-card-pad: clamp(0.75rem, 0.5rem + 1.2vw, 1.25rem);
+    --fl-gap: clamp(0.5rem, 0.3rem + 1vw, 1rem);
+    /* controls: 44px up to tablet width, a compact 40px on desktop */
+    --fl-ctl-h: 44px;
+    --fl-btn-px: clamp(0.75rem, 0.5rem + 1.2vw, 1.25rem);
+    --fl-head-h: 56px;                                            /* top bar */
+}
+@media (min-width: 641px) { :root { --fl-head-h: 64px; } }
+@media (min-width: 1024px) { :root { --fl-ctl-h: 40px; } }
+/* iOS zooms the page when a field under 16px gets focus. */
+@media (max-width: 767.98px) {
+    .dh-app :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]):not([type="range"]) { font-size: 16px; }
+}

@@ -42,9 +42,9 @@
         @foreach(collect(request()->query())->except([...$names, $pageName, 'export'])->filter(fn ($v) => is_scalar($v) && $v !== '') as $k => $v)
             <input type="hidden" name="{{ $k }}" value="{{ $v }}">
         @endforeach
-        <button type="button" class="dh-fbar-open dh-fbar-open--sm {{ $active ? 'is-on' : '' }}" @click="$refs.panel.showModal()" aria-haspopup="dialog" aria-controls="{{ $uid }}">
+        <button type="button" class="dh-fbar-open dh-fbar-open--sm btn-collapse {{ $active ? 'is-on' : '' }}" title="Filters" @click="$refs.panel.showModal()" aria-haspopup="dialog" aria-controls="{{ $uid }}">
             <x-icon name="list-filter" size="16" />
-            <span>Filters</span>
+            <span class="btn-text">Filters</span>
             @if($active)<span class="dh-fbar-badge">{{ count($active) }}</span>@endif
         </button>
 

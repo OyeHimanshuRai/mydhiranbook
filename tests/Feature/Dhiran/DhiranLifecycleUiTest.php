@@ -440,7 +440,7 @@ class DhiranLifecycleUiTest extends TestCase
         });
 
         $html = $this->actingAs($owner)->get('http://127.0.0.1:8787/dhiran/reports/interest')->assertOk()->getContent();
-        $this->assertMatchesRegularExpression('/Penalty Collected<\/p>\s*<p[^>]*>200\.00</', $html, 'a penalty-only payment was left out');
+        $this->assertMatchesRegularExpression('/Penalty Collected<\/p>\s*<p[^>]*>.*?200\.00</s', $html, 'a penalty-only payment was left out');
         $this->assertStringNotContainsString('Principal Collected', $html);
     }
 

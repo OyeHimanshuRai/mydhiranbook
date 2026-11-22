@@ -46,7 +46,7 @@ class DhiranLiveSearchTest extends TestCase
             $this->assertMatchesRegularExpression('/<turbo-frame id="dh-results"[^>]*target="_top"/', $html, "{$path}: links in the results still open full pages");
             $this->assertMatchesRegularExpression('#<turbo-frame id="dh-results".*?<table.*?</table>.*?</turbo-frame>#s', $html, "{$path}: the table is inside the frame");
             if (str_contains($html, 'data-dhiran-export')) {
-                $this->assertMatchesRegularExpression('/data-dhiran-export\s+onclick="const u = new window\.URL\(window\.location\.href\)/', $html, "{$path}: export follows the live search");
+                $this->assertMatchesRegularExpression('/<a\b(?=[^>]*data-dhiran-export)[^>]*onclick="const u = new window\.URL\(window\.location\.href\)/', $html, "{$path}: export follows the live search");
             }
         }
 

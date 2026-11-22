@@ -35,12 +35,12 @@
           @turbo:before-cache.window="$refs.panel?.open && $refs.panel.close(); [...$el.elements].forEach(e => { if (e.name && !['from', 'to'].includes(e.name)) e.disabled = false })">
         <div class="dh-fbar-row">
             @if($has('search'))
-                <x-dhiran.search :value="$filters->get('search') ?? ''" placeholder="Search loan number, name or mobile" label="Search loans" />
+                <x-dhiran.search :value="$filters->get('search') ?? ''" placeholder="Loan no., name or mobile" label="Search loans" />
             @endif
             @if($panelFields)
-                <button type="button" class="dh-fbar-open {{ $count ? 'is-on' : '' }}" @click="$refs.panel.showModal()" aria-haspopup="dialog" aria-controls="{{ $uid }}-panel">
+                <button type="button" class="dh-fbar-open btn-collapse {{ $count ? 'is-on' : '' }}" title="Filters" @click="$refs.panel.showModal()" aria-haspopup="dialog" aria-controls="{{ $uid }}-panel">
                     <x-icon name="list-filter" size="16" />
-                    <span>Filters</span>
+                    <span class="btn-text">Filters</span>
                     @if($count)<span class="dh-fbar-badge" data-filter-count>{{ $count }}</span>@endif
                 </button>
             @endif

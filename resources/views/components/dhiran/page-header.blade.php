@@ -30,7 +30,7 @@
             if (!this.dhHeaderSource || !this.dhHeaderFabNav) return;
 
             this.dhHeaderOriginalActions = Array.from(this.dhHeaderSource.children);
-            this.dhHeaderMedia = window.matchMedia('(max-width: 720px)');
+            this.dhHeaderMedia = window.matchMedia('(max-width: 640px)');
             this.dhSyncHeaderActions();
 
             const onChange = () => this.dhSyncHeaderActions();
@@ -39,18 +39,10 @@
             } else {
                 this.dhHeaderMedia.addListener(onChange);
             }
-
-            this.$nextTick(() => {
-                if (this.dhHeaderFab && this.dhHeaderFab.parentElement !== document.body) {
-                    document.body.appendChild(this.dhHeaderFab);
-                    this.dhHeaderHasFab = false;
-                    this.dhSyncHeaderActions();
-                }
-            });
         },
         dhIsPinnedHeaderAction(el) {
             const label = (el.textContent || '').trim().replace(/\s+/g, ' ').toLowerCase();
-            return el.dataset.dhMobilePin === 'true' || label.startsWith('back') || label === 'dashboard' || label === 'all loans';
+            return el.dataset.dhMobilePin === 'true' || el.classList.contains('btn-primary') || label.startsWith('back') || label === 'dashboard' || label === 'all loans';
         },
         dhPreparePinnedHeaderAction(el) {
             const label = (el.textContent || '').trim().replace(/\s+/g, ' ').toLowerCase();
@@ -102,9 +94,6 @@
                 delete el.dataset.dhMobileLabel;
                 this.dhHeaderSource.appendChild(el);
             });
-            if (this.dhHeaderFab && this.dhHeaderFab.parentElement === document.body) {
-                this.$el.appendChild(this.dhHeaderFab);
-            }
         }
      }"
      x-init="initDhHeaderActions()"
@@ -117,7 +106,7 @@
     <div class="dh-page-header-content">
         <button type="button" class="dh-header-toggle"
                 onclick="window.dispatchEvent(new CustomEvent('dhiran-menu'))"
-                aria-label="Open menu" aria-controls="dh-sidebar">
+                aria-label="Open menu" aria-controls="dh-sidebar" aria-expanded="false">
             <x-icon name="menu" />
         </button>
         @if($useSlotLayout)
@@ -152,12 +141,9 @@
                 <button type="button" class="dh-header-mobile-fab-toggle"
                         x-on:click.stop="dhHeaderActionsOpen = !dhHeaderActionsOpen"
                         x-bind:aria-expanded="dhHeaderActionsOpen.toString()"
-                        aria-label="Toggle page actions">
-                    <span class="dh-header-mobile-fab-bars" aria-hidden="true">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </span>
+                        aria-label="More actions">
+                    <svg x-show="!dhHeaderActionsOpen" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+                    <x-icon name="x" x-show="dhHeaderActionsOpen" x-cloak />
                 </button>
             </div>
         </div>
