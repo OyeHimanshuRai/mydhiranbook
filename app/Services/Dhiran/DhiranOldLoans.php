@@ -26,7 +26,7 @@ final class DhiranOldLoans
         'ticket_number' => 'Ticket number in your book', 'loan_date' => 'Date the loan was given', 'customer_name' => 'Customer name',
         'mobile' => 'Mobile', 'address' => 'Address', 'pan' => 'PAN', 'id_number' => 'ID number', 'amount_lent' => 'Amount lent',
         'principal_owed' => 'Principal still owed', 'interest_rate_monthly' => 'Interest % per month', 'interest_type' => 'flat / daily / compound',
-        'tenure_months' => 'Tenure (months)', 'interest_paid_up_to' => 'Interest paid up to', 'unpaid_interest' => 'Unpaid interest (optional)',
+        'tenure_months' => 'Tenure (months)', 'interest_paid_up_to' => 'Interest paid up to', 'unpaid_interest' => 'Unpaid interest',
         'item_description' => 'Item', 'metal' => 'gold / silver / other', 'purity' => 'Purity (gold 22, silver 925)', 'gross_weight_g' => 'Gross weight (g)',
         'stone_weight_g' => 'Stone weight (g)', 'rate_per_gram' => 'Rate per gram', 'appraised_value' => 'Appraised value (other items)',
     ];

@@ -16,7 +16,7 @@
     <div class="customer-photo__identity">
         <x-customer-avatar :customer="$customer" size="profile" />
         <div class="customer-photo__copy">
-            <div class="customer-photo__label">Customer photo <span>Optional</span></div>
+            <div class="customer-photo__label">Customer photo</div>
             <p>Private to your shop. Separate from KYC documents.</p>
             @if($canChange)
                 <div class="customer-photo__actions">
@@ -37,7 +37,7 @@
             <input type="file" name="customer_photo" data-photo-form-file hidden accept="image/jpeg,image/png,image/webp">
             <input type="hidden" name="customer_photo_version" data-photo-form-version value="{{ old('customer_photo_version', $photo?->version ?? '') }}">
             <input type="hidden" name="customer_photo_remove" data-photo-form-remove value="0">
-            <noscript><p>JavaScript is needed for camera previews. Choose an optional photo here:</p><input type="file" name="customer_photo" accept="image/jpeg,image/png,image/webp"></noscript>
+            <noscript><p>JavaScript is needed for camera previews. Choose a photo here:</p><input type="file" name="customer_photo" accept="image/jpeg,image/png,image/webp"></noscript>
         @endif
         <input type="file" data-photo-picker hidden accept="image/jpeg,image/png,image/webp">
         <dialog class="customer-photo-dialog" data-photo-dialog aria-labelledby="{{ $id }}-title">

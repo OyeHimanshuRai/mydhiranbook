@@ -1,8 +1,8 @@
 {{-- One labelled settings control. Wires label[for], hint and error via aria-describedby, marks aria-invalid, and shows a unit
      (prefix = leading, suffix = trailing) so the label stays short. inr: live "₹1,00,000" read-back under a rupee amount.
      type="select" takes the <option>s as the slot. Extra attributes (min, max, step, inputmode, maxlength...) go to the control.
-     Server value $value; errors come from the validation bag by $name. --}}
-@props(['name', 'label', 'type' => 'text', 'value' => null, 'hint' => null, 'prefix' => null, 'suffix' => null, 'inr' => false, 'wide' => false, 'optional' => false, 'id' => null])
+     req: the server requires it (star on the label, aria-required on the control). Server value $value; errors come from the validation bag by $name. --}}
+@props(['name', 'label', 'type' => 'text', 'value' => null, 'hint' => null, 'prefix' => null, 'suffix' => null, 'inr' => false, 'wide' => false, 'req' => false, 'id' => null])
 @php
     $id ??= 'f-' . trim(preg_replace('/[^a-z0-9]+/i', '-', $name), '-');
     $error = $errors->first($name);
@@ -10,9 +10,9 @@
     $initial = is_numeric($value) ? (float) $value : null;
 @endphp
 <div class="st-field{{ $wide ? ' st-wide' : '' }}" @if($inr) x-data="{ n: @js($value === null ? '' : (string) $value) }" @endif>
-    <label class="st-label" for="{{ $id }}">{{ $label }}@if($optional) <span class="st-opt">(optional)</span>@endif</label>
+    <label class="st-label" for="{{ $id }}">{{ $label }}@if($req) <x-req />@endif</label>
     @php
-        $attrs = $attributes->merge(['id' => $id, 'name' => $name, 'class' => 'st-control' . ($error ? ' is-invalid' : ''), 'aria-describedby' => $described ?: null, 'aria-invalid' => $error ? 'true' : null]);
+        $attrs = $attributes->merge(['id' => $id, 'name' => $name, 'class' => 'st-control' . ($error ? ' is-invalid' : ''), 'aria-describedby' => $described ?: null, 'aria-invalid' => $error ? 'true' : null, 'aria-required' => $req ? 'true' : null]);
     @endphp
     @if($prefix || $suffix)<div class="st-affix{{ $error ? ' is-invalid' : '' }}">@endif
         @if($prefix)<span class="st-unit st-unit--pre" aria-hidden="true">{{ $prefix }}</span>@endif

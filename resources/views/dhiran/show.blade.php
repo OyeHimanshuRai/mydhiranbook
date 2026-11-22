@@ -376,7 +376,7 @@
     {{-- The balance as the page shows it, repeated where money is taken --}}
     @php $readback = [['Outstanding Principal', $loan->outstanding_principal ?? $loan->principal_amount], ['Outstanding Interest', $loan->outstanding_interest ?? 0], ['Outstanding Penalty', $loan->outstanding_penalty ?? 0]]; @endphp
 
-    <x-dhiran.sheet id="payInterestModal" title="Pay Interest" :sub="$loan->loan_number . ' · ' . ($loan->customer->name ?? '')" :action="route('dhiran.pay-interest', $loan)" submit="Pay Interest" busy="Recording…">
+    <x-dhiran.sheet id="payInterestModal" title="Pay Interest" :sub="$loan->loan_number . ' · ' . ($loan->customer->name ?? '')" :action="route('dhiran.pay-interest', $loan)" submit="Pay Interest" busy="Recording…" legend>
         <dl class="dd-readback">
             @foreach($readback as [$k, $v])<div><dt>{{ $k }}</dt><dd>{{ $rupee($v) }}</dd></div>@endforeach
             <div class="is-total"><dt>Total Outstanding</dt><dd>{{ $rupee($loan->total_outstanding ?? 0) }}</dd></div>
@@ -385,7 +385,7 @@
         <x-dhiran.pay-method id="pi-method" />
     </x-dhiran.sheet>
 
-    <x-dhiran.sheet id="repayModal" title="Repay Loan" :sub="$loan->loan_number . ' · ' . ($loan->customer->name ?? '')" :action="route('dhiran.repay', $loan)" submit="Submit Payment" busy="Recording…">
+    <x-dhiran.sheet id="repayModal" title="Repay Loan" :sub="$loan->loan_number . ' · ' . ($loan->customer->name ?? '')" :action="route('dhiran.repay', $loan)" submit="Submit Payment" busy="Recording…" legend>
         <dl class="dd-readback">
             @foreach($readback as [$k, $v])<div><dt>{{ $k }}</dt><dd>{{ $rupee($v) }}</dd></div>@endforeach
             <div class="is-total"><dt>Total Outstanding</dt><dd>{{ $rupee($loan->total_outstanding ?? 0) }}</dd></div>
@@ -394,10 +394,10 @@
         <x-dhiran.pay-method id="rp-method" />
     </x-dhiran.sheet>
 
-    <x-dhiran.sheet id="releaseItemModal" title="Release Pledged Item" :sub="$loan->loan_number" :action="route('dhiran.release-item', $loan)" submit="Release Item" busy="Releasing…">
+    <x-dhiran.sheet id="releaseItemModal" title="Release Pledged Item" :sub="$loan->loan_number" :action="route('dhiran.release-item', $loan)" submit="Release Item" busy="Releasing…" legend>
         <div>
-            <label for="rel-item">Select Item</label>
-            <select id="rel-item" name="item_id" required autofocus class="dh-form-control dh-native-select dd-input">
+            <label for="rel-item">Select Item <x-req /></label>
+            <select id="rel-item" name="item_id" required aria-required="true" autofocus class="dh-form-control dh-native-select dd-input">
                 <option value="">Choose item...</option>
                 @foreach($loan->items ?? [] as $item)
                     @if(($item->status ?? 'pledged') === 'pledged')
@@ -425,18 +425,18 @@
     </x-dhiran.sheet>
 
     @php $renewDue = $isActive ? $service->renewalDue($loan) : 0; @endphp
-    <x-dhiran.sheet id="renewModal" title="Renew Loan" :sub="$loan->loan_number . ' · ' . ($loan->customer->name ?? '')" :action="route('dhiran.renew', $loan)" submit="Renew Loan" busy="Renewing…">
+    <x-dhiran.sheet id="renewModal" title="Renew Loan" :sub="$loan->loan_number . ' · ' . ($loan->customer->name ?? '')" :action="route('dhiran.renew', $loan)" submit="Renew Loan" busy="Renewing…" legend>
         @if($renewDue > 0)
             <p class="dd-takes">To renew, collect {{ $rupee($renewDue) }} now: interest and penalty due (at least the minimum interest), up to {{ $through }}. Interest for any days since is added.</p>
             <x-dhiran.pay-method id="rn-method" label="Paid by" autofocus />
         @endif
         <div>
-            <label for="rn-tenure">New Tenure (Months)</label>
-            <input id="rn-tenure" type="number" inputmode="numeric" name="tenure_months" required min="1" @if($renewDue <= 0) autofocus @endif value="{{ $loan->tenure_months }}" class="dh-form-control dd-input">
+            <label for="rn-tenure">New Tenure (Months) <x-req /></label>
+            <input id="rn-tenure" type="number" inputmode="numeric" name="tenure_months" required aria-required="true" min="1" @if($renewDue <= 0) autofocus @endif value="{{ $loan->tenure_months }}" class="dh-form-control dd-input">
         </div>
         <div>
-            <label for="rn-rate">New Interest Rate (%/month)</label>
-            <input id="rn-rate" type="number" step="0.01" inputmode="decimal" name="interest_rate_monthly" required value="{{ $loan->interest_rate_monthly }}" class="dh-form-control dd-input">
+            <label for="rn-rate">New Interest Rate (%/month) <x-req /></label>
+            <input id="rn-rate" type="number" step="0.01" inputmode="decimal" name="interest_rate_monthly" required aria-required="true" value="{{ $loan->interest_rate_monthly }}" class="dh-form-control dd-input">
         </div>
     </x-dhiran.sheet>
 </x-dhiran-layout>

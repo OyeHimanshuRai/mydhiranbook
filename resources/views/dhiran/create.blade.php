@@ -33,7 +33,7 @@
          @turbo:before-cache.window="document.body.classList.remove('dh-modal-open')"
          @pageshow.window="submitting = false">
 
-        <form method="POST" action="{{ route('dhiran.store') }}" id="fm-form" class="fm-page dhiran-create-form" @submit="prepareSubmit($event)" data-turbo-frame="_top">
+        <form method="POST" action="{{ route('dhiran.store') }}" id="fm-form" class="fm-page dhiran-create-form" @submit="prepareSubmit($event)" @turbo:submit-end="if (!$event.detail.success) submitting = false" data-turbo-frame="_top">
             @csrf <x-dhiran.once />
 
             @if($errors->any())
@@ -49,6 +49,8 @@
                     </div>
                 </div>
             @endif
+
+            <x-req-legend />
 
             <nav class="fm-steps" aria-label="Steps of this form">
                 <ol>
@@ -71,12 +73,12 @@
                 <div class="fm-card-body">
                     <input type="hidden" name="customer_id" :value="customer_id">
                     <div class="fm-field fm-combo" @click.outside="customerDropdownOpen = false">
-                        <label class="fm-label" for="fm-customer-search">Borrower</label>
+                        <label class="fm-label" for="fm-customer-search">Borrower <x-req /></label>
                         <div class="fm-affix" :class="{ 'is-invalid': {{ $errors->has('customer_id') ? 'true' : 'false' }} && !selectedCustomer }">
                             <span class="fm-unit fm-unit--pre" aria-hidden="true"><x-icon name="search" size="16" /></span>
                             <input type="search" id="fm-customer-search" class="fm-control"
                                    placeholder="Name, mobile or address" autocomplete="off" autocapitalize="off" spellcheck="false"
-                                   role="combobox" aria-autocomplete="list" aria-controls="fm-customer-list" :aria-expanded="customerDropdownOpen.toString()"
+                                   role="combobox" aria-required="true" aria-autocomplete="list" aria-controls="fm-customer-list" :aria-expanded="customerDropdownOpen.toString()"
                                    @if($errors->has('customer_id')) aria-invalid="true" aria-describedby="err-customer_id" @endif
                                    x-model="customerSearch"
                                    @focus="customerDropdownOpen = true"
@@ -141,9 +143,9 @@
 
                             <div class="fm-grid">
                                 <div class="fm-field fm-wide">
-                                    <label class="fm-label" :for="'it-desc-' + index">Description</label>
+                                    <label class="fm-label" :for="'it-desc-' + index">Description <x-req /></label>
                                     <input type="text" :id="'it-desc-' + index" :name="'items['+index+'][description]'" x-model="item.description" data-item-desc
-                                           placeholder="e.g. Gold chain, silver anklet" class="fm-control" required autocomplete="off">
+                                           placeholder="e.g. Gold chain, silver anklet" class="fm-control" required aria-required="true" autocomplete="off">
                                 </div>
                                 <div class="fm-field">
                                     <label class="fm-label" :for="'it-metal-' + index">Metal</label>
@@ -165,8 +167,8 @@
                                 {{-- Metal-mode fields (gold/silver, auto valuation) --}}
                                 <template x-if="item.metal_type !== 'other' && item.value_mode !== 'appraised'">
                                     <div class="fm-field">
-                                        <label class="fm-label" :for="'it-purity-' + index">Purity</label>
-                                        <select :id="'it-purity-' + index" :name="'items['+index+'][purity]'" x-model.number="item.purity" class="fm-control" required @change="recalcItem(index)">
+                                        <label class="fm-label" :for="'it-purity-' + index">Purity <x-req /></label>
+                                        <select aria-required="true" :id="'it-purity-' + index" :name="'items['+index+'][purity]'" x-model.number="item.purity" class="fm-control" required @change="recalcItem(index)">
                                             <option value="">Select</option>
                                             <template x-for="opt in purityOptions(item.metal_type)" :key="opt.value">
                                                 {{-- :selected — the options draw after x-model sets the value, so it showed "Select". --}}
@@ -177,35 +179,35 @@
                                 </template>
                                 <template x-if="item.metal_type !== 'other' && item.value_mode !== 'appraised'">
                                     <div class="fm-field">
-                                        <label class="fm-label" :for="'it-rate-' + index">Rate per gram at pledge</label>
+                                        <label class="fm-label" :for="'it-rate-' + index">Rate per gram at pledge <x-req /></label>
                                         <div class="fm-affix">
                                             <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
-                                            <input type="number" inputmode="decimal" step="0.01" min="0" :id="'it-rate-' + index" :name="'items['+index+'][rate_per_gram_at_pledge]'" x-model.number="item.rate_per_gram_at_pledge"
+                                            <input type="number" inputmode="decimal" step="0.01" min="0" aria-required="true" :id="'it-rate-' + index" :name="'items['+index+'][rate_per_gram_at_pledge]'" x-model.number="item.rate_per_gram_at_pledge"
                                                    placeholder="0.00" class="fm-control" @input="recalcItem(index)" @focus="$event.target.select()">
                                         </div>
                                     </div>
                                 </template>
 
                                 <div class="fm-field" x-show="item.metal_type === 'other' || item.value_mode === 'appraised'">
-                                    <label class="fm-label" :for="'it-value-' + index">Appraised value</label>
+                                    <label class="fm-label" :for="'it-value-' + index">Appraised value <x-req /></label>
                                     <div class="fm-affix">
                                         <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
-                                        <input type="number" inputmode="decimal" step="0.01" min="0" :id="'it-value-' + index" :name="'items['+index+'][market_value]'"
+                                        <input type="number" inputmode="decimal" step="0.01" min="0" aria-required="true" :id="'it-value-' + index" :name="'items['+index+'][market_value]'"
                                                x-model.number="item.market_value" placeholder="0.00" class="fm-control" @input="recalcItem(index)" @focus="$event.target.select()">
                                     </div>
                                 </div>
 
                                 <div class="fm-wide fm-grid fm-grid--pair" x-show="item.metal_type !== 'other'">
                                 <div class="fm-field">
-                                    <label class="fm-label" :for="'it-gross-' + index">Gross weight</label>
+                                    <label class="fm-label" :for="'it-gross-' + index">Gross weight <x-req x-show="item.metal_type !== 'other' && item.value_mode !== 'appraised'" /></label>
                                     <div class="fm-affix">
                                         <input type="number" inputmode="decimal" step="0.001" min="0" :id="'it-gross-' + index" :name="'items['+index+'][gross_weight]'" x-model.number="item.gross_weight"
-                                               placeholder="0.000" class="fm-control" :required="item.metal_type !== 'other' && item.value_mode !== 'appraised'" @input="recalcItem(index)" @focus="$event.target.select()">
+                                               placeholder="0.000" class="fm-control" :required="item.metal_type !== 'other' && item.value_mode !== 'appraised'" :aria-required="(item.metal_type !== 'other' && item.value_mode !== 'appraised').toString()" @input="recalcItem(index)" @focus="$event.target.select()">
                                         <span class="fm-unit fm-unit--suf">g</span>
                                     </div>
                                 </div>
                                 <div class="fm-field">
-                                    <label class="fm-label" :for="'it-stone-' + index">Stone weight <span class="fm-opt">optional</span></label>
+                                    <label class="fm-label" :for="'it-stone-' + index">Stone weight</label>
                                     <div class="fm-affix">
                                         <input type="number" inputmode="decimal" step="0.001" min="0" :id="'it-stone-' + index" :name="'items['+index+'][stone_weight]'" x-model.number="item.stone_weight"
                                                placeholder="0.000" class="fm-control" @input="recalcItem(index)" @focus="$event.target.select()">
@@ -214,7 +216,7 @@
                                 </div>
                                 </div>
                                 <div class="fm-field fm-wide">
-                                    <label class="fm-label" :for="'it-huid-' + index">HUID <span class="fm-opt">optional</span></label>
+                                    <label class="fm-label" :for="'it-huid-' + index">HUID</label>
                                     <input type="text" :id="'it-huid-' + index" :name="'items['+index+'][huid]'" x-model="item.huid"
                                            placeholder="6-character hallmark ID" class="fm-control" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false">
                                 </div>
@@ -246,19 +248,19 @@
                     <span class="fm-num" aria-hidden="true">3</span>
                     <div>
                         <h2 class="fm-title" id="fm-h-terms">Loan terms</h2>
-                        <p class="fm-desc">Amount, interest and period. Every field is needed unless marked optional.</p>
+                        <p class="fm-desc">Amount, interest and period.</p>
                     </div>
                 </header>
                 <div class="fm-card-body">
                     <div class="fm-grid">
                         <div class="fm-field fm-wide">
-                            <label for="principal_amount" class="fm-label">Principal amount</label>
+                            <label for="principal_amount" class="fm-label">Principal amount <x-req /></label>
                             <div class="fm-affix fm-affix--lead" :class="{ 'is-invalid': principalProblem }">
                                 <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
                                 <input type="number" inputmode="decimal" step="0.01" name="principal_amount" id="principal_amount"
                                        x-model.number="principal_amount"
                                        value="{{ old('principal_amount') }}"
-                                       placeholder="0.00" class="fm-control" required @focus="$event.target.select()"
+                                       placeholder="0.00" class="fm-control" required aria-required="true" @focus="$event.target.select()"
                                        :aria-invalid="principalProblem ? 'true' : 'false'" aria-describedby="principal-limit @error('principal_amount') err-principal_amount @enderror">
                             </div>
                             <p id="principal-limit" class="fm-limit" data-principal-limit :class="principalProblem && 'is-problem'" x-text="principalHint" aria-live="polite"></p>
@@ -270,12 +272,12 @@
                             </dl>
                         </div>
                         <div class="fm-field">
-                            <label for="interest_rate_monthly" class="fm-label">Interest rate</label>
+                            <label for="interest_rate_monthly" class="fm-label">Interest rate <x-req /></label>
                             <div class="fm-affix">
                                 <input type="number" inputmode="decimal" step="0.01" name="interest_rate_monthly" id="interest_rate_monthly"
                                        x-model.number="interest_rate_monthly"
                                        value="{{ old('interest_rate_monthly', $defaults['interest_rate_monthly'] ?? '') }}"
-                                       placeholder="e.g. 1.5" class="fm-control" required @focus="$event.target.select()"
+                                       placeholder="e.g. 1.5" class="fm-control" required aria-required="true" @focus="$event.target.select()"
                                        @error('interest_rate_monthly') aria-invalid="true" aria-describedby="err-interest_rate_monthly" @enderror>
                                 <span class="fm-unit fm-unit--suf">% / month</span>
                             </div>
@@ -284,8 +286,8 @@
                             @enderror
                         </div>
                         <div class="fm-field">
-                            <label for="interest_type" class="fm-label">Interest type</label>
-                            <select name="interest_type" id="interest_type" x-model="interest_type" class="fm-control" required
+                            <label for="interest_type" class="fm-label">Interest type <x-req /></label>
+                            <select name="interest_type" id="interest_type" x-model="interest_type" class="fm-control" required aria-required="true"
                                     @error('interest_type') aria-invalid="true" aria-describedby="err-interest_type" @enderror>
                                 <option value="flat">Flat (Simple)</option>
                                 <option value="daily">Daily</option>
@@ -296,12 +298,12 @@
                             @enderror
                         </div>
                         <div class="fm-field">
-                            <label for="tenure_months" class="fm-label">Tenure</label>
+                            <label for="tenure_months" class="fm-label">Tenure <x-req /></label>
                             <div class="fm-affix">
                                 <input type="number" inputmode="numeric" name="tenure_months" id="tenure_months"
                                        x-model.number="tenure_months"
                                        value="{{ old('tenure_months', $defaults['tenure_months'] ?? 6) }}"
-                                       placeholder="6" class="fm-control" required min="1" step="1" @focus="$event.target.select()"
+                                       placeholder="6" class="fm-control" required aria-required="true" min="1" step="1" @focus="$event.target.select()"
                                        @error('tenure_months') aria-invalid="true" aria-describedby="err-tenure_months" @enderror>
                                 <span class="fm-unit fm-unit--suf">months</span>
                             </div>
@@ -310,7 +312,7 @@
                             @enderror
                         </div>
                         <div class="fm-field">
-                            <label for="penalty_rate_monthly" class="fm-label">Penalty rate <span class="fm-opt">optional</span></label>
+                            <label for="penalty_rate_monthly" class="fm-label">Penalty rate</label>
                             <div class="fm-affix">
                                 <input type="number" inputmode="decimal" step="0.01" name="penalty_rate_monthly" id="penalty_rate_monthly"
                                        x-model.number="penalty_rate_monthly"
@@ -324,7 +326,7 @@
                             @enderror
                         </div>
                         <div class="fm-field">
-                            <label for="gold_rate_on_date" class="fm-label">Gold rate today <span class="fm-opt">optional</span></label>
+                            <label for="gold_rate_on_date" class="fm-label">Gold rate today</label>
                             <div class="fm-affix">
                                 <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
                                 <input type="number" inputmode="decimal" step="0.01" name="gold_rate_on_date" id="gold_rate_on_date"
@@ -378,7 +380,7 @@
                         <p class="fm-error" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
                     @enderror
                     <div class="fm-field">
-                        <label for="notes" class="fm-label">Notes <span class="fm-opt">optional</span></label>
+                        <label for="notes" class="fm-label">Notes</label>
                         <textarea name="notes" id="notes" rows="3" placeholder="Anything else to remember about this loan" class="fm-control">{{ old('notes') }}</textarea>
                     </div>
                 </div>
@@ -418,33 +420,34 @@
                 </div>
                 <div class="fm-dialog-body">
                     <p class="fm-alert fm-alert--inline" role="alert" x-show="nbError" x-cloak><x-icon name="circle-alert" size="20" /><span x-text="nbError"></span></p>
+                    <x-req-legend />
                     <div class="fm-grid">
                         <div class="fm-field">
-                            <label class="fm-label" for="nb-first_name">First name</label>
-                            <input type="text" id="nb-first_name" class="fm-control" x-model="nb.first_name" autocomplete="off" maxlength="255" :aria-invalid="nbField === 'first_name' ? 'true' : null" autofocus>
+                            <label class="fm-label" for="nb-first_name">First name <x-req /></label>
+                            <input type="text" id="nb-first_name" class="fm-control" x-model="nb.first_name" aria-required="true" autocomplete="off" maxlength="255" :aria-invalid="nbField === 'first_name' ? 'true' : null" autofocus>
                         </div>
                         <div class="fm-field">
-                            <label class="fm-label" for="nb-last_name">Last name <span class="fm-opt">optional</span></label>
+                            <label class="fm-label" for="nb-last_name">Last name</label>
                             <input type="text" id="nb-last_name" class="fm-control" x-model="nb.last_name" autocomplete="off" maxlength="255">
                         </div>
                         <div class="fm-field">
-                            <label class="fm-label" for="nb-mobile">Mobile number</label>
-                            <input type="tel" id="nb-mobile" class="fm-control" inputmode="numeric" placeholder="10 digits" maxlength="10" autocomplete="off" x-model="nb.mobile" :aria-invalid="nbField === 'mobile' ? 'true' : null">
+                            <label class="fm-label" for="nb-mobile">Mobile number <x-req /></label>
+                            <input type="tel" id="nb-mobile" class="fm-control" inputmode="numeric" placeholder="10 digits" maxlength="10" autocomplete="off" aria-required="true" x-model="nb.mobile" :aria-invalid="nbField === 'mobile' ? 'true' : null">
                         </div>
                         <div class="fm-field">
-                            <label class="fm-label" for="nb-pan">PAN <span class="fm-opt">optional</span></label>
+                            <label class="fm-label" for="nb-pan">PAN</label>
                             <input type="text" id="nb-pan" class="fm-control" placeholder="ABCDE1234F" maxlength="10" autocomplete="off" autocapitalize="characters" spellcheck="false" x-model="nb.pan" @input="nb.pan = nb.pan.toUpperCase()">
                         </div>
                         <div class="fm-field">
-                            <label class="fm-label" for="nb-id_number">ID number <span class="fm-opt">optional</span></label>
+                            <label class="fm-label" for="nb-id_number">ID number</label>
                             <input type="text" id="nb-id_number" class="fm-control" autocomplete="off" x-model="nb.id_number">
                         </div>
                         <div class="fm-field">
-                            <label class="fm-label" for="nb-state_code">State code <span class="fm-opt">optional</span></label>
+                            <label class="fm-label" for="nb-state_code">State code</label>
                             <input type="text" id="nb-state_code" class="fm-control" autocomplete="off" x-model="nb.state_code">
                         </div>
                         <div class="fm-field fm-wide">
-                            <label class="fm-label" for="nb-address">Address <span class="fm-opt">optional</span></label>
+                            <label class="fm-label" for="nb-address">Address</label>
                             <textarea id="nb-address" class="fm-control" rows="3" autocomplete="off" x-model="nb.address"></textarea>
                         </div>
                     </div>

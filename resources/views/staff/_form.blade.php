@@ -10,16 +10,17 @@
     @if($editing) @method('PUT') @endif
 
     <div class="st-stack">
+        <x-req-legend />
         <x-settings.panel title="Who they are" desc="Their name and the number they sign in with.">
             <div class="st-grid">
-                <x-settings.field name="name" id="name" label="Full name" wide required autocomplete="off" placeholder="Full name" :value="old('name', $user?->name)" />
-                <x-settings.field name="mobile_number" id="mobile_number" label="Mobile number" type="tel" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" required autocomplete="off" prefix="+91"
+                <x-settings.field name="name" id="name" label="Full name" wide req required autocomplete="off" placeholder="Full name" :value="old('name', $user?->name)" />
+                <x-settings.field name="mobile_number" id="mobile_number" label="Mobile number" type="tel" req inputmode="numeric" maxlength="10" pattern="[0-9]{10}" required autocomplete="off" prefix="+91"
                                   placeholder="10 digits" :value="old('mobile_number', $user?->mobile_number)" hint="Used for login" />
-                <x-settings.field name="email" id="email" label="Email" type="email" optional autocomplete="off" placeholder="name@example.com" :value="old('email', $user?->email)" />
+                <x-settings.field name="email" id="email" label="Email" type="email" autocomplete="off" placeholder="name@example.com" :value="old('email', $user?->email)" />
             </div>
         </x-settings.panel>
 
-        <x-settings.panel title="Role" desc="What this person can open and change. Edit a role's permissions under Roles & permissions.">
+        <x-settings.panel title="Role" req desc="What this person can open and change. Edit a role's permissions under Roles & permissions.">
             <fieldset class="st-choice-set" @error('role_id') aria-describedby="role-err" @enderror>
                 <legend class="st-sr">Role</legend>
                 <div class="st-choices">
@@ -37,8 +38,8 @@
 
         <x-settings.panel :title="$editing ? 'Change password' : 'Password'" :desc="$editing ? 'Leave both fields empty to keep the current password.' : 'At least 6 characters. Share it with them in person.'">
             <div class="st-grid">
-                <x-settings.field name="password" id="password" :label="$editing ? 'New password' : 'Password'" type="password" :required="! $editing" autocomplete="new-password" minlength="6" />
-                <x-settings.field name="password_confirmation" id="password_confirmation" :label="$editing ? 'Confirm new password' : 'Confirm password'" type="password" :required="! $editing" autocomplete="new-password" />
+                <x-settings.field name="password" id="password" :label="$editing ? 'New password' : 'Password'" type="password" :req="! $editing" :required="! $editing" autocomplete="new-password" minlength="6" />
+                <x-settings.field name="password_confirmation" id="password_confirmation" :label="$editing ? 'Confirm new password' : 'Confirm password'" type="password" :req="! $editing" :required="! $editing" autocomplete="new-password" />
             </div>
         </x-settings.panel>
     </div>

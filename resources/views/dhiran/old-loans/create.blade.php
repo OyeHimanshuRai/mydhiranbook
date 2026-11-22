@@ -49,7 +49,7 @@
     <div class="content-inner">
         <form method="POST" action="{{ route('dhiran.old-loans.store') }}" id="ol-form" class="fm-page" data-turbo-frame="_top"
               @submit="busy = !$event.defaultPrevented"
-              @pageshow.window="busy = false"
+              @pageshow.window="busy = false" @turbo:submit-end="if (!$event.detail.success) busy = false"
               x-data="{
                   busy: false,
                   customerId: @js((string) old('customer_id', '')),
@@ -76,6 +76,8 @@
                 </div>
             @endif
 
+            <x-req-legend />
+
             {{-- 1 Borrower --}}
             <section class="fm-card" id="ol-step-borrower" aria-labelledby="ol-h-borrower">
                 <header class="fm-card-head">
@@ -100,12 +102,12 @@
                     <div class="fm-grid" x-show="customerId === ''">
                         @foreach($borrowerFields as [$f, $label, $type, $req])
                             <div class="fm-field {{ $f === 'address' ? 'fm-wide' : '' }}">
-                                <label for="borrower_{{ $f }}" class="fm-label">{{ $label }} @unless($req)<span class="fm-opt">optional</span>@endunless</label>
+                                <label for="borrower_{{ $f }}" class="fm-label">{{ $label }}@if($req) <x-req />@endif</label>
                                 <input type="{{ $type }}" name="borrower[{{ $f }}]" id="borrower_{{ $f }}" value="{{ old("borrower.{$f}") }}" class="fm-control" autocomplete="off"
                                        @if($f === 'mobile') inputmode="numeric" maxlength="10" placeholder="10 digits" @endif
                                        @if($f === 'pan') maxlength="10" autocapitalize="characters" spellcheck="false" placeholder="ABCDE1234F" @endif
                                        @if($err("borrower.{$f}")) aria-invalid="true" aria-describedby="err-borrower_{{ $f }}" @endif
-                                       :disabled="customerId !== ''" @if($req) :required="customerId === ''" @endif>
+                                       :disabled="customerId !== ''" @if($req) :required="customerId === ''" aria-required="true" @endif>
                                 @if($err("borrower.{$f}"))<p class="fm-error" id="err-borrower_{{ $f }}" role="alert"><x-icon name="circle-alert" size="16" />{{ $err("borrower.{$f}") }}</p>@endif
                             </div>
                         @endforeach
@@ -119,14 +121,14 @@
                     <span class="fm-num" aria-hidden="true">2</span>
                     <div>
                         <h2 class="fm-title" id="ol-h-loan">Loan in your book</h2>
-                        <p class="fm-desc">Copy it as it stands today. Every field is needed unless marked optional.</p>
+                        <p class="fm-desc">Copy it as it stands today.</p>
                     </div>
                 </header>
                 <div class="fm-card-body">
                     <div class="fm-grid">
                         @foreach($loanFields as [$f, $label, $type, $default, $req, $pre, $suf])
                             <div class="fm-field">
-                                <label for="{{ $f }}" class="fm-label">{{ $label }} @unless($req)<span class="fm-opt">optional</span>@endunless</label>
+                                <label for="{{ $f }}" class="fm-label">{{ $label }}@if($req) <x-req />@endif</label>
                                 @php
                                     $attrs = ($type === 'number' ? 'step="0.01" min="0" inputmode="decimal"' : '')
                                         . ($f === 'tenure_months' || $f === 'grace_period_days' ? ' step="1" inputmode="numeric"' : '')
@@ -137,12 +139,12 @@
                                 @if($pre || $suf)
                                     <div class="fm-affix @if($hasErr) is-invalid @endif">
                                         @if($pre)<span class="fm-unit fm-unit--pre">{{ $pre }}</span>@endif
-                                        <input type="{{ $type }}" name="{{ $f }}" id="{{ $f }}" value="{{ old($f, $default) }}" class="fm-control" {!! $attrs !!} @if($req) required @endif
+                                        <input type="{{ $type }}" name="{{ $f }}" id="{{ $f }}" value="{{ old($f, $default) }}" class="fm-control" {!! $attrs !!} @if($req) required aria-required="true" @endif
                                                @if($f === 'unpaid_interest') aria-describedby="hint-unpaid_interest{{ $hasErr ? ' err-' . $f : '' }}" @elseif($hasErr) aria-describedby="err-{{ $f }}" @endif @if($hasErr) aria-invalid="true" @endif>
                                         @if($suf)<span class="fm-unit fm-unit--suf">{{ $suf }}</span>@endif
                                     </div>
                                 @else
-                                    <input type="{{ $type }}" name="{{ $f }}" id="{{ $f }}" value="{{ old($f, $default) }}" class="fm-control" {!! $attrs !!} @if($req) required @endif @if($type === 'text') autocomplete="off" @endif
+                                    <input type="{{ $type }}" name="{{ $f }}" id="{{ $f }}" value="{{ old($f, $default) }}" class="fm-control" {!! $attrs !!} @if($req) required aria-required="true" @endif @if($type === 'text') autocomplete="off" @endif
                                            @if($hasErr) aria-invalid="true" aria-describedby="err-{{ $f }}" @endif>
                                 @endif
                                 @if($f === 'unpaid_interest')<p class="fm-limit" id="hint-unpaid_interest">Leave blank to work it out from the paid-up date at this rate.</p>@endif
@@ -150,8 +152,8 @@
                             </div>
                         @endforeach
                         <div class="fm-field">
-                            <label for="interest_type" class="fm-label">Interest type</label>
-                            <select name="interest_type" id="interest_type" class="fm-control" required>
+                            <label for="interest_type" class="fm-label">Interest type <x-req /></label>
+                            <select name="interest_type" id="interest_type" class="fm-control" required aria-required="true">
                                 @foreach(['flat' => 'Flat', 'daily' => 'Daily', 'compound' => 'Compound (monthly)'] as $v => $l)
                                     <option value="{{ $v }}" @selected(old('interest_type', $settings->default_interest_type ?? 'flat') === $v)>{{ $l }}</option>
                                 @endforeach
@@ -183,8 +185,8 @@
                             <p class="fm-error" role="alert" x-show="itemErrors[i]" x-cloak><x-icon name="circle-alert" size="16" /><span x-text="itemErrors[i]"></span></p>
                             <div class="fm-grid">
                                 <div class="fm-field fm-wide">
-                                    <label class="fm-label" :for="'oi-desc-' + i">Description</label>
-                                    <input type="text" :id="'oi-desc-' + i" :name="`items[${i}][description]`" x-model="item.description" class="fm-control" required placeholder="e.g. Gold chain" autocomplete="off">
+                                    <label class="fm-label" :for="'oi-desc-' + i">Description <x-req /></label>
+                                    <input type="text" :id="'oi-desc-' + i" :name="`items[${i}][description]`" x-model="item.description" class="fm-control" required aria-required="true" placeholder="e.g. Gold chain" autocomplete="off">
                                 </div>
                                 <div class="fm-field">
                                     <label class="fm-label" :for="'oi-metal-' + i">Metal</label>
@@ -193,21 +195,21 @@
                                     </select>
                                 </div>
                                 <div class="fm-field" x-show="item.metal_type !== 'other'">
-                                    <label class="fm-label" :for="'oi-purity-' + i">Purity</label>
-                                    <select :id="'oi-purity-' + i" :name="`items[${i}][purity]`" x-model="item.purity" class="fm-control" :disabled="item.metal_type === 'other'">
+                                    <label class="fm-label" :for="'oi-purity-' + i">Purity <x-req /></label>
+                                    <select aria-required="true" :id="'oi-purity-' + i" :name="`items[${i}][purity]`" x-model="item.purity" class="fm-control" :disabled="item.metal_type === 'other'">
                                         <template x-for="p in (purities[item.metal_type] || [])" :key="p"><option :value="p" x-text="item.metal_type === 'gold' ? p + 'K' : p" :selected="String(p) === String(item.purity)"></option></template>
                                     </select>
                                 </div>
                                 <div class="fm-wide fm-grid fm-grid--pair" x-show="item.metal_type !== 'other'">
                                     <div class="fm-field">
-                                        <label class="fm-label" :for="'oi-gross-' + i">Gross weight</label>
+                                        <label class="fm-label" :for="'oi-gross-' + i">Gross weight <x-req /></label>
                                         <div class="fm-affix">
-                                            <input type="number" inputmode="decimal" step="0.001" min="0" :id="'oi-gross-' + i" :name="`items[${i}][gross_weight]`" x-model="item.gross_weight" class="fm-control" placeholder="0.000" :disabled="item.metal_type === 'other'" @focus="$event.target.select()">
+                                            <input type="number" inputmode="decimal" step="0.001" min="0" aria-required="true" :id="'oi-gross-' + i" :name="`items[${i}][gross_weight]`" x-model="item.gross_weight" class="fm-control" placeholder="0.000" :disabled="item.metal_type === 'other'" @focus="$event.target.select()">
                                             <span class="fm-unit fm-unit--suf">g</span>
                                         </div>
                                     </div>
                                     <div class="fm-field">
-                                        <label class="fm-label" :for="'oi-stone-' + i">Stone weight <span class="fm-opt">optional</span></label>
+                                        <label class="fm-label" :for="'oi-stone-' + i">Stone weight</label>
                                         <div class="fm-affix">
                                             <input type="number" inputmode="decimal" step="0.001" min="0" :id="'oi-stone-' + i" :name="`items[${i}][stone_weight]`" x-model="item.stone_weight" class="fm-control" placeholder="0.000" :disabled="item.metal_type === 'other'" @focus="$event.target.select()">
                                             <span class="fm-unit fm-unit--suf">g</span>
@@ -215,18 +217,18 @@
                                     </div>
                                 </div>
                                 <div class="fm-field fm-wide" x-show="item.metal_type !== 'other'">
-                                    <label class="fm-label" :for="'oi-rate-' + i">Rate per gram at pledge</label>
+                                    <label class="fm-label" :for="'oi-rate-' + i">Rate per gram at pledge <x-req /></label>
                                     <div class="fm-affix">
                                         <span class="fm-unit fm-unit--pre">₹</span>
-                                        <input type="number" inputmode="decimal" step="0.01" min="0" :id="'oi-rate-' + i" :name="`items[${i}][rate_per_gram_at_pledge]`" x-model="item.rate_per_gram_at_pledge" class="fm-control" placeholder="0.00" :disabled="item.metal_type === 'other'" @focus="$event.target.select()">
+                                        <input type="number" inputmode="decimal" step="0.01" min="0" aria-required="true" :id="'oi-rate-' + i" :name="`items[${i}][rate_per_gram_at_pledge]`" x-model="item.rate_per_gram_at_pledge" class="fm-control" placeholder="0.00" :disabled="item.metal_type === 'other'" @focus="$event.target.select()">
                                         <span class="fm-unit fm-unit--suf">/ g</span>
                                     </div>
                                 </div>
                                 <div class="fm-field fm-wide" x-show="item.metal_type === 'other'">
-                                    <label class="fm-label" :for="'oi-value-' + i">Appraised value</label>
+                                    <label class="fm-label" :for="'oi-value-' + i">Appraised value <x-req /></label>
                                     <div class="fm-affix">
                                         <span class="fm-unit fm-unit--pre">₹</span>
-                                        <input type="number" inputmode="decimal" step="0.01" min="0" :id="'oi-value-' + i" :name="`items[${i}][market_value]`" x-model="item.market_value" class="fm-control" placeholder="0.00" :disabled="item.metal_type !== 'other'" @focus="$event.target.select()">
+                                        <input type="number" inputmode="decimal" step="0.01" min="0" aria-required="true" :id="'oi-value-' + i" :name="`items[${i}][market_value]`" x-model="item.market_value" class="fm-control" placeholder="0.00" :disabled="item.metal_type !== 'other'" @focus="$event.target.select()">
                                     </div>
                                 </div>
                             </div>
@@ -247,7 +249,7 @@
                 </header>
                 <div class="fm-card-body">
                     <div class="fm-field">
-                        <label for="notes" class="fm-label">Notes <span class="fm-opt">optional</span></label>
+                        <label for="notes" class="fm-label">Notes</label>
                         <textarea name="notes" id="notes" rows="3" class="fm-control">{{ old('notes') }}</textarea>
                     </div>
                 </div>
