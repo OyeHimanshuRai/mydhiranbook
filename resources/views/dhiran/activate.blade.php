@@ -1,65 +1,37 @@
 <x-dhiran-layout title="Activate Dhiran">
+    @vite('resources/css/dhiran-detail.css')
     <x-dhiran.page-header>
-        <h1 class="page-title">Dhiran (Pledge Loans)</h1>
-        <div class="page-actions">
-            <span class="header-badge">Module Setup</span>
+        <div class="min-w-0">
+            <h1 class="page-title">Dhiran (Pledge Loans)</h1>
         </div>
     </x-dhiran.page-header>
 
-    <div class="content-inner dhiran-activate-root">
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <div class="da-hero">
-                <div class="da-hero-icon">
-                    <x-icon name="circle-dollar-sign" stroke-width="1.5" />
+    <div class="content-inner dhiran-activate-root dd-activate">
+        <section class="dd-card dd-activate-card" aria-labelledby="dd-act-t">
+            <div class="dd-activate-body">
+                <div>
+                    <h2 id="dd-act-t" class="dd-activate-title">Start your pledge-loan book</h2>
+                    <p class="dd-lead">Keep every gold and silver pledge, interest payment, repayment and release for your shop in one place, with a printed receipt for each customer.</p>
                 </div>
-                <h2 class="da-hero-title">Dhiran &mdash; Pledge Loan Module</h2>
-                <p class="da-hero-subtitle">
-                    Manage gold &amp; silver pledge loans in one place. Track collateral, calculate interest, handle renewals and forfeitures.
-                </p>
 
-                <div class="da-features">
-                    <div class="da-feature-card">
-                        <div class="da-feature-card-icon bg-amber-100 text-amber-700">
-                            <x-icon name="dollar-sign" />
-                        </div>
-                        <div class="da-feature-card-title">Gold &amp; Silver Pledge Loans</div>
-                        <div class="da-feature-card-desc">Issue loans against gold &amp; silver jewellery with configurable LTV ratios and interest rates.</div>
-                    </div>
-                    <div class="da-feature-card">
-                        <div class="da-feature-card-icon bg-emerald-100 text-emerald-700">
-                            <x-icon name="calculator" />
-                        </div>
-                        <div class="da-feature-card-title">Interest Tracking</div>
-                        <div class="da-feature-card-desc">Flat, daily or compound interest calculations with automatic penalty tracking on overdue loans.</div>
-                    </div>
-                    <div class="da-feature-card">
-                        <div class="da-feature-card-icon bg-sky-100 text-sky-700">
-                            <x-icon name="package" />
-                        </div>
-                        <div class="da-feature-card-title">Collateral Management</div>
-                        <div class="da-feature-card-desc">Detailed item-wise tracking with weight, purity, HUID and individual item release support.</div>
-                    </div>
-                    <div class="da-feature-card">
-                        <div class="da-feature-card-icon bg-violet-100 text-violet-700">
-                            <x-icon name="file-chart-column" />
-                        </div>
-                        <div class="da-feature-card-title">Reports & Receipts</div>
-                        <div class="da-feature-card-desc">Active loan reports, overdue tracking, interest summaries and printable pledge receipts.</div>
-                    </div>
+                <div>
+                    <h3 class="dd-field-label">What happens next</h3>
+                    <ol class="dd-steps">
+                        <li><span><strong>Dhiran turns on for your shop</strong>Nothing is charged.</span></li>
+                        <li><span><strong>You land on the Loans list</strong>It is empty until you add your first customer and loan.</span></li>
+                        <li><span><strong>Set your rates and receipt in Settings</strong>Interest rate, lock period and what prints on receipts can be changed at any time.</span></li>
+                    </ol>
                 </div>
 
                 @can('dhiran.settings')
                 <form method="POST" action="{{ route('dhiran.activate') }}" data-turbo-frame="_top">
                     @csrf
-                    <button type="submit" class="da-activate-btn">
-                        <x-icon name="zap" />
-                        Activate Dhiran Module
-                    </button>
+                    <button type="submit" class="btn btn-primary" data-turbo-submits-with="Turning on…">Activate Dhiran Module</button>
                 </form>
                 @else
-                <p class="da-feature-card-desc">{{ \App\Support\NotAvailable::MESSAGE }}</p>
+                <p class="dd-activate-note">{{ \App\Support\NotAvailable::MESSAGE }}</p>
                 @endcan
             </div>
-        </div>
+        </section>
     </div>
 </x-dhiran-layout>

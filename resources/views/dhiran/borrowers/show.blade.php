@@ -1,98 +1,74 @@
 <x-dhiran-layout title="Customer Profile">
+    @vite('resources/css/dhiran-detail.css')
+    @php
+        $rupee = fn ($n) => '₹' . \App\Support\IndianNumber::format($n, 2);
+        $tel = \App\Support\Mobile::isValid($customer->mobile) ? \App\Support\Mobile::forWhatsApp($customer->mobile) : null;
+        $pan = $kycPan ?? $customer->pan ?? null;
+        $hasIdProof = $attachments->contains(fn ($a) => str_starts_with((string) $a->document_type, 'id_proof'));
+        $allItems = $loans->flatMap(fn ($l) => $l->items->map(fn ($i) => [$i, $l]));
+        $outstanding = $summary['principal_outstanding'] + $summary['interest_outstanding'];
+        $counts = ['Active' => 'active', 'Awaiting evidence' => 'pending_evidence', 'Closed' => 'closed', 'Renewed' => 'renewed', 'Forfeited' => 'forfeited'];
+    @endphp
+
     <x-dhiran.page-header>
-        <div>
+        <div class="min-w-0">
             <h1 class="page-title">{{ $customer->name }}</h1>
-            <p class="text-sm text-gray-500 mt-1">{{ \App\Support\Mobile::forDisplay($customer->mobile) ?: '' }}{{ $customer->customer_code ? ' · ' . $customer->customer_code : '' }}</p>
         </div>
         <div class="page-actions">
-            <a href="{{ route('dhiran.create', ['customer_id' => $customer->id]) }}" class="btn btn-primary btn-sm">
-                <x-icon name="plus" size="14" class="mr-1" />
-                New Loan for this customer
+            <a href="{{ route('dhiran.create', ['customer_id' => $customer->id]) }}" class="btn btn-primary btn-sm" aria-label="New Loan for this customer" title="New Loan for this customer">
+                <x-icon name="plus" size="16" class="mr-1" />
+                New Loan
             </a>
-            <a href="{{ route('dhiran.borrowers.index') }}" class="btn btn-secondary btn-sm">
-                <x-icon name="arrow-left" size="14" class="mr-1" />
-                Back to Customers
-            </a>
+            <x-dhiran.btn-collapse icon="arrow-left" label="Back to Customers" :href="route('dhiran.borrowers.index')" />
         </div>
     </x-dhiran.page-header>
 
-    <div class="content-inner">
+    <div class="content-inner dd dd-profile">
 
         {{-- 1. Basic details --}}
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 mb-6">
-            <h2 class="text-base font-semibold text-slate-900 mb-4">Customer details</h2>
+        <section class="dd-card dd-who-card" aria-labelledby="dd-cust-h">
+            <h2 id="dd-cust-h" class="dd-h">Customer details</h2>
+            <ul class="dd-chips" aria-label="KYC">
+                <li class="{{ $pan ? 'is-ok' : 'is-missing' }}"><x-icon :name="$pan ? 'badge-check' : 'triangle-alert'" />PAN {{ $pan ? 'on file' : 'missing' }}</li>
+                <li class="{{ $kycAadhaar ? 'is-ok' : 'is-missing' }}"><x-icon :name="$kycAadhaar ? 'badge-check' : 'triangle-alert'" />Aadhaar {{ $kycAadhaar ? 'on file' : 'missing' }}</li>
+                <li class="{{ $hasIdProof ? 'is-ok' : 'is-missing' }}"><x-icon :name="$hasIdProof ? 'badge-check' : 'triangle-alert'" />ID proof {{ $hasIdProof ? 'uploaded' : 'not uploaded' }}</li>
+            </ul>
             <x-customer-photo :customer="$customer" />
-            <dl class="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4 text-sm">
-                <div><dt class="text-[11px] uppercase tracking-[0.16em] text-slate-400">Name</dt><dd class="text-slate-800 font-medium mt-0.5">{{ $customer->name }}</dd></div>
-                <div><dt class="text-[11px] uppercase tracking-[0.16em] text-slate-400">Mobile</dt><dd class="text-slate-800 mt-0.5">{{ \App\Support\Mobile::forDisplay($customer->mobile) ?: '—' }}</dd></div>
-                <div><dt class="text-[11px] uppercase tracking-[0.16em] text-slate-400">Customer code</dt><dd class="text-slate-800 font-mono mt-0.5">{{ $customer->customer_code ?? '—' }}</dd></div>
-                @if($customer->address)<div class="col-span-2"><dt class="text-[11px] uppercase tracking-[0.16em] text-slate-400">Address</dt><dd class="text-slate-800 mt-0.5">{{ $customer->address }}</dd></div>@endif
-                @if($customer->email)<div><dt class="text-[11px] uppercase tracking-[0.16em] text-slate-400">Email</dt><dd class="text-slate-800 mt-0.5">{{ $customer->email }}</dd></div>@endif
-                <div><dt class="text-[11px] uppercase tracking-[0.16em] text-slate-400">PAN</dt><dd class="text-slate-800 mt-0.5">{{ $kycPan ?? $customer->pan ?? '—' }}</dd></div>
-                <div><dt class="text-[11px] uppercase tracking-[0.16em] text-slate-400">Aadhaar (masked)</dt><dd class="text-slate-800 mt-0.5 font-mono">{{ $kycAadhaar ?? '—' }}</dd></div>
-                @if($customer->notes)<div class="col-span-2 md:col-span-3"><dt class="text-[11px] uppercase tracking-[0.16em] text-slate-400">Notes</dt><dd class="text-slate-700 mt-0.5">{{ $customer->notes }}</dd></div>@endif
+            <dl class="dd-kv">
+                <div><dt>Name</dt><dd>{{ $customer->name }}</dd></div>
+                <div><dt>Mobile</dt><dd>@if($tel)<a href="tel:+{{ $tel }}" class="dd-tel">{{ \App\Support\Mobile::forDisplay($customer->mobile) }}</a>@else{{ \App\Support\Mobile::forDisplay($customer->mobile) ?: '—' }}@endif</dd></div>
+                <div><dt>Customer code</dt><dd>{{ $customer->customer_code ?? '—' }}</dd></div>
+                @if($customer->address)<div class="is-span"><dt>Address</dt><dd>{{ $customer->address }}</dd></div>@endif
+                @if($customer->email)<div><dt>Email</dt><dd>{{ $customer->email }}</dd></div>@endif
+                <div><dt>PAN</dt><dd>{{ $pan ?? '—' }}</dd></div>
+                <div><dt>Aadhaar (masked)</dt><dd>{{ $kycAadhaar ?? '—' }}</dd></div>
+                @if($customer->notes)<div class="is-span"><dt>Notes</dt><dd>{{ $customer->notes }}</dd></div>@endif
             </dl>
-        </div>
+        </section>
 
-        {{-- 3. Loan summary --}}
-        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
-            @php
-                $cards = [
-                    ['Active', $summary['active'], 'text-emerald-700'],
-                    ['Awaiting evidence', $summary['pending_evidence'], 'text-amber-700'],
-                    ['Closed', $summary['closed'], 'text-slate-600'],
-                    ['Renewed', $summary['renewed'], 'text-sky-700'],
-                    ['Forfeited', $summary['forfeited'], 'text-red-600'],
-                ];
-            @endphp
-            @foreach($cards as [$label, $val, $color])
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <p class="text-[10px] uppercase tracking-[0.16em] text-slate-400">{{ $label }}</p>
-                    <p class="text-2xl font-semibold {{ $color }} mt-1">{{ number_format($val) }}</p>
-                </div>
-            @endforeach
-            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p class="text-[10px] uppercase tracking-[0.16em] text-slate-400">Outstanding</p>
-                <p class="text-xl font-semibold text-slate-900 mt-1">₹{{ number_format($summary['principal_outstanding'] + $summary['interest_outstanding'], 2) }}</p>
+        {{-- 2. Loan summary: what is owed, then how many loans in each state --}}
+        <section class="dd-card" aria-labelledby="dd-sum-h">
+            <h2 id="dd-sum-h" class="dd-sr">Loan summary</h2>
+            <div class="dd-total">
+                <span class="dd-fig-label">Outstanding</span>
+                <span class="dd-total-value">{{ $rupee($outstanding) }}</span>
             </div>
-        </div>
+            <dl class="dd-figs">
+                @foreach($counts as $label => $key)
+                    <div><dt>{{ $label }}</dt><dd class="{{ $summary[$key] > 0 ? '' : 'is-zero' }}">{{ number_format($summary[$key]) }}</dd></div>
+                @endforeach
+            </dl>
+        </section>
 
-        {{-- 2. KYC / Documents --}}
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 mb-6">
-            <h2 class="text-base font-semibold text-slate-900 mb-1">Documents &amp; evidence</h2>
-            <p class="text-xs text-slate-500 mb-4">ID proof, photos, and loan documents for this customer. Files are private to your shop.</p>
-            <x-dhiran.evidence-gallery :attachments="$attachments" />
-
-            {{-- The customer's own documents; an ID proof here counts for every loan of this customer. --}}
-            @can('dhiran.create')
-            @if($errors->has('file'))
-                <p class="text-sm text-red-600 mb-2">{{ $errors->first('file') }}</p>
-            @endif
-            <form method="POST" action="{{ route('dhiran.attachments.store') }}" enctype="multipart/form-data" data-turbo-frame="_top"
-                  class="dh-upload-form border-t border-slate-100 pt-4">
-                @csrf
-                <input type="hidden" name="owner_type" value="customer">
-                <input type="hidden" name="owner_id" value="{{ $customer->id }}">
-                <div class="flex-1">
-                    <label class="block text-xs font-medium text-slate-600 mb-1">Document type</label>
-                    <select name="document_type" required class="dh-form-control dh-native-select">
-                        <option value="id_proof_front">ID proof (front)</option>
-                        <option value="id_proof_back">ID proof (back)</option>
-                        <option value="address_proof">Address proof</option>
-                        <option value="borrower_photo">Borrower photo</option>
-                    </select>
-                </div>
-                <div class="flex-1">
-                    <label class="block text-xs font-medium text-slate-600 mb-1">File <span class="text-slate-400">(JPG/PNG/PDF, max 8 MB)</span></label>
-                    <input type="file" name="file" required accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" class="dh-file-input">
-                </div>
-                <button type="submit" class="btn btn-dark btn-sm shrink-0">Upload</button>
-            </form>
-            @endcan
-        </div>
+        <nav class="dd-jump" aria-label="Sections">
+            <a href="#loans" class="dd-jump-link">Loans</a>
+            @if($hasPayments)<a href="#payments" class="dd-jump-link">Payments</a>@endif
+            @if($allItems->isNotEmpty())<a href="#items" class="dd-jump-link">Pledged items</a>@endif
+            <a href="#documents" class="dd-jump-link">Documents</a>
+        </nav>
 
         {{-- 4. Loans: status chips with counts, 10 a page --}}
-        <div id="loans" data-profile-section class="dh-profile-section rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
+        <section id="loans" data-profile-section class="dd-card dd-tablecard dd-section" aria-labelledby="dd-loans-h">
             @php
                 $loanFilters = ['loan_status' => [
                     'legend' => 'Status', 'any' => 'All loans',
@@ -101,61 +77,55 @@
                         ->map(fn ($l, $s) => [$l, $summary[$s] ?? 0])->all(),
                 ]];
             @endphp
-            <div class="dh-section-head">
-                <h2 class="text-base font-semibold text-slate-900">Loans <span class="dh-section-count">{{ $loans->count() }}</span></h2>
+            <div class="dd-head">
+                <h2 id="dd-loans-h" class="dd-h">Loans <span class="dd-count">{{ $loans->count() }}</span></h2>
                 @if($loans->isNotEmpty())
                     <x-dhiran.filter-panel :groups="$loanFilters" title="Filter loans" fragment="loans" page-name="loans_page" />
                 @endif
             </div>
             <x-dhiran.filter-panel :groups="$loanFilters" fragment="loans" page-name="loans_page" mode="chips" />
             @if($loans->isEmpty())
-                <div class="px-6 py-12 text-center">
-                    <p class="text-base font-semibold text-slate-700 mb-1">No loans yet</p>
-                    <p class="text-sm text-slate-500 mb-4">This customer has no pledge loans with your shop.</p>
+                <div class="dd-empty">
+                    <p class="dd-empty-title">No loans yet</p>
+                    <p>This customer has no pledge loans with your shop.</p>
                     <a href="{{ route('dhiran.create', ['customer_id' => $customer->id]) }}" class="btn btn-primary btn-sm">Create loan for this customer</a>
                 </div>
             @elseif($loanList->isEmpty())
-                <p class="px-6 py-10 text-center text-sm text-slate-500">No {{ strtolower(\App\Services\Dhiran\DhiranListFilters::STATUSES[$loanStatus] ?? '') }} loans for this customer.</p>
+                <div class="dd-empty"><p>No {{ strtolower(\App\Services\Dhiran\DhiranListFilters::STATUSES[$loanStatus] ?? '') }} loans for this customer.</p></div>
             @else
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-[760px] jf-table dh-stack">
-                        <thead class="bg-slate-50 border-b border-slate-200">
+                <table class="dd-table dd-t-rec">
+                    <thead>
+                        <tr>
+                            <th scope="col">Loan #</th>
+                            <th scope="col">Status</th>
+                            <th scope="col" class="num">Principal</th>
+                            <th scope="col" class="num">Outstanding</th>
+                            <th scope="col">Created</th>
+                            <th scope="col">Maturity</th>
+                            <th scope="col"><span class="dd-sr">Open</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($loanList as $loan)
                             <tr>
-                                <th scope="col" class="dh-sno-th">#</th>
-                                <th class="pl-6 pr-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Loan #</th>
-                                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
-                                <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Principal</th>
-                                <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Outstanding</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Created</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Maturity</th>
-                                <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500"></th>
+                                <td data-cell="title" class="strong"><a href="{{ route('dhiran.show', $loan) }}">{{ $loan->loan_number }}</a></td>
+                                <td data-label="Status"><x-dhiran.status :value="$loan->status" /></td>
+                                <td data-label="Principal" class="num">{{ $rupee($loan->principal_amount) }}</td>
+                                <td data-label="Outstanding" class="num strong">{{ $rupee($loan->totalOutstanding()) }}</td>
+                                <td data-label="Created">{{ $loan->loan_date?->format('d M Y') }}</td>
+                                <td data-label="Maturity">{{ $loan->maturity_date?->format('d M Y') }}</td>
+                                <td data-cell="act"><a href="{{ route('dhiran.show', $loan) }}" class="dd-tlink dd-tlink--link">View loan <span class="dd-sr">{{ $loan->loan_number }}</span></a></td>
                             </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            @foreach($loanList as $loan)
-                                <tr class="hover:bg-slate-50/70">
-                                    <x-dhiran.sno :rows="$loanList" :n="$loop->iteration" />
-                                    <td data-label="Loan #" class="pl-6 pr-4 py-4"><a href="{{ route('dhiran.show', $loan) }}" class="font-mono font-medium text-slate-700 hover:text-amber-700">{{ $loan->loan_number }}</a></td>
-                                    <td data-label="Status" class="px-4 py-4 text-center">
-                                        <x-dhiran.status :value="$loan->status" />
-                                    </td>
-                                    <td data-label="Principal" class="px-4 py-4 text-right text-sm text-slate-700">₹{{ number_format($loan->principal_amount, 2) }}</td>
-                                    <td data-label="Outstanding" class="px-4 py-4 text-right text-sm font-medium text-slate-800">₹{{ number_format($loan->totalOutstanding(), 2) }}</td>
-                                    <td data-label="Created" class="px-4 py-4 text-sm text-slate-500">{{ $loan->loan_date?->format('d M Y') }}</td>
-                                    <td data-label="Maturity" class="px-4 py-4 text-sm text-slate-500">{{ $loan->maturity_date?->format('d M Y') }}</td>
-                                    <td data-label="" class="px-4 py-4 text-center"><a href="{{ route('dhiran.show', $loan) }}" class="jf-row-action jf-row-action--view" data-tip="View"><x-icon name="eye" size="16" /><span class="jf-sr-only">View</span></a></td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                        @endforeach
+                    </tbody>
+                </table>
                 <x-dhiran.pager :paginator="$loanList" noun="loans" :sizes="[]" />
             @endif
-        </div>
+        </section>
 
         {{-- 5. Payments: the full history, 10 a page, by type and by loan --}}
         @if($hasPayments)
-        <div id="payments" data-profile-section class="dh-profile-section rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
+        <section id="payments" data-profile-section class="dd-card dd-tablecard dd-section" aria-labelledby="dd-pays-h">
             @php
                 $paymentFilters = ['payment_type' => [
                     'legend' => 'Type', 'any' => 'All types',
@@ -168,116 +138,124 @@
                         'options' => $loans->mapWithKeys(fn ($l) => [$l->id => [$l->loan_number, null]])->all()];
                 }
             @endphp
-            <div class="dh-section-head">
-                <h2 class="text-base font-semibold text-slate-900">Payments <span class="dh-section-count">{{ array_sum($paymentTypeCounts) }}</span></h2>
-                <div class="dh-section-tools">
+            <div class="dd-head">
+                <h2 id="dd-pays-h" class="dd-h">Payments <span class="dd-count">{{ array_sum($paymentTypeCounts) }}</span></h2>
+                <div class="dd-tools">
                     <x-dhiran.filter-panel :groups="$paymentFilters" title="Filter payments" fragment="payments" page-name="payments_page" />
-                    <a href="{{ request()->fullUrlWithQuery(['export' => 'payments', 'payments_page' => null]) }}" class="btn btn-secondary btn-sm" data-turbo="false" download>
-                        <x-icon name="download" size="14" /> Export CSV
-                    </a>
+                    <x-dhiran.btn-collapse icon="download" label="Export CSV" :href="request()->fullUrlWithQuery(['export' => 'payments', 'payments_page' => null])" data-turbo="false" download />
                 </div>
             </div>
             <x-dhiran.filter-panel :groups="$paymentFilters" fragment="payments" page-name="payments_page" mode="chips" />
-            <div class="dh-section-filters">
-                <p class="dh-section-summary" data-payments-summary>
-                    {{ $payments->total() }} {{ \Illuminate\Support\Str::plural('payment', $payments->total()) }}
-                    · <strong>₹{{ number_format($paymentSummary['received'], 2) }}</strong> received
-                    · <strong>₹{{ number_format($paymentSummary['interest'], 2) }}</strong> interest
-                    @if($paymentSummary['penalty'] > 0) · <strong>₹{{ number_format($paymentSummary['penalty'], 2) }}</strong> penalty @endif
-                </p>
-            </div>
+            <p class="dd-summary" data-payments-summary>
+                {{ $payments->total() }} {{ \Illuminate\Support\Str::plural('payment', $payments->total()) }}
+                · <strong>{{ $rupee($paymentSummary['received']) }}</strong> received
+                · <strong>{{ $rupee($paymentSummary['interest']) }}</strong> interest
+                @if($paymentSummary['penalty'] > 0) · <strong>{{ $rupee($paymentSummary['penalty']) }}</strong> penalty @endif
+            </p>
             @if($payments->isEmpty())
-                <p class="px-6 py-10 text-center text-sm text-slate-500">No payments match these filters.</p>
+                <div class="dd-empty"><p>No payments match these filters.</p></div>
             @else
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[760px] jf-table dh-stack">
-                    <thead class="bg-slate-50 border-b border-slate-200">
+                <table class="dd-table dd-t-pay">
+                    <thead>
                         <tr>
-                            <th scope="col" class="dh-sno-th">#</th>
-                            <th class="pl-6 pr-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Date</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Loan</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Type</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Principal</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Interest</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Penalty</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Total</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500"></th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Loan</th>
+                            <th scope="col">Type</th>
+                            <th scope="col" class="num">Principal</th>
+                            <th scope="col" class="num">Interest</th>
+                            <th scope="col" class="num">Penalty</th>
+                            <th scope="col" class="num">Total</th>
+                            <th scope="col"><span class="dd-sr">Receipt</span></th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody>
                         @foreach($payments as $p)
-                            <tr class="hover:bg-slate-50/70">
-                                <x-dhiran.sno :rows="$payments" :n="$loop->iteration" />
-                                <td data-label="Date" class="pl-6 pr-4 py-3 text-sm text-slate-500 whitespace-nowrap">{{ optional($p->payment_date)->format('d M Y') ?? $p->created_at->format('d M Y') }}</td>
-                                <td data-label="Loan" class="px-4 py-3 text-sm font-mono text-slate-600">
-                                    @if($p->loan)<a href="{{ route('dhiran.show', $p->loan) }}" class="hover:text-amber-700">{{ $p->loan->loan_number }}</a>@else — @endif
-                                </td>
-                                <td data-label="Type" class="px-4 py-3 text-sm text-slate-600">{{ ucwords(str_replace('_', ' ', $p->type)) }}</td>
-                                <td data-label="Principal" class="px-4 py-3 text-sm text-right text-slate-600">₹{{ number_format($p->principal_component, 2) }}</td>
-                                <td data-label="Interest" class="px-4 py-3 text-sm text-right text-slate-600">₹{{ number_format($p->interest_component, 2) }}</td>
-                                <td data-label="Penalty" class="px-4 py-3 text-sm text-right text-slate-600">₹{{ number_format($p->penalty_component, 2) }}</td>
-                                <td data-label="Total" class="px-4 py-3 text-sm text-right font-medium text-slate-800">₹{{ number_format($p->amount, 2) }}</td>
-                                <td data-label="" class="px-4 py-3 text-center">
-                                    @if($p->loan)<a href="{{ route('dhiran.payment-receipt', [$p->loan, $p]) }}" class="text-sm font-semibold text-amber-700 hover:text-amber-800">Receipt</a>@endif
-                                </td>
+                            <tr>
+                                <td data-label="Date">{{ optional($p->payment_date)->format('d M Y') ?? $p->created_at->format('d M Y') }}</td>
+                                <td data-label="Loan">@if($p->loan)<a href="{{ route('dhiran.show', $p->loan) }}">{{ $p->loan->loan_number }}</a>@else — @endif</td>
+                                <td data-cell="title" class="strong">{{ ucwords(str_replace('_', ' ', $p->type)) }}</td>
+                                <td data-label="Principal" class="num">{{ $rupee($p->principal_component) }}</td>
+                                <td data-label="Interest" class="num">{{ $rupee($p->interest_component) }}</td>
+                                <td data-label="Penalty" class="num">{{ $rupee($p->penalty_component) }}</td>
+                                <td data-cell="amount" data-label="Total" class="num strong">{{ $rupee($p->amount) }}</td>
+                                <td data-cell="act">@if($p->loan)<a href="{{ route('dhiran.payment-receipt', [$p->loan, $p]) }}" class="dd-tlink">Receipt</a>@endif</td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
-            </div>
-            <x-dhiran.pager :paginator="$payments" noun="payments" :sizes="[]" />
+                <x-dhiran.pager :paginator="$payments" noun="payments" :sizes="[]" />
             @endif
-        </div>
+        </section>
         @endif
 
         {{-- 6. Pledged items history --}}
-        @php $allItems = $loans->flatMap(fn ($l) => $l->items->map(fn ($i) => [$i, $l])); @endphp
         @if($allItems->isNotEmpty())
-        <div id="items" data-profile-section class="dh-profile-section rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
-            <div class="px-6 py-4 border-b border-slate-100"><h2 class="text-base font-semibold text-slate-900">Pledged items</h2></div>
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[820px] jf-table dh-stack">
-                    <thead class="bg-slate-50 border-b border-slate-200">
+        <section id="items" data-profile-section class="dd-card dd-tablecard dd-section" aria-labelledby="dd-items-h">
+            <div class="dd-head"><h2 id="dd-items-h" class="dd-h">Pledged items</h2></div>
+            <table class="dd-table dd-t-rec">
+                <thead>
+                    <tr>
+                        <th scope="col">Item</th>
+                        <th scope="col">Metal</th>
+                        <th scope="col">Purity</th>
+                        <th scope="col" class="num">Gross (g)</th>
+                        <th scope="col" class="num">Net (g)</th>
+                        <th scope="col" class="num">Fine (g)</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Loan</th>
+                        <th scope="col">Photo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($allItems as [$item, $loan])
                         <tr>
-                            <th scope="col" class="dh-sno-th">#</th>
-                            <th class="pl-6 pr-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Item</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Metal</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Purity</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Gross (g)</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Net (g)</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Fine (g)</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Loan</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Photo</th>
+                            <td data-cell="title" class="strong"><a href="{{ route('dhiran.items.show', $item) }}">{{ $item->description }}</a></td>
+                            <td data-label="Metal" class="capitalize">{{ $item->metal_type ?? 'gold' }}</td>
+                            <td data-label="Purity">@if(($item->metal_type ?? "gold") === "other")—@else{{ rtrim(rtrim((string) $item->purity, "0"), ".") }}{{ ($item->metal_type ?? "gold") === "silver" ? "" : "K" }}@endif</td>
+                            <td data-label="Gross (g)" class="num">{{ number_format($item->gross_weight, 3) }}</td>
+                            <td data-label="Net (g)" class="num">{{ number_format($item->net_metal_weight, 3) }}</td>
+                            <td data-label="Fine (g)" class="num strong">{{ number_format($item->fine_weight, 3) }}</td>
+                            <td data-label="Status" class="capitalize">{{ $item->status ?? 'pledged' }}</td>
+                            <td data-label="Loan"><a href="{{ route('dhiran.show', $loan) }}">{{ $loan->loan_number }}</a></td>
+                            <td data-label="Photo">@if(in_array($item->id, $itemsWithPhoto))<span class="dd-photo-tag">Photo</span>@else<span aria-label="No photo">—</span>@endif</td>
                         </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @foreach($allItems as [$item, $loan])
-                            <tr class="hover:bg-slate-50/70">
-                                <x-dhiran.sno :rows="null" :n="$loop->iteration" />
-                                <td data-label="Item" class="pl-6 pr-4 py-3 text-sm">
-                                    <a href="{{ route('dhiran.items.show', $item) }}" class="text-slate-800 hover:text-amber-700">{{ $item->description }}</a>
-                                </td>
-                                <td data-label="Metal" class="px-4 py-3 text-sm text-slate-600 capitalize">{{ $item->metal_type ?? 'gold' }}</td>
-                                <td data-label="Purity" class="px-4 py-3 text-sm text-center text-slate-600">@if(($item->metal_type ?? "gold") === "other")—@else{{ rtrim(rtrim((string) $item->purity, "0"), ".") }}{{ ($item->metal_type ?? "gold") === "silver" ? "" : "K" }}@endif</td>
-                                <td data-label="Gross (g)" class="px-4 py-3 text-sm text-right text-slate-600 whitespace-nowrap tabular-nums">{{ number_format($item->gross_weight, 3) }}</td>
-                                <td data-label="Net (g)" class="px-4 py-3 text-sm text-right text-slate-600 whitespace-nowrap tabular-nums">{{ number_format($item->net_metal_weight, 3) }}</td>
-                                <td data-label="Fine (g)" class="px-4 py-3 text-sm text-right text-slate-800 font-medium whitespace-nowrap tabular-nums">{{ number_format($item->fine_weight, 3) }}</td>
-                                <td data-label="Status" class="px-4 py-3 text-center text-sm text-slate-600 capitalize">{{ $item->status ?? 'pledged' }}</td>
-                                <td data-label="Loan" class="px-4 py-3 text-sm font-mono"><a href="{{ route('dhiran.show', $loan) }}" class="text-slate-600 hover:text-amber-700">{{ $loan->loan_number }}</a></td>
-                                <td data-label="Photo" class="px-4 py-3 text-center">
-                                    @if(in_array($item->id, $itemsWithPhoto))
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700">Photo</span>
-                                    @else
-                                        <span class="text-xs text-slate-300">—</span>
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                    @endforeach
+                </tbody>
+            </table>
+        </section>
         @endif
+
+        {{-- 3. KYC / Documents --}}
+        <section id="documents" class="dd-card dd-card-pad dd-section" aria-labelledby="dd-docs-h">
+            <h2 id="dd-docs-h" class="dd-h">Documents &amp; evidence</h2>
+            <p class="dd-sub">ID proof, photos, and loan documents for this customer. Files are private to your shop.</p>
+            <x-dhiran.evidence-gallery :attachments="$attachments" />
+
+            {{-- The customer's own documents; an ID proof here counts for every loan of this customer. --}}
+            @can('dhiran.create')
+            @if($errors->has('file'))
+                <p class="dd-error" role="alert">{{ $errors->first('file') }}</p>
+            @endif
+            <form method="POST" action="{{ route('dhiran.attachments.store') }}" enctype="multipart/form-data" data-turbo-frame="_top" class="dh-upload-form dd-upload">
+                @csrf
+                <input type="hidden" name="owner_type" value="customer">
+                <input type="hidden" name="owner_id" value="{{ $customer->id }}">
+                <div>
+                    <label for="cd-type">Document type</label>
+                    <select id="cd-type" name="document_type" required class="dh-form-control dh-native-select">
+                        <option value="id_proof_front">ID proof (front)</option>
+                        <option value="id_proof_back">ID proof (back)</option>
+                        <option value="address_proof">Address proof</option>
+                        <option value="borrower_photo">Borrower photo</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="cd-file">File <small>(JPG/PNG/PDF, max 8 MB)</small></label>
+                    <input id="cd-file" type="file" name="file" required accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" class="dh-file-input">
+                </div>
+                <button type="submit" class="btn btn-dark btn-sm" data-turbo-submits-with="Uploading…">Upload</button>
+            </form>
+            @endcan
+        </section>
     </div>
 </x-dhiran-layout>

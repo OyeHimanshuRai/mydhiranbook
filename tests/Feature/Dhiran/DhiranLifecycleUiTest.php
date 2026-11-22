@@ -339,7 +339,7 @@ class DhiranLifecycleUiTest extends TestCase
             }
             // The release dialog says what each item needs.
             $dialog = $this->renderShow($shop, $owner, $loan->id);
-            $this->assertStringContainsString('pay at least ₹' . number_format($need, 2), $dialog);
+            $this->assertStringContainsString('pay at least ₹' . \App\Support\IndianNumber::format($need, 2), $dialog);
 
             $this->service->releaseItem($this->fresh($loan->id), $bangle, $need, 'cash', '');
             $this->assertEqualsWithDelta(0, (float) $this->fresh($loan->id)->outstanding_principal, 0.01, 'principal left with no gold held');
@@ -476,7 +476,7 @@ class DhiranLifecycleUiTest extends TestCase
 
         $due = TenantContext::runFor($shop->id, fn () => $this->service->renewalDue($this->fresh($loan->id)));
         $this->assertGreaterThan(0, $due, 'test premise: the minimum interest applies');
-        $this->assertStringContainsString('collect ₹' . number_format($due, 2), $this->renderShow($shop, $owner, $loan->id));
+        $this->assertStringContainsString('collect ₹' . \App\Support\IndianNumber::format($due, 2), $this->renderShow($shop, $owner, $loan->id));
 
         $new = TenantContext::runFor($shop->id, fn () => $this->service->renewLoan($this->fresh($loan->id), null, null, 'upi'));
         $payment = \App\Models\Dhiran\DhiranPayment::withoutGlobalScopes()->where('dhiran_loan_id', $loan->id)->where('type', 'renewal_interest')->firstOrFail();
@@ -536,7 +536,7 @@ class DhiranLifecycleUiTest extends TestCase
         $this->assertGreaterThan((float) $loan->outstanding_principal, $takes, 'test premise: the minimum interest applies');
 
         $html = $this->renderShow($shop, $owner, $loan->id);
-        $this->assertStringContainsString('To close, collect ₹' . number_format($takes, 2), strip_tags($html));
+        $this->assertStringContainsString('To close, collect ₹' . \App\Support\IndianNumber::format($takes, 2), strip_tags($html));
         $history = substr($html, strpos($html, 'Payment History'), 4000);
         $this->assertMatchesRegularExpression('/>\s*UPI\s*</', $history);
         $this->assertStringNotContainsString('Upi', $html);

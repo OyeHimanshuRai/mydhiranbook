@@ -72,7 +72,7 @@ class DhiranPhoneTablesTest extends TestCase
             $doc = new \DOMDocument();
             @$doc->loadHTML('<?xml encoding="utf-8"?>' . $html);
             $xp = new \DOMXPath($doc);
-            $tables = $xp->query('//table[contains(concat(" ", normalize-space(@class), " "), " dh-stack ")]');
+            $tables = $xp->query('//table[contains(concat(" ", normalize-space(@class), " "), " dh-stack ") or contains(concat(" ", normalize-space(@class), " "), " dd-table ")]'); // dd-table: loan detail and profile (phase 3B)
             $this->assertGreaterThan(0, $tables->length, "{$page}: its tables stack on phones");
             foreach ($tables as $table) {
                 $heads = array_map(fn ($th) => trim(preg_replace('/\s+/', ' ', $th->textContent)), iterator_to_array($xp->query('.//thead//th', $table)));
@@ -84,6 +84,9 @@ class DhiranPhoneTablesTest extends TestCase
                         continue; // "nothing here" row
                     }
                     foreach ($cells as $i => $td) {
+                        if ($td->hasAttribute('data-cell') && ! $td->hasAttribute('data-label')) {
+                            continue; // dd-table: the card's title and action cells are named by their content
+                        }
                         $this->assertSame($heads[$i] ?? null, $td->getAttribute('data-label'), "{$page}: cell {$i} label");
                         // Owner 2026-11-11: one piece of data per column, never stacked under another inside a cell.
                         $stacked = $xp->query('.//div|.//p|.//br|.//small', $td)->length;

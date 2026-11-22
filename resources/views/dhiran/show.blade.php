@@ -1,414 +1,292 @@
 <x-dhiran-layout title="Loan Detail">
+    @vite('resources/css/dhiran-detail.css')
+    @php
+        // Money is always shown with lakh grouping and both decimals; nothing is rounded away.
+        $rupee = fn ($n) => '₹' . \App\Support\IndianNumber::format($n, 2);
+        $user = auth()->user();
+        $service = app(\App\Services\DhiranService::class);
+        $isActive = $loan->status === 'active';
+        $isPending = $loan->status === 'pending_evidence';
+        $canCreate = $user->can('dhiran.create');
+        $canPay = $isActive && $user->can('dhiran.pay');
+        $canRelease = $isActive && $user->can('dhiran.release');
+        $canRenew = $isActive && $user->can('dhiran.renew');
+        $canForfeit = $isActive && $user->can('dhiran.forfeit');
+        $noticeDue = $canForfeit && $loan->forfeitureNoticeDue();
+        $canExecute = $canForfeit && $loan->canExecuteForfeit();
+        $removableOld = $loan->brought_forward && $isActive && $loan->payments->isEmpty();
+        $canRemove = $removableOld && $canCreate;
+        $hasMore = $canRelease || $canRenew || $canPay || $noticeDue || $canExecute || $canRemove;
+        $canView = $user->can('dhiran.view');
+        $docs = $canView && ($loan->forfeitureNoticeSent() || $loan->status === 'closed');
+        $hasRail = $canPay || $hasMore || ($isPending && $canCreate) || $docs;
+        $through = \Illuminate\Support\Carbon::parse($loan->interest_accrued_through ?? $loan->loan_date)->format('d M Y');
+        $owing = fn ($v) => (float) $v > 0 ? 'is-owed' : '';
+    @endphp
+
     <x-dhiran.page-header>
-        <div>
+        <div class="min-w-0">
             <h1 class="page-title">Loan {{ $loan->loan_number }}</h1>
-            <p class="text-sm text-gray-500 mt-1">
-                {{ $loan->customer->name ?? '---' }}
-                <x-dhiran.status :value="$loan->status" class="ml-2" />
-            </p>
-            {{-- Renewal chain: the old loan keeps its figures as a record; its balance moved to the new loan. --}}
-            @if($loan->brought_forward)
-                <p class="text-xs text-slate-500 mt-1" data-brought-forward-note>Brought forward from the paper book; lent on {{ $loan->loan_date->format('d M Y') }}.</p>
-            @endif
-            @if($loan->renewedFrom)
-                <p class="text-xs text-slate-500 mt-1">Renewed from <a href="{{ route('dhiran.show', $loan->renewedFrom) }}" class="font-semibold text-amber-700 hover:underline">{{ $loan->renewedFrom->loan_number }}</a></p>
-            @endif
-            @foreach($loan->renewals ?? [] as $renewal)
-                <p class="text-xs text-slate-500 mt-1">Renewed into <a href="{{ route('dhiran.show', $renewal) }}" class="font-semibold text-amber-700 hover:underline">{{ $renewal->loan_number }}</a>; its balance moved there.</p>
-            @endforeach
         </div>
-        <div class="page-actions flex flex-wrap gap-2">
-            @if($loan->status === 'active')
-                @can('dhiran.pay')
-                <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('payInterestModal').showModal()">
-                    <x-icon name="dollar-sign" size="14" class="mr-1" />
-                    Pay Interest
-                </button>
-                <button type="button" class="btn btn-dark btn-sm" onclick="document.getElementById('repayModal').showModal()">
-                    <x-icon name="square-check-big" size="14" class="mr-1" />
-                    Repay
-                </button>
-                @endcan
-                @can('dhiran.release')
-                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('releaseItemModal').showModal()">
-                    <x-icon name="package-open" size="14" class="mr-1" />
-                    Release Item
-                </button>
-                @endcan
-                @can('dhiran.pay')
-                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('precloseModal').showModal()">
-                    <x-icon name="circle-x" size="14" class="mr-1" />
-                    Pre-Close
-                </button>
-                @endcan
-                @can('dhiran.renew')
-                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('renewModal').showModal()">
-                    <x-icon name="rotate-cw" size="14" class="mr-1" />
-                    Renew
-                </button>
-                @endcan
-                @can('dhiran.forfeit')
-                @if($loan->forfeitureNoticeDue())
-                <form method="POST" action="{{ route('dhiran.send-notice', $loan) }}" class="inline" data-turbo-frame="_top">
-                    @csrf <x-dhiran.once />
-                    <button type="submit" class="btn btn-secondary btn-sm">
-                        <x-icon name="mail" size="14" class="mr-1" />
-                        Send Notice
-                    </button>
-                </form>
-                @endif
-
-                {{-- Execute Forfeit — only after the notice is sent AND the notice
-                     period has elapsed (mirrors the service guard). Serious terminal
-                     action → explicit confirm. --}}
-                @if($loan->canExecuteForfeit())
-                <form method="POST" action="{{ route('dhiran.forfeit', $loan) }}" class="inline" data-turbo-frame="_top"
-                      onsubmit="return confirm('Execute forfeiture for {{ $loan->loan_number }}? This permanently forfeits all pledged items and writes off the outstanding balance. This cannot be undone.');">
-                    @csrf <x-dhiran.once />
-                    <button type="submit" class="btn btn-danger btn-sm">
-                        <x-icon name="trash-2" size="14" class="mr-1" />
-                        Execute Forfeit
-                    </button>
-                </form>
-                @endif
-                @endcan
-            @endif
-
-            {{-- Print Forfeiture Notice — visible once the notice is sent (and stays
-                 available after forfeiture, where it is legally useful). --}}
-            @can('dhiran.view')
-            @if($loan->forfeitureNoticeSent())
-            <a href="{{ route('dhiran.forfeiture-notice', $loan) }}" target="_blank" class="btn btn-secondary btn-sm">
-                <x-icon name="file" size="14" class="mr-1" />
-                Print Forfeiture Notice
-            </a>
-            @endif
-
-            {{-- Print Closure Certificate — only for closed loans. --}}
-            @if($loan->status === 'closed')
-            <a href="{{ route('dhiran.closure-certificate', $loan) }}" target="_blank" class="btn btn-secondary btn-sm">
-                <x-icon name="circle-check" size="14" class="mr-1" />
-                Print Closure Certificate
-            </a>
-            @endif
-            @endcan
-
-            <a href="{{ route('dhiran.receipt', $loan) }}" target="_blank" class="btn btn-secondary btn-sm">
-                <x-icon name="printer" size="14" class="mr-1" />
-                Print Receipt
-            </a>
-            <a href="{{ route('dhiran.loans') }}" class="btn btn-secondary btn-sm">
-                <x-icon name="arrow-left" size="14" class="mr-1" />
-                All Loans
-            </a>
+        <div class="page-actions">
+            <x-dhiran.btn-collapse icon="arrow-left" label="All Loans" :href="route('dhiran.loans')" />
+            <x-dhiran.btn-collapse icon="printer" label="Print Receipt" :href="route('dhiran.receipt', $loan)" target="_blank" data-dh-mobile-pin="true" />
         </div>
     </x-dhiran.page-header>
 
-    <div class="content-inner dhiran-show-root">
+    <div class="content-inner dhiran-show-root dd {{ $isPending ? 'dd--pending' : '' }}">
+        <div class="dd-top {{ $hasRail ? 'dd-top--rail' : '' }}">
 
-        {{-- Evidence gate: a pending-evidence loan must have a pledged-item photo
-             AND a borrower ID proof before it can be activated. --}}
-        @if($loan->status === 'pending_evidence')
-        <div class="rounded-2xl border border-amber-200 bg-amber-50 shadow-sm p-6 mb-6">
-            <h2 class="text-base font-semibold text-amber-900 mb-1">Evidence required before activation</h2>
-            <p class="text-xs text-amber-800/80 mb-4">This loan is not active yet. Upload the required evidence below, then activate it.</p>
-            <ul class="space-y-2 mb-4">
-                <li class="flex items-center gap-2 text-sm {{ ($evidence['item_photo'] ?? false) ? 'text-emerald-700' : 'text-amber-900' }}">
-                    @if($evidence['item_photo'] ?? false)
-                        <x-icon name="check" size="16" stroke-width="2.5" />
-                    @else
-                        <x-icon name="circle" size="16" />
-                    @endif
-                    Pledged item photo
-                </li>
-                <li class="flex items-center gap-2 text-sm {{ ($evidence['id_proof'] ?? false) ? 'text-emerald-700' : 'text-amber-900' }}">
-                    @if($evidence['id_proof'] ?? false)
-                        <x-icon name="check" size="16" stroke-width="2.5" />
-                    @else
-                        <x-icon name="circle" size="16" />
-                    @endif
-                    Borrower ID proof
-                </li>
-            </ul>
-            @can('dhiran.create')
-            @if($evidence['ok'] ?? false)
-                <form method="POST" action="{{ route('dhiran.activate-loan', $loan) }}" data-turbo-frame="_top"
-                      onsubmit="return confirm('Activate this loan? Interest will start accruing.');">
-                    @csrf
-                    <button type="submit" class="btn btn-success btn-sm">
-                        Activate Loan
-                    </button>
-                </form>
-            @else
-                <button type="button" class="btn btn-sm" disabled>Activate Loan</button>
-                <p class="text-xs text-amber-800/80 mt-2">Upload both required documents in the Evidence &amp; Documents section below to enable activation.</p>
-            @endif
-            <button type="button" class="btn btn-secondary btn-sm mt-3" onclick="document.getElementById('cancelLoanModal').showModal()">Cancel loan</button>
-            @endcan
-        </div>
-        @endif
-
-        {{-- An active loan without its photo or ID proof (an old loan brought in active): flagged, not blocking. --}}
-        @php $removableOld = $loan->brought_forward && $loan->status === 'active' && $loan->payments->isEmpty(); @endphp
-        @if($loan->status === 'active' && ! ($evidence['ok'] ?? true))
-            <div class="dh-flash dh-flash-warning mb-6" data-evidence-missing>
-                Evidence missing: upload {{ collect(['the pledged-item photo' => ! ($evidence['item_photo'] ?? false), 'the borrower ID proof' => ! ($evidence['id_proof'] ?? false)])->filter()->keys()->implode(' and ') }} in Evidence &amp; Documents below.
+            <div class="dd-a">
+            {{-- Who and what state --}}
+            <div class="dd-id">
+                <x-dhiran.status :value="$loan->status" />
+                @if($loan->customer)
+                    <a href="{{ route('dhiran.customer-loans', $loan->customer) }}" class="dd-who"><x-icon name="user" size="16" />{{ $loan->customer->name }}</a>
+                @endif
             </div>
-        @endif
-        @if($removableOld)
-            @can('dhiran.create')
-                <div class="mb-6"><button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('cancelLoanModal').showModal()">Remove old loan (entered by mistake)</button></div>
-            @endcan
-        @endif
+            @if($loan->brought_forward || $loan->renewedFrom || ($loan->renewals ?? collect())->isNotEmpty())
+                <div class="dd-chain">
+                    {{-- Renewal chain: the old loan keeps its figures as a record; its balance moved to the new loan. --}}
+                    @if($loan->brought_forward)
+                        <p data-brought-forward-note>Brought forward from the paper book; lent on {{ $loan->loan_date->format('d M Y') }}.</p>
+                    @endif
+                    @if($loan->renewedFrom)
+                        <p>Renewed from <a href="{{ route('dhiran.show', $loan->renewedFrom) }}">{{ $loan->renewedFrom->loan_number }}</a></p>
+                    @endif
+                    @foreach($loan->renewals ?? [] as $renewal)
+                        <p>Renewed into <a href="{{ route('dhiran.show', $renewal) }}">{{ $renewal->loan_number }}</a>; its balance moved there.</p>
+                    @endforeach
+                </div>
+            @endif
 
-        @if($loan->status === 'pending_evidence' || $removableOld)
-        @can('dhiran.create')
-        <dialog id="cancelLoanModal" class="dh-dialog">
-            <form method="POST" action="{{ route('dhiran.cancel', $loan) }}" data-turbo-frame="_top">
-                @csrf <x-dhiran.once />
-                <div class="dh-dialog-body">
-                    <h3 class="text-lg font-semibold text-slate-900 mb-2">{{ $removableOld ? 'Remove' : 'Cancel' }} {{ $loan->loan_number }}?</h3>
-                    <p class="text-sm text-slate-600 mb-4">
-                        @if($removableOld)
-                            Use this only if this old loan was entered by mistake. It is marked cancelled and its opening balance withdrawn; nothing goes into the cash book. Enter it again with the right figures. This cannot be undone.
+            {{-- Balance: total first, then what it is made of --}}
+            <section class="dd-card" aria-labelledby="dd-bal-h">
+                <h2 id="dd-bal-h" class="dd-sr">Balance</h2>
+                <div class="dd-total">
+                    <span class="dd-fig-label">Total Outstanding</span>
+                    <span class="dd-total-value">{{ $rupee($loan->total_outstanding ?? 0) }}</span>
+                </div>
+                <dl class="dd-breakdown">
+                    <div><dt class="dd-fig-label">Outstanding Principal</dt><dd>{{ $rupee($loan->outstanding_principal ?? $loan->principal_amount) }}</dd></div>
+                    <div><dt class="dd-fig-label">Outstanding Interest</dt><dd>{{ $rupee($loan->outstanding_interest ?? 0) }}</dd></div>
+                    <div><dt class="dd-fig-label">Outstanding Penalty</dt><dd class="{{ $owing($loan->outstanding_penalty) }}">{{ $rupee($loan->outstanding_penalty ?? 0) }}</dd></div>
+                    <div><dt class="dd-fig-label">Principal</dt><dd>{{ $rupee($loan->principal_amount) }}</dd></div>
+                </dl>
+            </section>
+
+            {{-- Evidence gate: a pending-evidence loan must have a pledged-item photo AND a borrower ID proof before it can be activated. --}}
+            @if($isPending)
+                <section class="dd-gate" aria-labelledby="dd-gate-h">
+                    <h2 id="dd-gate-h" class="dd-h">Evidence required before activation</h2>
+                    <p>This loan is not active yet. Upload the required evidence below, then activate it.</p>
+                    <ul class="dd-checks">
+                        @foreach(['item_photo' => 'Pledged item photo', 'id_proof' => 'Borrower ID proof'] as $key => $label)
+                            <li class="{{ ($evidence[$key] ?? false) ? 'is-done' : '' }}">
+                                <x-icon :name="($evidence[$key] ?? false) ? 'check' : 'circle'" size="20" stroke-width="2.5" />
+                                {{ $label }}<span class="dd-sr">{{ ($evidence[$key] ?? false) ? ' (uploaded)' : ' (missing)' }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                    @if(! ($evidence['ok'] ?? false))
+                        <a href="#evidence">Go to Evidence &amp; Documents</a>
+                    @endif
+                </section>
+            @elseif($isActive && ! ($evidence['ok'] ?? true))
+                {{-- An active loan without its photo or ID proof (an old loan brought in active): flagged, not blocking. --}}
+                <section class="dd-gate" data-evidence-missing>
+                    <p>Evidence missing: upload {{ collect(['the pledged-item photo' => ! ($evidence['item_photo'] ?? false), 'the borrower ID proof' => ! ($evidence['id_proof'] ?? false)])->filter()->keys()->implode(' and ') }} in Evidence &amp; Documents below.</p>
+                    <a href="#evidence">Go to Evidence &amp; Documents</a>
+                </section>
+            @endif
+
+            </div>
+
+            {{-- Actions: the next step for this loan's state stays in view; the rest sit under "More actions" (always open in the side rail). --}}
+            @if($hasRail)
+            <section class="dd-card dd-actions dd-rail" aria-labelledby="dd-act-h">
+                <h2 id="dd-act-h" class="dd-h">Actions</h2>
+                @if($isPending && $canCreate)
+                    <div class="dd-act-main">
+                        @if($evidence['ok'] ?? false)
+                            <form method="POST" action="{{ route('dhiran.activate-loan', $loan) }}" data-turbo-frame="_top"
+                                  onsubmit="return confirm('Activate this loan? Interest will start accruing.');">
+                                @csrf
+                                <button type="submit" class="btn btn-success btn-sm" data-turbo-submits-with="Activating…">Activate Loan</button>
+                            </form>
                         @else
-                            Use this when the loan will not go ahead. The cash book gets the ₹{{ number_format((float) $loan->outstanding_principal, 2) }} paid out back in{{ (float) $loan->processing_fee > 0 ? ' and the ₹' . number_format((float) $loan->processing_fee, 2) . ' fee back out' : '' }}, and the items are marked returned to the borrower. This cannot be undone.
+                            <button type="button" class="btn btn-sm" disabled>Activate Loan</button>
                         @endif
-                    </p>
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2" for="cancel-reason">Reason</label>
-                    <input id="cancel-reason" type="text" name="reason" maxlength="255" class="dh-form-control" placeholder="e.g. Borrower changed mind">
-                </div>
-                <div class="dh-dialog-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="this.closest('dialog').close()">Keep loan</button>
-                    <button type="submit" class="btn btn-danger btn-sm">{{ $removableOld ? 'Remove old loan' : 'Cancel loan' }}</button>
-                </div>
-            </form>
-        </dialog>
-        @endcan
-        @endif
+                    </div>
+                    @unless($evidence['ok'] ?? false)
+                        <p class="dd-reason">Upload both required documents in the Evidence &amp; Documents section below to enable activation.</p>
+                    @endunless
+                    <button type="button" class="btn btn-secondary btn-sm dd-danger" onclick="document.getElementById('cancelLoanModal').showModal()">Cancel loan</button>
+                @endif
 
-        {{-- Loan Info Grid --}}
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 mb-6">
-            <div class="ds-info-grid">
-                <div>
-                    <div class="ds-info-item-label">Loan Date</div>
-                    <div class="ds-info-item-value">{{ $loan->loan_date->format('d M Y') }}</div>
-                </div>
-                <div>
-                    <div class="ds-info-item-label">Maturity Date</div>
-                    <div class="ds-info-item-value">{{ $loan->maturity_date ? $loan->maturity_date->format('d M Y') : '---' }}</div>
-                </div>
-                <div>
-                    <div class="ds-info-item-label">Tenure</div>
-                    <div class="ds-info-item-value">{{ $loan->tenure_months }} months</div>
-                </div>
-                <div>
-                    <div class="ds-info-item-label">Interest Rate</div>
-                    <div class="ds-info-item-value">{{ $loan->interest_rate_monthly }}% / month</div>
-                </div>
-                <div>
-                    <div class="ds-info-item-label">Interest Type</div>
-                    <div class="ds-info-item-value">{{ ucfirst($loan->interest_type) }}</div>
-                </div>
-                <div>
-                    <div class="ds-info-item-label">LTV %</div>
-                    <div class="ds-info-item-value">{{ number_format($loan->ltv_percent ?? 0, 1) }}%</div>
-                </div>
-                @if((float) $loan->gold_rate_on_date > 0)
-                <div>
-                    <div class="ds-info-item-label">Gold rate (at pledge)</div>
-                    <div class="ds-info-item-value">{{ $currencySymbol ?? '₹' }}{{ number_format($loan->gold_rate_on_date, 2) }}</div>
-                </div>
+                @if($canPay)
+                    <div class="dd-act-main">
+                        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('payInterestModal').showModal()"><x-icon name="dollar-sign" size="16" />Pay Interest</button>
+                        <button type="button" class="btn btn-dark btn-sm" onclick="document.getElementById('repayModal').showModal()"><x-icon name="square-check-big" size="16" />Repay</button>
+                    </div>
                 @endif
-                @if((float) ($loan->silver_rate_on_date ?? 0) > 0)
-                <div>
-                    <div class="ds-info-item-label">Silver rate (at pledge)</div>
-                    <div class="ds-info-item-value">{{ $currencySymbol ?? '₹' }}{{ number_format($loan->silver_rate_on_date, 2) }}</div>
-                </div>
-                @endif
-                <div>
-                    <div class="ds-info-item-label">Customer</div>
-                    <div class="ds-info-item-value">
-                        @if($loan->customer)
-                            <a href="{{ route('dhiran.customer-loans', $loan->customer) }}" class="text-amber-700 hover:underline">{{ $loan->customer->name }}</a>
-                        @else
-                            ---
+
+                @if($hasMore)
+                <div class="dd-more" x-data="{ open: false }" @keydown.escape="if (open) { open = false; $refs.toggle.focus() }" @click.outside="open = false">
+                    <button type="button" class="btn btn-secondary btn-sm dd-more-toggle" x-ref="toggle" :aria-expanded="open.toString()" aria-controls="dd-more-list" aria-expanded="false"
+                            @click="open = !open; if (open) $nextTick(() => $refs.list.querySelector('a, button')?.focus())">
+                        More actions <x-icon name="chevron-down" size="16" />
+                    </button>
+                    <div id="dd-more-list" class="dd-more-list" x-ref="list" :class="{ 'is-open': open }" @click="if ($event.target.closest('button:not([type=submit])')) open = false">
+                        @if($canRelease || $canRenew)
+                            <p class="dd-group">Release and renew</p>
+                            @if($canRelease)
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('releaseItemModal').showModal()"><x-icon name="package-open" size="16" />Release Item</button>
+                            @endif
+                            @if($canRenew)
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('renewModal').showModal()"><x-icon name="rotate-cw" size="16" />Renew</button>
+                            @endif
+                        @endif
+                        @if($canPay || $noticeDue || $canExecute || $canRemove)
+                            <p class="dd-group">Close out</p>
+                            @if($canPay)
+                                <button type="button" class="btn btn-secondary btn-sm dd-danger" onclick="document.getElementById('precloseModal').showModal()"><x-icon name="circle-x" size="16" />Pre-Close</button>
+                            @endif
+                            @if($noticeDue)
+                                <form method="POST" action="{{ route('dhiran.send-notice', $loan) }}" data-turbo-frame="_top">
+                                    @csrf <x-dhiran.once />
+                                    <button type="submit" class="btn btn-secondary btn-sm"><x-icon name="mail" size="16" />Send Notice</button>
+                                </form>
+                            @endif
+                            {{-- Execute Forfeit: only after the notice is sent AND the notice period has elapsed (mirrors the service guard). Serious terminal action: explicit confirm. --}}
+                            @if($canExecute)
+                                <form method="POST" action="{{ route('dhiran.forfeit', $loan) }}" data-turbo-frame="_top"
+                                      onsubmit="return confirm('Execute forfeiture for {{ $loan->loan_number }}? This permanently forfeits all pledged items and writes off the outstanding balance. This cannot be undone.');">
+                                    @csrf <x-dhiran.once />
+                                    <button type="submit" class="btn btn-danger btn-sm"><x-icon name="trash-2" size="16" />Execute Forfeit</button>
+                                </form>
+                            @endif
+                            @if($canRemove)
+                                <button type="button" class="btn btn-secondary btn-sm dd-danger" onclick="document.getElementById('cancelLoanModal').showModal()">Remove old loan (entered by mistake)</button>
+                            @endif
                         @endif
                     </div>
                 </div>
-            </div>
-        </div>
+                @endif
 
-        {{-- Financial Summary --}}
-        <div class="ds-fin-grid">
-            <div class="ds-fin-card">
-                <div class="ds-fin-label">Principal</div>
-                <div class="ds-fin-value">{{ $currencySymbol ?? '₹' }}{{ number_format($loan->principal_amount, 2) }}</div>
-            </div>
-            <div class="ds-fin-card">
-                <div class="ds-fin-label">Outstanding Principal</div>
-                <div class="ds-fin-value">{{ $currencySymbol ?? '₹' }}{{ number_format($loan->outstanding_principal ?? $loan->principal_amount, 2) }}</div>
-            </div>
-            <div class="ds-fin-card">
-                <div class="ds-fin-label">Outstanding Interest</div>
-                <div class="ds-fin-value text-amber-700">{{ $currencySymbol ?? '₹' }}{{ number_format($loan->outstanding_interest ?? 0, 2) }}</div>
-            </div>
-            <div class="ds-fin-card">
-                <div class="ds-fin-label">Outstanding Penalty</div>
-                <div class="ds-fin-value text-rose-600">{{ $currencySymbol ?? '₹' }}{{ number_format($loan->outstanding_penalty ?? 0, 2) }}</div>
-            </div>
-            <div class="ds-fin-card ds-fin-card-primary">
-                <div class="ds-fin-label">Total Outstanding</div>
-                <div class="ds-fin-value">{{ $currencySymbol ?? '₹' }}{{ number_format($loan->total_outstanding ?? 0, 2) }}</div>
-            </div>
+                @if($docs)
+                    <div class="dd-docs">
+                        {{-- Print Forfeiture Notice: visible once the notice is sent (and stays after forfeiture, where it is legally useful). --}}
+                        @if($loan->forfeitureNoticeSent())
+                            <a href="{{ route('dhiran.forfeiture-notice', $loan) }}" target="_blank" class="btn btn-secondary btn-sm"><x-icon name="file" size="16" />Print Forfeiture Notice</a>
+                        @endif
+                        {{-- Print Closure Certificate: only for closed loans. --}}
+                        @if($loan->status === 'closed')
+                            <a href="{{ route('dhiran.closure-certificate', $loan) }}" target="_blank" class="btn btn-secondary btn-sm"><x-icon name="circle-check" size="16" />Print Closure Certificate</a>
+                        @endif
+                    </div>
+                @endif
+            </section>
+            @endif
+
+            {{-- Loan terms --}}
+            <section class="dd-card dd-b" aria-labelledby="dd-terms-h">
+                <div class="dd-head"><h2 id="dd-terms-h" class="dd-h">Loan terms</h2></div>
+                <dl class="dd-pairs">
+                    <div><dt>Loan Date</dt><dd>{{ $loan->loan_date->format('d M Y') }}</dd></div>
+                    <div><dt>Maturity Date</dt><dd>{{ $loan->maturity_date ? $loan->maturity_date->format('d M Y') : '---' }}</dd></div>
+                    <div><dt>Tenure</dt><dd>{{ $loan->tenure_months }} months</dd></div>
+                    <div><dt>Interest Rate</dt><dd>{{ $loan->interest_rate_monthly }}% / month</dd></div>
+                    <div><dt>Interest Type</dt><dd>{{ ucfirst($loan->interest_type) }}</dd></div>
+                    <div><dt>Interest counted to</dt><dd>{{ $through }}</dd></div>
+                    <div><dt>LTV %</dt><dd>{{ number_format($loan->ltv_percent ?? 0, 1) }}%</dd></div>
+                    @if((int) $loan->min_lock_months > 0)
+                        <div><dt>Lock period</dt><dd>{{ $loan->min_lock_months }} {{ \Illuminate\Support\Str::plural('month', $loan->min_lock_months) }}<small>{{ $loan->isInLockPeriod() ? 'In the lock period now' : 'Lock period is over' }}</small></dd></div>
+                    @endif
+                    @if((int) $loan->min_interest_months > 0)
+                        <div><dt>Minimum interest</dt><dd>{{ $loan->min_interest_months }} {{ \Illuminate\Support\Str::plural('month', $loan->min_interest_months) }}<small>{{ $rupee($loan->minimumInterestAmount()) }}</small></dd></div>
+                    @endif
+                    @if((float) $loan->gold_rate_on_date > 0)
+                        <div><dt>Gold rate (at pledge)</dt><dd>{{ $rupee($loan->gold_rate_on_date) }}</dd></div>
+                    @endif
+                    @if((float) ($loan->silver_rate_on_date ?? 0) > 0)
+                        <div><dt>Silver rate (at pledge)</dt><dd>{{ $rupee($loan->silver_rate_on_date) }}</dd></div>
+                    @endif
+                    @if($loan->kyc_aadhaar)
+                        <div><dt>Aadhaar Number</dt><dd>{{ $loan->kyc_aadhaar }}</dd></div>
+                    @endif
+                    @if($loan->kyc_pan)
+                        <div><dt>PAN</dt><dd>{{ $loan->kyc_pan }}</dd></div>
+                    @endif
+                </dl>
+            </section>
         </div>
 
         {{-- Pledged Items --}}
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
-            <div class="p-4 border-b border-slate-200">
-                <h2 class="text-lg font-semibold text-slate-900">Pledged Items</h2>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[900px] jf-table dh-stack">
-                    <thead class="bg-slate-50 border-b border-slate-200">
+        <section class="dd-card dd-tablecard" aria-labelledby="dd-items-h">
+            <div class="dd-head"><h2 id="dd-items-h" class="dd-h">Pledged Items</h2></div>
+            <table class="dd-table dd-t-rec">
+                <thead>
+                    <tr>
+                        <th scope="col">Description</th>
+                        <th scope="col">Metal</th>
+                        <th scope="col" class="num">Gross Wt</th>
+                        <th scope="col" class="num">Net Wt</th>
+                        <th scope="col">Purity</th>
+                        <th scope="col" class="num">Fine Wt</th>
+                        <th scope="col" class="num">Market Val</th>
+                        <th scope="col" class="num">Loan Val</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">HUID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($loan->items ?? [] as $item)
                         <tr>
-                            <th scope="col" class="dh-sno-th">#</th>
-                            <th class="pl-6 pr-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Description</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Metal</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Gross Wt</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Net Wt</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Purity</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Fine Wt</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Market Val</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Loan Val</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Status</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">HUID</th>
+                            <td data-cell="title" class="strong"><a href="{{ route('dhiran.items.show', $item) }}">{{ $item->description }}</a></td>
+                            <td data-label="Metal" class="capitalize">{{ $item->metal_type ?? 'gold' }}</td>
+                            <td data-label="Gross Wt" class="num">{{ number_format($item->gross_weight, 3) }}g</td>
+                            <td data-label="Net Wt" class="num">{{ number_format($item->net_metal_weight, 3) }}g</td>
+                            <td data-label="Purity">@if(($item->metal_type ?? "gold") === "other")—@else{{ rtrim(rtrim((string) $item->purity, "0"), ".") }}{{ ($item->metal_type ?? "gold") === "silver" ? "" : "K" }}@endif</td>
+                            <td data-label="Fine Wt" class="num">{{ number_format($item->fine_weight, 3) }}g</td>
+                            <td data-label="Market Val" class="num">{{ $rupee($item->market_value) }}</td>
+                            <td data-label="Loan Val" class="num strong">{{ $rupee($item->loan_value) }}</td>
+                            <td data-label="Status"><x-dhiran.status :value="$item->status ?? 'pledged'" /></td>
+                            <td data-label="HUID">{{ $item->huid ?? '---' }}</td>
                         </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @forelse($loan->items ?? [] as $item)
-                            <tr class="hover:bg-slate-50/70">
-                                <x-dhiran.sno :rows="null" :n="$loop->iteration" />
-                                <td data-label="Description" class="pl-6 pr-4 py-4 whitespace-nowrap text-sm font-medium">
-                                    <a href="{{ route('dhiran.items.show', $item) }}" class="text-slate-700 hover:text-amber-700">{{ $item->description }}</a>
-                                </td>
-                                <td data-label="Metal" class="px-4 py-4 whitespace-nowrap text-sm text-slate-600 capitalize">{{ $item->metal_type ?? 'gold' }}</td>
-                                <td data-label="Gross Wt" class="px-4 py-4 whitespace-nowrap text-sm text-right text-slate-600">{{ number_format($item->gross_weight, 3) }}g</td>
-                                <td data-label="Net Wt" class="px-4 py-4 whitespace-nowrap text-sm text-right text-slate-600">{{ number_format($item->net_metal_weight, 3) }}g</td>
-                                <td data-label="Purity" class="px-4 py-4 whitespace-nowrap text-sm text-center text-slate-600">@if(($item->metal_type ?? "gold") === "other")—@else{{ rtrim(rtrim((string) $item->purity, "0"), ".") }}{{ ($item->metal_type ?? "gold") === "silver" ? "" : "K" }}@endif</td>
-                                <td data-label="Fine Wt" class="px-4 py-4 whitespace-nowrap text-sm text-right text-slate-600">{{ number_format($item->fine_weight, 3) }}g</td>
-                                <td data-label="Market Val" class="px-4 py-4 whitespace-nowrap text-sm text-right text-slate-700">{{ $currencySymbol ?? '₹' }}{{ number_format($item->market_value, 2) }}</td>
-                                <td data-label="Loan Val" class="px-4 py-4 whitespace-nowrap text-sm text-right font-medium text-slate-800">{{ $currencySymbol ?? '₹' }}{{ number_format($item->loan_value, 2) }}</td>
-                                <td data-label="Status" class="px-4 py-4 whitespace-nowrap text-center">
-                                    <x-dhiran.status :value="$item->status ?? 'pledged'" />
-                                </td>
-                                <td data-label="HUID" class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">{{ $item->huid ?? '---' }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="11" class="jf-table-empty">
-                                    @if($loan->status === 'renewed' && $loan->renewals->isNotEmpty())
-                                        Items moved to {{ $loan->renewals->first()->loan_number }} with the renewal.
-                                    @else
-                                        No items recorded
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        {{-- Payment History --}}
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden mb-6">
-            <div class="p-4 border-b border-slate-200">
-                <h2 class="text-lg font-semibold text-slate-900">Payment History</h2>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[800px] jf-table dh-stack">
-                    <thead class="bg-slate-50 border-b border-slate-200">
+                    @empty
                         <tr>
-                            <th scope="col" class="dh-sno-th">#</th>
-                            <th class="pl-6 pr-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Date</th>
-                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Type</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Amount</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Principal</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Interest</th>
-                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Penalty</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Method</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Receipt</th>
+                            <td colspan="10" class="is-empty">
+                                @if($loan->status === 'renewed' && $loan->renewals->isNotEmpty())
+                                    Items moved to {{ $loan->renewals->first()->loan_number }} with the renewal.
+                                @else
+                                    No items recorded
+                                @endif
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @forelse($loan->payments ?? [] as $payment)
-                            <tr class="hover:bg-slate-50/70">
-                                <x-dhiran.sno :rows="null" :n="$loop->iteration" />
-                                <td data-label="Date" class="pl-6 pr-4 py-4 whitespace-nowrap text-sm text-slate-600">{{ $payment->payment_date ? $payment->payment_date->format('d M Y') : '---' }}</td>
-                                <td data-label="Type" class="px-4 py-4 whitespace-nowrap text-sm font-medium text-slate-700">{{ $payment->type ? ucwords(str_replace('_', ' ', $payment->type)) : '---' }}</td>
-                                <td data-label="Amount" class="px-4 py-4 whitespace-nowrap text-sm text-right font-medium text-slate-800">{{ $currencySymbol ?? '₹' }}{{ number_format($payment->amount, 2) }}</td>
-                                <td data-label="Principal" class="px-4 py-4 whitespace-nowrap text-sm text-right text-slate-600">{{ $currencySymbol ?? '₹' }}{{ number_format($payment->principal_component ?? 0, 2) }}</td>
-                                <td data-label="Interest" class="px-4 py-4 whitespace-nowrap text-sm text-right text-slate-600">{{ $currencySymbol ?? '₹' }}{{ number_format($payment->interest_component ?? 0, 2) }}</td>
-                                <td data-label="Penalty" class="px-4 py-4 whitespace-nowrap text-sm text-right text-slate-600">{{ $currencySymbol ?? '₹' }}{{ number_format($payment->penalty_component ?? 0, 2) }}</td>
-                                <td data-label="Method" class="px-4 py-4 whitespace-nowrap text-center">
-                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700">
-                                        {{ \App\Models\Dhiran\DhiranPayment::methodLabel($payment->payment_method) }}
-                                    </span>
-                                </td>
-                                <td data-label="Receipt" class="px-4 py-4 whitespace-nowrap text-center">
-                                    <a href="{{ route('dhiran.payment-receipt', [$loan, $payment]) }}" target="_blank" class="text-amber-700 hover:underline text-xs font-medium">Print Receipt</a>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="9" class="jf-table-empty">No payments recorded yet</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        {{-- KYC Section --}}
-        @if($loan->kyc_aadhaar || $loan->kyc_pan)
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-semibold text-slate-900 mb-4">KYC Information</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                @if($loan->kyc_aadhaar)
-                <div>
-                    <div class="ds-info-item-label">Aadhaar Number</div>
-                    <div class="ds-info-item-value">{{ $loan->kyc_aadhaar }}</div>
-                </div>
-                @endif
-                @if($loan->kyc_pan)
-                <div>
-                    <div class="ds-info-item-label">PAN</div>
-                    <div class="ds-info-item-value">{{ $loan->kyc_pan }}</div>
-                </div>
-                @endif
-            </div>
-        </div>
-        @endif
+                    @endforelse
+                </tbody>
+            </table>
+        </section>
 
         {{-- Evidence & Documents (private, shop-scoped attachments) --}}
-        <div id="evidence" class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-semibold text-slate-900 mb-1">Evidence &amp; Documents</h2>
-            <p class="text-xs text-slate-500 mb-4">Pledged-item photos, borrower ID proof, and loan documents. Files are private to your shop.</p>
+        <section id="evidence" class="dd-card dd-card-pad dd-evidence" aria-labelledby="dd-evid-h">
+            <h2 id="dd-evid-h" class="dd-h">Evidence &amp; Documents</h2>
+            <p class="dd-sub">Pledged-item photos, borrower ID proof, and loan documents. Files are private to your shop.</p>
 
             <x-dhiran.evidence-gallery :attachments="$attachments ?? collect()" />
 
             @can('dhiran.create')
             @if($errors->has('file'))
-                <p class="text-sm text-red-600 mb-2">{{ $errors->first('file') }}</p>
+                <p class="dd-error" role="alert">{{ $errors->first('file') }}</p>
             @endif
-            <form method="POST" action="{{ route('dhiran.attachments.store') }}" enctype="multipart/form-data" data-turbo-frame="_top"
-                  class="dh-upload-form border-t border-slate-100 pt-4">
+            <form method="POST" action="{{ route('dhiran.attachments.store') }}" enctype="multipart/form-data" data-turbo-frame="_top" class="dh-upload-form dd-upload">
                 @csrf
                 <input type="hidden" name="owner_type" value="dhiran_loan">
                 <input type="hidden" name="owner_id" value="{{ $loan->id }}">
-                <div class="flex-1">
-                    <label class="block text-xs font-medium text-slate-600 mb-1">Document type</label>
-                    <select name="document_type" required class="dh-form-control dh-native-select">
+                <div>
+                    <label for="ev-type">Document type</label>
+                    <select id="ev-type" name="document_type" required class="dh-form-control dh-native-select">
                         <option value="item_photo">Pledged item photo</option>
                         <option value="id_proof_front">ID proof (front)</option>
                         <option value="id_proof_back">ID proof (back)</option>
@@ -420,189 +298,141 @@
                         <option value="loan_document">Other loan document</option>
                     </select>
                 </div>
-                <div class="flex-1">
-                    <label class="block text-xs font-medium text-slate-600 mb-1">File <span class="text-slate-400">(JPG/PNG/PDF, max 8 MB)</span></label>
-                    <input type="file" name="file" required accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
-                           class="dh-file-input">
+                <div>
+                    <label for="ev-file">File <small>(JPG/PNG/PDF, max 8 MB)</small></label>
+                    <input id="ev-file" type="file" name="file" required accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" class="dh-file-input">
                 </div>
-                <button type="submit" class="btn btn-dark btn-sm shrink-0">Upload</button>
+                <button type="submit" class="btn btn-dark btn-sm" data-turbo-submits-with="Uploading…">Upload</button>
             </form>
             @endcan
-        </div>
+        </section>
+
+        {{-- Payment History --}}
+        <section class="dd-card dd-tablecard" aria-labelledby="dd-pay-h">
+            <div class="dd-head"><h2 id="dd-pay-h" class="dd-h">Payment History</h2></div>
+            <table class="dd-table dd-t-pay">
+                <thead>
+                    <tr>
+                        <th scope="col">Date</th>
+                        <th scope="col">Type</th>
+                        <th scope="col" class="num">Amount</th>
+                        <th scope="col" class="num">Principal</th>
+                        <th scope="col" class="num">Interest</th>
+                        <th scope="col" class="num">Penalty</th>
+                        <th scope="col">Method</th>
+                        <th scope="col"><span class="dd-sr">Receipt</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($loan->payments ?? [] as $payment)
+                        <tr>
+                            <td data-label="Date">{{ $payment->payment_date ? $payment->payment_date->format('d M Y') : '---' }}</td>
+                            <td data-cell="title" class="strong">{{ $payment->type ? ucwords(str_replace('_', ' ', $payment->type)) : '---' }}</td>
+                            <td data-cell="amount" data-label="Amount" class="num strong">{{ $rupee($payment->amount) }}</td>
+                            <td data-label="Principal" class="num">{{ $rupee($payment->principal_component ?? 0) }}</td>
+                            <td data-label="Interest" class="num">{{ $rupee($payment->interest_component ?? 0) }}</td>
+                            <td data-label="Penalty" class="num">{{ $rupee($payment->penalty_component ?? 0) }}</td>
+                            <td data-label="Method"><span class="dd-method">{{ \App\Models\Dhiran\DhiranPayment::methodLabel($payment->payment_method) }}</span></td>
+                            <td data-cell="act"><a href="{{ route('dhiran.payment-receipt', [$loan, $payment]) }}" target="_blank" class="dd-tlink">Print Receipt</a></td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="8" class="is-empty">No payments recorded yet</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </section>
 
         {{-- Notes --}}
         @if($loan->notes)
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 mb-6">
-            <h2 class="text-lg font-semibold text-slate-900 mb-2">Notes</h2>
-            <p class="text-sm text-slate-600 whitespace-pre-line">{{ $loan->notes }}</p>
-        </div>
+        <section class="dd-card dd-card-pad" aria-labelledby="dd-notes-h">
+            <h2 id="dd-notes-h" class="dd-h">Notes</h2>
+            <p class="dd-lead dd-notes">{{ $loan->notes }}</p>
+        </section>
         @endif
     </div>
 
-    {{-- Pay Interest Modal --}}
-    <dialog id="payInterestModal" class="dh-dialog">
-        <div class="dh-dialog-body">
-            <h3 class="text-lg font-semibold text-slate-900 mb-4">Pay Interest</h3>
-            <form method="POST" action="{{ route('dhiran.pay-interest', $loan) }}" data-turbo-frame="_top">
-                @csrf <x-dhiran.once />
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Amount</label>
-                    <input type="number" step="0.01" name="amount" required placeholder="0.00"
-                           class="dh-form-control">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Payment Method</label>
-                    <select name="payment_method" class="dh-form-control dh-native-select">
-                        <option value="cash">Cash</option>
-                        <option value="upi">UPI</option>
-                        <option value="card">Card</option>
-                        <option value="bank_transfer">Bank Transfer</option>
-                    </select>
-                </div>
-                <div class="dh-dialog-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('payInterestModal').close()">Cancel</button>
-                    <button type="submit" class="btn btn-dark btn-sm">Pay Interest</button>
-                </div>
-            </form>
-        </div>
-    </dialog>
-
-    {{-- Repay Modal --}}
-    <dialog id="repayModal" class="dh-dialog">
-        <div class="dh-dialog-body">
-            <h3 class="text-lg font-semibold text-slate-900 mb-4">Repay Loan</h3>
-            <form method="POST" action="{{ route('dhiran.repay', $loan) }}" data-turbo-frame="_top">
-                @csrf <x-dhiran.once />
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Amount</label>
-                    <input type="number" step="0.01" name="amount" required placeholder="0.00"
-                           class="dh-form-control">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Payment Method</label>
-                    <select name="payment_method" class="dh-form-control dh-native-select">
-                        <option value="cash">Cash</option>
-                        <option value="upi">UPI</option>
-                        <option value="card">Card</option>
-                        <option value="bank_transfer">Bank Transfer</option>
-                    </select>
-                </div>
-                <div class="dh-dialog-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('repayModal').close()">Cancel</button>
-                    <button type="submit" class="btn btn-dark btn-sm">Submit Payment</button>
-                </div>
-            </form>
-        </div>
-    </dialog>
-
-    {{-- Release Item Modal --}}
-    <dialog id="releaseItemModal" class="dh-dialog">
-        <div class="dh-dialog-body">
-            <h3 class="text-lg font-semibold text-slate-900 mb-4">Release Pledged Item</h3>
-            <form method="POST" action="{{ route('dhiran.release-item', $loan) }}" data-turbo-frame="_top">
-                @csrf <x-dhiran.once />
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Select Item</label>
-                    <select name="item_id" required class="dh-form-control dh-native-select">
-                        <option value="">Choose item...</option>
-                        @foreach($loan->items ?? [] as $item)
-                            @if(($item->status ?? 'pledged') === 'pledged')
-                                @php $releaseMin = rescue(fn () => app(\App\Services\DhiranService::class)->releaseMinimum($loan, $item), null, false); @endphp
-                                <option value="{{ $item->id }}">{{ $item->description }} ({{ number_format($item->gross_weight, 3) }}g){{ $releaseMin !== null ? ' — pay at least ' . ($currencySymbol ?? '₹') . number_format($releaseMin, 2) : '' }}</option>
-                            @endif
-                        @endforeach
-                    </select>
-                    <p class="mt-1 text-xs text-slate-500">The amount covers interest and penalty due up to {{ \Illuminate\Support\Carbon::parse($loan->interest_accrued_through ?? $loan->loan_date)->format('d M Y') }}, plus the item's share of the principal. Interest for any days since is added when you release.</p>
-                </div>
-                {{-- DhiranService::releaseMinimum: interest and penalty due plus the item's share of the principal among the items still pledged. --}}
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Amount</label>
-                    <input type="number" step="0.01" min="0" name="payment_amount" required placeholder="0.00"
-                           class="dh-form-control">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Payment Method</label>
-                    <select name="payment_method" class="dh-form-control dh-native-select">
-                        <option value="cash">Cash</option>
-                        <option value="upi">UPI</option>
-                        <option value="card">Card</option>
-                        <option value="bank_transfer">Bank Transfer</option>
-                    </select>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Condition Note</label>
-                    <input type="text" name="condition_note" maxlength="500" class="dh-form-control">
-                </div>
-                <div class="dh-dialog-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('releaseItemModal').close()">Cancel</button>
-                    <button type="submit" class="btn btn-dark btn-sm">Release Item</button>
-                </div>
-            </form>
-        </div>
-    </dialog>
-
-    {{-- Pre-Close Modal --}}
-    <dialog id="precloseModal" class="dh-dialog">
-        <div class="dh-dialog-body">
-            <h3 class="text-lg font-semibold text-slate-900 mb-4">Pre-Close Loan</h3>
-            {{-- Closing takes the principal plus interest and penalty due, at least the minimum interest (as preCloseLoan). --}}
-            @php $closeTakes = $loan->status === 'active' ? (float) $loan->outstanding_principal + app(\App\Services\DhiranService::class)->renewalDue($loan) : 0; @endphp
-            <p class="text-sm text-slate-600 mb-4">This will close the loan and release all pledged items. To close, collect <strong>{{ $currencySymbol ?? '₹' }}{{ number_format($closeTakes, 2) }}</strong>: the principal, plus interest and penalty due (at least the minimum interest), up to {{ \Illuminate\Support\Carbon::parse($loan->interest_accrued_through ?? $loan->loan_date)->format('d M Y') }}. Interest for any days since is added.</p>
-            <form method="POST" action="{{ route('dhiran.pre-close', $loan) }}" data-turbo-frame="_top">
-                @csrf <x-dhiran.once />
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Payment Method</label>
-                    <select name="payment_method" class="dh-form-control dh-native-select">
-                        <option value="cash">Cash</option>
-                        <option value="upi">UPI</option>
-                        <option value="card">Card</option>
-                        <option value="bank_transfer">Bank Transfer</option>
-                    </select>
-                </div>
-                <div class="dh-dialog-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('precloseModal').close()">Cancel</button>
-                    <button type="submit" class="btn btn-dark btn-sm">Pre-Close Loan</button>
-                </div>
-            </form>
-        </div>
-    </dialog>
-
-    {{-- Renew Modal --}}
-    <dialog id="renewModal" class="dh-dialog">
-        <div class="dh-dialog-body">
-            <h3 class="text-lg font-semibold text-slate-900 mb-4">Renew Loan</h3>
-            <form method="POST" action="{{ route('dhiran.renew', $loan) }}" data-turbo-frame="_top">
-                @csrf <x-dhiran.once />
-                @php $renewDue = $loan->status === 'active' ? app(\App\Services\DhiranService::class)->renewalDue($loan) : 0; @endphp
-                @if($renewDue > 0)
-                    <p class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                        To renew, collect {{ $currencySymbol ?? '₹' }}{{ number_format($renewDue, 2) }} now: interest and penalty due (at least the minimum interest), up to {{ \Illuminate\Support\Carbon::parse($loan->interest_accrued_through ?? $loan->loan_date)->format('d M Y') }}. Interest for any days since is added.
-                    </p>
-                    <div class="mb-4">
-                        <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Paid by</label>
-                        <select name="payment_method" class="dh-form-control dh-native-select">
-                            <option value="cash">Cash</option>
-                            <option value="upi">UPI</option>
-                            <option value="card">Card</option>
-                            <option value="bank_transfer">Bank Transfer</option>
-                        </select>
-                    </div>
+    {{-- Cancel a loan that is waiting for evidence, or remove an old loan entered by mistake --}}
+    @if(($isPending || $removableOld) && $canCreate)
+        <x-dhiran.sheet id="cancelLoanModal" :title="($removableOld ? 'Remove' : 'Cancel') . ' ' . $loan->loan_number . '?'" :sub="$loan->customer->name ?? null"
+                        :action="route('dhiran.cancel', $loan)" :submit="$removableOld ? 'Remove old loan' : 'Cancel loan'" cancel="Keep loan" variant="danger" busy="Working…">
+            <p>
+                @if($removableOld)
+                    Use this only if this old loan was entered by mistake. It is marked cancelled and its opening balance withdrawn; nothing goes into the cash book. Enter it again with the right figures. This cannot be undone.
+                @else
+                    Use this when the loan will not go ahead. The cash book gets the ₹{{ number_format((float) $loan->outstanding_principal, 2) }} paid out back in{{ (float) $loan->processing_fee > 0 ? ' and the ₹' . number_format((float) $loan->processing_fee, 2) . ' fee back out' : '' }}, and the items are marked returned to the borrower. This cannot be undone.
                 @endif
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">New Tenure (Months)</label>
-                    <input type="number" name="tenure_months" required min="1" value="{{ $loan->tenure_months }}"
-                           class="dh-form-control">
-                </div>
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">New Interest Rate (%/month)</label>
-                    <input type="number" step="0.01" name="interest_rate_monthly" required value="{{ $loan->interest_rate_monthly }}"
-                           class="dh-form-control">
-                </div>
-                <div class="dh-dialog-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('renewModal').close()">Cancel</button>
-                    <button type="submit" class="btn btn-dark btn-sm">Renew Loan</button>
-                </div>
-            </form>
+            </p>
+            <div>
+                <label for="cancel-reason">Reason</label>
+                <input id="cancel-reason" type="text" name="reason" maxlength="255" autofocus class="dh-form-control dd-input" placeholder="e.g. Borrower changed mind">
+            </div>
+        </x-dhiran.sheet>
+    @endif
+
+    {{-- The balance as the page shows it, repeated where money is taken --}}
+    @php $readback = [['Outstanding Principal', $loan->outstanding_principal ?? $loan->principal_amount], ['Outstanding Interest', $loan->outstanding_interest ?? 0], ['Outstanding Penalty', $loan->outstanding_penalty ?? 0]]; @endphp
+
+    <x-dhiran.sheet id="payInterestModal" title="Pay Interest" :sub="$loan->loan_number . ' · ' . ($loan->customer->name ?? '')" :action="route('dhiran.pay-interest', $loan)" submit="Pay Interest" busy="Recording…">
+        <dl class="dd-readback">
+            @foreach($readback as [$k, $v])<div><dt>{{ $k }}</dt><dd>{{ $rupee($v) }}</dd></div>@endforeach
+            <div class="is-total"><dt>Total Outstanding</dt><dd>{{ $rupee($loan->total_outstanding ?? 0) }}</dd></div>
+        </dl>
+        <x-dhiran.amount id="pi-amount" name="amount" label="Amount" autofocus />
+        <x-dhiran.pay-method id="pi-method" />
+    </x-dhiran.sheet>
+
+    <x-dhiran.sheet id="repayModal" title="Repay Loan" :sub="$loan->loan_number . ' · ' . ($loan->customer->name ?? '')" :action="route('dhiran.repay', $loan)" submit="Submit Payment" busy="Recording…">
+        <dl class="dd-readback">
+            @foreach($readback as [$k, $v])<div><dt>{{ $k }}</dt><dd>{{ $rupee($v) }}</dd></div>@endforeach
+            <div class="is-total"><dt>Total Outstanding</dt><dd>{{ $rupee($loan->total_outstanding ?? 0) }}</dd></div>
+        </dl>
+        <x-dhiran.amount id="rp-amount" name="amount" label="Amount" autofocus />
+        <x-dhiran.pay-method id="rp-method" />
+    </x-dhiran.sheet>
+
+    <x-dhiran.sheet id="releaseItemModal" title="Release Pledged Item" :sub="$loan->loan_number" :action="route('dhiran.release-item', $loan)" submit="Release Item" busy="Releasing…">
+        <div>
+            <label for="rel-item">Select Item</label>
+            <select id="rel-item" name="item_id" required autofocus class="dh-form-control dh-native-select dd-input">
+                <option value="">Choose item...</option>
+                @foreach($loan->items ?? [] as $item)
+                    @if(($item->status ?? 'pledged') === 'pledged')
+                        @php $releaseMin = rescue(fn () => $service->releaseMinimum($loan, $item), null, false); @endphp
+                        <option value="{{ $item->id }}">{{ $item->description }} ({{ number_format($item->gross_weight, 3) }}g){{ $releaseMin !== null ? ' — pay at least ' . $rupee($releaseMin) : '' }}</option>
+                    @endif
+                @endforeach
+            </select>
+            <p class="dd-hint">The amount covers interest and penalty due up to {{ $through }}, plus the item's share of the principal. Interest for any days since is added when you release.</p>
         </div>
-    </dialog>
+        {{-- DhiranService::releaseMinimum: interest and penalty due plus the item's share of the principal among the items still pledged. --}}
+        <x-dhiran.amount id="rel-amount" name="payment_amount" label="Amount" min="0" />
+        <x-dhiran.pay-method id="rel-method" />
+        <div>
+            <label for="rel-note">Condition Note</label>
+            <input id="rel-note" type="text" name="condition_note" maxlength="500" class="dh-form-control dd-input">
+        </div>
+    </x-dhiran.sheet>
+
+    {{-- Closing takes the principal plus interest and penalty due, at least the minimum interest (as preCloseLoan). --}}
+    @php $closeTakes = $isActive ? (float) $loan->outstanding_principal + $service->renewalDue($loan) : 0; @endphp
+    <x-dhiran.sheet id="precloseModal" title="Pre-Close Loan" :sub="$loan->loan_number . ' · ' . ($loan->customer->name ?? '')" :action="route('dhiran.pre-close', $loan)" submit="Pre-Close Loan" variant="danger" busy="Closing…">
+        <p class="dd-takes is-danger">This will close the loan and release all pledged items. To close, collect <strong>{{ $rupee($closeTakes) }}</strong>: the principal, plus interest and penalty due (at least the minimum interest), up to {{ $through }}. Interest for any days since is added.</p>
+        <x-dhiran.pay-method id="pc-method" autofocus />
+    </x-dhiran.sheet>
+
+    @php $renewDue = $isActive ? $service->renewalDue($loan) : 0; @endphp
+    <x-dhiran.sheet id="renewModal" title="Renew Loan" :sub="$loan->loan_number . ' · ' . ($loan->customer->name ?? '')" :action="route('dhiran.renew', $loan)" submit="Renew Loan" busy="Renewing…">
+        @if($renewDue > 0)
+            <p class="dd-takes">To renew, collect {{ $rupee($renewDue) }} now: interest and penalty due (at least the minimum interest), up to {{ $through }}. Interest for any days since is added.</p>
+            <x-dhiran.pay-method id="rn-method" label="Paid by" autofocus />
+        @endif
+        <div>
+            <label for="rn-tenure">New Tenure (Months)</label>
+            <input id="rn-tenure" type="number" inputmode="numeric" name="tenure_months" required min="1" @if($renewDue <= 0) autofocus @endif value="{{ $loan->tenure_months }}" class="dh-form-control dd-input">
+        </div>
+        <div>
+            <label for="rn-rate">New Interest Rate (%/month)</label>
+            <input id="rn-rate" type="number" step="0.01" inputmode="decimal" name="interest_rate_monthly" required value="{{ $loan->interest_rate_monthly }}" class="dh-form-control dd-input">
+        </div>
+    </x-dhiran.sheet>
 </x-dhiran-layout>
