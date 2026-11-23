@@ -107,6 +107,25 @@ class BillingTest extends AdminTestCase
         $this->assertSame(0, ShopSubscription::count());
     }
 
+    public function test_refund_for_an_admin_dismissed_payment_is_answered_permanently(): void
+    {
+        // Rule: an admin who marks a parked payment resolved has handled it by hand (refund/ignore); a later refund webhook
+        // finds no subscription and must not be retried forever (500 loop).
+        \App\Models\Platform\SubscriptionEvent::create(['shop_subscription_id' => null, 'shop_id' => null, 'admin_id' => null, 'event_type' => 'payment.unresolved', 'before' => null,
+            'after' => ['order_id' => 'order_a', 'payment_id' => 'pay_admin', 'attempt_count' => 1, 'transient' => false, 'resolved_at' => now()->toIso8601String(), 'resolved_by_admin_id' => 1, 'resolution_note' => 'refunded in dashboard'], 'reason' => 'refused [RESOLVED by admin]']);
+        $this->refund('pay_admin', 1999900, 'rfnd_a', 'evt_ra')->assertOk()->assertJson(['status' => 'not_applied']);
+        $this->assertSame(0, ShopSubscription::count());
+    }
+
+    public function test_a_payment_an_admin_dismissed_is_never_granted_by_a_later_capture(): void
+    {
+        $owner = $this->shopUser(); $t = $this->paidOrder($owner);
+        \App\Models\Platform\SubscriptionEvent::create(['shop_subscription_id' => null, 'shop_id' => null, 'admin_id' => null, 'event_type' => 'payment.unresolved', 'before' => null,
+            'after' => ['order_id' => $t['razorpay_order_id'], 'payment_id' => $t['razorpay_payment_id'], 'attempt_count' => 1, 'transient' => false, 'resolved_at' => now()->toIso8601String(), 'resolved_by_admin_id' => 1, 'resolution_note' => 'ignore'], 'reason' => 'refused [RESOLVED by admin]']);
+        $this->capturedWebhook($t, 'cap_dismissed');
+        $this->assertSame(0, ShopSubscription::count());
+    }
+
     public function test_refund_redelivered_after_capture_cancels_the_term(): void
     {
         // Rule: money refunded at Razorpay must end the term. A refund seen before the capture was webhook-ed

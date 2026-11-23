@@ -86,6 +86,8 @@ class FormsRedesignTest extends TestCase
             $this->assertStringContainsString('id="' . $step . '"', $html); // sections stay (validation errors focus them)
         }
         $this->assertStringNotContainsString('fm-steps', $html, 'the numbered step cards on top were removed (owner)');
+        // the server requires silver_rate_on_date for a metal-valued silver item: the form must offer the field (it had none, so silver loans could not be submitted)
+        $this->assertStringContainsString('name="silver_rate_on_date"', $html);
         $this->assertStringContainsString('x-for="(item, index) in items"', $html);
         $this->assertStringContainsString('<fieldset class="fm-item"', $html);
         $this->assertMatchesRegularExpression('/data-principal-limit[^>]*x-text="principalHint"/', $html);

@@ -177,6 +177,10 @@ class SubscriptionPaymentService
     public function finalizeCapturedPayment(string $orderId, string $paymentId): ShopSubscription
     {
         if ($existing = $this->findExistingSubscription($paymentId)) { return $existing; }
+        // an admin dismissed this payment by hand (refunded/ignored): a later capture or reconcile must not grant a term for it
+        if (SubscriptionEvent::where('event_type', 'payment.unresolved')->where('after->payment_id', $paymentId)->whereNotNull('after->resolved_by_admin_id')->exists()) {
+            throw new \LogicException('This payment was dismissed by an admin; no term granted.');
+        }
         // a refund was already seen for this (parked) payment: never grant a term for refunded money; admin decides
         if (SubscriptionEvent::where('event_type', 'refund.invalid')->where('after->payment_id', $paymentId)->where('after->refund_of_parked', true)->exists()) {
             throw new \LogicException('A refund was already issued for this payment; no term granted.');

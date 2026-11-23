@@ -89,7 +89,7 @@ class SubscriptionWebhookService
                     // only a FINAL park counts (non-transient, not resolved): a transient one is reconciled into a subscription later,
                     // and the refund must then still be applied, so it keeps being retried
                     $parked = SubscriptionEvent::where('event_type', 'payment.unresolved')->where('after->payment_id', $paymentId)
-                        ->whereNull('after->resolved_at')->whereRaw("COALESCE((after->>'transient')::boolean, false) = false")->exists();
+                        ->where(fn ($q) => $q->whereNotNull('after->resolved_at')->orWhereRaw("COALESCE((after->>'transient')::boolean, false) = false"))->exists(); // admin-dismissed counts as final too
                     $this->refuseRefund($paymentId, $refundId, $parked ? 'refund for a payment parked as unresolved (no subscription exists)' : 'no local subscription found for payment id (will retry)', $paise, $currency, $eventId, $parked ? ['refund_of_parked' => true] : []);
                     return $parked ? SubscriptionPaymentService::OUTCOME_PERMANENT : SubscriptionPaymentService::OUTCOME_TRANSIENT;
                 }

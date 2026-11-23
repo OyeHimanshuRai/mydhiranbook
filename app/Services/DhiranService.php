@@ -536,16 +536,16 @@ class DhiranService
      */
     public function activateLoan(DhiranLoan $loan): void
     {
-        if ($loan->status !== 'pending_evidence') {
-            throw new LogicException('Only loans awaiting evidence can be activated.');
-        }
+        DB::transaction(function () use ($loan): void {
+            $loan = $this->lockActive($loan, 'pending_evidence'); // decided on the locked row: a concurrent cancel/close wins
 
-        if (! $this->evidenceStatus($loan)['ok']) {
-            throw new LogicException('Required evidence is missing: a pledged-item photo and a borrower ID proof must be uploaded first.');
-        }
+            if (! $this->evidenceStatus($loan)['ok']) {
+                throw new LogicException('Required evidence is missing: a pledged-item photo and a borrower ID proof must be uploaded first.');
+            }
 
-        $loan->status = 'active';
-        $loan->save();
+            $loan->status = 'active';
+            $loan->save();
+        });
     }
 
     /**

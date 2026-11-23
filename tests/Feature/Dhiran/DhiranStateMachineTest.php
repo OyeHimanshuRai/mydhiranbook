@@ -71,6 +71,35 @@ class DhiranStateMachineTest extends TestCase
 
     // H1. Two people act on one loan: the second action sees the loan as the first one left it, not as it was when
     // their page loaded, so a pre-closed loan cannot then be forfeited, renewed, paid or closed again.
+    public function test_a_pending_loan_cancelled_by_someone_else_cannot_be_activated_from_a_stale_copy(): void
+    {
+        // Rule: activation is decided on the locked row, not on the copy a page loaded earlier.
+        $loan = $this->loan();
+        $loan->forceFill(['status' => 'pending_evidence'])->save(); // fixture loans are born active; this one awaits evidence
+        $stale = $this->in(fn () => DhiranLoan::find($loan->id)); // someone else still has this page open
+        $this->in(fn ($svc) => $svc->cancelPendingLoan(DhiranLoan::find($loan->id), 'entered twice'));
+        try {
+            $this->in(fn ($svc) => $svc->activateLoan($stale));
+            $this->fail('activated a cancelled loan');
+        } catch (LogicException $e) {
+            $this->assertStringContainsString('cancelled', $e->getMessage());
+        }
+        $this->assertSame('cancelled', $loan->refresh()->status);
+    }
+
+    public function test_overdue_scope_agrees_with_the_loan_page_a_loan_due_today_is_not_overdue(): void
+    {
+        // Rule: overdue starts the day AFTER maturity (DhiranLoan::isOverdue); the Overdue report must say the same.
+        $dueToday = $this->loan(CarbonImmutable::today()->subMonth()->toDateString(), 1);
+        $lastWeek = $this->loan(CarbonImmutable::today()->subMonths(2)->subDays(7)->toDateString(), 2);
+        foreach ([$dueToday, $lastWeek] as $l) { $l->forceFill(['status' => 'active'])->save(); }
+        $this->assertTrue($dueToday->refresh()->maturity_date->isToday(), 'fixture: due today');
+        $this->assertFalse($dueToday->isOverdue());
+        $overdue = DhiranLoan::withoutGlobalScopes()->overdue()->pluck('id')->all();
+        $this->assertNotContains($dueToday->id, $overdue);
+        $this->assertContains($lastWeek->id, $overdue);
+    }
+
     public function test_a_loan_finished_by_someone_else_cannot_be_acted_on_from_a_stale_copy(): void
     {
         $actions = [

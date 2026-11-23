@@ -324,7 +324,7 @@ class DhiranLoan extends Model
     {
         return $query->where('status', 'active')
             ->whereNotNull('maturity_date')
-            ->where('maturity_date', '<', now());
+            ->where('maturity_date', '<', today()->toDateString()); // overdue starts the day AFTER maturity, as isOverdue() does
     }
 
     public function scopeDefaultRisk(Builder $query): Builder

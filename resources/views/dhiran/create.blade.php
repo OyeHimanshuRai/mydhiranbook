@@ -330,6 +330,21 @@
                                 <p class="fm-error" id="err-gold_rate_on_date" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
                             @enderror
                         </div>
+                        {{-- the server requires the silver reference rate when any silver item is valued by metal weight --}}
+                        <div class="fm-field" x-cloak x-show="items.some(i => i.metal_type === 'silver' && i.value_mode !== 'appraised')">
+                            <label for="silver_rate_on_date" class="fm-label">Silver rate today</label>
+                            <div class="fm-affix">
+                                <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
+                                <input type="number" inputmode="decimal" step="0.01" name="silver_rate_on_date" id="silver_rate_on_date"
+                                       value="{{ old('silver_rate_on_date') }}"
+                                       placeholder="Reference rate" class="fm-control" @focus="$event.target.select()"
+                                       @error('silver_rate_on_date') aria-invalid="true" aria-describedby="err-silver_rate_on_date" @enderror>
+                                <span class="fm-unit fm-unit--suf">/ g</span>
+                            </div>
+                            @error('silver_rate_on_date')
+                                <p class="fm-error" id="err-silver_rate_on_date" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
 
                     <h3 class="fm-sub">Loan summary</h3>
