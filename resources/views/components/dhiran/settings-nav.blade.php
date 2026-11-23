@@ -13,9 +13,6 @@
         'billing' => ['Plan & billing', route('subscription.status'), $user->isShopOwner()],
     ], fn ($i) => $i[2]);
 @endphp
-@once
-    @vite(['resources/css/dhiran-receipt-settings.css'])
-@endonce
 @if($as === 'title')
     @php($current = $items[$active][0] ?? 'Settings')
     <div class="min-w-0">

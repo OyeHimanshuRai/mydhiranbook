@@ -1,9 +1,9 @@
-<x-subscription-page title="Plan & billing" footer>
+<x-subscription-page title="Plan & billing" :settings="$hasShop" footer>
 @if($hasShop)
-    @vite('resources/css/dhiran-settings.css')
     <x-dhiran.page-header>
         <x-dhiran.settings-nav active="billing" as="title" />
     </x-dhiran.page-header>
+    <turbo-frame id="settings-pane" data-turbo-action="advance">
     <div class="content-inner">
         <x-dhiran.settings-nav active="billing" switcher />
         <x-settings.live />
@@ -41,7 +41,7 @@
                     <ul class="st-receipts">
                         @foreach($receipts as $r)
                             <li class="st-receipt">
-                                <a href="{{ route('subscription.receipt', $r) }}">{{ $r->invoice_number }}</a>
+                                <a href="{{ route('subscription.receipt', $r) }}" data-turbo-frame="_top">{{ $r->invoice_number }}</a>
                                 <p class="st-receipt-date">{{ $r->issued_at->format('d M Y') }}</p>
                                 <span class="st-receipt-amt">{{ \App\Support\IndianNumber::rupee($r->total_amount, 2) }}</span>
                             </li>
@@ -63,6 +63,7 @@
             </section>
         </div>
     </div>
+    </turbo-frame>
 @else
 <div class="ck">
     <h1>Plan &amp; billing</h1>

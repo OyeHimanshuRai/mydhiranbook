@@ -1,5 +1,4 @@
-<x-dhiran-layout title="Loan settings" footer>
-    @vite('resources/css/dhiran-settings.css')
+<x-dhiran-layout title="Loan settings" settings footer>
     <x-dhiran.page-header>
         <x-dhiran.settings-nav active="loan" as="title" />
     </x-dhiran.page-header>
@@ -12,6 +11,7 @@
         $num = fn (string $key) => is_numeric($v($key)) ? rtrim(rtrim(number_format((float) $v($key), 2, '.', ''), '0'), '.') : $v($key);
     @endphp
 
+    <turbo-frame id="settings-pane" data-turbo-action="advance">
     <div class="content-inner">
         <x-dhiran.settings-nav active="loan" switcher />
         <x-settings.live />
@@ -79,4 +79,5 @@
             <x-settings.savebar label="Save settings" :cancel-href="route('dhiran.loans')" />
         </form>
     </div>
+    </turbo-frame>
 </x-dhiran-layout>

@@ -1,5 +1,4 @@
-<x-dhiran-layout title="Edit staff">
-    @vite('resources/css/dhiran-settings.css')
+<x-dhiran-layout title="Edit staff" settings>
     <x-dhiran.page-header>
         <div>
             <h1 class="page-title">Edit Staff: {{ $staff->name }}</h1>

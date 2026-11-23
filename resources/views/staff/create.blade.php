@@ -1,5 +1,4 @@
-<x-dhiran-layout title="Add Staff Member">
-    @vite('resources/css/dhiran-settings.css')
+<x-dhiran-layout title="Add Staff Member" settings>
     <x-dhiran.page-header>
         <div>
             <h1 class="page-title">Add Staff Member</h1>

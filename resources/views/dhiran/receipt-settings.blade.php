@@ -7,10 +7,11 @@
     $total = fn ($def) => collect($def['groups'])->sum(fn ($f) => count($f));
     $on = fn ($receipt, $fields) => collect(array_keys($fields))->filter(fn ($k) => in_array("$receipt.$k", $printed, true))->count();
 @endphp
-<x-dhiran-layout title="Receipt settings" footer>
+<x-dhiran-layout title="Receipt settings" settings footer>
     <x-dhiran.page-header>
         <x-dhiran.settings-nav active="receipt" as="title" />
     </x-dhiran.page-header>
+<turbo-frame id="settings-pane" data-turbo-action="advance">
 <div class="content-inner dhiran-settings-root rs">
 <x-dhiran.settings-nav active="receipt" switcher />
 <form id="rs-form" class="rs-form" method="POST" action="{{ route('dhiran.settings.receipt') }}" data-turbo-frame="_top"
@@ -98,54 +99,6 @@
     </div>
 </form>
 </div>
-<noscript><style>.rs-seg, .rs-sample, .rs-master { display: none !important; } .rs-panel[hidden] { display: block !important; } .rs-panel-title { position: static !important; width: auto !important; height: auto !important; clip-path: none !important; }</style></noscript>
+</turbo-frame>
 
-@push('scripts')
-<script>
-    // Alpine state for the receipt form (global function, so it also works after a Turbo visit).
-    window.rsReceiptSettings = (opts) => ({
-        tab: 'pledge', dirty: !!opts.dirty, saving: false, announce: '', counts: {}, panels: {}, len: {}, base: null,
-        get message() { return this.dirty ? 'Unsaved changes' : (this.announce || 'No changes yet'); },
-        snapshot() { const d = new FormData(this.$root); d.delete('_token'); return new URLSearchParams(d).toString(); },
-        init() {
-            const names = ['pledge', 'payment'];
-            let want = location.hash.slice(1);
-            if (!names.includes(want)) { try { want = sessionStorage.getItem('rs-tab'); } catch (e) { want = null; } }
-            this.tab = names.includes(want) ? want : 'pledge';
-            this.$root.classList.add('rs-tabbed');
-            this.recount();
-            this.base = opts.dirty ? null : this.snapshot();
-            if (opts.saved) setTimeout(() => { this.announce = opts.saved; }, 300); // set after load so the status region is announced
-        },
-        setTab(t) {
-            this.tab = t;
-            try { sessionStorage.setItem('rs-tab', t); history.replaceState(history.state, '', '#' + t); } catch (e) {}
-        },
-        move(step) { const n = ['pledge', 'payment']; const t = n[(n.indexOf(this.tab) + step + n.length) % n.length]; this.setTab(t); this.$nextTick(() => document.getElementById('rs-tab-' + t).focus()); },
-        recount() {
-            const counts = {}, panels = {}, len = {};
-            this.$root.querySelectorAll('[data-rs-group]').forEach((g) => {
-                const boxes = [...g.querySelectorAll('input[name="show[]"]')];
-                counts[g.dataset.rsGroup] = { on: boxes.filter((b) => b.checked).length, total: boxes.length };
-            });
-            this.$root.querySelectorAll('[data-rs-panel]').forEach((p) => {
-                const boxes = [...p.querySelectorAll('input[name="show[]"]')];
-                panels[p.dataset.rsPanel] = { on: boxes.filter((b) => b.checked).length, total: boxes.length };
-            });
-            this.$root.querySelectorAll('[data-rs-len]').forEach((t) => { len[t.dataset.rsLen] = t.value.length; });
-            this.counts = counts; this.panels = panels; this.len = len;
-        },
-        countText(id) { const c = this.counts[id]; return c ? c.on + ' of ' + c.total + ' shown' : ''; },
-        panelText(id) { const c = this.panels[id]; return c ? c.on + ' of ' + c.total + ' fields printed' : ''; },
-        allOn(id) { const c = this.counts[id]; return !!c && c.on === c.total; },
-        master(id) {
-            const turnOn = !this.allOn(id);
-            this.$root.querySelectorAll('[data-rs-group="' + id + '"] input[name="show[]"]').forEach((b) => { b.checked = turnOn; });
-            this.touch();
-        },
-        touch() { this.recount(); this.dirty = this.base === null ? true : this.snapshot() !== this.base; },
-        discard() { this.$root.reset(); this.base = this.snapshot(); this.announce = ''; this.recount(); this.dirty = false; },
-    });
-</script>
-@endpush
 </x-dhiran-layout>

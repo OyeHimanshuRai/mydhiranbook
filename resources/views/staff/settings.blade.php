@@ -1,5 +1,4 @@
-<x-dhiran-layout title="Users & roles" footer>
-@vite('resources/css/dhiran-settings.css')
+<x-dhiran-layout title="Users & roles" settings footer>
 <x-dhiran.page-header>
     <x-dhiran.settings-nav active="users" as="title" />
 </x-dhiran.page-header>
@@ -23,6 +22,7 @@
     $savedRole = $roles->first(fn ($r) => session('success') === "Permissions for {$r->display_name} updated successfully.");
     $initialRole = ($roles->firstWhere('id', $requestedRole) ?? $savedRole ?? $firstEditable)?->id;
 @endphp
+<turbo-frame id="settings-pane" data-turbo-action="advance">
 <div class="content-inner">
 <x-dhiran.settings-nav active="users" switcher />
 <x-settings.live />
@@ -39,13 +39,11 @@
              e.preventDefault(); tabs[j].focus({ preventScroll: true }); tabs[j].click();
          }
      }">
-    {{-- Without JavaScript the tabs are plain links (the server renders the chosen tab); with it they are buttons that switch panels in place. --}}
-    <noscript><style>.st-tablist { display: none; }</style>
-        <nav class="st-tabs" aria-label="Users and roles views">
+    {{-- Without JavaScript (media query, not <noscript>, so a Turbo swap cannot show it) the tabs are plain links (the server renders the chosen tab); with it they are buttons that switch panels in place. --}}
+    <nav class="st-tabs st-nojs" aria-label="Users and roles views">
             <a class="st-tab" href="{{ route('settings.edit', ['tab' => 'staff']) }}">Staff</a>
             @can('settings.edit')<a class="st-tab" href="{{ route('settings.edit', ['tab' => 'roles']) }}">Roles &amp; permissions</a>@endcan
         </nav>
-    </noscript>
     <div class="st-tabs st-tablist" role="tablist" aria-label="Users and roles" @keydown="nav($event)">
         <button type="button" class="st-tab" role="tab" id="tab-staff" aria-controls="pane-staff" aria-selected="{{ $activeTab === 'staff' ? 'true' : 'false' }}" tabindex="{{ $activeTab === 'staff' ? 0 : -1 }}"
                 :aria-selected="tab === 'staff'" :tabindex="tab === 'staff' ? 0 : -1" @click="show('staff')">Staff</button>
@@ -221,4 +219,5 @@
     </section>
 </div>
 </div>
+</turbo-frame>
 </x-dhiran-layout>

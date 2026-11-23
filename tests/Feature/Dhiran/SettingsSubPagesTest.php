@@ -243,7 +243,7 @@ class SettingsSubPagesTest extends TestCase
             $this->assertMatchesRegularExpression('/<button type="button" class="st-tab" role="tab" id="tab-roles" aria-controls="pane-roles" aria-selected="' . $rolesSel . '"/', $html, $tab);
             $this->assertStringContainsString('role="tablist"', $html);
             // no <a> tab links in the JS path (the plain links live in <noscript>)
-            $js = preg_replace('/<noscript>.*?<\/noscript>/s', '', $html);
+            $js = preg_replace('/<nav class="st-tabs st-nojs".*?<\/nav>/s', '', $html);
             $this->assertDoesNotMatchRegularExpression('/<a [^>]*class="st-tab"/', $js);
             $this->assertStringContainsString('id="pane-staff" role="tabpanel"', $html);
             $this->assertStringContainsString('id="pane-roles" role="tabpanel"', $html);
@@ -257,5 +257,33 @@ class SettingsSubPagesTest extends TestCase
         $this->assertMatchesRegularExpression('/id="role-tab-' . $role->id . '"[^>]*aria-selected="true"/', $html);
         preg_match_all('/<form [^>]*role="tabpanel"[^>]*>/', $html, $forms);
         $this->assertCount(1, array_filter($forms[0], fn ($tag) => ! str_contains($tag, ' inert')), 'exactly one role form is live');
+    }
+
+    /** The four settings pages swap inside one Turbo frame: same frame id on all, the shared stylesheet is in every head, and each still answers as a whole page. */
+    public function test_settings_pages_share_one_frame_and_stylesheet_and_stand_alone(): void
+    {
+        $owner = $this->owner($this->shop());
+        foreach (['/dhiran/settings', '/dhiran/settings/receipt', '/settings?tab=staff', '/subscription/status'] as $path) {
+            $html = $this->page($owner, $path)->assertOk()->getContent();
+            $this->assertStringStartsWith('<!DOCTYPE html>', ltrim($html), $path);
+            preg_match('/<head>.*?<\/head>/s', $html, $head);
+            $this->assertMatchesRegularExpression('/<link rel="stylesheet" href="[^"]*dhiran-settings-[^"]+\.css"/', $head[0] ?? '', "$path: settings css in the head, not injected later");
+            $this->assertSame(1, substr_count($html, '<turbo-frame id="settings-pane" data-turbo-action="advance">'), $path);
+            // the pane carries the section links, so aria-current moves with the pane; the shell (rail, header band) is outside it
+            preg_match('/<turbo-frame id="settings-pane".*?<\/turbo-frame>/s', $html, $frame);
+            $this->assertStringContainsString('class="dh-subnav"', $frame[0], $path);
+            $this->assertStringNotContainsString('class="dh-sidebar"', $frame[0], $path);
+            $this->assertStringContainsString('class="dh-sidebar"', $html, "$path: standalone page keeps its own rail");
+            $this->assertStringContainsString('class="dh-page-header', $html, $path);
+            $this->assertStringContainsString('</html>', $html, $path);
+            $this->assertStringNotContainsString('<noscript><style>', $html, "$path: a style inside noscript turns live when a frame is swapped in");
+        }
+        // the receipt form's Alpine state ships with the app, not as a page script a frame swap would miss
+        $receipt = $this->page($owner, '/dhiran/settings/receipt')->assertOk()->getContent();
+        $this->assertStringNotContainsString('window.rsReceiptSettings =', $receipt);
+        $this->assertStringContainsString('x-data="rsReceiptSettings(', $receipt);
+        // links that leave the pane are told to break out of the frame, so they never hit "content missing"
+        $loan = $this->page($owner, '/dhiran/settings')->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/<a href="[^"]*\/dhiran\/loans" class="btn btn-secondary btn-sm" data-turbo-frame="_top">Cancel/', $loan);
     }
 }

@@ -4,7 +4,7 @@
 <div class="st-savebar">
     <p class="st-savestate" role="status" aria-live="polite"><span x-show="dirty" x-cloak><x-icon name="circle-alert" size="16" /> Unsaved changes</span></p>
     <div class="st-saveacts">
-        @if($cancelHref)<a href="{{ $cancelHref }}" class="btn btn-secondary btn-sm">{{ $cancelLabel }}</a>@endif
+        @if($cancelHref)<a href="{{ $cancelHref }}" class="btn btn-secondary btn-sm" data-turbo-frame="_top">{{ $cancelLabel }}</a>@endif
         <button type="submit" class="btn btn-dark btn-sm" :disabled="saving" data-busy="Saving...">
             <x-icon :name="$icon" size="16" /> <span x-text="saving ? 'Saving...' : @js($label)">{{ $label }}</span>
         </button>

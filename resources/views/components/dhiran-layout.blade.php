@@ -1,4 +1,4 @@
-@props(['title' => null, 'list' => false, 'footer' => false])
+@props(['title' => null, 'list' => false, 'footer' => false, 'settings' => false])
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dh-html">
 <head>
@@ -11,6 +11,8 @@
     @include('partials.favicon')
 
     @vite(['resources/css/app.css', 'resources/css/dhiran.css', 'resources/js/app.js'])
+    {{-- The four settings pages swap inside one Turbo frame, so their shared stylesheet is in the head of every one of them: no late style injection. --}}
+    @if($settings)@vite(['resources/css/dhiran-settings.css'])@endif
 
     {{-- Dhiran shell — a dedicated, Dhiran-only navigation surface. Only
          pledge-loan navigation appears here. --}}

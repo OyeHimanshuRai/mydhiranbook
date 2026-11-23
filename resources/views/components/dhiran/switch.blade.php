@@ -1,10 +1,7 @@
 @props(['name' => null, 'value' => null, 'label', 'hint' => null, 'checked' => false, 'locked' => false, 'id'])
-{{-- Reusable on/off switch row (CSS: ui-switch in dhiran-receipt-settings.css). The whole row is the tap target.
+{{-- Reusable on/off switch row (CSS: ui-switch in dhiran-receipt-settings.css, loaded by dhiran-settings.css in the layout head). The whole row is the tap target.
      <x-dhiran.switch id="x" name="show[]" value="a.b" label="Shop name" hint="One line in plain words" :checked="true" />
      `locked`: always on, cannot be changed, no name so it is never posted; stays focusable and is announced as unavailable. --}}
-@once
-    @vite(['resources/css/dhiran-receipt-settings.css'])
-@endonce
 <label class="ui-switch-row{{ $locked ? ' is-locked' : '' }}" for="{{ $id }}">
     <span class="ui-switch-text">
         <span class="ui-switch-label" id="{{ $id }}-l">{{ $label }}</span>
