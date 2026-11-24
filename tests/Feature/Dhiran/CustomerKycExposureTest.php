@@ -71,7 +71,7 @@ class CustomerKycExposureTest extends TestCase
         $this->assertStringNotContainsString('ID-SECRET-77', $html);
     }
 
-    public function test_kyc_endpoint_returns_only_pan_and_id_for_own_shop(): void
+    public function test_kyc_endpoint_returns_only_pan_id_and_an_id_proof_flag_for_own_shop(): void
     {
         $shop = $this->shop();
         $user = $this->userWith($shop, ['dhiran.view', 'dhiran.create']);
@@ -79,7 +79,7 @@ class CustomerKycExposureTest extends TestCase
 
         $this->visit($user, "/dhiran/borrowers/{$c->id}/kyc")
             ->assertOk()
-            ->assertExactJson(['pan' => 'QWERT9876Z', 'id_number' => 'ID-SECRET-77'])
+            ->assertExactJson(['pan' => 'QWERT9876Z', 'id_number' => 'ID-SECRET-77', 'has_id_proof' => false]) // the flag says only whether a proof exists, never its content
             ->assertHeader('Cache-Control', 'no-store, private');
     }
 

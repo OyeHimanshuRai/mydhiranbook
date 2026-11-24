@@ -202,9 +202,9 @@ class DhiranService
                 $netMetalWeight = max(0.0, $grossWeight - $stoneWeight);
 
                 if ($valueMode === 'appraised') {
-                    // No fine-weight math; the appraised market value is authoritative.
+                    // The typed market value is authoritative, but gold/silver still get their fine weight (net x purity); 'other' has none.
                     $purity      = $isOther ? 0.0 : (float) ($item['purity'] ?? 0);
-                    $fineWeight  = 0.0;
+                    $fineWeight  = $isOther ? 0.0 : $netMetalWeight * (\App\Services\MetalRegistry::fineWeightMultiplier($pledgeMetal, $purity) ?? 0.0);
                     $marketValue = round((float) ($item['market_value'] ?? 0), 2);
                     if ($marketValue <= 0) {
                         throw new \LogicException('An appraised market value is required for manually-valued collateral.');

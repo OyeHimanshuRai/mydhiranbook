@@ -192,6 +192,44 @@ class DhiranMetalPurityTest extends TestCase
         $this->assertEqualsWithDelta(0, (float) $item->fine_weight, 0.0001); // no metal fine weight
     }
 
+    // Appraised gold / silver: the typed value stays, net and fine weight are still worked out; loan value math is unchanged.
+    public function test_appraised_gold_and_silver_store_net_and_fine_weight_and_keep_the_typed_value(): void
+    {
+        [$shop, $owner] = $this->dhiranShop('9390003020');
+        $c = $this->customer($shop, '9812230020');
+        $this->submitLoan($owner, [
+            ['metal_type' => 'gold', 'value_mode' => 'appraised', 'market_value' => 70000, 'purity' => 22, 'gross_weight' => 12.5, 'stone_weight' => 0.5, 'description' => 'Antique necklace'],
+            ['metal_type' => 'silver', 'value_mode' => 'appraised', 'market_value' => 3000, 'purity' => 925, 'gross_weight' => 100, 'stone_weight' => 2.5, 'description' => 'Silver tray'],
+            ['metal_type' => 'other', 'value_mode' => 'appraised', 'market_value' => 20000, 'gross_weight' => 4, 'stone_weight' => 1, 'description' => 'Diamond ring'],
+        ], $c, 20000)->assertRedirect();
+        $loan = $this->latestLoan($shop);
+        $this->assertNotNull($loan);
+        $items = TenantContext::runFor($shop->id, fn () => $loan->items()->orderBy('id')->get());
+        [$gold, $silver, $other] = [$items[0], $items[1], $items[2]];
+
+        $this->assertEqualsWithDelta(12.0, (float) $gold->net_metal_weight, 1e-6);
+        $this->assertEqualsWithDelta(11.0, (float) $gold->fine_weight, 1e-6);          // 12 x 22/24
+        $this->assertEqualsWithDelta(70000, (float) $gold->market_value, 0.001);       // typed, not rate x fine
+        $this->assertEqualsWithDelta(97.5, (float) $silver->net_metal_weight, 1e-6);
+        $this->assertEqualsWithDelta(90.1875, (float) $silver->fine_weight, 1e-6);     // 97.5 x 925/1000
+        $this->assertEqualsWithDelta(3000, (float) $silver->market_value, 0.001);
+        $this->assertEqualsWithDelta(3.0, (float) $other->net_metal_weight, 1e-6);     // other: net kept
+        $this->assertEqualsWithDelta(0.0, (float) $other->fine_weight, 1e-6);          // but no fine weight
+        $this->assertEqualsWithDelta(20000, (float) $other->market_value, 0.001);
+        $this->assertEqualsWithDelta(11.0 + 90.1875, (float) $loan->fresh()->total_fine_weight, 1e-5);
+        $this->assertEqualsWithDelta(93000, (float) $loan->fresh()->total_collateral_value, 0.01);
+    }
+
+    public function test_appraised_item_with_stone_above_gross_is_refused(): void
+    {
+        [$shop, $owner] = $this->dhiranShop('9390003021');
+        $c = $this->customer($shop, '9812230021');
+        $this->submitLoan($owner, [[
+            'metal_type' => 'gold', 'value_mode' => 'appraised', 'market_value' => 70000, 'purity' => 22, 'gross_weight' => 5, 'stone_weight' => 6, 'description' => 'Bad weights',
+        ]], $c, 20000)->assertSessionHasErrors('items.0.stone_weight');
+        $this->assertNull($this->latestLoan($shop));
+    }
+
     // 'Other' without an appraised value is rejected.
     public function test_other_without_value_rejected(): void
     {

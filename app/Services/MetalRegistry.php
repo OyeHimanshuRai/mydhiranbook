@@ -298,10 +298,60 @@ final class MetalRegistry
 
         // out-of-range purity (above 24k / 1000 fineness, or not positive) has no fine weight: callers refuse it
         return match (true) {
-            $normalized === 'gold' && $purity > 0 && $purity <= 24      => $purity / 24.0,
+            $normalized === 'gold' && $purity > 0 && $purity <= 24      => self::goldFineness($purity),
             $normalized === 'silver' && $purity > 0 && $purity <= 1000  => $purity / 1000.0,
             default => null,
         };
+    }
+
+    /**
+     * Pure-gold share of a karat. THE one place the gold formula lives (the New Loan page's JavaScript mirrors it
+     * through purityPresetTable() for the standard karats): karat / 24, so 22K = 91.667 %. A hallmark-based rule
+     * (916 = 91.6 %) would change only this line.
+     */
+    public static function goldFineness(float $karat): float
+    {
+        return $karat / 24.0;
+    }
+
+    /**
+     * Standard purities of a pledged item: stored purity => hallmark fineness. Gold is stored as the karat number,
+     * silver as its millesimal fineness (unchanged, so existing loans stay valid).
+     */
+    public const PURITY_PRESETS = [
+        'gold'   => [24 => 999, 23 => 958, 22 => 916, 21 => 875, 20 => 833, 18 => 750, 14 => 585, 9 => 375],
+        'silver' => [999 => 999, 970 => 970, 925 => 925, 900 => 900, 835 => 835, 800 => 800],
+    ];
+
+    /** The picker as the page needs it: per metal, value / label / the server's own multiplier. */
+    public static function purityPresetTable(): array
+    {
+        $table = [];
+        foreach (self::PURITY_PRESETS as $metal => $presets) {
+            foreach ($presets as $purity => $fineness) {
+                $table[$metal][] = [
+                    'value'      => $purity,
+                    'label'      => $metal === 'gold' ? "{$purity}K ({$fineness})" : (string) $purity,
+                    'multiplier' => self::fineWeightMultiplier($metal, (float) $purity),
+                ];
+            }
+        }
+
+        return $table;
+    }
+
+    /** Whether an item's purity (any entry, standard or "Other") is acceptable: gold 1-24 karat, silver 100-999.99, at most 2 decimals (the column). */
+    public static function purityInRange(string $metal, float $purity): bool
+    {
+        $range = ['gold' => [1.0, 24.0], 'silver' => [100.0, 999.99]][$metal] ?? null;
+
+        return $range !== null && $purity >= $range[0] && $purity <= $range[1] && abs(round($purity, 2) - $purity) < 1e-9;
+    }
+
+    /** Net metal weight = gross - stone, never negative, to the 6 places it is stored with. */
+    public static function netWeight(float $gross, float $stone): float
+    {
+        return round(max(0.0, $gross - $stone), 6);
     }
 
     /**

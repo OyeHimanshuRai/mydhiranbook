@@ -4,7 +4,10 @@ import flatpickr from 'flatpickr';
 
 import Alpine from 'alpinejs';
 import { registerHistoricalManual } from './historical-manual';
-import { initializeCustomerPhotos } from './customer-photo';
+import { initializeCustomerPhotos, PhotoCamera, cameraError } from './customer-photo';
+// the New Loan item photos reuse the same live-camera helper
+window.PhotoCamera = PhotoCamera;
+window.cameraError = cameraError;
 import { showFlashes, toastSettings } from './toast';
 import { initializeChallanShare } from './repair-challan-share';
 import { initializeRowActionLabels } from './table-row-actions';

@@ -23,7 +23,7 @@
     @endphp
 
     <div class="content-inner">
-        <form method="POST" action="{{ route('dhiran.customers.store') }}" id="bc-form" class="fm-page fm-page--narrow"
+        <form method="POST" action="{{ route('dhiran.customers.store') }}" enctype="multipart/form-data" id="bc-form" class="fm-page fm-page--narrow"
               x-data="{ busy: false }" @submit="busy = !$event.defaultPrevented" @pageshow.window="busy = false" @turbo:submit-end="if (!$event.detail.success) busy = false">
             @csrf
             @if($errors->any())
@@ -48,6 +48,9 @@
                     </div>
                 </header>
                 <div class="fm-card-body">
+                    @can('dhiran.create')
+                        <x-customer-photo mode="form" />
+                    @endcan
                     <div class="fm-grid">
                         @foreach($fields as [$f, $label, $type, $req, $max, $extra])
                             <div class="fm-field">

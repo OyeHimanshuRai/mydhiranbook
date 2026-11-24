@@ -231,3 +231,12 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
 .dh-app .fm-card-head .fm-head-switch { margin: 0 0 0 auto; padding: 0; border: 0; flex: none; align-items: center; gap: var(--sp-3); width: auto; min-height: 0; }
 .dh-app .fm-card-head .fm-head-switch .ui-switch-label { font-size: var(--fl-fs-cell); text-align: right; }
 .dh-app .fm-card-head .fm-head-switch:not(.is-locked):hover { background: none; box-shadow: none; } /* the settings lists tint a hovered row; the header switch stays flat */
+
+/* A photo of a pledged item, on the item card: thumbnail, add/change, remove. */
+.dh-app .fm-photo-row { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.dh-app .fm-photo-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: var(--kh-radius); border: 1px solid var(--kh-field-edge); background: var(--dh-muted-surface); }
+.dh-app .fm-photo-btn { position: relative; cursor: pointer; }
+.dh-app .fm-photo-btn:focus-within { outline: 2px solid var(--dh-focus); outline-offset: 2px; }
+
+.dh-app .fm-photo-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; font-size: 0; }
+.dh-app .fm-cam-video { display: block; width: 100%; max-height: 60vh; background: #000; border-radius: var(--kh-radius); object-fit: contain; }

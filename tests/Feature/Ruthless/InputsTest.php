@@ -1008,7 +1008,7 @@ class InputsTest extends TestCase
             'tenure 61'               => [['tenure_months' => '61']],
             'unknown interest type'   => [['interest_type' => 'weird']],
             'unknown metal'           => [['metal' => 'platinum']],
-            'unsupported purity'      => [['purity' => '23']],
+            'unsupported purity'      => [['purity' => '25']],
             'no weight'               => [['gross_weight_g' => '0']],
             'no rate'                 => [['rate_per_gram' => '']],
             'bad mobile'              => [['mobile' => '12345']],

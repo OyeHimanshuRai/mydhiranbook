@@ -33,7 +33,7 @@
          @turbo:before-cache.window="document.body.classList.remove('dh-modal-open')"
          @pageshow.window="submitting = false">
 
-        <form method="POST" action="{{ route('dhiran.store') }}" id="fm-form" class="fm-page dhiran-create-form" @submit="prepareSubmit($event)" @turbo:submit-end="if (!$event.detail.success) submitting = false" data-turbo-frame="_top">
+        <form method="POST" action="{{ route('dhiran.store') }}" enctype="multipart/form-data" id="fm-form" class="fm-page dhiran-create-form" @submit="prepareSubmit($event)" @turbo:submit-end="if (!$event.detail.success) submitting = false" data-turbo-frame="_top">
             @csrf <x-dhiran.once />
 
             @if($errors->any())
@@ -108,6 +108,7 @@
                         </dl>
                     </div>
                     <p class="fm-note" x-show="!selectedCustomer" x-cloak>No borrower chosen yet. Their details will show here.</p>
+                    <p class="fm-alert fm-alert--inline" role="status" x-show="borrowerNote" x-cloak><x-icon name="circle-alert" size="20" /><span x-text="borrowerNote"></span></p>
                 </div>
             </section>
 
@@ -155,16 +156,21 @@
                                 </div>
 
                                 {{-- Metal-mode fields (gold/silver, auto valuation) --}}
-                                <template x-if="item.metal_type !== 'other' && item.value_mode !== 'appraised'">
+                                <template x-if="item.metal_type !== 'other'">
                                     <div class="fm-field">
                                         <label class="fm-label" :for="'it-purity-' + index">Purity</label>
-                                        <select :id="'it-purity-' + index" :name="'items['+index+'][purity]'" x-model.number="item.purity" class="fm-control" @change="recalcItem(index)">
-                                            <option value="">Select</option>
+                                        {{-- Standard purities (from MetalRegistry) or Other = type any value. The posted purity is the hidden field: gold = karat, silver = fineness. --}}
+                                        <select :id="'it-purity-' + index" class="fm-control" @change="pickPurity(index, $event.target.value)">
                                             <template x-for="opt in purityOptions(item.metal_type)" :key="opt.value">
-                                                {{-- :selected — the options draw after x-model sets the value, so it showed "Select". --}}
-                                                <option :value="opt.value" x-text="opt.label" :selected="Number(opt.value) === Number(item.purity)"></option>
+                                                {{-- :selected — the options draw after the value is set, so a plain value showed the first option. --}}
+                                                <option :value="String(opt.value)" x-text="opt.label" :selected="String(opt.value) === item.purityPick"></option>
                                             </template>
+                                            <option value="other" :selected="item.purityPick === 'other'">Other</option>
                                         </select>
+                                        <input type="hidden" :name="'items['+index+'][purity]'" :value="item.purity">
+                                        <input type="number" inputmode="decimal" step="0.01" min="0" :id="'it-purity-custom-' + index" x-model.number="item.purity" x-show="item.purityPick === 'other'" x-cloak
+                                               class="fm-control" :placeholder="item.metal_type === 'silver' ? 'e.g. 925.5' : 'e.g. 22.5'" :aria-label="'Purity, ' + (item.metal_type === 'silver' ? 'fineness' : 'karat')" @input="recalcItem(index)" @focus="$event.target.select()">
+                                        <p class="fm-note" aria-live="polite" x-text="purityNote(item)"></p>
                                     </div>
                                 </template>
                                 <template x-if="item.metal_type !== 'other' && item.value_mode !== 'appraised'">
@@ -187,7 +193,7 @@
                                     </div>
                                 </div>
 
-                                <div class="fm-wide fm-grid fm-grid--pair" x-show="item.metal_type !== 'other'">
+                                <div class="fm-wide fm-grid fm-grid--pair" style="align-items:end"> {{-- end-aligned: a wrapped label must not push its input down --}}
                                 <div class="fm-field">
                                     <label class="fm-label" :for="'it-gross-' + index">Gross weight</label>
                                     <div class="fm-affix">
@@ -197,7 +203,7 @@
                                     </div>
                                 </div>
                                 <div class="fm-field">
-                                    <label class="fm-label" :for="'it-stone-' + index">Stone weight</label>
+                                    <label class="fm-label" :for="'it-stone-' + index">Stone / other weight</label>
                                     <div class="fm-affix">
                                         <input type="number" inputmode="decimal" step="0.001" min="0" :id="'it-stone-' + index" :name="'items['+index+'][stone_weight]'" x-model.number="item.stone_weight"
                                                placeholder="0.000" class="fm-control" @input="recalcItem(index)" @focus="$event.target.select()">
@@ -205,6 +211,12 @@
                                     </div>
                                 </div>
                                 </div>
+                                <p class="fm-error fm-wide" role="alert" x-show="stoneTooHeavy(item)" x-cloak><x-icon name="circle-alert" size="16" /><span>Stone weight must be less than the gross weight.</span></p>
+                                {{-- Net = gross - stone; fine (pure metal) = net x purity (gold / silver only). Worked out as you type, same rule as the server, whether the value is melt or appraised. --}}
+                                <dl class="fm-readout fm-wide" aria-live="polite">
+                                    <div><dt>Net weight</dt><dd x-text="item.net_metal_weight.toFixed(3) + ' g'"></dd></div>
+                                    <div x-show="item.metal_type !== 'other'"><dt>Fine (pure metal) weight</dt><dd x-text="item.fine_weight.toFixed(3) + ' g'"></dd></div>
+                                </dl>
                                 <div class="fm-field fm-wide">
                                     <label class="fm-label" :for="'it-huid-' + index">HUID</label>
                                     <input type="text" :id="'it-huid-' + index" :name="'items['+index+'][huid]'" x-model="item.huid"
@@ -212,10 +224,29 @@
                                 </div>
                             </div>
 
+                            {{-- A photo of this item, saved with the loan (item_photo evidence): activation then needs no second trip. --}}
+                            <div class="fm-field fm-wide">
+                                <span class="fm-label">Photo of this item</span>
+                                <div class="fm-photo-row">
+                                    <img class="fm-photo-thumb" :src="item.photoUrl" alt="" x-show="item.photoUrl" x-cloak>
+                                    {{-- The file input covers the whole button (invisible), so a tap or click reaches it directly in every browser. --}}
+                                    <span class="btn btn-secondary fm-photo-btn">
+                                        <x-icon name="upload" size="16" /><span x-text="item.photoFile ? 'Change photo' : 'Add photo'">Add photo</span>
+                                        <input type="file" accept="image/jpeg,image/png" class="fm-photo-input" @change="pickItemPhoto(index, $event)" :aria-label="(item.photoFile ? 'Change photo of item ' : 'Add photo of item ') + (index + 1)">
+                                    </span>
+                                    {{-- Live camera with a preview (laptop webcam, tablet or phone); Add photo stays for a file or the gallery. --}}
+                                    <button type="button" class="btn btn-secondary" @click="openCamera(index)" :aria-label="'Take a photo of item ' + (index + 1) + ' with the camera'">
+                                        <x-icon name="camera" size="16" /> Take photo
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" x-show="item.photoFile" x-cloak @click="clearItemPhoto(index)" :aria-label="'Remove photo of item ' + (index + 1)"><x-icon name="trash-2" size="16" /></button>
+                                </div>
+                                <p class="fm-error" role="alert" x-show="item.photoError" x-cloak><x-icon name="circle-alert" size="16" /><span x-text="item.photoError"></span></p>
+                                {{-- The file that is posted: filled from the item's own photo at submit, so removing or reordering items can never mismatch a photo. --}}
+                                <input type="file" class="fm-sr" tabindex="-1" aria-hidden="true" :id="'it-photo-submit-' + index" :name="'items['+index+'][photo]'">
+                            </div>
+
                             {{-- What the item is worth, worked out as you type. --}}
                             <dl class="fm-readout" aria-live="polite">
-                                <div x-show="item.metal_type !== 'other' && item.value_mode !== 'appraised'"><dt>Net metal weight</dt><dd x-text="item.net_metal_weight.toFixed(3) + ' g'"></dd></div>
-                                <div x-show="item.metal_type !== 'other' && item.value_mode !== 'appraised'"><dt>Fine weight</dt><dd x-text="item.fine_weight.toFixed(3) + ' g'"></dd></div>
                                 <div><dt>Market value</dt><dd x-text="'{{ $sym }}' + money(item.market_value)"></dd></div>
                                 <div><dt>Loan value</dt><dd x-text="'{{ $sym }}' + money(item.loan_value)"></dd></div>
                             </dl>
@@ -408,7 +439,7 @@
                     <span class="fm-num" aria-hidden="true">4</span>
                     <div>
                         <h2 class="fm-title" id="fm-h-kyc">KYC &amp; notes</h2>
-                        <p class="fm-desc">PAN and ID come from the borrower's saved profile.</p>
+                        <p class="fm-desc">PAN and ID number come from the borrower's saved profile. Add the ID proof photo here.</p>
                     </div>
                 </header>
                 <div class="fm-card-body">
@@ -424,6 +455,22 @@
                     @error('aadhaar')
                         <p class="fm-error" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
                     @enderror
+                    {{-- The borrower's ID proof, saved to the borrower: the last thing activation needs after the item photo. --}}
+                    <div class="fm-grid">
+                        <div class="fm-field">
+                            <label for="id_proof_front" class="fm-label">ID proof, front</label>
+                            <input type="file" name="id_proof_front" id="id_proof_front" accept="image/jpeg,image/png,application/pdf" class="fm-control" @change="checkIdProof($event)">
+                        </div>
+                        <div class="fm-field">
+                            <label for="id_proof_back" class="fm-label">ID proof, back</label>
+                            <input type="file" name="id_proof_back" id="id_proof_back" accept="image/jpeg,image/png,application/pdf" class="fm-control" @change="checkIdProof($event)">
+                        </div>
+                    </div>
+                    <p class="fm-note" x-show="selectedCustomer && selectedCustomer.hasIdProof" x-cloak>This borrower already has an ID proof saved. Add one here only if it has changed.</p>
+                    <p class="fm-note">JPG, PNG or PDF, up to 8 MB each. Saved to the borrower's profile.</p>
+                    <p class="fm-error" role="alert" x-show="idProofError" x-cloak><x-icon name="circle-alert" size="16" /><span x-text="idProofError"></span></p>
+                    @error('id_proof_front')<p class="fm-error" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>@enderror
+                    @error('id_proof_back')<p class="fm-error" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>@enderror
                     <div class="fm-field">
                         <label for="notes" class="fm-label">Notes</label>
                         <textarea name="notes" id="notes" rows="3" placeholder="Anything else to remember about this loan" class="fm-control">{{ old('notes') }}</textarea>
@@ -447,6 +494,28 @@
             </div>
         </form>
 
+        {{-- Live camera for an item photo. Esc or Close stops the camera; the shot becomes the item's photo straight away. --}}
+        <dialog class="fm-dialog fm-cam" x-ref="camDialog" aria-labelledby="fm-cam-title" @cancel.prevent="closeCamera()" @click.self="closeCamera()">
+            <div class="fm-dialog-card">
+                <div class="fm-dialog-head">
+                    <div>
+                        <h2 id="fm-cam-title" x-text="camIndex === null ? 'Take photo' : 'Photo of item ' + (camIndex + 1)">Take photo</h2>
+                        <p>Hold the item in view, then take the photo.</p>
+                    </div>
+                    <button type="button" class="btn btn-secondary fm-dialog-x" @click="closeCamera()" title="Close"><x-icon name="x" size="18" /><span class="fm-sr">Close</span></button>
+                </div>
+                <div class="fm-dialog-body">
+                    <p class="fm-alert fm-alert--inline" role="alert" x-show="camError" x-cloak><x-icon name="circle-alert" size="20" /><span x-text="camError"></span></p>
+                    <video class="fm-cam-video" x-ref="camVideo" playsinline muted autoplay aria-label="Live camera preview"></video>
+                </div>
+                <div class="fm-dialog-foot">
+                    <button type="button" class="btn btn-secondary" x-show="camCanSwitch" x-cloak @click="switchCamera()"><x-icon name="switch-camera" size="16" /> Switch camera</button>
+                    <button type="button" class="btn btn-secondary" @click="closeCamera()">Cancel</button>
+                    <button type="button" class="btn btn-primary" @click="captureItemPhoto()"><x-icon name="camera" size="16" /> Take photo</button>
+                </div>
+            </div>
+        </dialog>
+
         {{-- Add new borrower: a full-height sheet on phones, a centred dialog from 768px. The native dialog gives the focus trap, Esc and the scrim. --}}
         <dialog class="fm-dialog" x-ref="nbDialog" aria-labelledby="fm-nb-title"
                 x-effect="newBorrowerOpen ? ($refs.nbDialog.open || $refs.nbDialog.showModal()) : ($refs.nbDialog.open && $refs.nbDialog.close())"
@@ -465,6 +534,9 @@
                 </div>
                 <div class="fm-dialog-body">
                     <p class="fm-alert fm-alert--inline" role="alert" x-show="nbError" x-cloak><x-icon name="circle-alert" size="20" /><span x-text="nbError"></span></p>
+                    @can('dhiran.create')
+                        <x-customer-photo mode="form" />
+                    @endcan
                     <div class="fm-grid">
                         <div class="fm-field">
                             <label class="fm-label" for="nb-first_name">First name <x-req /></label>
@@ -528,6 +600,12 @@
                 selectedCustomer: null,
                 // Add Borrower dialog: one state, 'closed' -> 'open' -> 'saving' -> 'closed' (saved) or 'open' (refused).
                 nbState: 'closed',
+                borrowerNote: '',
+                idProofError: '',
+                checkIdProof(ev) {
+                    const f = ev.target.files && ev.target.files[0];
+                    if (f && f.size > 8 * 1024 * 1024) { this.idProofError = 'That file is over 8 MB. Choose a smaller one.'; ev.target.value = ''; } else { this.idProofError = ''; }
+                },
                 nbError: '',
                 nbField: '',
                 submitting: false,
@@ -559,6 +637,9 @@
                 minLoan: {{ $defaults['min_loan'] ?? 0 }},
                 maxLoan: {{ $defaults['max_loan'] ?? 0 }},
 
+                // Standard purities per metal with the server's own multiplier (MetalRegistry::purityPresetTable).
+                purityTable: {{ Illuminate\Support\Js::from(\App\Services\MetalRegistry::purityPresetTable()) }},
+
                 // After a refused save, the items come back as typed (init() recalculates their values).
                 items: {{ Illuminate\Support\Js::from(collect(old('items') ?: [[]])->values()->map(fn ($i) => [
                     'description' => (string) ($i['description'] ?? ''),
@@ -566,11 +647,12 @@
                     'value_mode' => (string) ($i['value_mode'] ?? 'metal'),
                     'gross_weight' => (float) ($i['gross_weight'] ?? 0),
                     'stone_weight' => (float) ($i['stone_weight'] ?? 0),
-                    'purity' => (float) ($i['purity'] ?? 22),
+                    'purity' => ($i['purity'] ?? '') === '' ? ($i ? '' : 22) : (float) $i['purity'], 'purityPick' => '', // the pick is worked out in init()
                     'rate_per_gram_at_pledge' => (float) ($i['rate_per_gram_at_pledge'] ?? 0),
                     'huid' => (string) ($i['huid'] ?? ''),
                     'net_metal_weight' => 0, 'fine_weight' => 0,
                     'market_value' => (float) ($i['market_value'] ?? 0), 'loan_value' => 0,
+                    'photoFile' => null, 'photoUrl' => '', 'photoError' => '', // a chosen photo cannot be refilled after a refusal: choose again
                 ])) }},
 
                 get totalMarketValue() {
@@ -641,7 +723,10 @@
                 },
 
                 init() {
-                    this.items.forEach((_, i) => this.recalcItem(i));
+                    this.items.forEach((it, i) => {
+                        it.purityPick = this.purityPickFor(it);
+                        this.recalcItem(i);
+                    });
                     // If a borrower was preselected (?customer_id= from the borrower
                     // profile/list), show their name in the picker on load.
                     if (this.preselected) this.selectCustomer(this.preselected, true);
@@ -684,6 +769,19 @@
                     this.nbState = 'open';
                 },
 
+                // The dialog is reused for the next borrower: clear the photo the last one chose.
+                resetBorrowerPhoto() {
+                    const root = this.$refs.nbDialog.querySelector('[data-customer-photo]');
+                    if (!root) return;
+                    const file = root.querySelector('[data-photo-form-file]');
+                    if (file) file.value = '';
+                    root.querySelectorAll('[data-photo-image]').forEach(img => { img.hidden = true; img.removeAttribute('src'); });
+                    root.querySelectorAll('[data-photo-initials]').forEach(el => { el.hidden = false; });
+                    root.querySelectorAll('[data-photo-action="change"], [data-photo-action="remove"]').forEach(b => { b.hidden = true; });
+                    const status = root.querySelector('[data-photo-status]');
+                    if (status) status.textContent = '';
+                },
+
                 closeNewBorrower() {
                     if (this.nbState === 'open') this.nbState = 'closed'; // never mid-save: the answer would land unseen
                 },
@@ -708,6 +806,7 @@
                         if (!this.selectedCustomer || this.selectedCustomer.id !== customer.id) return; // picked someone else meanwhile
                         this.selectedCustomer.pan = kyc.pan || '';
                         this.selectedCustomer.id_number = kyc.id_number || '';
+                        this.selectedCustomer.hasIdProof = !!kyc.has_id_proof;
                     } catch (e) { return; }
                     if (!keepExistingKyc || !this.loanPan) this.loanPan = this.selectedCustomer.pan;
                     if (!keepExistingKyc || !this.loanAadhaar) this.loanAadhaar = this.aadhaarCandidate(this.selectedCustomer);
@@ -729,14 +828,18 @@
                     if (this.nbState !== 'open') return; // one save at a time
                     this.nbState = 'saving';
                     try {
+                        // multipart, so the optional photo (held by the photo component in the dialog) goes with the borrower
+                        const fd = new FormData();
+                        Object.entries(this.nb).forEach(([k, v]) => fd.append(k, v ?? ''));
+                        const photo = this.$refs.nbDialog.querySelector('[data-photo-form-file]')?.files?.[0];
+                        if (photo) fd.append('customer_photo', photo);
                         const res = await fetch('{{ route('dhiran.customers.store') }}', {
                             method: 'POST',
                             headers: {
-                                'Content-Type': 'application/json',
                                 'Accept': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                             },
-                            body: JSON.stringify(this.nb),
+                            body: fd,
                         });
                         const out = await res.json().catch(() => ({}));
                         if (!res.ok || !out.ok) {
@@ -755,8 +858,10 @@
                         };
 
                         this.selectCustomer(savedCustomer);
+                        this.borrowerNote = out.photo_error ? 'Borrower saved, but the photo was not: ' + out.photo_error + ' Add it from the borrower profile.' : '';
                         this.nbState = 'closed';
                         this.nb = { first_name: '', last_name: '', mobile: '', pan: '', id_number: '', state_code: '', address: '' };
+                        this.resetBorrowerPhoto();
                     } catch (e) {
                         this.nbError = 'Network error. Please try again.';
                     } finally {
@@ -766,10 +871,68 @@
 
                 addItem() {
                     this.items.push({
-                        description: '', metal_type: 'gold', value_mode: 'metal', gross_weight: 0, stone_weight: 0, purity: 22,
+                        description: '', metal_type: 'gold', value_mode: 'metal', gross_weight: 0, stone_weight: 0, purity: 22, purityPick: '22',
                         rate_per_gram_at_pledge: 0, huid: '',
-                        net_metal_weight: 0, fine_weight: 0, market_value: 0, loan_value: 0
+                        net_metal_weight: 0, fine_weight: 0, market_value: 0, loan_value: 0,
+                        photoFile: null, photoUrl: '', photoError: ''
                     });
+                },
+
+                // An item's photo is held on the item itself (not in a file input), so it follows the item when others are removed.
+                pickItemPhoto(index, ev) {
+                    const f = ev.target.files && ev.target.files[0];
+                    ev.target.value = '';
+                    this.setItemPhoto(index, f);
+                },
+                setItemPhoto(index, f) {
+                    const item = this.items[index];
+                    if (!f || !item) return;
+                    if (!/^image\/(jpeg|png)$/.test(f.type)) { item.photoError = 'Choose a JPG or PNG photo.'; return; }
+                    if (f.size > 8 * 1024 * 1024) { item.photoError = 'That photo is over 8 MB. Choose a smaller one.'; return; }
+                    if (item.photoUrl) URL.revokeObjectURL(item.photoUrl);
+                    item.photoFile = f; item.photoUrl = URL.createObjectURL(f); item.photoError = '';
+                },
+                // Live camera for an item photo: one shared dialog, the same camera helper as the borrower photo.
+                camIndex: null, camError: '', camCanSwitch: false, cam: null,
+                async openCamera(index) {
+                    this.camIndex = index; this.camError = '';
+                    const dialog = this.$refs.camDialog;
+                    if (!dialog.open) dialog.showModal();
+                    this.cam = this.cam || new window.PhotoCamera(this.$refs.camVideo);
+                    try {
+                        await this.cam.start();
+                        this.camCanSwitch = await this.cam.canSwitch();
+                    } catch (e) {
+                        this.camError = window.cameraError(e);
+                    }
+                },
+                async switchCamera() {
+                    try {
+                        if (await this.cam.switchFacing() === 'unavailable') this.camError = 'The other camera is unavailable, so this one stays on.';
+                    } catch (e) { this.camError = window.cameraError(e); }
+                },
+                captureItemPhoto() {
+                    const v = this.$refs.camVideo;
+                    if (!v.videoWidth || !v.videoHeight) { this.camError = 'Wait for the camera preview, then take the photo.'; return; }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = v.videoWidth; canvas.height = v.videoHeight;
+                    canvas.getContext('2d').drawImage(v, 0, 0);
+                    canvas.toBlob(blob => {
+                        if (!blob) { this.camError = 'Capture failed. Try again, or use Add photo.'; return; }
+                        this.setItemPhoto(this.camIndex, new File([blob], 'item-camera.jpg', { type: 'image/jpeg' }));
+                        this.closeCamera();
+                    }, 'image/jpeg', 0.92);
+                },
+                closeCamera() {
+                    this.cam?.stop();
+                    if (this.$refs.camDialog?.open) this.$refs.camDialog.close();
+                    this.camIndex = null; this.camError = '';
+                },
+
+                clearItemPhoto(index) {
+                    const item = this.items[index];
+                    if (item.photoUrl) URL.revokeObjectURL(item.photoUrl);
+                    item.photoFile = null; item.photoUrl = ''; item.photoError = '';
                 },
 
                 focusItem(index) {
@@ -780,44 +943,69 @@
                     return this.itemErrors[index] || '';
                 },
 
-                // Supported purities per metal (MetalRegistry: gold = karat/24,
-                // silver = millesimal/1000). Display-list only; the backend is
-                // authoritative.
+                // ── Weights and purity. Mirrors App\Services\MetalRegistry (netWeight, fineWeightMultiplier, purityInRange);
+                // the server is the authority and recomputes everything. Gold purity = karat, silver = fineness.
                 purityOptions(metal) {
-                    if (metal === 'silver') {
-                        return [
-                            { value: 999, label: '999' },
-                            { value: 958, label: '958' },
-                            { value: 925, label: '925' },
-                            { value: 900, label: '900' },
-                            { value: 800, label: '800' },
-                        ];
-                    }
-                    return [
-                        { value: 24, label: '24K' },
-                        { value: 22, label: '22K' },
-                        { value: 20, label: '20K' },
-                        { value: 18, label: '18K' },
-                        { value: 14, label: '14K' },
-                    ];
+                    return this.purityTable[metal] || [];
+                },
+                purityPickFor(item) {
+                    if (item.metal_type === 'other') return '';
+                    return this.purityOptions(item.metal_type).some(o => o.value === Number(item.purity)) ? String(Number(item.purity)) : 'other';
+                },
+                purityOk(metal, p) {
+                    const [lo, hi] = metal === 'silver' ? [100, 999.99] : [1, 24];
+                    return p >= lo && p <= hi && Math.abs(Math.round(p * 100) / 100 - p) < 1e-9;
+                },
+                // Share of pure metal. Standard purities use the server's multiplier; "Other" = karat / 24 (gold) or fineness / 1000 (silver).
+                fineMultiplier(metal, purity) {
+                    const p = Number(purity);
+                    const preset = this.purityOptions(metal).find(o => o.value === p);
+                    if (preset) return preset.multiplier;
+                    return this.purityOk(metal, p) ? p / (metal === 'silver' ? 1000 : 24) : 0;
+                },
+                purityNote(item) {
+                    if (item.metal_type === 'other' || item.purity === '' || item.purity === null) return item.purityPick === 'other' ? 'Enter the purity.' : '';
+                    const m = this.fineMultiplier(item.metal_type, item.purity);
+                    if (!m) return item.metal_type === 'silver' ? 'Silver purity is 100 to 999.99.' : 'Gold purity is 1 to 24 karat.';
+                    return (item.metal_type === 'silver' ? item.purity : item.purity + 'K') + ' = ' + (m * 100).toFixed(2) + ' % pure';
+                },
+                // PHP round(x, 6). Identical for every standard purity; a custom fractional purity can differ by 0.000001 g at an exact tie (not shown, the server recomputes).
+                round6(v) {
+                    return Math.round(v * 1e6) / 1e6;
+                },
+                netWeight(item) {
+                    return this.round6(Math.max(0, (Number(item.gross_weight) || 0) - (Number(item.stone_weight) || 0)));
+                },
+                stoneTooHeavy(item) {
+                    return (Number(item.gross_weight) || 0) > 0 && this.netWeight(item) <= 0;
                 },
 
-                // When metal changes, reset a now-invalid purity and recompute.
+                pickPurity(index, value) {
+                    const item = this.items[index];
+                    item.purityPick = value;
+                    item.purity = value === 'other' ? '' : Number(value);
+                    if (value === 'other') this.$nextTick(() => document.getElementById('it-purity-custom-' + index)?.focus());
+                    this.recalcItem(index);
+                },
+
+                // A new metal gets a valid default purity (gold 22K, silver 925), never the old metal's value.
                 onMetalChange(index) {
                     const item = this.items[index];
                     if (item.metal_type === 'other') {
                         // Other = always appraised; clear metal-only fields.
                         item.value_mode = 'appraised';
                         item.purity = '';
+                        item.purityPick = '';
                     } else {
-                        const valid = this.purityOptions(item.metal_type).some(o => o.value === Number(item.purity));
-                        if (!valid) item.purity = '';
+                        item.purity = item.metal_type === 'silver' ? 925 : 22;
+                        item.purityPick = String(item.purity);
                     }
                     this.recalcItem(index);
                 },
 
                 removeItem(index) {
                     if (this.items.length > 1) {
+                        if (this.items[index].photoUrl) URL.revokeObjectURL(this.items[index].photoUrl);
                         this.items.splice(index, 1);
                     }
                 },
@@ -825,26 +1013,24 @@
                 // An item the clerk has typed into is never dropped by a stray tap: ask first.
                 confirmRemove(index) {
                     const i = this.items[index];
-                    const typed = (i.description || '').trim() || i.gross_weight > 0 || i.market_value > 0;
+                    const typed = (i.description || '').trim() || i.gross_weight > 0 || i.market_value > 0 || i.photoFile;
                     if (!typed || window.confirm('Remove item ' + (index + 1) + '?')) this.removeItem(index);
                 },
 
                 recalcItem(index) {
                     let item = this.items[index];
                     const appraised = item.metal_type === 'other' || item.value_mode === 'appraised';
+                    // Net and fine weight are worked out for every item; 'other' has no purity, so no fine weight.
+                    item.net_metal_weight = this.netWeight(item);
+                    // Fine weight is stored to 6 places; the value is worked from the unrounded figure, as the server does.
+                    const fine = item.metal_type === 'other' ? 0 : item.net_metal_weight * this.fineMultiplier(item.metal_type, item.purity);
+                    item.fine_weight = this.round6(fine);
                     if (appraised) {
-                        // Operator-entered market value is authoritative; no metal math.
-                        item.net_metal_weight = 0;
-                        item.fine_weight = 0;
+                        // The typed market value is authoritative.
                         item.market_value = Number(item.market_value) || 0;
                     } else {
-                        item.net_metal_weight = Math.max(0, (item.gross_weight || 0) - (item.stone_weight || 0));
-                        // Metal-aware fine-weight scale: gold = purity/24 (karat),
-                        // silver = purity/1000 (millesimal). Mirrors MetalRegistry.
-                        const divisor = item.metal_type === 'silver' ? 1000 : 24;
-                        item.fine_weight = item.net_metal_weight * (item.purity || 0) / divisor;
                         let rate = item.rate_per_gram_at_pledge || this.goldRateOnDate || 0;
-                        item.market_value = item.fine_weight * rate;
+                        item.market_value = fine * rate;
                     }
                     item.loan_value = item.market_value * (this.ltvPercent / 100);
                 },
@@ -853,6 +1039,14 @@
                     if (this.submitting) { e.preventDefault(); return; } // one tap = one loan; the key below also guards it server-side
                     // Recalculate all items before submit
                     this.items.forEach((_, i) => this.recalcItem(i));
+                    // each item's own photo goes into the file input named for its position, so the server pairs them right
+                    this.items.forEach((it, i) => {
+                        const el = document.getElementById('it-photo-submit-' + i);
+                        if (!el) return;
+                        const dt = new DataTransfer();
+                        if (it.photoFile) dt.items.add(it.photoFile);
+                        el.files = dt.files;
+                    });
                     this.submitting = true;
                 }
             }));

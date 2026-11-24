@@ -100,6 +100,23 @@ class FormsRedesignTest extends TestCase
         $this->assertStringContainsString('<dialog class="fm-dialog"', $html, 'borrower sheet is a native dialog');
     }
 
+    public function test_item_card_shows_weights_purity_choice_and_the_server_preset_table(): void
+    {
+        $html = $this->page('/dhiran/create');
+
+        // Gross, stone, net (read-out), purity with its percent, fine (pure metal) weight read-out.
+        foreach (['>Gross weight<', '>Stone / other weight<', '>Net weight<', '>Fine (pure metal) weight<', '>Purity<'] as $text) {
+            $this->assertStringContainsString($text, $html);
+        }
+        $this->assertMatchesRegularExpression('/<option value="other"[^>]*>Other<\/option>/', $html);
+        $this->assertStringContainsString("'items['+index+'][purity]'", $html);
+        // Net and fine weight are shown for appraised items too; only 'other' has no fine weight.
+        $this->assertStringContainsString('<div><dt>Net weight</dt>', $html);
+        $this->assertStringContainsString("<div x-show=\"item.metal_type !== 'other'\"><dt>Fine (pure metal) weight</dt>", $html);
+        // The JavaScript uses the server's own table, so the two cannot drift apart.
+        $this->assertStringContainsString((string) \Illuminate\Support\Js::from(\App\Services\MetalRegistry::purityPresetTable()), $html);
+    }
+
     public function test_collapse_buttons_keep_their_text_for_screen_readers(): void
     {
         foreach (['/dhiran/create' => 'Back to Loans', '/dhiran/old-loans/create' => 'Old Loans', '/dhiran/old-loans/upload' => 'Old Loans', '/dhiran/borrowers/create' => 'Back to Customers'] as $path => $label) {

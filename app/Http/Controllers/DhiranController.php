@@ -143,7 +143,11 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
     {
         abort_unless((int) $customer->shop_id === (int) auth()->user()->shop_id, 404);
 
-        return response()->json($customer->only('pan', 'id_number'))->header('Cache-Control', 'no-store, private');
+        // has_id_proof: lets New Loan say the borrower's ID proof is already on file (no second upload needed)
+        $hasIdProof = \App\Models\Dhiran\DhiranAttachment::where('owner_type', \App\Models\Dhiran\DhiranAttachment::OWNER_CUSTOMER)
+            ->where('owner_id', $customer->id)->whereIn('document_type', ['id_proof_front', 'id_proof_back'])->exists();
+
+        return response()->json($customer->only('pan', 'id_number') + ['has_id_proof' => $hasIdProof])->header('Cache-Control', 'no-store, private');
     }
 
     /**
@@ -169,7 +173,8 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             'pan'        => ['nullable', new \App\Rules\PanFormatRule],
             'id_number'  => ['nullable', 'string', 'max:50'],
             'notes'      => ['nullable', 'string', 'max:1000'],
-        ]);
+            'customer_photo' => ['nullable', 'file', 'max:5120'], // optional photo, saved right after the borrower (same encoder as the profile)
+        ], ['customer_photo.max' => 'Choose an image no larger than 5 MB.']);
 
         // Dedupe within THIS shop (BelongsToShop scope keeps the lookup tenant-local).
         // resolveByMobile, not an exact match: a borrower added before mobiles
@@ -215,8 +220,20 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             $customer->forceFill(['state_code' => $data['state_code']])->save();
         }
 
+        // The borrower is saved either way; a photo that cannot be stored is reported, never lost silently.
+        $photoError = null;
+        if ($request->hasFile('customer_photo')) {
+            try {
+                app(\App\Services\CustomerProfilePhotoService::class)->save($customer, $request->file('customer_photo'), '');
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                $photoError = $e->validator->errors()->first('customer_photo') ?: 'The photo could not be saved.';
+            }
+        }
+
         if (! $request->expectsJson()) {
-            return redirect()->route('dhiran.borrowers.show', $customer)->with('success', 'Customer saved.');
+            $back = redirect()->route('dhiran.borrowers.show', $customer)->with('success', 'Customer saved.');
+
+            return $photoError ? $back->with('warning', "Customer saved, but the photo was not: {$photoError} Add it from this page.") : $back;
         }
 
         return response()->json([
@@ -230,6 +247,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
                 'id_number'  => $customer->id_number,
                 'state_code' => $customer->state_code,
             ],
+            'photo_error' => $photoError,
         ], 201);
     }
 
@@ -264,12 +282,22 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             'processing_fee'           => 'nullable|numeric|min:0|max:999999999999.99',
             'processing_fee_type'      => 'nullable|in:flat,percent',
             'advance_interest_months'  => 'nullable|integer|min:0|max:3', // the service also needs the shop's switch on
+            'items.*.photo'            => ['nullable', 'file', 'max:8192', 'mimes:jpg,jpeg,png'], // a photo of each item, saved with the loan so activation needs no second trip
+            'id_proof_front'           => ['nullable', 'file', 'max:8192', 'mimes:jpg,jpeg,png,pdf'], // the borrower's ID proof, saved to the borrower
+            'id_proof_back'            => ['nullable', 'file', 'max:8192', 'mimes:jpg,jpeg,png,pdf'],
             // Aadhaar: accept a full 12-digit number OR an already-masked value, but
             // NEVER persist the full number (masked to last-4 before save below).
             'aadhaar'                  => ['nullable', 'string', 'max:20', 'regex:/^[0-9Xx\- ]{4,20}$/'],
             'pan'                      => ['nullable', new \App\Rules\PanFormatRule],
             'notes'                    => 'nullable|string|max:1000',
         ]);
+
+        // Photos travel beside the items, not inside the collateral rules: take them out, keep them by position.
+        $itemPhotos = [];
+        foreach ($data['items'] as $i => $row) {
+            $itemPhotos[$i] = $row['photo'] ?? null;
+            unset($data['items'][$i]['photo']);
+        }
 
         // Authoritative collateral gate (shared with Old Loans); the backend is the source of truth, not the form.
         if ($itemErrors = \App\Services\Dhiran\DhiranCollateral::errors($data['items'])) {
@@ -310,8 +338,50 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             return back()->withErrors(['loan' => $e->getMessage()])->withInput();
         }
 
-        return redirect()->route('dhiran.show', $loan)
-            ->with('success', 'Loan created. Upload the pledged-item photo and borrower ID proof, then activate the loan.');
+        // Item photos chosen on the form become item_photo evidence on the new loan's items (in the order they were listed).
+        $saved = 0;
+        $failed = [];
+        $created = $loan->items()->orderBy('id')->get()->values();
+        foreach (array_values($itemPhotos) as $n => $file) {
+            if (! $file || ! ($item = $created->get($n))) {
+                continue;
+            }
+            try {
+                app(\App\Services\Dhiran\DhiranAttachmentService::class)->store($file, (int) $loan->shop_id,
+                    \App\Models\Dhiran\DhiranAttachment::OWNER_ITEM, (int) $item->id, 'item_photo', auth()->id());
+                $saved++;
+            } catch (\LogicException $e) {
+                $failed[] = 'item ' . ($n + 1) . ': ' . $e->getMessage();
+            }
+        }
+
+        // The borrower's ID proof (front, back) is kept on the borrower, like one added from the profile, so later loans reuse it.
+        $idSaved = 0;
+        foreach (['id_proof_front' => 'ID proof front', 'id_proof_back' => 'ID proof back'] as $field => $label) {
+            if (! $request->hasFile($field)) {
+                continue;
+            }
+            try {
+                app(\App\Services\Dhiran\DhiranAttachmentService::class)->store($request->file($field), (int) $loan->shop_id,
+                    \App\Models\Dhiran\DhiranAttachment::OWNER_CUSTOMER, (int) $loan->customer_id, $field, auth()->id());
+                $idSaved++;
+            } catch (\LogicException $e) {
+                $failed[] = $label . ': ' . $e->getMessage();
+            }
+        }
+
+        if ($saved + $idSaved === 0) {
+            $message = 'Loan created. Upload the pledged-item photo and borrower ID proof, then activate the loan.';
+        } else {
+            $evidence = $this->dhiranService->evidenceStatus($loan->fresh());
+            $missing = array_keys(array_filter(['the pledged-item photo' => ! $evidence['item_photo'], 'the borrower ID proof' => ! $evidence['id_proof']]));
+            $message = $missing
+                ? 'Loan created. Still needed before activation: ' . implode(' and ', $missing) . '.'
+                : 'Loan created. The photo and ID proof are in: activate the loan.';
+        }
+        $redirect = redirect()->route('dhiran.show', $loan)->with('success', $message);
+
+        return $failed ? $redirect->with('warning', 'A photo was not saved (' . implode('; ', $failed) . '). Add it under Evidence & Documents.') : $redirect;
     }
 
     /**

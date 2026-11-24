@@ -9,7 +9,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-C8guhaXr.css",
+    "file": "assets/app-DKl3-uNA.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -36,7 +36,7 @@
     ]
   },
   "resources/css/dhiran-forms.css": {
-    "file": "assets/dhiran-forms-BrKgVFPI.css",
+    "file": "assets/dhiran-forms--ClR0r_c.css",
     "src": "resources/css/dhiran-forms.css",
     "isEntry": true,
     "name": "dhiran-forms",
@@ -72,7 +72,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-CeXV0fY-.js",
+    "file": "assets/app-CnATA3J0.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true

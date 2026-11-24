@@ -2,6 +2,8 @@
 
 namespace App\Services\Dhiran;
 
+use App\Services\MetalRegistry;
+
 /**
  * The pledged items of a loan, checked the same way on New Loan and in Old Loans: every loan has at least one item
  * (no loan without collateral); gold and silver are valued from a supported purity, gross weight and a rate per gram;
@@ -9,11 +11,6 @@ namespace App\Services\Dhiran;
  */
 final class DhiranCollateral
 {
-    public const PURITIES = [
-        'gold'   => [24, 22, 20, 18, 14],
-        'silver' => [999, 958, 925, 900, 800],
-    ];
-
     public static function rules(): array
     {
         return [
@@ -49,20 +46,26 @@ final class DhiranCollateral
                 $errors["items.{$idx}.metal_type"] = 'This collateral type is not supported. Choose gold, silver, or other.';
                 continue;
             }
-            if (($metal === 'other' ? 'appraised' : ($row['value_mode'] ?? 'metal')) === 'appraised') {
-                if ((float) ($row['market_value'] ?? 0) <= 0) {
-                    $errors["items.{$idx}.market_value"] = 'Enter an appraised market value for this item.';
-                }
-                continue;
+            $appraised = ($metal === 'other' ? 'appraised' : ($row['value_mode'] ?? 'metal')) === 'appraised';
+            if ($appraised && (float) ($row['market_value'] ?? 0) <= 0) {
+                $errors["items.{$idx}.market_value"] = 'Enter an appraised market value for this item.';
             }
-            if (! in_array((int) round((float) ($row['purity'] ?? 0)), self::PURITIES[$metal], true)) {
-                $errors["items.{$idx}.purity"] = "Selected purity is not supported for {$metal}.";
+            $gross = (float) ($row['gross_weight'] ?? 0);
+            if ($appraised && $gross <= 0) {
+                continue; // the value is typed, so weights are optional (the net and fine weight then stay 0)
             }
-            if ((float) ($row['gross_weight'] ?? 0) <= 0) {
+            // Net and fine weight come from gross, stone, purity and metal whether the value is melt or appraised.
+            if ($metal !== 'other' && ! MetalRegistry::purityInRange($metal, (float) ($row['purity'] ?? 0))) {
+                $errors["items.{$idx}.purity"] = 'Purity for ' . $metal . ' must be ' . ($metal === 'gold' ? '1 to 24 karat' : '100 to 999.99') . ', with at most 2 decimals.';
+            }
+            if ($gross <= 0) {
                 $errors["items.{$idx}.gross_weight"] = 'Gross weight is required for a metal-valued item.';
             }
-            if ((float) ($row['stone_weight'] ?? 0) > (float) ($row['gross_weight'] ?? 0)) {
-                $errors["items.{$idx}.stone_weight"] = 'Stone weight cannot be more than the gross weight.';
+            if ($gross > 0 && MetalRegistry::netWeight($gross, (float) ($row['stone_weight'] ?? 0)) <= 0) {
+                $errors["items.{$idx}.stone_weight"] = 'Stone weight must be less than the gross weight.';
+            }
+            if ($appraised) {
+                continue;
             }
             if (! isset($row['rate_per_gram_at_pledge']) || $row['rate_per_gram_at_pledge'] === '') {
                 $errors["items.{$idx}.rate_per_gram_at_pledge"] = 'Rate per gram is required for a metal-valued item.';
