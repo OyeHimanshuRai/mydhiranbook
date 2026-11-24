@@ -31,6 +31,9 @@
         <div class="page-actions">
             <x-dhiran.btn-collapse icon="arrow-left" label="All Loans" :href="route('dhiran.loans')" />
             <x-dhiran.btn-collapse icon="printer" label="Pledge Receipt" :href="route('dhiran.receipt', $loan)" target="_blank" data-dh-mobile-pin="true" />
+            @if($loan->items->where('status', 'pledged')->isNotEmpty())
+                <x-dhiran.btn-collapse icon="package" label="Item Tag" :href="route('dhiran.tag', $loan)" target="_blank" />
+            @endif
         </div>
     </x-dhiran.page-header>
 

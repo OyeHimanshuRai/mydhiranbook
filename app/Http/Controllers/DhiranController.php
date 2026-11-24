@@ -755,6 +755,16 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         return view('dhiran.receipt', compact('loan', 'shop', 'show'));
     }
 
+    /** The slip stuck on the bag or packet of pledged items kept in the locker. */
+    public function tag(DhiranLoan $loan)
+    {
+        abort_unless((int) $loan->shop_id === (int) auth()->user()->shop_id, 404);
+        $loan->load(['customer', 'items']);
+        $shop = $loan->shop;
+
+        return view('dhiran.tag', compact('loan', 'shop'));
+    }
+
     public function closureCertificate(DhiranLoan $loan)
     {
         abort_unless((int) $loan->shop_id === (int) auth()->user()->shop_id, 404);
