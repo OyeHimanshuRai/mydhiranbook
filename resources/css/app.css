@@ -514,7 +514,7 @@ body {
     textarea
 ) {
     border-color: var(--app-control-border) !important;
-    background: var(--app-control-bg) !important;
+    background-color: var(--app-control-bg) !important; /* colour only: the shorthand wiped every select chevron */
     color: var(--jf-text) !important;
     border-radius: var(--jf-radius-md) !important;
     min-height: 42px;
