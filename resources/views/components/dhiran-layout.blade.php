@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     {{-- Alpine-rendered pages are not snapshot-safe: restoring a Turbo snapshot re-ran x-for clones without their scope. --}}
     <meta name="turbo-cache-control" content="no-cache">
-    <title>{{ $title ?? 'Dhiran' }}</title>
+    <title>{{ $title ?? 'MyDhiranBook' }}</title>
     @include('partials.favicon')
 
     @vite(['resources/css/app.css', 'resources/css/dhiran.css', 'resources/js/app.js'])
@@ -52,7 +52,7 @@
 
         <aside class="dh-sidebar" id="dh-sidebar" x-ref="sidebar" :role="drawer ? 'dialog' : null" :aria-modal="drawer ? 'true' : null" :aria-label="drawer ? 'Main menu' : null">
             <div class="dh-sidebar-head">
-                <a href="{{ route('dhiran.loans') }}" class="dh-brand" aria-label="Dhiran, Loans" @click="show = false">
+                <a href="{{ route('dhiran.loans') }}" class="dh-brand" aria-label="MyDhiranBook, Loans" @click="show = false">
                     <span class="dh-wordmark" aria-hidden="true">dhiran<span>.</span></span>
                 </a>
                 <button type="button" class="dh-sidebar-close"
@@ -96,8 +96,8 @@
 
             <div class="dh-foot">
                 <div class="dh-foot-user">{{ auth()->user()->name ?? \App\Support\Mobile::forDisplay(auth()->user()?->mobile_number) }}</div>
-                <div class="dh-foot-shop">{{ auth()->user()->shop?->name ?? 'Dhiran account' }}</div>
-                <form method="POST" action="{{ route('logout') }}" data-turbo-frame="_top" data-confirm-message="Sign out of Dhiran?">
+                <div class="dh-foot-shop">{{ auth()->user()->shop?->name ?? 'MyDhiranBook account' }}</div>
+                <form method="POST" action="{{ route('logout') }}" data-turbo-frame="_top" data-confirm-message="Sign out of MyDhiranBook?">
                     @csrf
                     <button type="submit" class="dh-logout"><x-icon name="log-out" /><span>Sign out</span></button>
                 </form>
@@ -125,7 +125,7 @@
                             <x-icon name="menu" />
                         </button>
                         <div class="min-w-0">
-                            <h1 class="page-title">{{ $title ?? 'Dhiran' }}</h1>
+                            <h1 class="page-title">{{ $title ?? 'MyDhiranBook' }}</h1>
                         </div>
                     </div>
                 </div>

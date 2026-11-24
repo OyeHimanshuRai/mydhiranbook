@@ -130,7 +130,7 @@ class PaymentFlowTest extends TestCase
     public function test_payment_pages_other_than_checkout_do_not_load_razorpay_js(): void
     {
         $owner = $this->shopUser(); self::activeSubscription($owner->shop);
-        $this->actingAs($owner)->get('/subscription/status')->assertOk()->assertDontSee('checkout.razorpay.com', false)->assertSee('Dhiran Yearly')->assertSee('Dhiran Monthly');
+        $this->actingAs($owner)->get('/subscription/status')->assertOk()->assertDontSee('checkout.razorpay.com', false)->assertSee('MyDhiranBook Yearly')->assertSee('MyDhiranBook Monthly');
     }
 
     public function test_unresolved_payment_emails_alert_to_billing_alert_email(): void

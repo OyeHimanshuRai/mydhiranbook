@@ -29,7 +29,7 @@ class PlatformAdminTest extends TestCase
         $admin=$this->admin(); $shop=Shop::create(['name'=>'Synthetic Tenant']);
         (new \Database\Seeders\PlanSeeder)->run();
         $this->signIn($admin);
-        $this->get('/admin')->assertOk()->assertSee('Dhiran platform');
+        $this->get('/admin')->assertOk()->assertSee('MyDhiranBook platform');
         $this->get('/admin/shops')->assertOk()->assertSee('Synthetic Tenant');
         $this->patch('/admin/shops/'.$shop->id,['status'=>'suspended','reason'=>'Synthetic acceptance check'])->assertRedirect();
         $this->assertDatabaseHas('shops',['id'=>$shop->id,'status'=>'suspended']);

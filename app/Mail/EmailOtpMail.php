@@ -13,7 +13,7 @@ class EmailOtpMail extends Mailable
 
     public function __construct(public string $otp, public string $name) {}
 
-    public function envelope(): Envelope { return new Envelope(subject: $this->otp.' is your Dhiran verification code'); }
+    public function envelope(): Envelope { return new Envelope(subject: $this->otp.' is your MyDhiranBook verification code'); }
 
     public function content(): Content { return new Content(view: 'emails.email-otp'); }
 }

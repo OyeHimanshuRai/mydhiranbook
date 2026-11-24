@@ -1,5 +1,5 @@
 @extends('admin.auth') @section('title','Admin sign in') @section('content')
-<h1>Platform sign in</h1><p class="lead">Use your Dhiran platform admin credentials. A second step follows.</p>
+<h1>Platform sign in</h1><p class="lead">Use your MyDhiranBook platform admin credentials. A second step follows.</p>
 <form method="post" action="/admin/login">@csrf
 @include('admin._field',['name'=>'email','label'=>'Admin email address','type'=>'email','attrs'=>['autocomplete'=>'username','required'=>'required','autocapitalize'=>'off','spellcheck'=>'false']])
 @include('admin._field',['name'=>'password','label'=>'Password','type'=>'password','attrs'=>['autocomplete'=>'current-password','required'=>'required']])

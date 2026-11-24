@@ -64,7 +64,7 @@ class TotpService
     /**
      * Build the otpauth:// URI for QR code generation.
      */
-    public function otpauthUri(string $secret, string $accountLabel, string $issuer = 'Dhiran'): string
+    public function otpauthUri(string $secret, string $accountLabel, string $issuer = 'MyDhiranBook'): string
     {
         return 'otpauth://totp/' . rawurlencode($issuer . ':' . $accountLabel)
             . '?secret=' . $secret

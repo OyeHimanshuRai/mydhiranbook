@@ -23,7 +23,7 @@
         fetch('{{ route('subscription.payment.initiate') }}', {method: 'POST', headers: {'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json'}})
             .then(function (r) { return r.json().then(function (d) { if (!r.ok) { throw new Error(d.error || 'Payment could not start.'); } return d; }); })
             .then(function (o) {
-                var rz = new Razorpay({key: o.key_id, amount: o.amount, currency: o.currency, order_id: o.order_id, name: 'Dhiran', description: o.plan_name,
+                var rz = new Razorpay({key: o.key_id, amount: o.amount, currency: o.currency, order_id: o.order_id, name: 'MyDhiranBook', description: o.plan_name,
                     prefill: {name: o.user_name, email: o.user_email, contact: o.user_contact},
                     handler: function (resp) { var f = document.getElementById('pay-return'); f.razorpay_order_id.value = resp.razorpay_order_id; f.razorpay_payment_id.value = resp.razorpay_payment_id; f.razorpay_signature.value = resp.razorpay_signature; f.submit(); },
                     modal: {ondismiss: function () { btn.disabled = false; }}});

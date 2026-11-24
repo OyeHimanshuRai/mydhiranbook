@@ -24,8 +24,8 @@ class SiteTest extends TestCase
         (new PlanSeeder)->run();
         Plan::create(['code' => 'old_plan', 'name' => 'Retired Plan', 'price_monthly' => 999, 'price_yearly' => null, 'grace_days' => 1, 'is_active' => false, 'features' => ['staff_limit' => 1, 'max_items' => 1]]);
         $this->get('/pricing')->assertOk()
-            ->assertSee('Dhiran Monthly')->assertSee('₹1,852')->assertSee('/ month', false)
-            ->assertSee('Dhiran Yearly')->assertSee('₹19,999')->assertSee('/ year', false)
+            ->assertSee('MyDhiranBook Monthly')->assertSee('₹1,852')->assertSee('/ month', false)
+            ->assertSee('MyDhiranBook Yearly')->assertSee('₹19,999')->assertSee('/ year', false)
             ->assertSee('No free trial')->assertSee('Prices in INR')
             ->assertDontSee('Retired Plan')->assertDontSee('GST');
     }
@@ -55,7 +55,7 @@ class SiteTest extends TestCase
         $this->get('/')->assertOk()->assertSee('Get started');
         $this->actingAs($this->newOwner())->get('/')->assertRedirect(route('dhiran.dashboard'));
         // shopless owner still lands in the onboarding chain
-        $this->actingAs($this->newOwner())->followingRedirects()->get('/')->assertSee('Choose your Dhiran plan');
+        $this->actingAs($this->newOwner())->followingRedirects()->get('/')->assertSee('Choose your MyDhiranBook plan');
     }
 
     public function test_every_public_auth_and_checkout_page_has_viewport_and_one_shared_footer(): void

@@ -72,7 +72,7 @@ class QueuedRenewalTest extends AdminTestCase
         $owner = $this->shopUser(); $shop = $owner->shop;
         $this->term($shop, today()->subYears(2)->toDateString(), today()->subYear()->toDateString());
         $this->assertTrue($shop->fresh()->isLapsed());
-        $msg = 'Your Dhiran plan has ended. Renew it to add staff.';
+        $msg = 'Your MyDhiranBook plan has ended. Renew it to add staff.';
         $this->actingAs($owner)->get('/staff/create')->assertRedirect()->assertSessionHas('error', $msg);
         $this->post('/staff', ['name' => 'X', 'mobile_number' => '9000000099', 'password' => 'Synthetic-pass-12345', 'password_confirmation' => 'Synthetic-pass-12345', 'role_id' => 1])->assertSessionHas('error', $msg);
     }

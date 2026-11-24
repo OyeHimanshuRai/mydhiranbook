@@ -18,7 +18,7 @@ class PlanAdminTest extends AdminTestCase
         $this->assertDatabaseHas('platform_audit_logs',['actor_admin_id'=>$admin->id,'action'=>'plan.updated','target_id'=>$plan->id]);
         $u=User::create(['name'=>'B','email'=>'b@example.test','password'=>'Buyer-pass-12345','email_verified_at'=>now()]);
         \Illuminate\Support\Facades\Auth::shouldUse('web'); // one app instance serves both sessions in a test
-        $this->actingAs($u)->get(route('dhiran.plans'))->assertOk()->assertDontSee('Dhiran Monthly')->assertSee('Dhiran Yearly');
+        $this->actingAs($u)->get(route('dhiran.plans'))->assertOk()->assertDontSee('MyDhiranBook Monthly')->assertSee('MyDhiranBook Yearly');
     }
     public function test_cannot_deactivate_every_plan_or_set_invalid_values(): void
     {

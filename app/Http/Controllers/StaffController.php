@@ -20,7 +20,7 @@ class StaffController extends Controller
     private function staffBlockedMessage(\App\Models\Shop $shop, string $hint = ''): string
     {
         return $shop->isLapsed()
-            ? 'Your Dhiran plan has ended. Renew it to add staff.'
+            ? 'Your MyDhiranBook plan has ended. Renew it to add staff.'
             : trim("Staff limit reached ({$shop->staffLimit()} accounts allowed on your plan). {$hint}");
     }
 

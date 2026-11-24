@@ -1,6 +1,6 @@
-<x-subscription-page title="Set up your Dhiran business">
+<x-subscription-page title="Set up your MyDhiranBook business">
     <div class="ck ck-narrow">
-        <h1>Set up your Dhiran business</h1>
+        <h1>Set up your MyDhiranBook business</h1>
         <p class="lede">Just a few details to get your pledge loan shop ready.</p>
         <form method="POST" action="{{ route('dhiran.onboarding.store') }}" data-turbo="false" data-once class="ui-card">@csrf
             <div class="ck-grid">

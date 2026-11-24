@@ -21,7 +21,7 @@ class OnboardingFlowTest extends TestCase
         (new \Database\Seeders\PlanSeeder)->run();
         $u = $this->newOwner();
         $this->actingAs($u)->get('/dhiran')->assertRedirect(route('dhiran.plans'));
-        $this->actingAs($u)->get(route('dhiran.plans'))->assertOk()->assertSee('Dhiran Monthly')->assertSee(route('subscription.choose'), false);
+        $this->actingAs($u)->get(route('dhiran.plans'))->assertOk()->assertSee('MyDhiranBook Monthly')->assertSee(route('subscription.choose'), false);
         $this->actingAs($u)->get(route('dhiran.onboarding'))->assertRedirect(route('dhiran.plans'));
     }
 

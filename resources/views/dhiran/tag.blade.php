@@ -39,7 +39,7 @@
         <button type="button" class="tag-btn" onclick="window.print()">Print tag</button>
     </div>
     <div class="tag">
-        <div class="tag-shop">{{ $shop->name ?? 'Dhiran' }}</div>
+        <div class="tag-shop">{{ $shop->name ?? 'MyDhiranBook' }}</div>
         <div class="tag-no">{{ $loan->loan_number }}</div>
         <div class="tag-line"><span>Borrower</span><b>{{ $loan->customer->name ?? '---' }}</b></div>
         <div class="tag-line"><span>Date</span><b>{{ $loan->loan_date?->format('d M Y') }}</b></div>

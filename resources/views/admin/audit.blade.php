@@ -1,5 +1,5 @@
 @extends('admin.layout') @section('title','Audit log') @section('content')
-<div class="adm-head"><div><h1>Audit log</h1><p>Append-only record of Dhiran admin activity, newest first.</p></div></div>
+<div class="adm-head"><div><h1>Audit log</h1><p>Append-only record of MyDhiranBook admin activity, newest first.</p></div></div>
 <section class="adm-panel"><div class="adm-tablewrap"><table class="adm-table"><thead><tr><th>Actor</th><th>Action</th><th>Target</th><th>Details</th></tr></thead><tbody>
 @forelse($logs as $log)<tr><td data-label="When" class="num"><div>{{ $log->created_at->format('d M Y H:i:s') }}<span class="adm-sub">{{ $log->actor?->name ?? 'Unauthenticated / system' }}</span></div></td>
 <td data-label="Action" class="adm-key">{{ $log->action }}<span class="adm-sub">{{ $log->ip }}</span></td>

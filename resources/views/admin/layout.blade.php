@@ -13,7 +13,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#7a1a1d">
-<title>@yield('title','Dhiran platform') · Dhiran admin</title>
+<title>@yield('title','MyDhiranBook platform') · MyDhiranBook admin</title>
 <link rel="icon" href="/dhiran-favicon.svg">
 <script>document.documentElement.classList.add('js')</script>
 @vite('resources/css/admin.css')
@@ -27,7 +27,7 @@
             @if(!$perm || $u->hasPermission($perm))<a href="{{ $href }}" @if(request()->is($match)) aria-current="page" @endif>{{ $label }}</a>@endif
         @endforeach
     </nav>
-    <p class="adm-foot">&copy; {{ date('Y') }} Dhiran · MFA protected</p>
+    <p class="adm-foot">&copy; {{ date('Y') }} MyDhiranBook · MFA protected</p>
 </aside>
 <div class="adm-scrim" id="adm-scrim" aria-hidden="true"></div>
 <div class="adm-shell">

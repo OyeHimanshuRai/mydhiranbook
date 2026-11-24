@@ -1,6 +1,6 @@
 @extends('admin.layout') @section('title','Platform dashboard') @section('content')
 @php $u=auth('platform_admin')->user(); @endphp
-<div class="adm-head"><div><h1>Dashboard</h1><p>Dhiran platform: shops, subscriptions and admin access.</p></div>@include('admin._badge',['s'=>'enabled','label'=>'MFA verified'])</div>
+<div class="adm-head"><div><h1>Dashboard</h1><p>MyDhiranBook platform: shops, subscriptions and admin access.</p></div>@include('admin._badge',['s'=>'enabled','label'=>'MFA verified'])</div>
 @if($stats['unresolved'])<div class="notice error" role="alert"><a href="/admin/unresolved-payments">{{ $stats['unresolved'] }} captured payment(s) need review</a></div>@endif
 <dl class="adm-stats">
 <div class="adm-stat"><dt>Shops</dt><dd>{{ $stats['shops'] }}</dd><small>{{ $stats['active'] }} active · {{ $stats['suspended'] }} suspended</small></div>

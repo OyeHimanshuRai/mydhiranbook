@@ -34,8 +34,8 @@ class PlatformAdminResetPassword extends Notification
         $minutes = config('auth.passwords.platform_admins.expire', 30);
 
         return (new MailMessage)
-            ->subject('Dhiran Platform Admin — Password Reset')
-            ->line('A password reset was requested for your Dhiran platform admin account.')
+            ->subject('MyDhiranBook Platform Admin — Password Reset')
+            ->line('A password reset was requested for your MyDhiranBook platform admin account.')
             ->action('Reset Password', $url)
             ->line("This link expires in {$minutes} minutes.")
             ->line('If you did not request this, no action is needed — your password stays unchanged.');

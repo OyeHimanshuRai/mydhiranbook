@@ -57,7 +57,7 @@ Only `public/` is web-reachable. Trusted proxies come from `TRUSTED_PROXIES` in 
 Create `.env` on the server (it is git-ignored) from `.env.example`. Never commit it. Generate the key with `php artisan key:generate` (or `--show`).
 
 App
-- `APP_NAME` (config name is fixed to `Dhiran`; `BUSINESS_NAME` falls back to it), `APP_ENV=production`, `APP_KEY`, `APP_DEBUG=false`, `APP_URL=https://...`
+- `APP_NAME=MyDhiranBook` (`BUSINESS_NAME` falls back to it), `APP_ENV=production`, `APP_KEY`, `APP_DEBUG=false`, `APP_URL=https://mydhiranbook.shop`
 
 Database (config/database.php; only `pgsql` exists)
 - `DB_URL` (leave empty), `DB_HOST`, `DB_PORT` (code default `55439`; set `5432`), `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`, `DB_SSLMODE` (`.env.example`: `require`; code default `disable`)
@@ -95,6 +95,9 @@ Other keys read by config but not in `.env.example`: `BCRYPT_ROUNDS` (default 12
 - `RAZORPAY_KEY`, `RAZORPAY_SECRET` and `RAZORPAY_WEBHOOK_SECRET` are all non-empty
 
 Nothing else is enforced (it does not check that Razorpay keys are live keys, that SMTP works, or that a worker is running). Because the guard runs on app boot, `.env` must be complete before any `php artisan` call, including the `package:discover` that Composer runs after install.
+
+### Domain: mydhiranbook.shop
+At the registrar, point an `A` record (and `AAAA` if the server has IPv6) for `mydhiranbook.shop` and `www` at the server. In nginx set `server_name mydhiranbook.shop www.mydhiranbook.shop;`, issue the TLS certificate (`certbot --nginx -d mydhiranbook.shop -d www.mydhiranbook.shop`), redirect `www` and port 80 to `https://mydhiranbook.shop`. Then `APP_URL=https://mydhiranbook.shop`, Razorpay webhook `https://mydhiranbook.shop/subscription/payment/webhook`. Leave `SESSION_DOMAIN` empty (host-only cookies). Production mail (Gmail SMTP or other) is set only in the server `.env` (local runs stay on the log mailer).
 
 ## 6. Deploy steps
 

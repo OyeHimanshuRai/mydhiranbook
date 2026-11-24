@@ -17,7 +17,7 @@ class UnresolvedPaymentAlert extends Mailable implements ShouldQueue
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Dhiran payment needs review: '.($this->paymentId ?: 'unknown payment'));
+        return new Envelope(subject: 'MyDhiranBook payment needs review: '.($this->paymentId ?: 'unknown payment'));
     }
 
     public function content(): Content { return new Content(text: 'mail.unresolved-payment'); }

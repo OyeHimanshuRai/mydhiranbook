@@ -37,7 +37,7 @@
     <div class="receipt-container">
         @if($any('shop_name', 'shop_address', 'shop_phone', 'title'))
         <header class="rc-head">
-            @if($show('shop_name'))<div class="receipt-shop-name">{{ $shop->name ?? 'Dhiran' }}</div>@endif
+            @if($show('shop_name'))<div class="receipt-shop-name">{{ $shop->name ?? 'MyDhiranBook' }}</div>@endif
             @if($show('shop_address') && ($shop->address ?? false))<div class="rc-muted">{{ $shop->address }}</div>@endif
             @if($show('shop_phone') && ($shop->phone ?? false))<div class="rc-muted">Phone: {{ $shop->phone }}</div>@endif
             @if($show('title'))<div class="rc-title">Pledge Receipt / Girvi Parchi</div>@endif
@@ -118,7 +118,7 @@
         @if($show('signatures'))
         <div class="rc-sigs">
             <div class="rc-sig">Pledger's Signature @if($show('customer_name'))<br><span class="rc-muted">{{ $loan->customer->name ?? '' }}</span>@endif</div>
-            <div class="rc-sig">Authorized Signatory @if($show('shop_name'))<br><span class="rc-muted">{{ $shop->name ?? 'Dhiran' }}</span>@endif</div>
+            <div class="rc-sig">Authorized Signatory @if($show('shop_name'))<br><span class="rc-muted">{{ $shop->name ?? 'MyDhiranBook' }}</span>@endif</div>
         </div>
         @endif
 
