@@ -23,6 +23,9 @@
             : $maturityDate;
         $totalOutstanding = $loan->totalOutstanding();
         $forfeitureNoticeDays = $settings->forfeiture_notice_days ?? 30;
+        // A reprint keeps the day the notice was issued and the deadline that was given, whatever day it is printed on.
+        $issuedOn = $loan->forfeiture_notice_sent_at ? \Illuminate\Support\Carbon::parse($loan->forfeiture_notice_sent_at)->timezone(config('app.timezone')) : now();
+        $deadline = $loan->forfeitureDeadline() ?? $issuedOn->copy()->addDays($forfeitureNoticeDays);
     @endphp
 
     <div class="receipt-page">
@@ -48,7 +51,7 @@
                 </div>
                 <div>
                     <h1 class="receipt-title">Forfeiture Notice</h1>
-                    <div class="receipt-sub">Date: {{ now()->format('d M Y') }}</div>
+                    <div class="receipt-sub">Date: {{ $issuedOn->format('d M Y') }}</div>
                     <span class="receipt-pill">{{ $loan->loan_number }}</span>
                 </div>
             </header>
@@ -89,7 +92,7 @@
                     </div>
                     <div class="meta-box">
                         <p class="meta-box-label">Days Overdue</p>
-                        <p class="meta-box-value">{{ $loan->daysOverdue() }}</p>
+                        <p class="meta-box-value">{{ $loan->maturity_date ? max(0, (int) $loan->maturity_date->copy()->startOfDay()->diffInDays($issuedOn->copy()->startOfDay(), false)) : 0 }}</p>
                     </div>
                 </section>
 
@@ -127,7 +130,7 @@
 
                 <section class="warning-box">
                     WARNING: If the outstanding amount is not settled within {{ $forfeitureNoticeDays }} days from the date
-                    of this notice (i.e. by {{ now()->addDays($forfeitureNoticeDays)->format('d M Y') }}), the pledged
+                    of this notice (i.e. by {{ $deadline->format('d M Y') }}), the pledged
                     gold ornaments will be forfeited and disposed of to recover the dues without further notice.
                 </section>
 
