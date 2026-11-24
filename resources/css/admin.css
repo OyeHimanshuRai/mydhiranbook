@@ -74,7 +74,7 @@
 .adm-search input:focus { outline: 2px solid var(--kh-focus); outline-offset: 2px; border-color: var(--kh-ink); }
 
 /* ---- panels ---- */
-.adm-panel { background: var(--dh-card); border: 1px solid var(--dh-card-border); border-radius: var(--r-md); box-shadow: var(--dh-card-shadow); margin-bottom: var(--sp-5); min-width: 0; overflow: hidden; }
+.adm-panel { background: var(--dh-card); border: 0; border-radius: var(--kh-radius-card); box-shadow: var(--dh-card-shadow); margin-bottom: var(--sp-5); min-width: 0; overflow: hidden; }
 .adm-panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-2) var(--sp-4); padding: var(--sp-4) var(--sp-5); border-bottom: 1px solid var(--dh-line); }
 .adm-panel-head p { margin: 0; font-size: var(--fs-sm); color: var(--dh-muted); width: 100%; }
 .adm-panel-body { padding: var(--sp-5); }
@@ -85,7 +85,7 @@
 @media (min-width: 1100px) { .adm-split { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } }
 
 /* ---- stats + notices ---- */
-.adm-stats { display: grid; gap: 1px; grid-template-columns: 1fr; margin: 0 0 var(--sp-5); padding: 0; background: var(--dh-line); border: 1px solid var(--dh-card-border); border-radius: var(--r-md); box-shadow: var(--dh-card-shadow); overflow: hidden; }
+.adm-stats { display: grid; gap: 1px; grid-template-columns: 1fr; margin: 0 0 var(--sp-5); padding: 0; background: var(--dh-line); border: 0; border-radius: var(--kh-radius-card); box-shadow: var(--dh-card-shadow); overflow: hidden; }
 .adm-stat { position: relative; padding: var(--sp-4) var(--sp-5) var(--sp-4) calc(var(--sp-5) + 6px); min-width: 0; background: var(--dh-card); }
 /* The margin line on every money card. */
 .adm-stat::before { content: ""; position: absolute; top: 0; bottom: 0; left: 10px; width: 1px; background: var(--kh-margin); opacity: .8; }
@@ -112,10 +112,10 @@
 .adm-badge--bad::before { border-radius: 0; }
 
 /* ---- buttons ---- */
-.adm-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); min-height: var(--fl-ctl-h); padding: 0 var(--fl-btn-px); border: 1px solid var(--kh-ink); border-radius: var(--kh-radius);
-    background: var(--kh-ink); color: #fff; font: 600 var(--fl-fs-body)/1.15 var(--font-body); cursor: pointer; text-decoration: none; transition: background .15s var(--ease-out); }
+.adm-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); min-height: var(--fl-ctl-h); padding: 0 var(--fl-btn-px); border: 1.5px solid var(--kh-ink); border-radius: var(--kh-radius-btn);
+    background: var(--kh-ink); color: #fff; box-shadow: 0 1px 2px rgba(10, 18, 38, .35); font: 600 var(--fl-fs-body)/1.15 var(--font-body); cursor: pointer; text-decoration: none; transition: background .15s var(--ease-out); }
 .adm-btn:hover { background: var(--kh-ink-2); border-color: var(--kh-ink-2); }
-.adm-btn--ghost { background: var(--kh-panel); color: var(--kh-ink); border-color: var(--kh-field-edge); }
+.adm-btn--ghost { background: var(--kh-panel); color: var(--kh-ink); border-color: var(--kh-ink-2); box-shadow: 0 1px 2px rgba(29, 34, 48, .10); }
 .adm-btn--ghost:hover { background: var(--kh-ink-soft); border-color: var(--kh-ink); }
 .adm-btn--danger { background: var(--kh-panel); border-color: var(--kh-err); color: var(--kh-err); }
 .adm-btn--danger:hover { background: var(--kh-err-soft); border-color: var(--kh-err); }
@@ -196,7 +196,7 @@ td.adm-empty strong { display: block; color: var(--dh-ink); font-size: var(--fs-
 
 /* ---- auth pages (login, MFA, forgot, reset) ---- */
 .adm-auth { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--sp-5) var(--sp-4); background: var(--kh-cloth); }
-.adm-auth-card { width: 100%; max-width: 440px; background: var(--dh-white); border-radius: var(--r-lg); padding: var(--sp-6) var(--sp-5); box-shadow: 0 18px 48px color-mix(in srgb, #000 35%, transparent); }
+.adm-auth-card { width: 100%; max-width: 440px; background: var(--dh-white); border-radius: var(--kh-radius-card); padding: var(--sp-6) var(--sp-5); box-shadow: 0 18px 48px color-mix(in srgb, #000 35%, transparent); }
 @media (min-width: 480px) { .adm-auth-card { padding: var(--sp-6); } }
 .adm-auth-brand { display: block; margin-bottom: var(--sp-5); text-align: center; font: 400 38px/1 var(--font-display); letter-spacing: -.02em; color: var(--dh-sidebar-ink-strong) !important; text-decoration: none; }
 .adm-auth-brand span { color: var(--kh-cloth); }

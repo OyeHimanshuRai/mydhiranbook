@@ -11,16 +11,17 @@
     --kh-cloth-line: rgba(255, 255, 255, .22);
 
     /* pages */
-    --kh-paper: #fbfbfc;
+    --kh-paper: #f3f4f7;                      /* page ground: a faint cool tint, so white surfaces read as raised */
     --kh-panel: #ffffff;
-    --kh-wash: #f3f4f7;                       /* quiet tint: table head, muted panels */
+    --kh-wash: #eaedf2;                       /* quiet tint: table head, muted panels */
 
     /* ink */
     --kh-text: #1d2230;                       /* graphite */
     --kh-text-2: #444c5e;
     --kh-text-3: #5b6477;                     /* faintest readable text, 5.9:1 on white */
     --kh-ink: #1a2a4a;                        /* blue-black: figures, links, primary buttons */
-    --kh-ink-2: #101c36;                      /* hover/pressed */
+    --kh-ink-2: #101c36;                      /* hover */
+    --kh-ink-3: #0a1226;                      /* pressed */
     --kh-ink-soft: #eef1f7;                   /* ink tint: selected rows, soft fills */
     --kh-ink-line: #c6cee0;
 
@@ -28,7 +29,7 @@
     --kh-margin: #c9484d;                     /* red margin line, hairline only */
     --kh-rule: #d9dce3;
     --kh-rule-soft: #e8eaef;
-    --kh-field-edge: #7d8698;                 /* 3.6:1 on white */
+    --kh-field-edge: #868fa2;                 /* control boundary, 3.2:1 on white */
 
     /* status: word + tone, never colour alone */
     --kh-ok: #1f6f4a;
@@ -50,7 +51,9 @@
     --kh-ring: 0 0 0 2px #fff, 0 0 0 4px var(--kh-ink);
 
     /* shape and type */
-    --kh-radius: 6px;
+    --kh-radius: 6px;                        /* inputs and selects */
+    --kh-radius-btn: 8px;                    /* buttons */
+    --kh-radius-card: 12px;                  /* cards, panels, tables */
     --kh-radius-sm: 4px;
     --kh-hair: 1px;
     --kh-font: system-ui, "Noto Sans", "Segoe UI", Roboto, "Noto Sans Devanagari", sans-serif;
@@ -64,6 +67,9 @@
     --kh-gap: var(--fl-gap, 12px);
 
     /* effects: flat. Only toasts and dialogs lift. */
+    /* elevation: cards sit on a 1px-spread shadow, popovers higher; no card has an outline */
+    --elev-1: 0 0 0 1px rgba(29, 34, 48, .05), 0 1px 3px rgba(29, 34, 48, .09);
+    --elev-2: 0 0 0 1px rgba(29, 34, 48, .06), 0 6px 20px rgba(29, 34, 48, .16);
     --kh-lift: 0 12px 32px rgba(26, 17, 20, .22), 0 2px 6px rgba(26, 17, 20, .12);
     --kh-scroll-thumb: color-mix(in srgb, var(--kh-ink) 35%, transparent);
     --kh-scroll-thumb-hover: color-mix(in srgb, var(--kh-ink) 55%, transparent);
@@ -103,6 +109,19 @@ html, body, * { scrollbar-width: thin; scrollbar-color: var(--kh-scroll-thumb) t
 ::selection { background: var(--kh-ink); color: #fff; }
 input, textarea, select { caret-color: var(--kh-ink); accent-color: var(--kh-ink); }
 
-/* ==== Required-field star and legend (shared by every form) ==== */
+/* ==== Required-field star (shared by every form; the legend line is its own component) ==== */
 .ui-req { margin-inline-start: 2px; color: var(--kh-err); font-size: 1em; font-weight: 600; }
-.ui-req-legend { margin: 0 0 var(--sp-3, 12px); color: var(--kh-text-2); font-size: var(--fs-sm, 0.8125rem); font-weight: 400; line-height: 1.4; }
+
+/* ==== Motion: restrained, decorative, never blocks. Only opacity, transform, colour, background, border, shadow animate. ==== */
+:root { --dur-1: 120ms; --dur-2: 180ms; --dur-3: 260ms; --ease-out: cubic-bezier(.2, .7, .2, 1); }
+html { -webkit-tap-highlight-color: color-mix(in srgb, var(--kh-ink) 14%, transparent); }
+:where(a, button, input, select, textarea, summary, label, [role="tab"], [role="switch"], tbody tr) {
+    transition: color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out),
+        box-shadow var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out), opacity var(--dur-1) var(--ease-out);
+}
+@keyframes kh-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes kh-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 1ms !important; transition-delay: 0s !important; animation-duration: 1ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+    .kh-spinner, .btn[aria-busy="true"]::after, .ui-btn[aria-busy="true"]::after { animation-duration: 1.2s !important; animation-iteration-count: infinite !important; }
+}

@@ -201,16 +201,6 @@ body {
     justify-content: flex-end;
 }
 
-.header-badge {
-    padding: 6px 14px;
-    background: var(--jf-surface-accent);
-    border: 1px solid var(--kh-rule);
-    border-radius: var(--jf-radius-pill);
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--jf-gold-deep);
-}
-
 .content-inner {
     padding: 32px;
     max-width: 1600px;
@@ -392,7 +382,7 @@ body {
     line-height: 1.45;
     overflow-wrap: anywhere;
     cursor: pointer;
-    transition: opacity 160ms ease, transform 160ms ease, visibility 160ms ease;
+    transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out), visibility var(--dur-2) var(--ease-out);
 }
 .global-toast.is-visible::after { content: "\00d7"; margin-left: auto; padding-left: 12px; font-size: 1.4em; line-height: 1; opacity: .85; }
 
@@ -763,7 +753,7 @@ body {
     height: 2.5px;
     border-radius: 999px;
     background: #ffffff;
-    transition: transform 220ms cubic-bezier(0.4, 0, 0.2, 1), opacity 180ms ease, top 220ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--dur-3) var(--ease-out), opacity var(--dur-2) var(--ease-out);
 }
 
 .jf-header-mobile-fab-bars span:nth-child(1) {

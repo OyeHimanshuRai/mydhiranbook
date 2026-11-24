@@ -20,5 +20,4 @@
     --ui-field-edge: var(--kh-field-edge);
     --ui-eyebrow-ink: var(--kh-cloth);
     --ui-on-navy-soft: var(--kh-on-cloth-soft);
-    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }

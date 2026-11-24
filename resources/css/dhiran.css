@@ -228,21 +228,6 @@
     flex-wrap: wrap;
     min-width: 0;
 }
-.header-badge {
-    display: inline-flex;
-    align-items: center;
-    border-radius: 999px;
-    border: 1px solid var(--dh-accent-line);
-    background: var(--dh-accent-soft);
-    color: var(--dh-accent-hover);
-    padding: 4px 9px;
-    font-size: var(--fs-meta);
-    line-height: 1;
-    font-weight: 600;
-    min-height: 26px;
-    white-space: nowrap;
-    flex: 0 0 auto;
-}
 
 .da-feature-card,
 .dr-report-card {
@@ -351,7 +336,12 @@ body.dh-modal-open {
     color: var(--dh-ink);
     box-shadow: 0 24px 56px color-mix(in srgb, var(--dh-shadow-tint) 18%, transparent);
 }
-.dh-dialog::backdrop { background: color-mix(in srgb, var(--dh-scrim-tint) 42%, transparent); }
+.dh-dialog { opacity: 0; transform: translateY(8px); transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out), overlay var(--dur-2) allow-discrete, display var(--dur-2) allow-discrete; }
+.dh-dialog[open] { opacity: 1; transform: none; }
+@starting-style { .dh-dialog[open] { opacity: 0; transform: translateY(8px); } }
+.dh-dialog::backdrop { background: color-mix(in srgb, var(--dh-scrim-tint) 42%, transparent); opacity: 0; transition: opacity var(--dur-2) var(--ease-out), overlay var(--dur-2) allow-discrete, display var(--dur-2) allow-discrete; }
+.dh-dialog[open]::backdrop { opacity: 1; }
+@starting-style { .dh-dialog[open]::backdrop { opacity: 0; } }
 
 .da-hero { padding: 22px; }
 .da-hero-title { color: var(--dh-ink); font-size: 24px; line-height: 1.2; font-weight: 600; margin: 0; }
@@ -436,11 +426,6 @@ body.dh-modal-open {
 }
 
 @media (max-width: 360px) {
-    .header-badge {
-        min-height: 25px;
-        padding: 4px 8px;
-        font-size: var(--fs-meta);
-    }
 }
 
 /* Final Dhiran create-page guardrails: keep legacy migrated rules from
@@ -673,13 +658,18 @@ body.dh-modal-open {
 .dh-app .dh-fbar-clearall { font-size: 13px; font-weight: 600; color: var(--dh-link); padding: 0 4px; }
 .dh-fbar-range { margin-left: auto; font-size: 12px; color: var(--dh-muted); }
 
-/* The panel: a right-hand drawer on desktop. */
+/* The panel: a right-hand drawer on desktop. It enters AND leaves with a transition (display and overlay are discrete). */
 .dh-app dialog.dh-fpanel {
     margin: 0 0 0 auto; padding: 0; border: 0; width: min(420px, 100vw); max-width: 100vw; height: 100dvh; max-height: 100dvh;
     background: var(--dh-card); color: var(--dh-ink); box-shadow: -16px 0 40px color-mix(in srgb, var(--dh-shadow-tint) 18%, transparent);
-    animation: dh-fpanel-in 220ms var(--dh-ease-drawer);
+    transform: translateX(100%); opacity: 0;
+    transition: transform var(--dur-3) var(--ease-out), opacity var(--dur-3) var(--ease-out), overlay var(--dur-3) allow-discrete, display var(--dur-3) allow-discrete;
 }
-.dh-fpanel::backdrop { background: color-mix(in srgb, var(--dh-scrim-tint) 40%, transparent); animation: dh-fade-in 200ms ease-out; }
+.dh-app dialog.dh-fpanel[open] { transform: none; opacity: 1; }
+@starting-style { .dh-app dialog.dh-fpanel[open] { transform: translateX(100%); opacity: 0; } }
+.dh-fpanel::backdrop { background: color-mix(in srgb, var(--dh-scrim-tint) 40%, transparent); opacity: 0; transition: opacity var(--dur-3) var(--ease-out), overlay var(--dur-3) allow-discrete, display var(--dur-3) allow-discrete; }
+.dh-fpanel[open]::backdrop { opacity: 1; }
+@starting-style { .dh-fpanel[open]::backdrop { opacity: 0; } }
 .dh-fpanel-inner { display: flex; flex-direction: column; height: 100%; }
 .dh-fpanel-handle { display: none; }
 .dh-fpanel-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 14px; border-bottom: 1px solid var(--dh-line); }
@@ -713,9 +703,6 @@ body.dh-modal-open {
 .dh-fpanel-foot .btn { justify-content: center; min-height: 46px; }
 html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; } /* the page behind stays put */
 
-@keyframes dh-fpanel-in { from { transform: translateX(100%); } to { transform: none; } }
-@keyframes dh-fsheet-in { from { transform: translateY(100%); } to { transform: none; } }
-@keyframes dh-fade-in { from { opacity: 0; } to { opacity: 1; } }
 
 /* Phones: a bottom sheet with a grab handle; search and the Filters button share the row. */
 @media (max-width: 720px) {
@@ -727,15 +714,16 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; } /* the page be
            full height however few the choices. Now it is as tall as its content, up to 88% of the screen. */
         inset: auto 0 0 0; margin: 0; width: 100vw; height: auto; max-height: 88dvh; border-radius: var(--kh-radius) 20px 0 0;
         box-shadow: 0 -12px 40px color-mix(in srgb, var(--dh-shadow-tint) 20%, transparent);
-        animation-name: dh-fsheet-in;
+        transform: translateY(100%);
     }
+    .dh-app dialog.dh-fpanel[open] { transform: none; }
+}
+@media (max-width: 720px) { @starting-style { .dh-app dialog.dh-fpanel[open] { transform: translateY(100%); } } }
+@media (max-width: 720px) {
     .dh-fpanel-inner { height: auto; max-height: 88dvh; }
     .dh-fpanel-handle { display: block; width: 40px; height: 5px; margin: 8px auto 0; border-radius: 999px; background: var(--dh-field-border); }
     .dh-fpanel-head { padding: 10px 20px 12px; }
     .dh-fopt span { min-height: 40px; }
-}
-@media (prefers-reduced-motion: reduce) {
-    .dh-app dialog.dh-fpanel, .dh-fpanel::backdrop { animation: none; }
 }
 
 /* Profile sections with their own filters: title + action on one line, link chips, a one-line summary. */
@@ -1104,7 +1092,7 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
     padding: var(--sp-3); border-bottom: 1px solid var(--dh-line-soft); color: var(--dh-ink-soft);
     font-size: var(--fl-fs-cell); font-weight: 500; line-height: 1.4; vertical-align: middle;
 }
-.dh-app table.dh-stack > tbody > tr:hover { background: var(--dh-row-hover); }
+.dh-app table.dh-stack > tbody > tr:has(.jf-row-action):hover { background: var(--dh-row-hover); }
 .dh-app table.dh-stack > tbody > tr:last-child > td { border-bottom: 0; }
 .dh-app table.dh-stack .dh-sno-th, .dh-app table.dh-stack td.dh-sno { width: 48px; padding-inline: var(--sp-4) var(--sp-1) !important; text-align: left; }
 .dh-app table.dh-stack td.jf-table-empty { padding: 0; }
@@ -1143,7 +1131,6 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
         padding: var(--fl-card-pad); background: var(--dh-card); border: 1px solid var(--dh-card-border);
         border-radius: var(--dh-card-radius); box-shadow: var(--dh-card-shadow);
     }
-    .dh-app table.dh-stack > tbody > tr:hover { background: var(--dh-card); border-color: var(--dh-accent-line); }
     .dh-app table.dh-stack > tbody > tr:has(a:focus-visible) { outline: 2px solid var(--dh-focus); outline-offset: 2px; }
     .dh-app table.dh-stack > tbody > tr > td {
         grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-3);
@@ -1274,7 +1261,8 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 
 /* ==== Links: ink; hover changes colour, never underlines (owner 2026-11-08) ==== */
 .dh-app a:not([class]) { color: var(--kh-ink); text-underline-offset: 3px; }
-.dh-app a:not([class]):hover { color: var(--kh-ink-2); }
+.dh-app a:not([class]):is(:hover, :focus-visible) { color: var(--kh-ink-2); text-decoration: underline; }
+.dh-app :is(p, li, dd) a:not([class]) { text-decoration: underline; }
 
 /* ==== Shell: the oxblood cloth ==== */
 .dh-sidebar { background: var(--kh-cloth); color: var(--kh-on-cloth); }
@@ -1287,7 +1275,7 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 .dh-wordmark span { color: var(--kh-on-cloth-soft); }
 .dh-nav-link { border-radius: var(--kh-radius); font-weight: 500; color: var(--kh-on-cloth); }
 .dh-nav-link:hover { background: color-mix(in srgb, #fff 9%, transparent); }
-.dh-nav-link.active, .dh-nav-link.active:hover { background: var(--kh-cloth-lift); font-weight: 600; box-shadow: inset 0 0 0 1px color-mix(in srgb, #fff 30%, transparent); }
+.dh-nav-link.active, .dh-nav-link.active:hover { background: var(--kh-cloth-lift); font-weight: 600; box-shadow: inset 3px 0 0 #fff; }
 .dh-sidebar :is(a, button):focus-visible, .dh-sidebar-close:focus-visible { outline: 2px solid var(--kh-focus-on-cloth); outline-offset: 2px; }
 .dh-logout, .dh-sidebar-close { border-color: var(--kh-cloth-line); border-radius: var(--kh-radius); }
 .dh-logout:hover { background: color-mix(in srgb, #fff 9%, transparent); }
@@ -1316,32 +1304,40 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 }
 .dh-scrim { background: color-mix(in srgb, var(--kh-cloth-deep) 55%, transparent); }
 
-/* ==== Buttons: ink fill = the next action; outline = the rest; crimson outline = destructive ==== */
+/* ==== Buttons (8px, pressable): solid ink = the next action; white with a strong ink border = the rest; crimson border = destructive;
+   ghost = text and icon only, for toolbars. Every one has hover, pressed, focus, disabled and loading. ==== */
 .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; position: relative;
     min-height: var(--kh-ctl-h); padding: 0 var(--fl-btn-px);
-    border: 1px solid var(--kh-field-edge); border-radius: var(--kh-radius); background: var(--kh-panel); color: var(--kh-ink);
-    font: 600 var(--fl-fs-body)/1.15 var(--kh-font); letter-spacing: 0; text-decoration: none; text-align: center; cursor: pointer; box-shadow: none;
-    transition: background-color 120ms var(--ease-out), border-color 120ms var(--ease-out), color 120ms var(--ease-out);
+    border: 1.5px solid var(--kh-ink-2); border-radius: var(--kh-radius-btn); background: var(--kh-panel); color: var(--kh-ink);
+    font: 600 var(--fl-fs-body)/1.15 var(--kh-font); letter-spacing: 0; text-decoration: none; text-align: center; cursor: pointer;
+    box-shadow: 0 1px 2px rgba(29, 34, 48, .10);
 }
 .btn svg { flex: none; }
-.btn:hover { background: var(--kh-ink-soft); border-color: var(--kh-ink); color: var(--kh-ink-2); }
-.btn-primary, .btn-dark, .btn-success {
-    background: var(--kh-ink); border-color: var(--kh-ink); color: #fff;
-}
-.btn-primary:hover, .btn-dark:hover, .btn-success:hover {
-    background: var(--kh-ink-2); border-color: var(--kh-ink-2); color: #fff;
-}
-.btn-secondary { background: var(--kh-panel); border-color: var(--kh-field-edge); color: var(--kh-ink); }
+.btn:hover { background: var(--kh-ink-soft); color: var(--kh-ink-2); }
+.btn:active:not([disabled]):not([aria-disabled="true"]) { background: var(--kh-ink-line); transform: translateY(1px); box-shadow: none; }
+.btn-primary, .btn-dark, .btn-success { background: var(--kh-ink); border-color: var(--kh-ink); color: #fff; box-shadow: 0 1px 2px rgba(10, 18, 38, .35); }
+.btn-primary:hover, .btn-dark:hover, .btn-success:hover { background: var(--kh-ink-2); border-color: var(--kh-ink-2); color: #fff; }
+.btn-primary:active:not([disabled]):not([aria-disabled="true"]), .btn-dark:active:not([disabled]), .btn-success:active:not([disabled]) { background: var(--kh-ink-3); border-color: var(--kh-ink-3); color: #fff; }
 .btn-danger, .btn-destructive { background: var(--kh-panel); border-color: var(--kh-err); color: var(--kh-err); }
 .btn-danger:hover, .btn-destructive:hover { background: var(--kh-err-soft); border-color: var(--kh-err); color: var(--kh-err); }
+.btn-danger:active:not([disabled]), .btn-destructive:active:not([disabled]) { background: var(--kh-err-line); color: var(--kh-err); }
+.btn-ghost { background: transparent; border-color: transparent; box-shadow: none; color: var(--kh-ink); }
+.btn-ghost:hover { background: transparent; color: var(--kh-ink-2); text-decoration: underline; text-underline-offset: 3px; }
 .btn-sm, .btn-xs { min-height: var(--kh-ctl-h); padding: 0 var(--fl-btn-px); font-size: var(--fl-fs-body); }
-.btn[disabled], .btn[aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
+/* Disabled is a different object, not a faded one: flat grey, no shadow, no border weight. */
+.btn[disabled], .btn[aria-disabled="true"] { background: var(--kh-wash); border-color: var(--kh-rule); color: var(--kh-text-3); box-shadow: none; cursor: not-allowed; transform: none; }
 .btn:focus-visible { outline: 2px solid var(--kh-focus); outline-offset: 2px; }
-/* Row action: a square icon button, ink filled, the same radius as every button. */
-.dh-app .jf-row-action { border-radius: var(--kh-radius); box-shadow: none; }
-.dh-app .jf-row-action--view { --jf-ra-bg: var(--kh-panel); --jf-ra-line: var(--kh-field-edge); --jf-ra-fg: var(--kh-ink); }
-.dh-app .jf-row-action--view:hover { --jf-ra-bg: var(--kh-ink-soft); --jf-ra-line: var(--kh-ink); }
+/* Loading: the label stays, a spinner appears; the button ignores taps until the request ends. */
+.btn[aria-busy="true"], form[aria-busy="true"] .btn[type="submit"] { pointer-events: none; padding-inline-start: calc(var(--fl-btn-px) + 22px); }
+.btn[aria-busy="true"]::after, form[aria-busy="true"] .btn[type="submit"]::after {
+    content: ""; position: absolute; left: var(--fl-btn-px); top: 50%; width: 14px; height: 14px; margin-top: -7px;
+    border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: kh-spin 700ms linear infinite;
+}
+/* Row action: an icon button, same family. */
+.dh-app .jf-row-action { border-radius: var(--kh-radius-btn); box-shadow: 0 1px 2px rgba(29, 34, 48, .10); }
+.dh-app .jf-row-action--view { --jf-ra-bg: var(--kh-panel); --jf-ra-line: var(--kh-ink-2); --jf-ra-fg: var(--kh-ink); border-width: 1.5px; }
+.dh-app .jf-row-action--view:hover { --jf-ra-bg: var(--kh-ink-soft); }
 
 /* ==== Fields ==== */
 .dh-app :is(input:where(:not([type="checkbox"], [type="radio"], [type="submit"], [type="button"], [type="reset"], [type="hidden"], [type="range"], [type="file"])), select, textarea):where(:not(.dh-fbar-search input)),
@@ -1351,9 +1347,11 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
     font: 400 var(--fl-fs-body)/1.3 var(--kh-font);
 }
 .dh-app select:not([multiple]):not(.dh-fbar-search select), .dh-native-select {
-    appearance: none; -webkit-appearance: none; padding-right: 36px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4.25 6 8.25l4-4' fill='none' stroke='%231a2a4a' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 12px center; background-size: 12px;
+    /* A dropdown is a field with an arrow zone: tinted, divided from the value, always showing a chevron. */
+    appearance: none; -webkit-appearance: none; padding-right: 52px; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4.25 6 8.25l4-4' fill='none' stroke='%231a2a4a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
+        linear-gradient(var(--kh-field-edge), var(--kh-field-edge)), linear-gradient(var(--kh-wash), var(--kh-wash));
+    background-repeat: no-repeat; background-position: right 14px center, right 40px top 0, right 0 top 0; background-size: 12px 12px, 1px 100%, 40px 100%;
 }
 .dh-app textarea, .dset-textarea { min-height: calc(var(--kh-ctl-h) * 2); padding: 10px 12px; }
 .dh-app :is(input, select, textarea)::placeholder, .dset-input::placeholder { color: var(--kh-text-3); font-weight: 400; opacity: 1; }
@@ -1371,12 +1369,12 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 /* ==== Switch: on = ink, off = grey; the tick/dash cue stays ==== */
 .dh-app :is(.rs-sw, .st-switch, .dh-switch) input:checked + :is(.rs-sw-track, .st-switch-track, .dh-switch-track, span) { background-color: var(--kh-ink); border-color: var(--kh-ink); }
 
-/* ==== Badges: a word plus a tone plus a shape, never colour alone ==== */
+/* ==== Badges: status, not controls. 4px, tinted, no border, a word plus a tone plus a shape, never colour alone ==== */
 .dh-status, .st-badge {
     width: fit-content; display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 8px;
-    border: 1px solid var(--dh-status-line, var(--kh-rule)); border-radius: var(--kh-radius-sm);
+    border: 0; border-radius: var(--kh-radius-sm);
     background: var(--dh-status-soft, var(--kh-wash)); color: var(--dh-status-ink, var(--kh-text-2));
-    font: 500 var(--fs-sm)/1.2 var(--kh-font); letter-spacing: 0; white-space: nowrap; max-width: 100%; overflow-wrap: anywhere;
+    font: 500 var(--fs-meta)/1.2 var(--kh-font); letter-spacing: 0; white-space: nowrap; max-width: 100%; overflow-wrap: anywhere; cursor: default;
 }
 /* A badge stays one word-group on one line; on very narrow screens it may wrap rather than touch its neighbour. */
 @media (max-width: 400px) { .dh-status, .st-badge { white-space: normal; } }
@@ -1386,13 +1384,14 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 .dh-status--muted::before { background: transparent; box-shadow: inset 0 0 0 1.5px currentColor; }
 .dh-status--info { --dh-status-ink: var(--kh-info); --dh-status-soft: var(--kh-info-soft); --dh-status-line: var(--kh-info-line); }
 .dh-status--muted { --dh-status-ink: var(--kh-text-2); --dh-status-soft: var(--kh-wash); --dh-status-line: var(--kh-rule); }
-.dh-status--warning { --dh-status-soft: var(--kh-panel); }
+.dh-status--warning { --dh-status-soft: var(--kh-wash); }
 
-/* ==== Cards and panels: flat, hairline, 6px ==== */
-.dh-table-card, .dh-filter-card, .dh-stat, .st-panel, .dr-report-grid, .da-feature-card, .dh-dialog, .dh-fpanel, .dh-doc-body {
-    border-radius: var(--kh-radius); box-shadow: none; border: 1px solid var(--kh-rule); background: var(--kh-panel);
+/* ==== Cards and panels: white, 12px, no outline, raised on --elev-1. A card is never hover-reactive unless the whole card is a link. ==== */
+.dh-table-card, .dh-filter-card, .dh-stat, .st-panel, .dr-report-grid, .da-feature-card, .dh-doc-body {
+    border-radius: var(--kh-radius-card); box-shadow: var(--elev-1); border: 0; background: var(--kh-panel);
 }
-.dh-dialog, .dh-fpanel { box-shadow: var(--kh-lift); }
+.dh-dialog, .dh-fpanel { border: 0; background: var(--kh-panel); box-shadow: var(--kh-lift); }
+.dh-dialog { border-radius: var(--kh-radius-card); }
 .dh-filter-card { padding: var(--fl-card-pad); }
 .st-panel, .rs-panel { padding: 0; }
 .dh-app :is(.dh-stat-label) { margin: 0; }
@@ -1416,7 +1415,7 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
     font-size: var(--kh-fs-label); font-weight: 600; letter-spacing: var(--kh-label-track); text-transform: uppercase; line-height: 1.3; white-space: nowrap;
 }
 .dh-app table.dh-stack > tbody > tr > td, .jf-table > tbody > tr > td { color: var(--kh-text); border-bottom: 1px solid var(--kh-rule-soft); font-size: var(--fl-fs-cell); font-weight: 400; }
-.dh-app table.dh-stack > tbody > tr:hover { background: color-mix(in srgb, var(--kh-ink) 4%, transparent); }
+.dh-app table.dh-stack > tbody > tr:has(.jf-row-action):hover { background: color-mix(in srgb, var(--kh-ink) 4%, transparent); }
 .dh-app table.dh-stack > tbody > tr:last-child > td { border-bottom: 0; }
 /* Figures sit on the right edge, in tabular numerals, a touch heavier than words. */
 .dh-app table.dh-stack :is(th, td).text-right { text-align: right; }
@@ -1447,23 +1446,32 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 /* Identifiers (loan numbers) and names keep one weight and one family wherever they appear. */
 .dh-app table .font-mono, .dh-app td.font-mono, .dh-app th.font-mono { font-family: var(--jf-font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace); font-size: 1em; font-weight: 500; letter-spacing: 0; }
 .dh-app table a:not(.jf-row-action):not(.btn) { color: var(--kh-ink) !important; font-weight: 500; }
-.dh-app table a:not(.jf-row-action):not(.btn):hover { color: var(--kh-ink-2) !important; }
+.dh-app table a:not(.jf-row-action):not(.btn):is(:hover, :focus-visible) { color: var(--kh-ink-2) !important; text-decoration: underline; }
 .dh-app table :is(.text-slate-700, .text-slate-800, .text-slate-900, .text-gray-700, .text-gray-800, .text-gray-900) { color: var(--kh-text) !important; }
 .dh-app table :is(.font-medium, .font-semibold) { font-weight: 500; }
 .dh-app table td.text-right :is(.font-semibold, .font-medium) { font-weight: 600; }
 
-/* ==== Tabs, segmented controls, chips ==== */
-.dh-app .dh-tab, .dh-app .dh-fchip, .dh-app .dh-fopt span, .dh-app .dh-subnav-link, .dh-app .st-tab, .dh-app .st-role-btn {
-    border: 1px solid var(--kh-field-edge); border-radius: var(--kh-radius); background: var(--kh-panel); color: var(--kh-ink);
-    font-size: var(--fl-fs-body); font-weight: 600; min-height: var(--kh-ctl-h); box-shadow: none;
+/* ==== Chips and filters: pills. Selected = tinted fill + a check, never colour alone. ==== */
+.dh-app :is(.dh-tab, .dh-fchip, .dh-fopt span, .st-role-btn) {
+    display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--kh-field-edge); border-radius: 999px; background: var(--kh-panel); color: var(--kh-text);
+    font-size: var(--fl-fs-body); font-weight: 500; min-height: var(--kh-ctl-h); box-shadow: none; cursor: pointer;
 }
-.dh-app .dh-tab:hover, .dh-app .dh-fchip:hover { background: var(--kh-ink-soft); border-color: var(--kh-ink); }
-.dh-app .dh-tab[aria-current="page"], .dh-app .dh-subnav-link[aria-current="page"], .dh-app .dh-fopt input:checked + span, .dh-app .dh-fopt--btn.is-picked span,
-.dh-app .st-tab[aria-selected="true"], .dh-app .st-role-btn[aria-pressed="true"] { background: var(--kh-ink); border-color: var(--kh-ink); color: #fff; box-shadow: none; }
-.dh-app .dh-fopt input:checked + span .dh-fopt-count { background: #fff; color: var(--kh-ink); }
+.dh-app :is(.dh-tab, .dh-fchip, .dh-fopt span, .st-role-btn):hover { background: var(--kh-ink-soft); border-color: var(--kh-ink); color: var(--kh-ink-2); }
+.dh-app :is(.dh-tab[aria-current="page"], .dh-fopt input:checked + span, .dh-fopt--btn.is-picked span, .st-role-btn[aria-selected="true"]) {
+    background: var(--kh-ink-soft); border-color: var(--kh-ink); color: var(--kh-ink-2); font-weight: 600;
+}
+.dh-app :is(.dh-tab[aria-current="page"], .dh-fopt input:checked + span, .dh-fopt--btn.is-picked span, .st-role-btn[aria-selected="true"])::before {
+    content: ""; flex: none; width: 14px; height: 14px; margin-inline-start: -2px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='m2.5 7.5 3 3 6-7' fill='none' stroke='%231a2a4a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.dh-app .dh-fopt input:checked + span .dh-fopt-count { background: var(--kh-ink); color: #fff; }
+/* Tabs: text with an indicator, no box. */
+.dh-app .dh-subnav-link { border: 0; border-radius: 0; background: none; box-shadow: inset 0 -3px 0 transparent; color: var(--kh-text-2); font-weight: 500; padding-inline: var(--sp-2); min-height: var(--kh-ctl-h); }
+.dh-app .dh-subnav-link:hover { background: none; color: var(--kh-ink); box-shadow: inset 0 -3px 0 var(--kh-rule); }
+.dh-app .dh-subnav-link[aria-current="page"] { background: none; color: var(--kh-ink); font-weight: 600; box-shadow: inset 0 -3px 0 var(--kh-ink); }
 
 /* ==== Pagination ==== */
-.dh-app .dh-pager-num, .dh-app .dh-pager-btn, .dh-app .dh-pager-select { border-radius: var(--kh-radius); border: 1px solid var(--kh-field-edge); background-color: var(--kh-panel); color: var(--kh-ink); font-weight: 600; }
+.dh-app .dh-pager-num, .dh-app .dh-pager-btn { border-radius: var(--kh-radius-btn); border: 1.5px solid var(--kh-ink-2); background-color: var(--kh-panel); box-shadow: 0 1px 2px rgba(29, 34, 48, .10); color: var(--kh-ink); font-weight: 600; }
 .dh-app .dh-pager-num.is-current { background: var(--kh-ink); border-color: var(--kh-ink); color: #fff; }
 .dh-pager { border-top: 1px solid var(--kh-rule); color: var(--kh-text-2); }
 
@@ -1471,11 +1479,11 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 .dh-app .dh-fbar-search, .dh-app .dh-fbar-open { border-radius: var(--kh-radius); background: var(--kh-panel); }
 .dh-app .dh-fbar-search { box-shadow: inset 0 0 0 1px var(--kh-field-edge); }
 .dh-app .dh-fbar-search:focus-within { box-shadow: inset 0 0 0 1px var(--kh-ink); outline: 2px solid var(--kh-focus); outline-offset: 2px; }
-.dh-app .dh-fbar-open { border: 1px solid var(--kh-field-edge); color: var(--kh-ink); font-weight: 600; }
+.dh-app .dh-fbar-open { border: 1.5px solid var(--kh-ink-2); border-radius: var(--kh-radius-btn); box-shadow: 0 1px 2px rgba(29, 34, 48, .10); color: var(--kh-ink); font-weight: 600; }
 .dh-app .dh-fbar-badge { background: var(--kh-ink); color: #fff; }
 
 /* ==== Dialogs and sheets ==== */
-.dh-dialog::backdrop, .dh-fpanel::backdrop { background: color-mix(in srgb, var(--kh-cloth-deep) 45%, transparent); }
+.dh-dialog::backdrop, .dh-fpanel::backdrop { background-color: color-mix(in srgb, var(--kh-cloth-deep) 45%, transparent); }
 .dh-fpanel-head { border-bottom: 1px solid var(--kh-rule); }
 .dh-fpanel-head h2 { font-size: var(--fl-fs-h2); font-weight: 600; }
 
@@ -1503,8 +1511,13 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 .dh-page--list .dh-pager { position: sticky; bottom: 0; z-index: 3; background: var(--kh-panel); }
 
 
-.dh-app .header-badge { border-radius: var(--kh-radius-sm); background: var(--kh-wash); border-color: var(--kh-rule); color: var(--kh-text-2); font: 500 var(--fs-sm)/1.2 var(--kh-font); }
 @media (min-width: 768px) and (max-width: 1023.98px) { .dh-nav-link, .dh-nav-link.active, .dh-logout { font-weight: 500; font-size: var(--fs-meta); } }
 
-@media (prefers-reduced-motion: reduce) { .btn, .dh-nav-link { transition: none; } }
+/* Menus and popovers sit one level above cards. */
+.dh-header-mobile-fab-nav, .ui-filter-select-menu { box-shadow: var(--elev-2); border-color: transparent; }
+
+/* ==== Motion on the page: content fades in on each visit (opacity only, no layout change); tab panes crossfade. ==== */
+.dh-content { animation: kh-fade var(--dur-1) var(--ease-out); }
+[role="tabpanel"]:not([hidden]) { animation: kh-fade 140ms var(--ease-out); }
+
 @media print { .dh-table-card::before, .dh-stat::before, .dh-sidebar::after { display: none; } }

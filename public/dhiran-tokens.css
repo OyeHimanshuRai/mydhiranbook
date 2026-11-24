@@ -75,15 +75,15 @@
     --dh-shadow-soft: none;
 
     /* cards: one look for every panel, KPI tile and table card */
-    --dh-card-border: var(--dh-line);
-    --dh-card-shadow: none;
+    --dh-card-border: transparent;
+    --dh-card-shadow: var(--elev-1);
 
     /* layout, shape and motion (not colour) */
     --dh-content-max: 1680px;   /* every Dhiran page, lists and detail pages alike; fills a 1920px screen beside the
                                    sidebar so tables have room for one value per column (owner 2026-11-11) */
     --dh-form-max: 1100px;      /* long settings-style forms */
-    --dh-card-radius: var(--kh-radius);
-    --dh-radius: var(--kh-radius);
+    --dh-card-radius: var(--kh-radius-card);
+    --dh-radius: var(--kh-radius-card);
     --dh-radius-sm: var(--kh-radius-sm);
     --dh-ease: cubic-bezier(0.23, 1, 0.32, 1);
     --dh-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);

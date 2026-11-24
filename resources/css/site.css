@@ -32,11 +32,11 @@
 
 /* ---- buttons (a or button) ---- */
 .ui-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); min-height: var(--fl-ctl-h); padding: 0 var(--fl-btn-px);
-    border: 1px solid var(--kh-ink); border-radius: var(--kh-radius); background: var(--kh-ink); color: #fff; font: 600 var(--fl-fs-body)/1.15 var(--font-body);
+    border: 1.5px solid var(--kh-ink); border-radius: var(--kh-radius-btn); background: var(--kh-ink); color: #fff; font: 600 var(--fl-fs-body)/1.15 var(--font-body); box-shadow: 0 1px 2px rgba(10, 18, 38, .35);
     text-decoration: none; cursor: pointer; transition: background .15s var(--ease-out), box-shadow .15s var(--ease-out); }
 .site a.ui-btn { color: #fff; } .site a.ui-btn:hover { text-decoration: none; color: #fff; }
 .ui-btn:hover { background: var(--kh-ink-2); border-color: var(--kh-ink-2); }
-.ui-btn--ghost, .site a.ui-btn--ghost { background: var(--kh-panel); color: var(--kh-ink); border-color: var(--kh-field-edge); }
+.ui-btn--ghost, .site a.ui-btn--ghost { background: var(--kh-panel); color: var(--kh-ink); border-color: var(--kh-ink-2); box-shadow: 0 1px 2px rgba(29, 34, 48, .10); }
 .ui-btn--ghost:hover, .site a.ui-btn--ghost:hover { background: var(--kh-ink-soft); border-color: var(--kh-ink); color: var(--kh-ink-2); }
 .ui-btn--onnavy, .site a.ui-btn--onnavy { background: transparent; color: #fff; border-color: color-mix(in srgb, #fff 45%, transparent); }
 .ui-btn--onnavy:hover, .site a.ui-btn--onnavy:hover { background: color-mix(in srgb, #fff 10%, transparent); color: #fff; }
@@ -80,7 +80,7 @@
 .ui-otp { text-align: center; font: 600 32px/1.2 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace !important; letter-spacing: .5em; text-indent: .5em; min-height: 64px !important; }
 
 /* ---- cards ---- */
-.ui-card { background: var(--dh-card); border: 1px solid var(--dh-card-border); border-radius: var(--r-md); padding: var(--sp-5); box-shadow: var(--dh-card-shadow); min-width: 0; }
+.ui-card { background: var(--dh-card); border: 0; border-radius: var(--kh-radius-card); padding: var(--sp-5); box-shadow: var(--dh-card-shadow); min-width: 0; }
 
 /* ---- header (public) ---- */
 .site-head { position: sticky; top: 0; z-index: 40; background: var(--kh-cloth); color: #fff; padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left); border-bottom: 1px solid color-mix(in srgb, #fff 8%, transparent); }
@@ -147,7 +147,7 @@
 @media (min-width: 720px) { .site .features { grid-template-columns: 1fr 1fr; } }
 @media (min-width: 1000px) { .site .features { grid-template-columns: repeat(3, 1fr); } }
 .site .plans { grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 380px)); justify-content: start; }
-.site .plan, .ck-plan { position: relative; border: 1px solid var(--kh-rule) !important; background: var(--kh-panel) !important; padding-left: calc(var(--sp-5) + 10px); }
+.site .plan, .ck-plan { position: relative; border: 0 !important; border-radius: var(--kh-radius-card); box-shadow: var(--elev-1); background: var(--kh-panel) !important; padding-left: calc(var(--sp-5) + 10px); }
 /* The margin line: every money card carries the ledger's hairline red rule. */
 .site .plan::before, .ck-plan::before { content: ""; position: absolute; top: 0; bottom: 0; left: 10px; width: 1px; background: var(--kh-margin); opacity: .8; pointer-events: none; }
 .site .plan h2 { font-size: var(--fs-lg); margin: 0; }
@@ -187,7 +187,7 @@
 .auth-side { display: flex; flex-direction: column; min-width: 0; min-height: 100vh; min-height: 100dvh; }
 .auth-main { flex: 1 0 auto; display: flex; padding: var(--sp-7) max(var(--sp-5), env(safe-area-inset-right)) var(--sp-6) max(var(--sp-5), env(safe-area-inset-left)); }
 .auth-card { width: 100%; max-width: 440px; margin: auto; }
-@media (min-width: 561px) { .auth-card { max-width: 500px; background: var(--dh-white); border: 1px solid var(--dh-card-border); border-radius: var(--r-lg); padding: var(--sp-6) var(--sp-7); box-shadow: var(--dh-card-shadow); } .auth-main { padding-top: var(--sp-7); padding-bottom: var(--sp-7); } }
+@media (min-width: 561px) { .auth-card { max-width: 500px; background: var(--dh-white); border: 0; border-radius: var(--kh-radius-card); box-shadow: var(--elev-1); padding: var(--sp-6) var(--sp-7); box-shadow: var(--dh-card-shadow); } .auth-main { padding-top: var(--sp-7); padding-bottom: var(--sp-7); } }
 .auth-card h1 { font-size: var(--fs-2xl); margin-bottom: var(--sp-2); }
 .auth-card .lede { color: var(--dh-muted); margin-bottom: var(--sp-2); }
 .auth-alt { margin: var(--sp-6) 0 0; padding-top: var(--sp-5); border-top: 1px solid var(--dh-line); display: grid; gap: var(--sp-1); font-size: var(--fs-sm); color: var(--dh-muted); }
@@ -255,6 +255,6 @@
 .site-head .ui-btn:not(.ui-btn--onnavy):hover, .hero .ui-btn:not(.ui-btn--onnavy):not(.ui-btn--ghost):hover { background: var(--kh-on-cloth-soft); border-color: var(--kh-on-cloth-soft); color: var(--kh-cloth-deep); }
 .site-head :is(a, button):focus-visible, .hero :is(a, button):focus-visible, .auth-brand :is(a, button):focus-visible { outline-color: var(--kh-focus-on-cloth); }
 
-.ui-card, .auth-card, .ui-modal-card { border-radius: var(--kh-radius); }
+.ui-card, .auth-card, .ui-modal-card { border-radius: var(--kh-radius-card); }
 .ck-list th { border-bottom: 3px double var(--kh-text-3); font-size: var(--kh-fs-label); letter-spacing: var(--kh-label-track); text-transform: uppercase; font-weight: 600; color: var(--kh-text-2); }
 

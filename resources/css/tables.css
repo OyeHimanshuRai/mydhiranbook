@@ -97,8 +97,7 @@
     padding-right: 4px;
 }
 
-.jf-table > tbody > tr:hover,
-.jf-table > tbody > tr:focus-within { background: var(--jf-t-hover); }
+.jf-table > tbody > tr:has(.jf-row-action):is(:hover, :focus-within) { background: var(--jf-t-hover); }
 /* no hover tint on a row that only carries an empty or "no match" message */
 .jf-table > tbody > tr:has(> .jf-table-empty):hover { background: transparent; }
 

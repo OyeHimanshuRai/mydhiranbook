@@ -36,13 +36,9 @@
 .dh-app .st-opt { font-weight: 400; color: var(--dh-muted); }
 .dh-app .st-control {
     display: block; width: 100%; min-height: var(--fl-ctl-h); padding: 0 var(--sp-3);
-    font: inherit; font-size: 16px; line-height: 1.3; color: var(--dh-ink); font-variant-numeric: tabular-nums;
-    background: var(--dh-field); border: 1.5px solid var(--ui-field-edge); border-radius: var(--r-sm);
+    font: inherit; font-size: var(--fl-fs-body); line-height: 1.3; color: var(--dh-ink); font-variant-numeric: tabular-nums;
+    background-color: var(--dh-field); border: 1px solid var(--kh-field-edge); border-radius: var(--kh-radius);
     -webkit-appearance: none; appearance: none;
-}
-.dh-app select.st-control {
-    padding-right: 36px; background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b6b80' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
 .dh-app .st-control:hover { border-color: var(--dh-muted); }
 .dh-app .st-control:focus-visible { outline: 2px solid var(--dh-focus); outline-offset: 1px; border-color: var(--dh-focus); }
@@ -52,7 +48,7 @@
 .dh-app .st-control[type="number"] { -moz-appearance: textfield; appearance: textfield; }
 
 /* Unit beside the number (₹, %, months, days): the label stays short and the number is read in context. */
-.dh-app .st-affix { display: flex; align-items: stretch; min-width: 0; background: var(--dh-field); border: 1.5px solid var(--ui-field-edge); border-radius: var(--r-sm); overflow: hidden; }
+.dh-app .st-affix { display: flex; align-items: stretch; min-width: 0; background: var(--dh-field); border: 1px solid var(--kh-field-edge); border-radius: var(--r-sm); overflow: hidden; }
 .dh-app .st-affix:hover { border-color: var(--dh-muted); }
 .dh-app .st-affix:focus-within { outline: 2px solid var(--dh-focus); outline-offset: 1px; border-color: var(--dh-focus); }
 .dh-app .st-affix .st-control { flex: 1 1 auto; min-width: 0; border: 0; border-radius: 0; background: transparent; outline: 0; }
@@ -148,10 +144,9 @@
 .dh-app .st-roles { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0; padding: 0; border: 0; min-width: 0; }
 .dh-app .st-role-btn {
     display: inline-flex; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 48px; padding: var(--sp-1) var(--sp-4); text-align: left;
-    font: inherit; font-weight: 600; color: var(--dh-ink-soft); background: var(--dh-card); border: 1.5px solid var(--ui-field-edge); border-radius: var(--r-sm); cursor: pointer;
+    font: inherit; cursor: pointer;
 }
-.dh-app .st-role-btn small { font-size: 0.75rem; font-weight: 500; color: var(--dh-muted); }
-.dh-app .st-role-btn[aria-selected="true"] { color: var(--dh-ink); background: var(--dh-accent-soft); border-color: var(--kh-ink); box-shadow: inset 0 0 0 1px var(--kh-ink); }
+.dh-app .st-role-btn small { font-size: var(--fs-meta); font-weight: 500; color: var(--kh-text-2); }
 .dh-app .st-perm-group { margin: 0; padding: 0; border: 0; min-width: 0; }
 .dh-app .st-perm-group + .st-perm-group { margin-top: var(--sp-5); }
 .dh-app .st-perm-group > legend { float: left; width: 100%; padding: 0 0 var(--sp-2); margin: 0; font-size: var(--fs-sm); font-weight: 600; color: var(--kh-text-2); }
@@ -216,7 +211,7 @@
 .dh-app .st-panel-body > * + * { margin-top: var(--sp-4); }
 
 /* The shell and app.css force field background, border and radius with !important; :not(#_) lifts these above them without a bigger hammer. */
-.dh-app .st-field .st-control:not(#_) { background-color: var(--dh-field) !important; border: 1.5px solid var(--ui-field-edge) !important; border-radius: var(--r-sm) !important; box-shadow: none !important; }
+.dh-app .st-field .st-control:not(#_) { background-color: var(--dh-field) !important; border: 1px solid var(--kh-field-edge) !important; border-radius: var(--kh-radius) !important; box-shadow: none !important; }
 .dh-app .st-field .st-control:not(#_):hover { border-color: var(--dh-muted) !important; }
 .dh-app .st-field .st-control:not(#_):focus-visible { border-color: var(--dh-focus) !important; background-color: var(--dh-card) !important; }
 .dh-app .st-field .st-control.is-invalid:not(#_) { border-color: var(--dh-danger) !important; background-color: var(--dh-danger-soft) !important; }

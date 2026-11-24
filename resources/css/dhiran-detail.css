@@ -120,7 +120,6 @@
 .dh-app .dd-table :is(th, td).num { text-align: right; }
 .dh-app .dd-table td.strong { color: var(--dh-ink); font-weight: 600; }
 .dh-app .dd-table td.mono { font-variant-numeric: tabular-nums; }
-.dh-app .dd-table tbody tr:hover { background: var(--dh-row-hover); }
 .dh-app .dd-table td.is-empty { padding: var(--sp-6) var(--fl-card-pad); text-align: center; color: var(--dh-muted); font-size: var(--fl-fs-body); font-weight: 400; }
 .dd-method { display: inline-flex; align-items: center; padding: 2px 10px; border: 1px solid var(--dh-line); border-radius: var(--r-pill); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fs-sm); font-weight: 500; white-space: nowrap; }
 .dh-app .dd-table a.dd-tlink { display: inline-flex; align-items: center; min-height: var(--tap); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
@@ -149,7 +148,6 @@
 .dh-app .dd-table :is(th, td).num { text-align: right; }
 .dh-app .dd-table td.strong { color: var(--dh-ink); font-weight: 600; }
 .dh-app .dd-table td.mono { font-variant-numeric: tabular-nums; }
-.dh-app .dd-table tbody tr:hover { background: var(--dh-row-hover); }
 .dh-app .dd-table td.is-empty { padding: var(--sp-6) var(--fl-card-pad); text-align: center; color: var(--dh-muted); font-size: var(--fl-fs-body); font-weight: 400; }
 .dd-method { display: inline-flex; align-items: center; padding: 2px 10px; border: 1px solid var(--dh-line); border-radius: var(--r-pill); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fs-sm); font-weight: 500; white-space: nowrap; }
 .dh-app .dd-table a.dd-tlink { display: inline-flex; align-items: center; min-height: var(--tap); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
@@ -164,7 +162,6 @@
     .dh-app .dd-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
     .dh-app .dd-table tbody { display: grid; gap: var(--sp-3); }
     .dh-app .dd-table tbody tr { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3) var(--sp-4); padding: var(--fl-card-pad); background: var(--dh-card); border: 1px solid var(--dh-card-border); border-radius: var(--dh-card-radius); box-shadow: var(--dh-card-shadow); }
-    .dh-app .dd-table tbody tr:hover { background: var(--dh-card); }
     .dh-app .dd-table td { min-width: 0; padding: 0; border: 0; text-align: left; font-size: var(--fl-fs-body); font-weight: 600; color: var(--dh-ink); }
     .dh-app .dd-table :is(th, td):first-child, .dh-app .dd-table :is(th, td):last-child { padding: 0; }
     .dh-app .dd-table td.num { text-align: left; }

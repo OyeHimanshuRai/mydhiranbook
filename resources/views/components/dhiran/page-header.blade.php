@@ -1,14 +1,13 @@
 @props([
     'title' => null,
     'subtitle' => null,
-    'badge' => null,
 ])
 
 @php
     $slotMarkup = trim((string) $slot);
     // Dhiran views pass their title/actions as slot children (legacy style).
     $useSlotLayout = $title === null && $subtitle === null && $slotMarkup !== '';
-    $hasHeaderActions = ($useSlotLayout && str_contains($slotMarkup, 'page-actions')) || isset($actions) || $badge;
+    $hasHeaderActions = ($useSlotLayout && str_contains($slotMarkup, 'page-actions')) || isset($actions);
 @endphp
 
 {{-- Dhiran-only page header. Pushed to the layout's header band, above the scroll area, so the page scrollbar
@@ -121,11 +120,8 @@
                 @endif
             </div>
 
-            @if(isset($actions) || $badge)
+            @if(isset($actions))
                 <div class="page-actions">
-                    @if($badge)
-                        <span class="header-badge">{{ $badge }}</span>
-                    @endif
                     {{ $actions ?? '' }}
                 </div>
             @endif
