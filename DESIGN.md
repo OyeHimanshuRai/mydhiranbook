@@ -7,20 +7,21 @@ colors:
   cloth-lift: "#8c2a2d"
   on-cloth: "#ffffff"
   on-cloth-soft: "#f0d9d9"
-  paper: "#fbfbfc"
+  paper: "#f3f4f7"
   panel: "#ffffff"
-  wash: "#f3f4f7"
+  wash: "#eaedf2"
   graphite: "#1d2230"
   graphite-2: "#444c5e"
   graphite-3: "#5b6477"
   ink: "#1a2a4a"
   ink-pressed: "#101c36"
+  ink-deep: "#0a1226"
   ink-soft: "#eef1f7"
   ink-line: "#c6cee0"
   margin-red: "#c9484d"
   rule: "#d9dce3"
   rule-soft: "#e8eaef"
-  field-edge: "#7d8698"
+  field-edge: "#868fa2"
   ok: "#1f6f4a"
   ok-soft: "#e9f4ee"
   error: "#b3261e"
@@ -66,6 +67,8 @@ typography:
 rounded:
   sm: "4px"
   md: "6px"
+  button: "8px"
+  card: "12px"
 spacing:
   xs: "4px"
   sm: "8px"
@@ -78,21 +81,21 @@ components:
   button-primary:
     backgroundColor: "{colors.ink}"
     textColor: "{colors.panel}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.button}"
     height: "44px"
   button-primary-hover:
     backgroundColor: "{colors.ink-pressed}"
   button-secondary:
     backgroundColor: "{colors.panel}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.button}"
     height: "44px"
   button-secondary-hover:
     backgroundColor: "{colors.ink-soft}"
   button-danger:
     backgroundColor: "{colors.panel}"
     textColor: "{colors.error}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.button}"
     height: "44px"
   input:
     backgroundColor: "{colors.panel}"
@@ -111,7 +114,7 @@ components:
     rounded: "{rounded.md}"
   ledger-card:
     backgroundColor: "{colors.panel}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.card}"
 ---
 
 # Design System: Dhiran
@@ -125,10 +128,10 @@ Dhiran is the shop's own red ledger made software. One committed oxblood cloth h
 It is a book opened all day by counter staff and checked from a phone by the owner, so density is steady and calm, never decorative. Accuracy comes first: no figure is rounded or hidden by styling. The system refuses the grey SaaS dashboard with a yellow accent, and the inherited JewelFlow look. There is no yellow or gold anywhere, enforced by `tests/Feature/NoYellowTest.php`.
 
 **Key Characteristics:**
-- Oxblood cloth shell (rail, phone top bar, auth panel); cool-white pages (#fbfbfc) on white panels.
-- Blue-black ink carries every action, link, figure and selected state.
+- Oxblood cloth shell (rail, phone top bar, auth panel); cool-white pages (#f3f4f7 ground) under white panels.
+- Blue-black ink carries every action, link, figure and selected state. Four things never look alike: button, dropdown, card, link (see Affordance Vocabulary).
 - Ledger furniture: red margin line, 3px double rules, 1px dotted stitch seam.
-- Flat: hairline borders, 6px radius, shadow only on toast and dialog.
+- Near-flat: cards rest on a 1px-spread hairline shadow (`--elev-1`), 12px card / 8px button / 6px field radius; only overlays lift.
 - System fonts with Devanagari fallbacks, no web-font request; one serif wordmark "dhiran.".
 - Fixed-height app shell: the body never scrolls.
 - 44px touch targets (40px on desktop), fluid type from 320px to 1440px.
@@ -138,7 +141,7 @@ It is a book opened all day by counter staff and checked from a phone by the own
 A committed two-material palette: oxblood cloth for the shell, cool paper and blue-black ink for the pages. Red appears twice only, as cloth and as the hairline margin.
 
 ### Primary
-- **Blue-Black Ink** (#1a2a4a): primary buttons, links, key figures, selected tabs and pager page, focus ring, form accents, scrollbar thumb (35% mix). Pressed or hover: **Pressed Ink** (#101c36). Soft fills (selected rows, secondary hover): **Ink Mist** (#eef1f7); ink hairline: #c6cee0.
+- **Blue-Black Ink** (#1a2a4a): primary buttons, links, key figures, selected tabs and pager page, focus ring, form accents, scrollbar thumb (35% mix). Hover: **Pressed Ink** (#101c36); active press: **Deep Ink** (#0a1226). Soft fills (selected rows, secondary hover): **Ink Mist** (#eef1f7); ink hairline: #c6cee0.
 
 ### Secondary
 - **Oxblood Cloth** (#7a1a1d): sidebar rail, top bar on phones, auth brand panel. **Deep Cloth** (#5a1215) for pressed parts, scrims and dialog backdrops; **Cloth Lift** (#8c2a2d) for the active or hover nav fill. Text on cloth is white (#ffffff) or **Cloth Blush** (#f0d9d9, 8:1) for secondary text. Cloth hairlines are white at 22%.
@@ -147,12 +150,12 @@ A committed two-material palette: oxblood cloth for the shell, cool paper and bl
 - **Margin Red** (#c9484d): the ledger margin line only, 1px, 80% opacity. Never text, never a fill.
 
 ### Neutral
-- **Cool Paper** (#fbfbfc): page ground (`.dh-scroll`). **Panel White** (#ffffff): cards, tables, the desktop top bar. **Quiet Wash** (#f3f4f7): muted panels, disabled fields, neutral badges.
+- **Cool Paper** (#f3f4f7): page ground (`.dh-scroll`, body). **Panel White** (#ffffff): cards, tables, the desktop top bar. **Quiet Wash** (#eaedf2): table head, muted panels, disabled fields, neutral badges, the dropdown arrow zone.
 - **Graphite** (#1d2230) body text; **Graphite 2** (#444c5e) labels and table headers; **Graphite 3** (#5b6477) faintest readable text (5.9:1 on white), placeholders, double rules.
-- **Rule Grey** (#d9dce3) card and header hairlines; **Soft Rule** (#e8eaef) row separators; **Field Edge** (#7d8698) control borders (3.6:1 on white).
+- **Rule Grey** (#d9dce3) card and header hairlines; **Soft Rule** (#e8eaef) row separators; **Field Edge** (#868fa2) control borders (3.2:1 on white).
 
 ### Status
-- **Ledger Green** (#1f6f4a, soft #e9f4ee, line #b8d8c6); **Crimson** (#b3261e, soft #fcefee, line #f0c4c1) also the required-field star; **Info Blue** (#1d4f91, soft #eaf1fb, line #bcd0ec).
+- **Ledger Green** (#1f6f4a, soft #e9f4ee, line #b8d8c6); **Crimson** (#b3261e, soft #fcefee, line #f0c4c1), also the required-field star (see Fields); **Info Blue** (#1d4f91, soft #eaf1fb, line #bcd0ec).
 - **Deep Brass-Brown** (#8a4700, line #d9ae86): warning text, outline and icon only on white. **Warning Solid** (#7d4200): the one solid use, the warning toast. Hue 33 degrees, outside the yellow band.
 
 ### Named Rules
@@ -191,51 +194,79 @@ Spacing steps are 4, 8, 12, 16, 24, 32, 48px. Page gutter is fluid (12px at 320 
 
 ## Elevation & Depth
 
-Flat. Depth comes from hairlines (1px Rule Grey), the cloth against white, and tonal fills (Ink Mist on hover, Quiet Wash on muted panels); blur, glow, glass and gradients are not used. Shadows exist only on the toast and on dialogs and filter sheets, plus the drawer rail on phones. Utility `shadow-*` classes inside the app are neutralised to none.
+Near-flat. Depth is hairlines, the cloth against the grey-white page, and tonal fills (Ink Mist on hover, Quiet Wash on muted panels). Cards and tables sit on a 1px-spread hairline plus a soft shadow; overlays lift higher. No blur, glow, glass or gradient on surfaces. Utility `shadow-*` classes inside the app are neutralised to the card token.
 
 ### Shadow Vocabulary
-- **Lift** (`box-shadow: 0 12px 32px rgba(26,17,20,.22), 0 2px 6px rgba(26,17,20,.12)`): dialogs, filter panel, toast, phone drawer.
+- **Card** (`--elev-1`: `0 0 0 1px rgba(29,34,48,.05), 0 1px 3px rgba(29,34,48,.09)`): cards, panels, tables, stat cards. Same at rest and on hover unless the card is a link (see Affordance Vocabulary).
+- **Popover** (`--elev-2`): header action menu, filter select menus.
+- **Lift** (`--kh-lift`: `0 12px 32px rgba(26,17,20,.22), 0 2px 6px rgba(26,17,20,.12)`): dialogs, filter panel, toast, phone drawer.
+- Sticky action bars (save bar, form totals bar) carry a small upward shadow only while they float over content (under 1024px); on desktop they are plain rows.
 
 ### Named Rules
-**The Flat Cards Rule.** Cards, tables, stats and fields are flat at rest and on hover. Only overlays lift.
+**The Cards Do Not Move Rule.** A card never lifts, grows or changes shadow on hover. Only a card that is itself a link or button may change border and tint on hover, and never move.
 **The Double Rule Rule.** A 3px double rule in Graphite 3 sits under every table header and above every totals row, with the sum in ink 600. It is the ledger's way of saying "the line above is final".
 **The Stitch Rule.** A 1px dotted seam marks the cloth: inside the rail edge, under the rail head, above the rail foot, and under the desktop top bar in rule grey.
 
 ## Shapes
 
-A single 6px radius for buttons, fields, cards, tabs, dialogs and alerts; 4px for badges; 50% only for a badge's dot. Utility rounded classes inside the app are forced to 6px. Borders are 1px hairlines; field edges are Field Edge (#7d8698). There are no pills, no heavy borders and no offset shadows. The signature geometry is the ledger: vertical red margin, horizontal double rules.
+Radius by role: **6px** fields, selects and alerts; **8px** buttons, chips and tabs; **12px** cards, panels and tables; **4px** badges and read-only labels; 50% only for a badge's dot and avatars. Utility rounded classes inside the app are forced to 6px. Borders are 1px hairlines (buttons 1.5px ink); field edges are Field Edge (#868fa2).
+
+**The No Pills Rule (owner).** No 999px capsules: not on chips, tabs, labels or counts. In particular **no count pill in a page header** (the old `$badge` slot of `<x-dhiran.page-header>` is gone, and nothing replaces it); counts live in the table pager ("Showing 1-15 of 15") or inside a filter chip's own label. The only fully rounded shapes are the switch track, progress bar and avatars.
 
 ## Components
 
 ### Buttons
-- **Shape:** 6px radius, 1px border, 44px high (40px desktop), 600 at body size, no letter-spacing.
-- **Primary:** Blue-Black Ink fill, white text; hover Pressed Ink. `btn-dark` and `btn-success` map to the same ink fill.
-- **Secondary:** white fill, ink text, Field Edge border; hover Ink Mist with an ink border.
+- **Shape:** 8px radius, 1.5px border, 44px high (40px desktop), 600 at body size, no letter-spacing, 1px hairline shadow.
+- **Primary:** Blue-Black Ink fill, white text; hover Pressed Ink, active Deep Ink. `btn-dark`, `btn-success` map to the same fill. One per view.
+- **Secondary:** white fill, ink text, ink border; hover Ink Mist.
 - **Destructive:** white fill, crimson text and border; hover crimson tint.
-- **Focus / Disabled:** 2px ink outline, 2px offset (white ring on the cloth); disabled 55% opacity. Colour transitions 120ms ease-out; none under reduced motion.
+- **Ghost:** no fill, no border, ink text; hover underlines. Only for tertiary in-row actions.
+- **Focus:** 2px ink outline, 2px offset (white ring on the cloth).
+- **Disabled:** a different object, not a faded one: Quiet Wash fill, Rule border, Graphite 3 text, no shadow, `not-allowed` cursor.
+- **Busy:** `aria-busy="true"` shows a 14px spinner at the left of the label and ignores taps (`kh-spin`, 700ms; kept under reduced motion at 1.2s because it is information). Pair with `disabled` and a "...ing" label.
 - **On the phone top bar:** the primary becomes a white button with deep-cloth text; the rest outline in white.
 
 ### Fields
-- **Style:** white fill, 1px Field Edge border, 6px radius, 12px side padding, 44px high, placeholder Graphite 3. Selects use an ink chevron.
+- **Style:** white fill, 1px Field Edge border, 6px radius, 12px side padding, 44px high (40px desktop), placeholder Graphite 3.
+- **Select chevron rule.** A dropdown is a field with an arrow zone: always `appearance: none`, 52px right padding, an ink chevron in a 40px Quiet Wash zone divided from the value by a 1px Field Edge line. No select ever renders without the chevron zone (native arrow or none are both bugs). Number fields with a unit use the same zone as a static suffix (`.st-unit`), without the chevron.
 - **Hover / Focus:** border to ink; focus a 2px ink outline with 2px offset.
 - **Error / Disabled:** crimson border; disabled Quiet Wash fill with Graphite 3 text.
-- **Required:** a crimson star (`.ui-req`) after the label, with a one-line legend (`.ui-req-legend`); no "optional" wording.
+- **Required star rule (server rules only).** The crimson star (`.ui-req`, `<x-req>`, aria-hidden) goes after the label of a field only when the server rejects it empty (a `required` rule in the FormRequest or controller validation); the HTML `required` attribute follows the same rule, never the other way round. One-line legend (`.ui-req-legend`); no "optional" wording. `tests/Feature/RequiredMarkersTest.php` guards it.
+- **Borrower picker (New Loan).** A combobox that searches the server (`dhiran.borrowers.search`, at least 2 characters, 8 matches at most, latest request wins). The page never carries the borrower book; PAN and ID are fetched for the one chosen borrower. States: "Type at least 2 letters or digits", "Searching...", "No borrower matches...", and a retryable "Could not search" error.
 
 ### Badges
 - **Style:** 24px high, 4px radius, 1px tone border, tone-soft fill, 13 to 14px/500; a word always present.
 - **Shape cue:** circle (ok, info), triangle (warning), rotated square (danger), hollow ring (muted). The warning badge is white with brown outline text, never filled.
 
 ### Cards / Containers
-- **Corner Style:** 6px. **Background:** panel white on cool paper. **Border:** 1px Rule Grey. **Shadow:** none.
+- **Corner Style:** 12px (`--dh-card-radius`). **Background:** panel white on cool paper. **Border:** none (transparent) with the Card shadow (`--elev-1`). Every card family (`dh-table-card`, `dd-card`, `fm-card`, `st-panel`, `rs-group`) takes radius, border and shadow from the `--dh-card-*` tokens; never a per-page literal.
 - **Stat cards and money tables:** carry the margin line; stat values in ink 600 at title size.
 
 ### Ledger Tables (signature)
 Headers are 12px/600 uppercase with +0.06em, Graphite 2 on white, over a 3px double rule. Rows are 1px Soft Rule hairlines with a faint ink tint on hover. Figures are right-aligned tabular, loan numbers monospace 500, links ink 500. Totals sit under a 3px double rule in ink 600. The margin line is red at 6px in a 14px gutter.
 
+### Affordance Vocabulary
+Four things must never be mistaken for each other. Anything that breaks a row below is a bug, fixed in the shared class, not per page.
+- **Button:** solid ink fill, or white with an ink border; 8px radius, 600 weight, a hairline shadow. Does something.
+- **Dropdown:** a field (Field Edge border, 6px radius) with the Quiet Wash chevron zone. Chooses something.
+- **Card:** a white 12px panel with the Card shadow. Holds things; no hover change, no pointer cursor, unless the whole card is a link (then border and tint change on hover, never movement).
+- **Link:** ink text, underlined at rest (1px, 50% ink, 3px offset); hover darkens and thickens the line to 2px. Covers body links, text links in tables (loan numbers, names), phone numbers (`dh-tel`, `dd-tel`) and the borrower name on loan detail. Buttons, badges and rail items are never underlined. Row-action icon buttons are boxed buttons, not links.
+- **Badge / label:** 4px radius, a word, not clickable, no pointer cursor. (A status badge that links, such as "Photo / ID missing", is still a badge in shape; its link is the whole badge.)
+
 ### Navigation
 - **Rail:** oxblood, white 500 labels with a dotted stitch; hover a 9% white wash; active Cloth Lift with 600 weight and a 30% white inset hairline; focus a white 2px outline.
 - **Top bar:** white with a Rule Grey hairline and dotted seam on desktop; cloth on phones with white title and hamburger.
-- **Tabs, chips, pager:** outlined ink buttons at control height; selected state fills ink with white text.
+- **Tabs, chips, pager:** outlined buttons at control height with the 8px button radius (never pills); hover Ink Mist with an ink border; selected is a tinted fill plus a check mark, so it is never colour alone. The settings sub-navigation is underline tabs.
+
+### Save Bar (settings forms)
+Loan settings, Receipt settings, Users & roles and Staff forms share one pattern (`<x-settings.savebar>`, state from `stSaveForm()` in `settings-pane.js`; Receipt keeps its own bar with the same three states plus Discard):
+- **Clean:** status "No changes yet" (muted), Save disabled.
+- **Dirty:** status "Unsaved changes" (brown, circle-alert icon), Save enabled. A pane switch or link away asks "Leave this page?" first.
+- **Saving:** status "Saving..." (ink), Save disabled and busy with the spinner, a second submit is ignored. A failed save (validation or network) frees the form; a good one is replaced by the next page.
+- The status is a polite live region. Under 1024px the bar is sticky at the bottom (safe-area aware); on desktop it is a plain row at the end of the form. Settings pages switch inside `<turbo-frame id="settings-pane">`: the shell, title and rail stay, only the pane swaps, and the address advances.
+
+### States and Motion
+Every control has rest, hover, focus-visible, active, disabled and (for submits) busy states, all from tokens. Motion is restrained and never blocks: only opacity, transform, colour, background, border and shadow animate, at 120ms (`--dur-1`), 180ms or 260ms with `--ease-out`. `prefers-reduced-motion` collapses transitions and animations to 1ms except the busy spinner. The page body and tab panels fade in (`kh-fade`, 120 to 140ms); nothing slides across the page or bounces.
 
 ### Alerts and Dialogs
 - **Alerts:** full 1px border, 6px radius; tone by tint (ok, crimson, info) while warning is white with brown text and brown line. Icon or word carries the tone.
@@ -244,7 +275,7 @@ Headers are 12px/600 uppercase with +0.06em, Graphite 2 on white, over a 3px dou
 ## Do's and Don'ts
 
 ### Do:
-- **Do** let the oxblood cloth carry the shell and keep the pages white (#fbfbfc ground, #ffffff panels).
+- **Do** let the oxblood cloth carry the shell and keep the pages light (#f3f4f7 ground, #ffffff panels).
 - **Do** use Blue-Black Ink (#1a2a4a) for the primary action, links, key figures, selected states and the focus ring.
 - **Do** draw the red margin line (#c9484d, 1px) at 6px inside a 14px reserved gutter on money tables, stat cards and report grids.
 - **Do** put a 3px double rule under table headers and above totals, and right-align money in tabular numerals.
@@ -257,12 +288,14 @@ Headers are 12px/600 uppercase with +0.06em, Graphite 2 on white, over a 3px dou
 ### Don't:
 - **Don't** use yellow or gold anywhere; warning is never a filled yellow.
 - **Don't** use red as a button, link or fill; it is cloth and margin line only.
-- **Don't** add shadows to cards, tables, fields or hover states; only overlays lift.
+- **Don't** lift, grow or re-shadow a card on hover; only overlays lift, and only a link card may change border and tint.
+- **Don't** use pills: no 999px chips, tabs, labels or count badges, and never a count pill in a page header.
 - **Don't** use gradients, glass, glow or blur.
 - **Don't** use all-caps outside table headers, or text under 12px.
 - **Don't** use a web font; the wordmark serif is the one exception to the system stack.
 - **Don't** let the page body scroll, or add a footer outside the four Settings pages.
 - **Don't** rely on colour alone for status or required fields.
 - **Don't** let the margin line touch cell content; draw it only in the reserved gutter.
-- **Don't** underline links on hover; hover changes colour.
+- **Don't** leave a link as plain coloured text or underline a button: links are underlined at rest, buttons never.
+- **Don't** render a select without its chevron zone, or mark a field required (star or attribute) that the server accepts empty.
 - **Don't** invent testimonials or stats on public pages.

@@ -150,7 +150,7 @@ class ReceiptSettingsTest extends TestCase
         $this->assertStringContainsString('name="receipt_terms_text"', $html);
         $this->assertStringContainsString('name="closure_certificate_text"', $html);
         $this->assertStringContainsString('class="rs-bar"', $html);
-        $this->assertMatchesRegularExpression('/<button type="submit"[^>]*>[^<]*(<svg.*?<\/svg>)?\s*Save changes/s', $html);
+        $this->assertMatchesRegularExpression('/<button type="submit"[^>]*>[^<]*(<svg.*?<\/svg>)?\s*(<span[^>]*>)?Save changes/s', $html);
         $this->assertStringContainsString('role="status"', $html);
     }
 

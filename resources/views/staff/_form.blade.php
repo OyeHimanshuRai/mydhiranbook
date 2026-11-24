@@ -4,7 +4,7 @@
     $user = $editing ? $staff : null;
 @endphp
 <form method="POST" action="{{ $editing ? route('staff.update', $staff) : route('staff.store') }}" class="st-stack"
-      x-data="{ dirty: {{ session()->hasOldInput() ? 'true' : 'false' }}, saving: false }" @input="dirty = true" @change="dirty = true" @submit="saving = true"
+      x-data="stSaveForm({{ session()->hasOldInput() ? 'true' : 'false' }})" @input="dirty = true" @change="dirty = true" @submit="submit($event)"
       @beforeunload.window="if (dirty && !saving) $event.preventDefault()">
     @csrf
     @if($editing) @method('PUT') @endif
@@ -43,5 +43,5 @@
         </x-settings.panel>
     </div>
 
-    <x-settings.savebar :label="$editing ? 'Save changes' : 'Add Staff Member'" :icon="$editing ? 'save' : 'user-plus'" :cancel-href="route('staff.index')" />
+    <x-settings.savebar :label="$editing ? 'Save changes' : 'Add Staff Member'" :icon="$editing ? 'save' : 'user-plus'" :cancel-href="route('staff.index')" :lock-clean="$editing" />
 </form>

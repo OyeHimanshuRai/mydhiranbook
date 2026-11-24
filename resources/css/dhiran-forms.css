@@ -31,7 +31,7 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
 
 /* ---- Cards: one per step ---- */
 .dh-app .fm-card {
-    min-width: 0; background: var(--dh-card); border: 1px solid var(--dh-card-border, var(--dh-line)); border-radius: var(--r-md); box-shadow: var(--dh-shadow-soft);
+    min-width: 0; background: var(--dh-card); border: 1px solid var(--dh-card-border, var(--dh-line)); border-radius: var(--dh-card-radius); box-shadow: var(--dh-card-shadow);
     scroll-margin-top: calc(var(--dh-head, 56px) + var(--sp-3));
 }
 .dh-app .fm-card-head { display: flex; gap: var(--sp-3); align-items: flex-start; padding: var(--fm-pad); border-bottom: 1px solid var(--dh-line-soft); }

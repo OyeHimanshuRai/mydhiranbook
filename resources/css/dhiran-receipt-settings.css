@@ -125,7 +125,7 @@
 .rs-panel + .rs-panel { margin-top: var(--sp-6); }
 
 .rs-locked, .rs-group, .rs-text {
-    background: var(--dh-card); border: 1px solid var(--dh-line); border-radius: var(--r-md); overflow: hidden;
+    background: var(--dh-card); border: 1px solid var(--dh-card-border, var(--dh-line)); border-radius: var(--dh-card-radius); box-shadow: var(--dh-card-shadow); overflow: hidden;
 }
 .rs-locked { margin-bottom: var(--sp-4); }
 .rs-groups { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); align-items: start; }

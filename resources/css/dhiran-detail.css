@@ -121,7 +121,7 @@
 .dh-app .dd-table td.strong { color: var(--dh-ink); font-weight: 600; }
 .dh-app .dd-table td.mono { font-variant-numeric: tabular-nums; }
 .dh-app .dd-table td.is-empty { padding: var(--sp-6) var(--fl-card-pad); text-align: center; color: var(--dh-muted); font-size: var(--fl-fs-body); font-weight: 400; }
-.dd-method { display: inline-flex; align-items: center; padding: 2px 10px; border: 1px solid var(--dh-line); border-radius: var(--r-pill); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fs-sm); font-weight: 500; white-space: nowrap; }
+.dd-method { display: inline-flex; align-items: center; padding: 2px 10px; border: 1px solid var(--dh-line); border-radius: var(--kh-radius-sm); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fs-sm); font-weight: 500; white-space: nowrap; }
 .dh-app .dd-table a.dd-tlink { display: inline-flex; align-items: center; min-height: var(--tap); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .dh-app .dd-table a.dd-tlink--link { text-decoration: none; }
 @media (min-width: 1024px) and (pointer: fine) { .dh-app .dd-table a.dd-tlink { min-height: 36px; } }
@@ -149,7 +149,7 @@
 .dh-app .dd-table td.strong { color: var(--dh-ink); font-weight: 600; }
 .dh-app .dd-table td.mono { font-variant-numeric: tabular-nums; }
 .dh-app .dd-table td.is-empty { padding: var(--sp-6) var(--fl-card-pad); text-align: center; color: var(--dh-muted); font-size: var(--fl-fs-body); font-weight: 400; }
-.dd-method { display: inline-flex; align-items: center; padding: 2px 10px; border: 1px solid var(--dh-line); border-radius: var(--r-pill); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fs-sm); font-weight: 500; white-space: nowrap; }
+.dd-method { display: inline-flex; align-items: center; padding: 2px 10px; border: 1px solid var(--dh-line); border-radius: var(--kh-radius-sm); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fs-sm); font-weight: 500; white-space: nowrap; }
 .dh-app .dd-table a.dd-tlink { display: inline-flex; align-items: center; min-height: var(--tap); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .dh-app .dd-table a.dd-tlink--link { text-decoration: none; }
 @media (min-width: 1024px) and (pointer: fine) { .dh-app .dd-table a.dd-tlink { min-height: 36px; } }
@@ -270,7 +270,7 @@
 .dh-app .dd-who-card .customer-photo__label { font-size: var(--fl-fs-body); }
 .dh-app .dd-who-card .customer-photo .btn, .dh-app .dd-who-card .customer-photo .customer-photo-icon { min-height: var(--tap); width: var(--tap); flex-basis: var(--tap); }
 .dd-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
-.dh-app .dd-chips li { display: inline-flex; align-items: center; gap: var(--sp-1); min-height: 32px; padding: 0 var(--sp-3); border: 1px solid var(--dh-line); border-radius: var(--r-pill); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fl-fs-cell); font-weight: 600; overflow-wrap: anywhere; }
+.dh-app .dd-chips li { display: inline-flex; align-items: center; gap: var(--sp-1); min-height: 32px; padding: 0 var(--sp-3); border: 1px solid var(--dh-line); border-radius: var(--kh-radius-sm); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fl-fs-cell); font-weight: 600; overflow-wrap: anywhere; }
 .dh-app .dd-chips li.is-ok { background: var(--dh-success-soft); border-color: var(--dh-success-line); color: var(--dh-success); }
 .dh-app .dd-chips li.is-missing { background: var(--dh-warning-soft); border-color: var(--dh-warning-line); color: var(--dh-warning-ink); }
 .dd-chips svg { width: 14px; height: 14px; flex: none; }
@@ -297,7 +297,7 @@
 .dd-empty { display: grid; justify-items: start; gap: var(--sp-2); padding: var(--sp-5) var(--fl-card-pad); }
 .dh-app .dd-empty p { margin: 0; font-size: var(--fl-fs-body); color: var(--dh-muted); font-weight: 400; }
 .dh-app .dd-empty .dd-empty-title { font-size: var(--fl-fs-h2); font-weight: 600; color: var(--dh-ink); }
-.dd-photo-tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: var(--r-pill); background: var(--dh-success-soft); border: 1px solid var(--dh-success-line); color: var(--dh-success); font-size: var(--fs-sm); font-weight: 500; }
+.dd-photo-tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: var(--kh-radius-sm); background: var(--dh-success-soft); border: 1px solid var(--dh-success-line); color: var(--dh-success); font-size: var(--fs-sm); font-weight: 500; }
 .dh-app .dd .dh-fchip, .dh-app .dd .dh-fbar-clearall { min-height: var(--tap); }
 .dh-app .dd-pager { margin: 0; }
 

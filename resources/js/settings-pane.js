@@ -3,10 +3,19 @@
 // unsaved-changes guard in step, and holds the Receipt form's Alpine state (it used to be a page script, which a frame swap would miss).
 const FRAME = 'settings-pane';
 
+// Alpine state shared by every settings form: `dirty` (edited since load) and `saving` (submit in flight). A second submit while saving is
+// ignored; a failed save (validation or network) frees the form again, a good one is replaced by the next page.
+const saveGuard = {
+    submit(event) { if (this.saving) event.preventDefault(); else this.saving = true; },
+    freeOnFailure() { this.$root.addEventListener('turbo:submit-end', (e) => { if (!e.detail.success) this.saving = false; }); },
+};
+window.stSaveForm = (dirty = false) => ({ dirty, saving: false, submit: saveGuard.submit, init: saveGuard.freeOnFailure });
+
 // Alpine state for the receipt form. Global and loaded with the app, so it exists when the Receipt pane is swapped in from another settings page.
 window.rsReceiptSettings = (opts) => ({
     tab: 'pledge', dirty: !!opts.dirty, saving: false, announce: '', counts: {}, panels: {}, len: {}, base: null,
-    get message() { return this.dirty ? 'Unsaved changes' : (this.announce || 'No changes yet'); },
+    get message() { return this.saving ? 'Saving…' : this.dirty ? 'Unsaved changes' : (this.announce || 'No changes yet'); },
+    submit: saveGuard.submit,
     snapshot() { const d = new FormData(this.$root); d.delete('_token'); return new URLSearchParams(d).toString(); },
     init() {
         const names = ['pledge', 'payment'];
@@ -14,6 +23,7 @@ window.rsReceiptSettings = (opts) => ({
         if (!names.includes(want)) { try { want = sessionStorage.getItem('rs-tab'); } catch (e) { want = null; } }
         this.tab = names.includes(want) ? want : 'pledge';
         this.$root.classList.add('rs-tabbed');
+        this.freeOnFailure();
         this.recount();
         this.base = opts.dirty ? null : this.snapshot();
         if (opts.saved) setTimeout(() => { this.announce = opts.saved; }, 300); // set after load so the status region is announced
@@ -44,6 +54,7 @@ window.rsReceiptSettings = (opts) => ({
         this.$root.querySelectorAll('[data-rs-group="' + id + '"] input[name="show[]"]').forEach((b) => { b.checked = turnOn; });
         this.touch();
     },
+    freeOnFailure: saveGuard.freeOnFailure,
     touch() { this.recount(); this.dirty = this.base === null ? true : this.snapshot() !== this.base; },
     discard() { this.$root.reset(); this.base = this.snapshot(); this.announce = ''; this.recount(); this.dirty = false; },
 });

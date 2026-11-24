@@ -82,7 +82,7 @@
                       id="role-pane-{{ $role->id }}" role="tabpanel" aria-labelledby="role-tab-{{ $role->id }}"
                       @if($role->id !== $initialRole) class="is-off" inert aria-hidden="true" @endif
                       :class="{ 'is-off': role !== '{{ $role->id }}' }" :inert="role !== '{{ $role->id }}'" :aria-hidden="role !== '{{ $role->id }}'"
-                      x-data="{ dirty: false, saving: false }" @input="dirty = true" @change="dirty = true" @submit="saving = true"
+                      x-data="stSaveForm()" @input="dirty = true" @change="dirty = true" @submit="submit($event)"
                       @beforeunload.window="if (dirty && !saving) $event.preventDefault()">
                     @csrf
                     @method('PATCH')

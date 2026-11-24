@@ -104,10 +104,10 @@
     "northStar": "The Bahi-khata",
     "overview": "Dhiran is the shop's own red ledger made software. One committed oxblood cloth holds the shell (rail, phone top bar, auth brand panel); inside it the pages are calm and white, and every money table keeps the ledger's rhythm: a red margin line, a double rule under the header and above totals, figures right-aligned in tabular numerals. The next action is always the one blue-black ink button.\n\nIt is a book opened all day by counter staff and checked from a phone by the owner, so density is steady and calm, never decorative. Accuracy comes first: no figure is rounded or hidden by styling. The system refuses the grey SaaS dashboard with a yellow accent, and the inherited JewelFlow look. There is no yellow or gold anywhere, enforced by tests/Feature/NoYellowTest.php.",
     "keyCharacteristics": [
-      "Oxblood cloth shell (rail, phone top bar, auth panel); cool-white pages (#fbfbfc) on white panels.",
+      "Oxblood cloth shell (rail, phone top bar, auth panel); cool-white pages (#f3f4f7) under white panels.",
       "Blue-black ink carries every action, link, figure and selected state.",
       "Ledger furniture: red margin line, 3px double rules, 1px dotted stitch seam.",
-      "Flat: hairline borders, 6px radius, shadow only on toast and dialog.",
+      "Near-flat: cards on a 1px-spread hairline shadow, 12px card / 8px button / 6px field radius, only overlays lift.",
       "System fonts with Devanagari fallbacks, no web-font request; one serif wordmark \"dhiran.\".",
       "Fixed-height app shell: the body never scrolls.",
       "44px touch targets (40px on desktop), fluid type from 320px to 1440px."
@@ -121,12 +121,12 @@
       { "name": "The Caps Are For Table Heads Rule", "body": "All-caps appears only on table headers. Field labels, stat labels and legends are sentence case.", "section": "typography" },
       { "name": "The Three Weights Rule", "body": "400, 500 and 600. 700 only for h1 and key figures.", "section": "typography" },
       { "name": "The Sixteen On Phones Rule", "body": "Fields are 16px under 768px so iOS does not zoom on focus.", "section": "typography" },
-      { "name": "The Flat Cards Rule", "body": "Cards, tables, stats and fields are flat at rest and on hover. Only overlays lift.", "section": "elevation" },
+      { "name": "The Cards Do Not Move Rule", "body": "A card never lifts, grows or re-shadows on hover; only a card that is itself a link may change border and tint. Cards share the --dh-card-* tokens.", "section": "elevation" },
       { "name": "The Double Rule Rule", "body": "A 3px double rule in Graphite 3 sits under every table header and above every totals row, with the sum in ink 600.", "section": "elevation" },
       { "name": "The Stitch Rule", "body": "A 1px dotted seam marks the cloth: inside the rail edge, under the rail head, above the rail foot, and under the desktop top bar in rule grey.", "section": "elevation" }
     ],
     "dos": [
-      "Do let the oxblood cloth carry the shell and keep the pages white (#fbfbfc ground, #ffffff panels).",
+      "Do let the oxblood cloth carry the shell and keep the pages light (#f3f4f7 ground, #ffffff panels).",
       "Do use Blue-Black Ink (#1a2a4a) for the primary action, links, key figures, selected states and the focus ring.",
       "Do draw the red margin line (#c9484d, 1px) at 6px inside a 14px reserved gutter on money tables, stat cards and report grids.",
       "Do put a 3px double rule under table headers and above totals, and right-align money in tabular numerals.",

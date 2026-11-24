@@ -17,7 +17,7 @@
         <x-settings.live />
         <p class="st-lead">Defaults for every new pledge loan. Loans already made keep the terms they were made with.</p>
         <form method="POST" action="{{ route('dhiran.settings.update') }}" class="st-page" data-turbo-frame="_top"
-              x-data="{ dirty: {{ session()->hasOldInput() ? 'true' : 'false' }}, saving: false }" @input="dirty = true" @change="dirty = true" @submit="saving = true"
+              x-data="stSaveForm({{ session()->hasOldInput() ? 'true' : 'false' }})" @input="dirty = true" @change="dirty = true" @submit="submit($event)"
               @beforeunload.window="if (dirty && !saving) $event.preventDefault()">
             @csrf
             @method('PATCH')

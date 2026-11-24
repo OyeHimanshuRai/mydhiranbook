@@ -16,7 +16,7 @@
 <x-dhiran.settings-nav active="receipt" switcher />
 <form id="rs-form" class="rs-form" method="POST" action="{{ route('dhiran.settings.receipt') }}" data-turbo-frame="_top"
       x-data="rsReceiptSettings({{ \Illuminate\Support\Js::from(['dirty' => session()->hasOldInput(), 'saved' => session('success')]) }})"
-      @input="touch($event)" @change="touch($event)" @submit="saving = true" @beforeunload.window="if (dirty && !saving) $event.preventDefault()">
+      @input="touch($event)" @change="touch($event)" @submit="submit($event)" @beforeunload.window="if (dirty && !saving) $event.preventDefault()">
     @csrf
     @method('PATCH')
 
@@ -94,7 +94,7 @@
         <p class="rs-status" role="status" :class="{ 'is-dirty': dirty }" x-text="message">No changes yet</p>
         <div class="rs-bar-actions">
             <button type="button" class="btn btn-secondary rs-discard" hidden :hidden="!dirty" @click="discard()">Discard changes</button>
-            <button type="submit" class="btn btn-primary rs-save"><x-icon name="save" size="16" /> Save changes</button>
+            <button type="submit" class="btn btn-primary rs-save" disabled :disabled="saving || !dirty" :aria-busy="saving"><x-icon name="save" size="16" /> <span x-text="saving ? 'Saving…' : 'Save changes'">Save changes</span></button>
         </div>
     </div>
 </form>

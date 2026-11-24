@@ -145,29 +145,6 @@
             color: var(--da-muted);
             line-height: 1.5;
         }
-        .da-activate-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 14px 32px;
-            border: none;
-            border-radius: var(--kh-radius);
-            background: var(--da-accent);
-            color: var(--dh-on-highlight);
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 4px 14px color-mix(in srgb, var(--dh-highlight) 35%, transparent);
-            transition: transform 0.15s, box-shadow 0.15s;
-        }
-        .da-activate-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px color-mix(in srgb, var(--dh-highlight) 45%, transparent);
-        }
-        .da-activate-btn svg {
-            width: 18px;
-            height: 18px;
-        }
     
 
 /* ---- migrated from resources/views/dhiran/reports/index.blade.php ---- */
@@ -753,8 +730,7 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; } /* the page be
    Save bar stays in reach at the bottom. One card per row on phones. */
 
 /* Customer contact column: a tap-to-call number. */
-.dh-app a.dh-tel { color: var(--dh-link); font-weight: 600; font-variant-numeric: tabular-nums; text-decoration: none; }
-.dh-app a.dh-tel:hover { color: var(--dh-link-hover); }
+.dh-app a.dh-tel { font-weight: 600; font-variant-numeric: tabular-nums; }
 @media (max-width: 720px) { .dh-app a.dh-tel { display: inline-flex; align-items: center; min-height: 32px; } }
 
 /* Row numbers (#): a narrow, quiet first column; numbering continues across pages. */
@@ -1259,10 +1235,15 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 .dh-app :is(strong, b) { font-weight: 600; }
 .dh-app :is(label, legend) { min-width: 0; overflow-wrap: anywhere; }
 
-/* ==== Links: ink; hover changes colour, never underlines (owner 2026-11-08) ==== */
-.dh-app a:not([class]) { color: var(--kh-ink); text-underline-offset: 3px; }
-.dh-app a:not([class]):is(:hover, :focus-visible) { color: var(--kh-ink-2); text-decoration: underline; }
-.dh-app :is(p, li, dd) a:not([class]) { text-decoration: underline; }
+/* ==== Links: ink and underlined at rest. Underline is what says "link" (buttons are filled or boxed, dropdowns carry a chevron zone,
+   cards are plain panels); hover darkens the ink and thickens the line. Unclassed links, text links in tables and the tap-to-call number. ==== */
+.dh-app :is(a:not([class]), table a:not(.jf-row-action):not(.btn):not(.dh-status), a.dh-tel, a.dd-tel, a.dd-who) {
+    color: var(--kh-ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px;
+    text-decoration-color: color-mix(in srgb, currentColor 50%, transparent);
+}
+.dh-app :is(a:not([class]), table a:not(.jf-row-action):not(.btn):not(.dh-status), a.dh-tel, a.dd-tel, a.dd-who):is(:hover, :focus-visible) {
+    color: var(--kh-ink-2); text-decoration-thickness: 2px; text-decoration-color: currentColor;
+}
 
 /* ==== Shell: the oxblood cloth ==== */
 .dh-sidebar { background: var(--kh-cloth); color: var(--kh-on-cloth); }
@@ -1446,14 +1427,14 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 /* Identifiers (loan numbers) and names keep one weight and one family wherever they appear. */
 .dh-app table .font-mono, .dh-app td.font-mono, .dh-app th.font-mono { font-family: var(--jf-font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace); font-size: 1em; font-weight: 500; letter-spacing: 0; }
 .dh-app table a:not(.jf-row-action):not(.btn) { color: var(--kh-ink) !important; font-weight: 500; }
-.dh-app table a:not(.jf-row-action):not(.btn):is(:hover, :focus-visible) { color: var(--kh-ink-2) !important; text-decoration: underline; }
+.dh-app table a:not(.jf-row-action):not(.btn):is(:hover, :focus-visible) { color: var(--kh-ink-2) !important; }
 .dh-app table :is(.text-slate-700, .text-slate-800, .text-slate-900, .text-gray-700, .text-gray-800, .text-gray-900) { color: var(--kh-text) !important; }
 .dh-app table :is(.font-medium, .font-semibold) { font-weight: 500; }
 .dh-app table td.text-right :is(.font-semibold, .font-medium) { font-weight: 600; }
 
-/* ==== Chips and filters: pills. Selected = tinted fill + a check, never colour alone. ==== */
+/* ==== Chips and filters: outlined buttons at control height (button radius, no pills). Selected = tinted fill + a check, never colour alone. ==== */
 .dh-app :is(.dh-tab, .dh-fchip, .dh-fopt span, .st-role-btn) {
-    display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--kh-field-edge); border-radius: 999px; background: var(--kh-panel); color: var(--kh-text);
+    display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--kh-field-edge); border-radius: var(--kh-radius-btn); background: var(--kh-panel); color: var(--kh-text);
     font-size: var(--fl-fs-body); font-weight: 500; min-height: var(--kh-ctl-h); box-shadow: none; cursor: pointer;
 }
 .dh-app :is(.dh-tab, .dh-fchip, .dh-fopt span, .st-role-btn):hover { background: var(--kh-ink-soft); border-color: var(--kh-ink); color: var(--kh-ink-2); }
