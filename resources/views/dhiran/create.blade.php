@@ -175,7 +175,7 @@
                                 </template>
                                 <template x-if="item.metal_type !== 'other' && item.value_mode !== 'appraised'">
                                     <div class="fm-field">
-                                        <label class="fm-label" :for="'it-rate-' + index">Rate per gram at pledge</label>
+                                        <label class="fm-label" :for="'it-rate-' + index" x-text="item.metal_type === 'silver' ? 'Silver rate per gram (pure, 999)' : 'Gold rate per gram (24K, pure)'">Gold rate per gram (24K, pure)</label>
                                         <div class="fm-affix">
                                             <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
                                             <input type="number" inputmode="decimal" step="0.01" min="0" :id="'it-rate-' + index" :name="'items['+index+'][rate_per_gram_at_pledge]'" x-model.number="item.rate_per_gram_at_pledge"
@@ -373,7 +373,7 @@
                             @enderror
                         </div>
                         <div class="fm-field">
-                            <label for="gold_rate_on_date" class="fm-label">Gold rate today</label>
+                            <label for="gold_rate_on_date" class="fm-label">Gold rate today (24K, per gram)</label>
                             <div class="fm-affix">
                                 <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
                                 <input type="number" inputmode="decimal" step="0.01" name="gold_rate_on_date" id="gold_rate_on_date"
@@ -389,7 +389,7 @@
                         </div>
                         {{-- the server requires the silver reference rate when any silver item is valued by metal weight --}}
                         <div class="fm-field" x-cloak x-show="items.some(i => i.metal_type === 'silver' && i.value_mode !== 'appraised')">
-                            <label for="silver_rate_on_date" class="fm-label">Silver rate today</label>
+                            <label for="silver_rate_on_date" class="fm-label">Silver rate today (pure, per gram)</label>
                             <div class="fm-affix">
                                 <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
                                 <input type="number" inputmode="decimal" step="0.01" name="silver_rate_on_date" id="silver_rate_on_date"
