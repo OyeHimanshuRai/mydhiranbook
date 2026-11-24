@@ -29,6 +29,7 @@ use Illuminate\Support\Facades\Route;
             Route::post('/loans/{loan}/activate', [\App\Http\Controllers\DhiranController::class, 'activateLoan'])->middleware('can:dhiran.create')->name('activate-loan');
 
             // Payments — pay permission
+            Route::post('/loans/{loan}/pay-installment', [\App\Http\Controllers\DhiranController::class, 'payInstallment'])->middleware('can:dhiran.pay')->name('pay-installment');
             Route::post('/loans/{loan}/pay-interest', [\App\Http\Controllers\DhiranController::class, 'payInterest'])->middleware('can:dhiran.pay')->name('pay-interest');
             Route::post('/loans/{loan}/repay', [\App\Http\Controllers\DhiranController::class, 'repay'])->middleware('can:dhiran.pay')->name('repay');
             Route::post('/loans/{loan}/pre-close', [\App\Http\Controllers\DhiranController::class, 'preClose'])->middleware('can:dhiran.pay')->name('pre-close');

@@ -75,6 +75,27 @@
                 </dl>
             </section>
 
+            {{-- Paid in advance, month by month: when the next installment falls due and what it is --}}
+            @if($installment ?? null)
+                @php $late = $installment['days'] < 0; @endphp
+                <section class="dd-card" aria-labelledby="dd-inst-h">
+                    <h2 id="dd-inst-h" class="dd-h">Interest installment</h2>
+                    <dl class="dd-breakdown">
+                        <div><dt class="dd-fig-label">Next due</dt><dd>{{ $installment['due']->format('d M Y') }}</dd></div>
+                        <div><dt class="dd-fig-label">Amount to collect</dt><dd>{{ $rupee($installment['amount']) }}</dd></div>
+                        <div><dt class="dd-fig-label">Status</dt><dd class="{{ $late ? 'is-owed' : '' }}">
+                            @if($late) Late by {{ abs($installment['days']) }} day{{ abs($installment['days']) === 1 ? '' : 's' }}
+                            @elseif($installment['days'] === 0) Due today
+                            @else Due in {{ $installment['days'] }} day{{ $installment['days'] === 1 ? '' : 's' }} @endif
+                        </dd></div>
+                    </dl>
+                    <p class="dd-reason">Paid in advance: each installment pays the month that starts on its due date{{ $late ? '. The late days are included in the amount' : '' }}.</p>
+                    @if($canPay ?? false)
+                        <button type="button" class="btn btn-primary btn-sm" @disabled($installment['days'] > 7) onclick="document.getElementById('installmentModal').showModal()"><x-icon name="dollar-sign" size="16" />Collect installment</button>
+                    @endif
+                </section>
+            @endif
+
             {{-- Evidence gate: a pending-evidence loan must have a pledged-item photo AND a borrower ID proof before it can be activated. --}}
             @if($isPending)
                 <section class="dd-gate" aria-labelledby="dd-gate-h">
@@ -384,6 +405,17 @@
         <x-dhiran.amount id="pi-amount" name="amount" label="Amount" autofocus />
         <x-dhiran.pay-method id="pi-method" />
     </x-dhiran.sheet>
+
+    @if($installment ?? null)
+    <x-dhiran.sheet id="installmentModal" title="Collect Installment" :sub="$loan->loan_number . ' · ' . ($loan->customer->name ?? '')" :action="route('dhiran.pay-installment', $loan)" submit="Collect {{ $rupee($installment['amount']) }}" busy="Recording…">
+        <dl class="dd-readback">
+            <div><dt>Due date</dt><dd>{{ $installment['due']->format('d M Y') }}</dd></div>
+            <div class="is-total"><dt>Amount</dt><dd>{{ $rupee($installment['amount']) }}</dd></div>
+        </dl>
+        <p class="dd-reason">The amount is worked out from the days in the month and the principal still owed. It cannot be changed here.</p>
+        <x-dhiran.pay-method id="inst-method" />
+    </x-dhiran.sheet>
+    @endif
 
     <x-dhiran.sheet id="repayModal" title="Repay Loan" :sub="$loan->loan_number . ' · ' . ($loan->customer->name ?? '')" :action="route('dhiran.repay', $loan)" submit="Submit Payment" busy="Recording…">
         <dl class="dd-readback">

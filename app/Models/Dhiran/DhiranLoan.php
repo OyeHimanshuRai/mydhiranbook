@@ -48,6 +48,7 @@ class DhiranLoan extends Model
         'grace_period_days',
         'min_interest_months',
         'advance_interest_months',
+        'interest_periods_paid',
         'interest_prepaid',
         'status',
         'renewed_count',
@@ -68,6 +69,16 @@ class DhiranLoan extends Model
         'interest_capitalised',
         'created_by',
     ];
+
+    /** Paid in advance, month by month: the date the next monthly installment falls due (loan day + the periods already paid); null for loans paid afterwards. */
+    public function nextInstallmentDue(): ?\Illuminate\Support\Carbon
+    {
+        if (! (int) $this->advance_interest_months) {
+            return null;
+        }
+
+        return \Illuminate\Support\Carbon::parse($this->loan_date)->startOfDay()->addMonthsNoOverflow((int) $this->interest_periods_paid);
+    }
 
     /** The first months' interest taken at the counter when the loan was given (0 when none), from the payment that recorded it. */
     public function advanceInterestAmount(): float
@@ -109,6 +120,7 @@ class DhiranLoan extends Model
         'grace_period_days'         => 'integer',
         'min_interest_months'       => 'integer',
         'advance_interest_months'   => 'integer',
+        'interest_periods_paid'     => 'integer',
         'interest_prepaid'          => 'decimal:2',
         'renewed_count'             => 'integer',
     ];

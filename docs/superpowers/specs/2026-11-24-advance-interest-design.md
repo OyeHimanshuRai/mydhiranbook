@@ -35,3 +35,41 @@ Day 0 payout and ledger; outstanding interest at days 29, 30, 31; close at day 1
 
 ## Risks
 Money paths: accrual, settlement, cancel. Needs the Ruthless LoanEngine/LoanMath suites green and an advisor review before commit.
+
+---
+
+# v2 — two collection methods, installment schedule (owner 2026-11-24, later the same day)
+
+## The two methods (chosen per loan on New Loan)
+1. **Paid afterwards (bank way)** — what Dhiran did before: interest builds up per day; the customer pays what has built up when they come. `advance_interest_months = 0`.
+2. **Paid in advance, month by month (house-rent way)** — the installment for a month is paid at the START of that month. Installment 1 is taken on the loan day (as the "first N months now", N = 1..3); the next is due when that period ends and pays the following month, and so on. `advance_interest_months > 0` marks the loan as method 2.
+
+## Periods and amounts: per actual day, every interest type
+- Period k = [loan date + (k-1) months, loan date + k months), calendar months from the loan day with no overflow (24 Nov, 24 Dec, 24 Jan; 31 Jan + 1 month = 28 Feb). Same arithmetic as maturity and compound month ends.
+- Amount = interest for the actual days in the period (rate / 100 / 30 per day, as accrual already does). A 31-day period costs 31 days of interest; a 30-day one costs 30. The earlier flat "rate x N" advance is replaced by this (first advance = days of periods 1..N).
+- **flat / daily:** principal still owed x per-day rate x days.
+- **compound:** unpaid interest joins the base at each month anniversary. Installments are paid ahead, so nothing is unpaid at an anniversary and the periods are simple interest on principal; only an `interest_capitalised` left by earlier lateness counts, and only until the next anniversary. This is the same base `accrueInterest` uses, so a paid installment is spent to exactly zero at the period end.
+
+## "Amount to cover through period end E" (one function, used by creation and by every installment)
+`need = max(0, outstanding_interest + coverInterest(today -> E) - interest_prepaid)`
+- On time: outstanding is 0, so need = the period's interest.
+- Late (the customer comes after the due date): the already-accrued late days are inside `outstanding_interest`, so need still equals the whole period's interest if the principal did not change.
+- After a part-payment the principal is lower, so need shrinks accordingly.
+- Paying `need` clears the late interest first, then tops `interest_prepaid` up so accrual is fully covered to E. Accruing to E afterwards leaves interest owed ~0 and prepaid ~0 (the property the tests check for flat, daily and compound).
+
+## Operation: pay the next installment
+- Only loans with `advance_interest_months > 0`, status active, and `next_due <= today + 7 days` (a week early is allowed; not further ahead). One period per payment.
+- The server computes the amount (no amount field); payment type `advance_interest`, direction in, interest_component = amount; `total_interest_collected += amount`; `interest_periods_paid += 1`. Ledger credit entry and cash entry like the first advance. Submit-once key required.
+- `next_due = loan date + interest_periods_paid months`. Late when `next_due < today`.
+- Penalty is not part of an installment (use the normal interest payment for penalty).
+
+## Rules kept from v1
+The shop keeps whatever advance is left when the loan closes; a cancelled pending loan returns it; renewal starts clean (new loan, method 1 or 2 chosen again). Min-interest and lock-period rules count all collected interest.
+
+## UI
+- New Loan: "Interest collection": "Paid afterwards (as it builds up)" | "Paid in advance, month by month" with "Months taken now" (1 to 3); summary shows interest taken now, cash to hand over, and the next installment date.
+- Loan page: an "Interest installment" card for method-2 loans: next due date, amount, late flag, and a "Collect installment" button (sheet shows the amount; no editing).
+- Settings: wording of the switch updated; the months setting is the default "months taken now".
+
+## Schema
+`dhiran_loans.interest_periods_paid` smallint default 0. (`advance_interest_months` and `interest_prepaid` exist.)

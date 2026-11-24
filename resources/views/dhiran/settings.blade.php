@@ -65,11 +65,11 @@
                     </div>
                 </x-settings.panel>
 
-                <x-settings.panel title="Advance interest" desc="Take the first months' interest when the loan is given.">
+                <x-settings.panel title="Interest paid in advance" desc="Let a loan be paid in advance, month by month, like rent.">
                     <div class="st-grid">
-                        <x-dhiran.switch id="ds-adv" name="advance_interest_enabled" value="1" label="Allow advance interest" :checked="(bool) $settings->advance_interest_enabled"
-                            hint="On each new loan the clerk can choose to deduct the first 1 to 3 months' interest from the cash handed over. It is never refunded if the loan closes early. Some states do not allow deducting interest from the loan (Tamil Nadu does not): check your state's pawnbrokers law." />
-                        <x-settings.field name="advance_interest_default_months" id="ds-advm" label="Months taken in advance" type="select">
+                        <x-dhiran.switch id="ds-adv" name="advance_interest_enabled" value="1" label="Allow interest paid in advance" :checked="(bool) $settings->advance_interest_enabled"
+                            hint="On each new loan the clerk chooses: interest paid afterwards as it builds up, or paid in advance month by month. In advance, the first 1 to 3 months are deducted from the cash handed over and each next month is paid when the last one ends. It is never refunded if the loan closes early. Some states do not allow deducting interest from the loan (Tamil Nadu does not): check your state's pawnbrokers law." />
+                        <x-settings.field name="advance_interest_default_months" id="ds-advm" label="Months taken on the loan day" type="select">
                             @foreach([1 => '1 month', 2 => '2 months', 3 => '3 months'] as $value => $label)
                                 <option value="{{ $value }}" @selected((int) $v('advance_interest_default_months', 1) === $value)>{{ $label }}</option>
                             @endforeach

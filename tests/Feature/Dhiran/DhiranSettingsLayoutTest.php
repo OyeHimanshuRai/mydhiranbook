@@ -47,7 +47,7 @@ class DhiranSettingsLayoutTest extends TestCase
         preg_match_all('/<h2 class="st-title"[^>]*>([^<]+)</', $board, $m);
         $this->assertSame(
             // 2026-11-12: the Reminders card is gone; the receipt texts moved to the Receipt page until something actually sends reminders.
-            ['Interest', 'Loan value (LTV)', 'Loan limits and fee', 'Tenure and forfeiture', 'Advance interest', 'Loan numbers'],
+            ['Interest', 'Loan value (LTV)', 'Loan limits and fee', 'Tenure and forfeiture', 'Interest paid in advance', 'Loan numbers'],
             array_map('trim', $m[1]),
             'six cards, one heading each'
         );

@@ -15,17 +15,22 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use LogicException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
- * Advance interest (owner 2026-11-24): the loan creator may take the first N months' interest at the counter.
- * Advance A = principal * rate% * N (flat 2% of 100000 for 1 month = 2000). The ticket principal stays 100000, the cash handed
- * out is 100000 - 2000 on the books as an out of 100000 and an in of 2000. Interest runs from day 1 as always, but the first 30*N days
- * are already paid for, so nothing is owed until day 31. The shop keeps the whole advance when the customer closes early.
+ * Interest collected in advance (owner 2026-11-24). A loan with advance_interest_months > 0 is "paid in advance, month by month":
+ * installment 1 (the first N months) is taken on the loan day, the next is due when that period ends and pays the following month.
+ * Periods are calendar months from the loan day (24 Nov, 24 Dec, 24 Jan, ...) and each costs its ACTUAL days at rate/30 per day:
+ *   100000 at 2%: 66.6667 a day; Nov 24 to Dec 24 = 30 days = 2000.00; Dec 24 to Jan 24 = 31 days = 2066.67.
+ * Interest runs from day 1 as always; the advance is spent day by day, so nothing is owed while it lasts. The shop keeps whatever
+ * is left when the loan closes.
  */
 class AdvanceInterestTest extends TestCase
 {
     use RefreshDatabase;
+
+    private const START = '2026-11-24';
 
     private DhiranService $svc;
     private Shop $shop;
@@ -35,7 +40,7 @@ class AdvanceInterestTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->at('2026-01-01');
+        $this->at(self::START);
         $this->svc = app(DhiranService::class);
         $this->shop = self::createDhiranShop([
             'name' => 'Pawn Co', 'shop_type' => 'dhiran', 'phone' => '9390078000',
@@ -64,6 +69,12 @@ class AdvanceInterestTest extends TestCase
         Carbon::setTestNow(Carbon::parse("{$date} 10:00", 'Asia/Kolkata'));
     }
 
+    /** The date n days after the loan day. */
+    private function day(int $n): string
+    {
+        return Carbon::parse(self::START)->addDays($n)->toDateString();
+    }
+
     private function t(callable $fn)
     {
         return TenantContext::runFor($this->shop->id, $fn);
@@ -71,14 +82,14 @@ class AdvanceInterestTest extends TestCase
 
     private function loan(array $p = []): DhiranLoan
     {
-        $this->at('2026-01-01');
+        $this->at(self::START);
 
         return $this->t(fn () => $this->svc->createLoan($this->shop, $this->customer, [[
             'description' => 'Chain', 'metal_type' => 'gold', 'purity' => 24, 'gross_weight' => 100, 'rate_per_gram_at_pledge' => 6000,
         ]], array_merge([
             'principal_amount' => 100000, 'gold_rate_on_date' => 6000, 'interest_rate_monthly' => 2.0, 'interest_type' => 'flat',
             'penalty_rate_monthly' => 0, 'tenure_months' => 12, 'min_lock_months' => 0, 'min_interest_months' => 0,
-            'grace_period_days' => 30, 'loan_date' => '2026-01-01', 'created_by' => null, 'advance_interest_months' => 1,
+            'grace_period_days' => 30, 'loan_date' => self::START, 'created_by' => null, 'advance_interest_months' => 1,
         ], $p)));
     }
 
@@ -100,12 +111,29 @@ class AdvanceInterestTest extends TestCase
         return round((float) DB::table('dhiran_cash_entries')->where('dhiran_loan_id', $l->id)->where('type', $type)->sum('amount'), 2);
     }
 
+    private function amountOn(DhiranLoan $l, string $date): float
+    {
+        $this->at($date);
+
+        return $this->t(fn () => $this->svc->installmentAmount($this->fresh($l)));
+    }
+
+    private function payInstallmentOn(DhiranLoan $l, string $date)
+    {
+        $this->at($date);
+
+        return $this->t(fn () => $this->svc->payInstallment($this->fresh($l)));
+    }
+
+    // ── first installment, taken on the loan day ─────────────────────────────
+
     public function test_creation_takes_the_first_month_at_the_counter(): void
     {
         $l = $this->loan();
 
         $this->assertSame(1, (int) $l->advance_interest_months);
-        $this->assertEquals(2000.00, (float) $l->interest_prepaid);
+        $this->assertSame(1, (int) $l->interest_periods_paid);
+        $this->assertEquals(2000.00, (float) $l->interest_prepaid, 'Nov 24 to Dec 24 is 30 days');
         $this->assertEquals(2000.00, (float) $l->total_interest_collected);
         $this->assertEquals(0.00, (float) $l->outstanding_interest);
         $this->assertEquals(100000.00, (float) $l->outstanding_principal);
@@ -115,39 +143,51 @@ class AdvanceInterestTest extends TestCase
         $this->assertNotNull($adv);
         $this->assertSame('in', $adv->direction);
         $this->assertEquals(2000.00, (float) $adv->interest_component);
+        $this->assertSame('2026-12-24', $this->fresh($l)->nextInstallmentDue()->toDateString());
     }
 
-    public function test_two_months_and_percentages_are_exact(): void
+    public function test_the_advance_counts_the_real_days_of_each_month(): void
     {
-        $l = $this->loan(['advance_interest_months' => 3, 'interest_rate_monthly' => 1.5]);
-        $this->assertEquals(4500.00, (float) $l->interest_prepaid); // 100000 * 1.5% * 3
+        $this->assertEquals(4066.67, (float) $this->loan(['advance_interest_months' => 2])->interest_prepaid, 'Nov 24 to Jan 24 = 30 + 31 = 61 days');
+        $this->assertEquals(6133.33, (float) $this->loan(['advance_interest_months' => 3])->interest_prepaid, '92 days');
+        $this->assertEquals(1500.00, (float) $this->loan(['interest_rate_monthly' => 1.5])->interest_prepaid);
+
+        $this->at('2026-12-24');
+        $dec = $this->t(fn () => $this->svc->createLoan($this->shop, $this->customer, [[
+            'description' => 'Ring', 'metal_type' => 'gold', 'purity' => 24, 'gross_weight' => 100, 'rate_per_gram_at_pledge' => 6000,
+        ]], ['principal_amount' => 100000, 'gold_rate_on_date' => 6000, 'interest_rate_monthly' => 2.0, 'interest_type' => 'flat',
+            'tenure_months' => 12, 'loan_date' => '2026-12-24', 'advance_interest_months' => 1]));
+        $this->assertEquals(2066.67, (float) $dec->interest_prepaid, 'a 31-day month costs 31 days');
     }
 
-    public function test_nothing_is_owed_for_the_first_thirty_days_then_interest_runs(): void
+    public function test_compound_pays_the_same_first_months_as_flat(): void
+    {
+        $this->assertEquals(4066.67, (float) $this->loan(['interest_type' => 'compound', 'advance_interest_months' => 2])->interest_prepaid, 'paid ahead, so nothing compounds');
+    }
+
+    public function test_nothing_is_owed_while_the_advance_lasts_then_interest_runs(): void
     {
         $l = $this->loan();
 
-        $d29 = $this->accrueOn($l, '2026-01-30');
+        $d29 = $this->accrueOn($l, $this->day(29));
         $this->assertEquals(0.00, (float) $d29->outstanding_interest);
-        $this->assertEqualsWithDelta(66.67, (float) $d29->interest_prepaid, 0.011, 'day 29 used 29 of 30 days');
+        $this->assertEqualsWithDelta(66.67, (float) $d29->interest_prepaid, 0.011);
 
-        $d30 = $this->accrueOn($l, '2026-01-31');
+        $d30 = $this->accrueOn($l, $this->day(30));
         $this->assertEquals(0.00, (float) $d30->outstanding_interest);
         $this->assertEqualsWithDelta(0.0, (float) $d30->interest_prepaid, 0.011);
 
-        $d31 = $this->accrueOn($l, '2026-02-01');
-        $this->assertEqualsWithDelta(66.67, (float) $d31->outstanding_interest, 0.011, 'day 31 owes its own day');
-        $this->assertEquals(0.00, (float) $d31->interest_prepaid);
+        $d31 = $this->accrueOn($l, $this->day(31));
+        $this->assertEqualsWithDelta(66.67, (float) $d31->outstanding_interest, 0.011);
     }
 
     public function test_accrual_is_the_same_however_often_it_runs(): void
     {
         $once = $this->loan();
-        $this->accrueOn($once, '2026-02-10');
-
+        $this->accrueOn($once, $this->day(40));
         $many = $this->loan();
-        foreach (['2026-01-05', '2026-01-20', '2026-02-02', '2026-02-10', '2026-02-10'] as $d) {
-            $this->accrueOn($many, $d);
+        foreach ([5, 20, 33, 40, 40] as $n) {
+            $this->accrueOn($many, $this->day($n));
         }
         $a = $this->fresh($once);
         $b = $this->fresh($many);
@@ -156,32 +196,25 @@ class AdvanceInterestTest extends TestCase
         $this->assertEqualsWithDelta(40 * 100000 * 0.02 / 30 - 2000, (float) $a->outstanding_interest, 0.02, '40 days of interest minus the 2000 advance');
     }
 
-    public function test_closing_on_day_ten_keeps_the_whole_advance_and_refunds_nothing(): void
+    // ── closing early: the shop keeps the advance ─────────────────────────────
+
+    public function test_closing_on_day_ten_or_twenty_nine_keeps_the_whole_advance(): void
     {
-        $l = $this->loan();
-        $this->at('2026-01-11');
-        $this->t(fn () => $this->svc->recordPayment($this->fresh($l), 100000));
+        foreach ([10, 29] as $n) {
+            $l = $this->loan();
+            $this->at($this->day($n));
+            $this->t(fn () => $this->svc->recordPayment($this->fresh($l), 100000));
 
-        $f = $this->fresh($l);
-        $this->assertSame('closed', $f->status);
-        $this->assertSame(100000.00, $this->cash($l, 'out'), 'only the disbursement ever leaves the till');
-        $this->assertSame(0, DB::table('dhiran_payments')->where('dhiran_loan_id', $l->id)->whereIn('type', ['advance_refund', 'interest_refund'])->count());
-    }
-
-    public function test_closing_on_day_twenty_nine_keeps_the_whole_advance_too(): void
-    {
-        $l = $this->loan();
-        $this->at('2026-01-30');
-        $this->t(fn () => $this->svc->recordPayment($this->fresh($l), 100000));
-
-        $this->assertSame('closed', $this->fresh($l)->status);
-        $this->assertSame(100000.00, $this->cash($l, 'out'));
+            $this->assertSame('closed', $this->fresh($l)->status, "day {$n}");
+            $this->assertSame(100000.00, $this->cash($l, 'out'), 'only the disbursement ever leaves the till');
+            $this->assertSame(0, DB::table('dhiran_payments')->where('dhiran_loan_id', $l->id)->whereIn('type', ['advance_refund', 'interest_refund'])->count());
+        }
     }
 
     public function test_the_advance_counts_towards_the_minimum_interest(): void
     {
         $l = $this->loan(['min_interest_months' => 1]);
-        $this->at('2026-01-11');
+        $this->at($this->day(10));
         $pay = $this->t(fn () => $this->svc->preCloseLoan($this->fresh($l)));
 
         $this->assertEquals(100000.00, (float) $pay->amount, 'the advance already is the minimum month: nothing more is charged');
@@ -191,21 +224,12 @@ class AdvanceInterestTest extends TestCase
     public function test_a_part_payment_before_the_advance_is_used_up_cuts_the_later_accrual(): void
     {
         $l = $this->loan();
-        $this->at('2026-01-11');
+        $this->at($this->day(10));
         $this->t(fn () => $this->svc->recordPayment($this->fresh($l), 50000));
-        $f = $this->accrueOn($l, '2026-02-10'); // 10 days on 100000 + 30 days on 50000 = 666.67 + 1000.00 = 1666.67
+        $f = $this->accrueOn($l, $this->day(40)); // 10 days on 100000 + 30 days on 50000 = 666.67 + 1000.00
 
         $this->assertEquals(0.00, (float) $f->outstanding_interest);
         $this->assertEqualsWithDelta(333.33, (float) $f->interest_prepaid, 0.02);
-    }
-
-    public function test_compound_loans_match_flat_through_the_first_month_end(): void
-    {
-        $l = $this->loan(['interest_type' => 'compound']);
-        $f = $this->accrueOn($l, '2026-01-31');
-
-        $this->assertEquals(0.00, (float) $f->outstanding_interest);
-        $this->assertEqualsWithDelta(0.0, (float) $f->interest_prepaid, 0.011);
     }
 
     public function test_cancelling_a_pending_loan_gives_the_advance_back(): void
@@ -220,28 +244,130 @@ class AdvanceInterestTest extends TestCase
         $this->assertSame($this->cash($l, 'in'), $this->cash($l, 'out'), 'the till nets to zero: nothing was lent, nothing kept');
     }
 
-    public function test_it_is_refused_when_the_shop_has_not_enabled_it_or_the_months_are_out_of_range(): void
+    // ── the next installments ─────────────────────────────────────────────────
+
+    public function test_the_second_installment_is_due_when_the_first_month_ends_and_pays_the_next_month(): void
     {
+        $l = $this->loan();
+
+        $this->assertEquals(2066.67, $this->amountOn($l, '2026-12-24'), 'Dec 24 to Jan 24 is 31 days');
+        $pay = $this->payInstallmentOn($l, '2026-12-24');
+
+        $this->assertSame('advance_interest', $pay->type);
+        $this->assertSame('in', $pay->direction);
+        $this->assertEquals(2066.67, (float) $pay->amount);
+        $f = $this->fresh($l);
+        $this->assertSame(2, (int) $f->interest_periods_paid);
+        $this->assertSame('2027-01-24', $f->nextInstallmentDue()->toDateString());
+        $this->assertEquals(4066.67, (float) $f->total_interest_collected);
+        $this->assertSame(round(2000.00 + 2066.67, 2), $this->cash($l, 'in'));
+
+        $end = $this->accrueOn($l, '2027-01-24');
+        $this->assertEqualsWithDelta(0.0, (float) $end->outstanding_interest, 0.02, 'month 2 is paid for exactly');
+        $this->assertEqualsWithDelta(0.0, (float) $end->interest_prepaid, 0.02);
+    }
+
+    public function test_paying_the_second_installment_late_still_costs_exactly_its_month(): void
+    {
+        $l = $this->loan();
+        // Jan 8 is 45 days in: Dec 25 to Jan 8 (15 days, 1000.00) is already owed, the rest of the period is still ahead.
+        $this->assertEquals(2066.67, $this->amountOn($l, '2027-01-08'), 'late days + the rest of the month = the whole month');
+        $this->payInstallmentOn($l, '2027-01-08');
+
+        $f = $this->fresh($l);
+        $this->assertEquals(0.00, (float) $f->outstanding_interest, 'the late days were settled by the payment');
+        $this->assertSame(2, (int) $f->interest_periods_paid);
+        $end = $this->accrueOn($l, '2027-01-24');
+        $this->assertEqualsWithDelta(0.0, (float) $end->outstanding_interest, 0.02);
+        $this->assertEqualsWithDelta(0.0, (float) $end->interest_prepaid, 0.02);
+    }
+
+    public function test_a_part_payment_lowers_the_next_installment(): void
+    {
+        $l = $this->loan();
+        $this->at($this->day(15)); // Dec 9
+        $this->t(fn () => $this->svc->recordPayment($this->fresh($l), 20000));
+
+        // days 1-15 on 100000 = 1000.00, days 16-30 on 80000 = 800.00: 200.00 of the first advance is left on Dec 24.
+        // Dec 24 to Jan 24 on 80000 = 31 x 53.3333 = 1653.33, less the 200 left = 1453.33.
+        $this->assertEquals(1453.33, $this->amountOn($l, '2026-12-24'));
+        $this->payInstallmentOn($l, '2026-12-24');
+        $end = $this->accrueOn($l, '2027-01-24');
+        $this->assertEqualsWithDelta(0.0, (float) $end->outstanding_interest, 0.03);
+        $this->assertEqualsWithDelta(0.0, (float) $end->interest_prepaid, 0.03);
+    }
+
+    #[DataProvider('interestTypes')]
+    public function test_a_paid_installment_is_spent_to_zero_at_the_period_end_for_every_interest_type(string $type): void
+    {
+        // One on-time installment, then the customer vanishes for 9 days past the next due date (arrears build up, and for compound
+        // they compound at the anniversary), then settles that period.
+        $l = $this->loan(['interest_type' => $type]);
+        $this->payInstallmentOn($l, '2026-12-24');           // period 2, on time
+        $late = $this->accrueOn($l, '2027-02-02');           // Jan 24 to Feb 2 unpaid
+        $this->assertGreaterThan(0.0, (float) $late->outstanding_interest);
+
+        $this->payInstallmentOn($l, '2027-02-02');           // period 3 (Jan 24 to Feb 24): late days + the rest
+        $f = $this->fresh($l);
+        $this->assertSame(3, (int) $f->interest_periods_paid);
+        $this->assertEquals(0.00, (float) $f->outstanding_interest);
+
+        $end = $this->accrueOn($l, '2027-02-24');
+        $this->assertEqualsWithDelta(0.0, (float) $end->outstanding_interest, 0.05, "{$type}: period 3 is paid exactly");
+        $this->assertEqualsWithDelta(0.0, (float) $end->interest_prepaid, 0.05, "{$type}: nothing left over");
+    }
+
+    public static function interestTypes(): array
+    {
+        return ['flat' => ['flat'], 'daily' => ['daily'], 'compound' => ['compound']];
+    }
+
+    public function test_a_compound_loan_that_missed_a_month_owes_the_compounded_amount(): void
+    {
+        $flat = $this->loan(['interest_type' => 'flat']);
+        $comp = $this->loan(['interest_type' => 'compound']);
+        $f = $this->amountOn($flat, '2027-02-02');
+        $c = $this->amountOn($comp, '2027-02-02');
+
+        $this->assertGreaterThan($f, $c, 'unpaid interest at the Dec 24 and Jan 24 anniversaries earns interest');
+    }
+
+    public function test_an_installment_can_be_taken_a_week_early_but_not_two(): void
+    {
+        $l = $this->loan();
+        $this->at('2026-12-10'); // due Dec 24: 14 days away
+        try {
+            $this->t(fn () => $this->svc->payInstallment($this->fresh($l)));
+            $this->fail('two weeks early must be refused');
+        } catch (LogicException $e) {
+            $this->assertStringContainsString('not due yet', $e->getMessage());
+        }
+        $this->assertSame(1, (int) $this->fresh($l)->interest_periods_paid);
+
+        // Dec 17 is 7 days early: 7 days of the first advance are still unspent, so it still costs exactly the month.
+        $this->assertEquals(2066.67, $this->amountOn($l, '2026-12-17'));
+        $this->payInstallmentOn($l, '2026-12-17');
+        $this->assertSame(2, (int) $this->fresh($l)->interest_periods_paid);
+    }
+
+    public function test_only_a_paid_in_advance_active_loan_has_installments(): void
+    {
+        $later = $this->loan(['advance_interest_months' => 0]);
+        $this->assertNull($this->fresh($later)->nextInstallmentDue());
         $this->expectException(LogicException::class);
-        DhiranSettings::getForShop($this->shop->id)->update(['advance_interest_enabled' => false]);
-        $this->loan();
+        $this->payInstallmentOn($later, '2026-12-24');
     }
 
-    public function test_four_months_is_refused(): void
+    public function test_a_closed_loan_has_no_installment(): void
     {
+        $l = $this->loan();
+        $this->at($this->day(10));
+        $this->t(fn () => $this->svc->recordPayment($this->fresh($l), 100000));
         $this->expectException(LogicException::class);
-        $this->loan(['advance_interest_months' => 4]);
+        $this->payInstallmentOn($l, '2026-12-24');
     }
 
-    public function test_zero_months_is_the_ordinary_loan(): void
-    {
-        $l = $this->loan(['advance_interest_months' => 0]);
-
-        $this->assertEquals(0.00, (float) $l->interest_prepaid);
-        $this->assertSame(0.00, $this->cash($l, 'in'));
-        $f = $this->accrueOn($l, '2026-01-31');
-        $this->assertEqualsWithDelta(2000.00, (float) $f->outstanding_interest, 0.011);
-    }
+    // ── reports, renewal, switches ───────────────────────────────────────────
 
     public function test_the_interest_report_nets_a_cancelled_advance_to_zero(): void
     {
@@ -262,30 +388,38 @@ class AdvanceInterestTest extends TestCase
 
     public function test_a_renewal_does_not_inherit_the_advance(): void
     {
-        foreach (['2026-01-11', '2026-02-10'] as $day) {
+        foreach ([10, 40] as $n) {
             $l = $this->loan();
-            $this->at($day);
+            $this->at($this->day($n));
             $new = $this->t(fn () => $this->svc->renewLoan($this->fresh($l)));
-            $this->assertSame(0, (int) $new->advance_interest_months, $day);
-            $this->assertEquals(0.00, (float) $new->interest_prepaid, $day);
+            $this->assertSame(0, (int) $new->advance_interest_months, "day {$n}");
+            $this->assertSame(0, (int) $new->interest_periods_paid, "day {$n}");
+            $this->assertEquals(0.00, (float) $new->interest_prepaid, "day {$n}");
             $this->assertSame('renewed', $this->fresh($l)->status);
         }
     }
 
-    public function test_compound_across_several_month_ends_is_the_same_in_one_accrual_or_many(): void
+    public function test_it_is_refused_when_the_shop_has_not_enabled_it(): void
     {
-        foreach ([1, 2] as $months) {
-            $a = $this->loan(['interest_type' => 'compound', 'advance_interest_months' => $months]);
-            $b = $this->loan(['interest_type' => 'compound', 'advance_interest_months' => $months]);
-            $this->accrueOn($a, '2026-04-05');
-            foreach (['2026-01-20', '2026-02-01', '2026-02-25', '2026-03-01', '2026-03-20', '2026-04-05'] as $d) {
-                $this->accrueOn($b, $d);
-            }
-            $x = $this->fresh($a);
-            $y = $this->fresh($b);
-            foreach (['outstanding_interest', 'interest_prepaid', 'interest_capitalised'] as $col) {
-                $this->assertEqualsWithDelta((float) $x->$col, (float) $y->$col, 0.03, "{$months} month(s): {$col}");
-            }
-        }
+        $this->expectException(LogicException::class);
+        DhiranSettings::getForShop($this->shop->id)->update(['advance_interest_enabled' => false]);
+        $this->loan();
+    }
+
+    public function test_four_months_is_refused(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->loan(['advance_interest_months' => 4]);
+    }
+
+    public function test_zero_months_is_the_ordinary_loan_paid_afterwards(): void
+    {
+        $l = $this->loan(['advance_interest_months' => 0]);
+
+        $this->assertEquals(0.00, (float) $l->interest_prepaid);
+        $this->assertSame(0, (int) $l->interest_periods_paid);
+        $this->assertSame(0.00, $this->cash($l, 'in'));
+        $f = $this->accrueOn($l, $this->day(30));
+        $this->assertEqualsWithDelta(2000.00, (float) $f->outstanding_interest, 0.011);
     }
 }

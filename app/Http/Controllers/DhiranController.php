@@ -19,7 +19,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
     public static function middleware(): array
     {
         return [new \Illuminate\Routing\Controllers\Middleware(\App\Http\Middleware\DhiranSubmitOnce::class,
-            only: ['store', 'payInterest', 'repay', 'releaseItem', 'preClose', 'renew', 'close', 'cancel', 'sendNotice', 'forfeit'])];
+            only: ['store', 'payInterest', 'payInstallment', 'repay', 'releaseItem', 'preClose', 'renew', 'close', 'cancel', 'sendNotice', 'forfeit'])];
     }
 
     public function __construct(
@@ -380,7 +380,14 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         // Evidence gate status for the checklist + activation button.
         $evidence = $this->dhiranService->evidenceStatus($loan);
 
-        return view('dhiran.show', compact('loan', 'attachments', 'evidence'));
+        // Paid in advance, month by month: the next installment's date and amount (the server works the amount out).
+        $installment = null;
+        if ($loan->status === 'active' && $loan->nextInstallmentDue()) {
+            $due = $loan->nextInstallmentDue();
+            $installment = ['due' => $due, 'amount' => $this->dhiranService->installmentAmount($loan), 'days' => (int) today()->diffInDays($due, false)];
+        }
+
+        return view('dhiran.show', compact('loan', 'attachments', 'evidence', 'installment'));
     }
 
     /* ================================================================
@@ -405,6 +412,22 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
 
         return redirect()->route('dhiran.show', $loan)
             ->with('success', 'Interest payment recorded.');
+    }
+
+    public function payInstallment(Request $request, DhiranLoan $loan)
+    {
+        abort_unless((int) $loan->shop_id === (int) auth()->user()->shop_id, 404);
+
+        $data = $request->validate(['payment_method' => 'nullable|in:cash,upi,card,bank_transfer']);
+
+        try {
+            $payment = $this->dhiranService->payInstallment($loan, $data['payment_method'] ?? 'cash');
+        } catch (\LogicException $e) {
+            return redirect()->route('dhiran.show', $loan)->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('dhiran.show', $loan)
+            ->with('success', $payment ? 'Installment recorded.' : 'Nothing to collect: this month is already covered.');
     }
 
     public function repay(Request $request, DhiranLoan $loan)

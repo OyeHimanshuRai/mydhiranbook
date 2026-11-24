@@ -292,8 +292,8 @@
                             <label for="advance_interest_months" class="fm-label">Interest collection</label>
                             <select name="advance_interest_months" id="advance_interest_months" x-model.number="advance_interest_months" class="fm-control"
                                     @error('advance_interest_months') aria-invalid="true" aria-describedby="err-advance_interest_months" @enderror>
-                                <option value="0">Collected later, as it builds up</option>
-                                @foreach([1 => 'First month taken now', 2 => 'First 2 months taken now', 3 => 'First 3 months taken now'] as $m => $label)
+                                <option value="0">Paid afterwards, as it builds up</option>
+                                @foreach([1 => 'Paid in advance, month by month: first month now', 2 => 'Paid in advance, month by month: first 2 months now', 3 => 'Paid in advance, month by month: first 3 months now'] as $m => $label)
                                     <option value="{{ $m }}">{{ $label }}</option>
                                 @endforeach
                             </select>
@@ -381,6 +381,10 @@
                         <div class="fm-sum-main" x-show="advanceInterest > 0" x-cloak>
                             <dt>Cash to hand over</dt>
                             <dd x-text="'{{ $sym }}' + money((Number(principal_amount) || 0) - advanceInterest - processingFee)"></dd>
+                        </div>
+                        <div x-show="advanceInterest > 0" x-cloak>
+                            <dt>Next installment due</dt>
+                            <dd x-text="nextInstallmentLabel"></dd>
                         </div>
                         @endif
                     </dl>
@@ -591,9 +595,27 @@
                 get monthlyInterest() {
                     return (this.principal_amount || 0) * (this.interest_rate_monthly || 0) / 100;
                 },
+                // Advance interest counts the real days of the first N months from today (the server's date, so both agree):
+                // principal x rate / 100 / 30 per day, to the paisa.
+                serverToday: '{{ today()->toDateString() }}',
+                monthsFromToday(k) {
+                    const [y, m, d] = this.serverToday.split('-').map(Number);
+                    const first = new Date(Date.UTC(y, m - 1 + k, 1));
+                    const last = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
+                    return new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), Math.min(d, last)));
+                },
+                get advanceDays() {
+                    const n = Number(this.advance_interest_months) || 0;
+                    if (!n) return 0;
+                    const [y, m, d] = this.serverToday.split('-').map(Number);
+                    return Math.round((this.monthsFromToday(n) - new Date(Date.UTC(y, m - 1, d))) / 86400000);
+                },
                 get advanceInterest() {
-                    // first N months at the loan's monthly rate, to the paisa (the server computes the same figure)
-                    return Math.round((Number(this.principal_amount) || 0) * (Number(this.interest_rate_monthly) || 0) * (Number(this.advance_interest_months) || 0)) / 100;
+                    return Math.round((Number(this.principal_amount) || 0) * (Number(this.interest_rate_monthly) || 0) * this.advanceDays / 30) / 100;
+                },
+                get nextInstallmentLabel() {
+                    const n = Number(this.advance_interest_months) || 0;
+                    return n ? this.monthsFromToday(n).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '';
                 },
                 get processingFee() {
                     // The shop's fee is either a % of the loan or a fixed amount (Dhiran settings).

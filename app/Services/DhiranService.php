@@ -298,7 +298,8 @@ class DhiranService
                 if ($advanceMonths < 1 || $advanceMonths > 3) {
                     throw new LogicException('Advance interest can cover 1 to 3 months.');
                 }
-                $advanceInterest = round($principalAmount * $interestRateMonthly / 100 * $advanceMonths, 2);
+                // The first N months, each at its real number of days (rate / 30 per day): Nov 24 to Dec 24 is 30 days, Dec 24 to Jan 24 is 31.
+                $advanceInterest = round($this->coverInterest($interestRateMonthly, $interestType, $loanDate->copy(), $loanDate->copy()->addMonthsNoOverflow($advanceMonths), $loanDate, $principalAmount, 0.0), 2);
                 if ($advanceInterest <= 0 || $advanceInterest >= $principalAmount) {
                     throw new LogicException('Advance interest must be more than zero and less than the loan amount.');
                 }
@@ -343,6 +344,7 @@ class DhiranService
                 'interest_accrued_through' => $accruedThrough,
                 'total_interest_collected' => $advanceInterest,
                 'advance_interest_months'  => $advanceMonths,
+                'interest_periods_paid'    => $advanceMonths,
                 'interest_prepaid'         => $advanceInterest,
                 'total_penalty_collected'  => 0,
                 'total_principal_collected' => round($principalAmount - $owed, 2),
@@ -505,51 +507,8 @@ class DhiranService
 
             // ── Advance interest (cash in): the customer is handed the loan less this ──
             if ($advanceInterest > 0) {
-                $advance = DhiranPayment::record([
-                    'shop_id'                    => $shop->id,
-                    'dhiran_loan_id'             => $loan->id,
-                    'payment_date'               => $loanDate->toDateString(),
-                    'type'                       => 'advance_interest',
-                    'amount'                     => $advanceInterest,
-                    'direction'                  => 'in',
-                    'payment_method'             => $paymentMethod,
-                    'interest_component'         => $advanceInterest,
-                    'penalty_component'          => 0,
-                    'principal_component'        => 0,
-                    'processing_fee_component'   => 0,
-                    'outstanding_principal_after' => $principalAmount,
-                    'outstanding_interest_after' => 0,
-                    'outstanding_penalty_after'  => 0,
-                    'notes'                      => "Advance interest for {$advanceMonths} month(s): {$loanNumber}",
-                    'created_by'                 => $createdBy,
-                ]);
-
-                DhiranCashEntry::record([
-                    'shop_id'            => $shop->id,
-                    'dhiran_loan_id'     => $loan->id,
-                    'dhiran_payment_id'  => $advance->id,
-                    'entry_date'         => $loanDate->toDateString(),
-                    'type'               => 'in',
-                    'amount'             => $advanceInterest,
-                    'source_type'        => 'advance_interest',
-                    'payment_method'     => $paymentMethod,
-                    'description'        => "Advance interest for {$advanceMonths} month(s): {$loanNumber}",
-                    'created_by'         => $createdBy,
-                ]);
-
-                DhiranLedgerEntry::record([
-                    'shop_id'                 => $shop->id,
-                    'dhiran_loan_id'          => $loan->id,
-                    'dhiran_payment_id'       => $advance->id,
-                    'entry_type'              => 'advance_interest',
-                    'direction'               => 'credit',
-                    'amount'                  => $advanceInterest,
-                    'balance_after'           => $principalAmount,
-                    'interest_balance_after'  => 0,
-                    'penalty_balance_after'   => 0,
-                    'note'                    => "Advance interest collected for {$advanceMonths} month(s): {$loanNumber}",
-                    'created_by'              => $createdBy,
-                ]);
+                $this->bookAdvanceInterest($loan, $advanceInterest, $paymentMethod, $createdBy, $loanDate->toDateString(), 0.0,
+                    "Advance interest for {$advanceMonths} month(s): {$loanNumber}");
             }
 
             return $loan->fresh(['items', 'payments']);
@@ -697,6 +656,130 @@ class DhiranService
             DhiranLedgerEntry::record($base + ['dhiran_payment_id' => $refund->id, 'entry_type' => 'advance_refund', 'direction' => 'debit',
                 'amount' => $advance, 'balance_after' => 0, 'interest_balance_after' => 0, 'penalty_balance_after' => 0, 'note' => $note]);
         }
+    }
+
+    /* ══════════════════════════════════════════════════════════
+     *  1c. INTEREST PAID IN ADVANCE, MONTH BY MONTH
+     * ══════════════════════════════════════════════════════════ */
+
+    /**
+     * Interest that covers [from, to) when the customer's unpaid interest is cleared in the same payment, at the real number of days
+     * (rate / 100 / 30 per day). flat / daily: simple interest on the principal still owed. compound: unpaid interest joins the base at each
+     * loan-month anniversary, but nothing is unpaid then (it is paid ahead), so only an interest_capitalised left by earlier lateness counts,
+     * and only until the next anniversary. This is the base accrueInterest uses, so what is paid here is spent to zero at the period end.
+     */
+    private function coverInterest(float $rateMonthly, string $interestType, Carbon $from, Carbon $to, Carbon $loanDate, float $principal, float $capitalised): float
+    {
+        if ($from->gte($to)) {
+            return 0.0;
+        }
+        $perDay = $rateMonthly / 100 / 30;
+        if ($interestType !== 'compound') {
+            return $principal * $perDay * $from->diffInDays($to);
+        }
+        $total = 0.0;
+        $cursor = $from->copy();
+        $base = $principal + $capitalised;
+        $k = 1;
+        while (($end = $loanDate->copy()->addMonthsNoOverflow($k))->lte($cursor)) {
+            $k++;
+        }
+        while ($cursor->lt($to)) {
+            $stop = $end->lt($to) ? $end : $to;
+            $total += $base * $perDay * $cursor->diffInDays($stop);
+            $cursor = $stop->copy();
+            $base = $principal; // past an anniversary everything before it was paid
+            $end = $loanDate->copy()->addMonthsNoOverflow(++$k);
+        }
+
+        return $total;
+    }
+
+    /** The cash-in payment, cash entry and ledger credit for interest taken ahead (day-0 advance and every monthly installment). */
+    private function bookAdvanceInterest(DhiranLoan $loan, float $amount, string $method, ?int $createdBy, string $date, float $interestAfter, string $note): DhiranPayment
+    {
+        $payment = DhiranPayment::record([
+            'shop_id' => $loan->shop_id, 'dhiran_loan_id' => $loan->id, 'payment_date' => $date, 'type' => 'advance_interest',
+            'amount' => $amount, 'direction' => 'in', 'payment_method' => $method,
+            'interest_component' => $amount, 'penalty_component' => 0, 'principal_component' => 0, 'processing_fee_component' => 0,
+            'outstanding_principal_after' => (float) $loan->outstanding_principal, 'outstanding_interest_after' => $interestAfter,
+            'outstanding_penalty_after' => (float) $loan->outstanding_penalty, 'notes' => $note, 'created_by' => $createdBy,
+        ]);
+        DhiranCashEntry::record([
+            'shop_id' => $loan->shop_id, 'dhiran_loan_id' => $loan->id, 'dhiran_payment_id' => $payment->id, 'entry_date' => $date,
+            'type' => 'in', 'amount' => $amount, 'source_type' => 'advance_interest', 'payment_method' => $method,
+            'description' => $note, 'created_by' => $createdBy,
+        ]);
+        DhiranLedgerEntry::record([
+            'shop_id' => $loan->shop_id, 'dhiran_loan_id' => $loan->id, 'dhiran_payment_id' => $payment->id, 'entry_type' => 'advance_interest',
+            'direction' => 'credit', 'amount' => $amount, 'balance_after' => (float) $loan->outstanding_principal,
+            'interest_balance_after' => $interestAfter, 'penalty_balance_after' => (float) $loan->outstanding_penalty,
+            'note' => $note, 'created_by' => $createdBy,
+        ]);
+
+        return $payment;
+    }
+
+    /** What the next monthly installment costs today: the interest already owed plus the rest of the period, less any advance still unspent. */
+    private function installmentNeed(DhiranLoan $loan): float
+    {
+        $loanDate = Carbon::parse($loan->loan_date)->startOfDay();
+        $end = $loanDate->copy()->addMonthsNoOverflow((int) $loan->interest_periods_paid + 1);
+        $ahead = $this->coverInterest((float) $loan->interest_rate_monthly, $loan->interest_type, today(), $end, $loanDate,
+            (float) $loan->outstanding_principal, (float) $loan->interest_capitalised);
+
+        // interest_remainder: the fraction of a paisa accrued but not yet booked, so the amount is right to the paisa
+        return max(0.0, round((float) $loan->outstanding_interest + (float) $loan->interest_remainder + $ahead - (float) $loan->interest_prepaid, 2));
+    }
+
+    /** The amount to collect for the next installment (up to date: accrues first). 0 for a loan that is not paid in advance. */
+    public function installmentAmount(DhiranLoan $loan): float
+    {
+        if (! (int) $loan->advance_interest_months || $loan->status !== 'active') {
+            return 0.0;
+        }
+        $this->accrueInterest($loan);
+
+        return $this->installmentNeed($loan->refresh());
+    }
+
+    /**
+     * Collect the next monthly installment of a loan paid in advance (due from 7 days before its date). The server works out the amount:
+     * the interest already owed is cleared first, the rest is kept as advance that accrual spends day by day to the period end.
+     * Returns null when the month is already fully covered (the due date still moves on).
+     */
+    public function payInstallment(DhiranLoan $loan, string $method = 'cash'): ?DhiranPayment
+    {
+        $this->assertActive($loan);
+        if (! (int) $loan->advance_interest_months) {
+            throw new LogicException('This loan is not paid in advance: it has no interest installments.');
+        }
+        $this->accrueInterest($loan);
+
+        return DB::transaction(function () use ($loan, $method): ?DhiranPayment {
+            $loan = $this->lockActive($loan);
+            $due = $loan->nextInstallmentDue();
+            if ($due->gt(today()->addDays(7))) {
+                throw new LogicException('The next installment is not due yet (due ' . $due->format('d M Y') . ').');
+            }
+            $amount = $this->installmentNeed($loan);
+            $owed = (float) $loan->outstanding_interest;
+            $toOwed = round(min($amount, $owed), 2);
+            $loan->outstanding_interest = round($owed - $toOwed, 2);
+            $loan->interest_prepaid = round((float) $loan->interest_prepaid + ($amount - $toOwed), 2);
+            $loan->total_interest_collected = round((float) $loan->total_interest_collected + $amount, 2);
+            $loan->interest_periods_paid = (int) $loan->interest_periods_paid + 1;
+            $loan->save();
+
+            if ($amount <= 0) {
+                return null;
+            }
+            $actor = $this->actor($loan);
+            $month = $loan->nextInstallmentDue()->format('d M Y');
+
+            return $this->bookAdvanceInterest($loan, $amount, $method, $actor, today()->toDateString(), (float) $loan->outstanding_interest,
+                "Interest installment paid in advance, covers up to {$month}: {$loan->loan_number}");
+        });
     }
 
     /* ══════════════════════════════════════════════════════════

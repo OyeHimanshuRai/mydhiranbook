@@ -25,6 +25,7 @@ class AdvanceInterestFormTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        \Illuminate\Support\Carbon::setTestNow(\Illuminate\Support\Carbon::parse('2026-11-24 10:00', 'Asia/Kolkata'));
         $this->shop = self::createDhiranShop([
             'name' => 'Pawn Co', 'shop_type' => 'dhiran', 'phone' => '9390019000', 'owner_first_name' => 'O', 'owner_last_name' => 'W',
             'owner_mobile' => '9390019000', 'country' => 'India', 'gst_rate' => 3.0, 'wastage_recovery_percent' => 0,
@@ -36,6 +37,12 @@ class AdvanceInterestFormTest extends TestCase
         $this->owner = User::create(['mobile_number' => '9390019000', 'password' => bcrypt('x'), 'realm' => 'dhiran', 'email' => 'o@example.com',
             'is_active' => true, 'email_verified_at' => now(), 'shop_id' => $this->shop->id, 'role_id' => $role->id]);
         $this->customer = TenantContext::runFor($this->shop->id, fn () => Customer::create(['shop_id' => $this->shop->id, 'first_name' => 'Adv', 'last_name' => 'Form', 'mobile' => '9815590001']));
+    }
+
+    protected function tearDown(): void
+    {
+        \Illuminate\Support\Carbon::setTestNow();
+        parent::tearDown();
     }
 
     private function as(callable $fn)
@@ -87,7 +94,9 @@ class AdvanceInterestFormTest extends TestCase
         $this->enable(2);
         $html = $this->as(fn ($t) => $t->get(self::HOST . '/dhiran/create'))->getContent();
         $this->assertStringContainsString('name="advance_interest_months"', $html);
-        $this->assertStringContainsString('First month taken now', $html);
+        $this->assertStringContainsString('Paid in advance, month by month: first month now', $html);
+        $this->assertStringContainsString('Next installment due', $html);
+        $this->assertStringContainsString("serverToday: '2026-11-24'", $html);
         $this->assertStringContainsString('Cash to hand over', $html);
         $this->assertStringContainsString('advance_interest_months: 2,', $html, 'the shop default is preselected');
     }
@@ -131,5 +140,68 @@ class AdvanceInterestFormTest extends TestCase
         $html = $this->as(fn ($t) => $t->get(self::HOST . "/dhiran/loans/{$plain->id}/receipt"))->getContent();
         $this->assertStringNotContainsString('Advance Interest', $html);
         $this->assertStringNotContainsString('Cash Handed to Borrower', $html);
+    }
+
+    private function advanceLoan(): DhiranLoan
+    {
+        $this->enable();
+        $this->as(fn ($t) => $t->post(self::HOST . '/dhiran', $this->loanForm(['advance_interest_months' => 1])))->assertSessionHasNoErrors();
+
+        return DhiranLoan::withoutGlobalScopes()->where('shop_id', $this->shop->id)->orderByDesc('id')->first();
+    }
+
+    private function activate(DhiranLoan $l): void
+    {
+        DhiranLoan::withoutGlobalScopes()->whereKey($l->id)->update(['status' => 'active']);
+    }
+
+    public function test_the_loan_page_shows_the_installment_only_for_a_loan_paid_in_advance(): void
+    {
+        $l = $this->advanceLoan();
+        $this->activate($l);
+        $html = $this->as(fn ($t) => $t->get(self::HOST . "/dhiran/loans/{$l->id}"))->getContent();
+        $this->assertStringContainsString('Interest installment', $html);
+        $this->assertStringContainsString('24 Dec 2026', $html);
+        $this->assertStringContainsString('Due in 30 days', $html);
+        $this->assertStringContainsString('2,066.67', $html, 'Dec 24 to Jan 24 is 31 days at 66.67 a day');
+        $this->assertStringContainsString('Collect installment', $html);
+
+        $this->as(fn ($t) => $t->post(self::HOST . '/dhiran', $this->loanForm(['advance_interest_months' => 0])));
+        $plain = DhiranLoan::withoutGlobalScopes()->where('shop_id', $this->shop->id)->orderByDesc('id')->first();
+        $this->activate($plain);
+        $html = $this->as(fn ($t) => $t->get(self::HOST . "/dhiran/loans/{$plain->id}"))->getContent();
+        $this->assertStringNotContainsString('Interest installment', $html);
+    }
+
+    public function test_collecting_the_installment_through_the_screen(): void
+    {
+        $l = $this->advanceLoan();
+        $this->activate($l);
+
+        // two weeks early: refused with a plain reason, nothing recorded
+        $this->as(fn ($t) => $t->post(self::HOST . "/dhiran/loans/{$l->id}/pay-installment", ['idempotency_key' => 'inst-key-0001']))->assertSessionHas('error');
+        $this->assertSame(1, (int) $l->fresh()->interest_periods_paid);
+
+        \Illuminate\Support\Carbon::setTestNow(\Illuminate\Support\Carbon::parse('2026-12-24 10:00', 'Asia/Kolkata'));
+        $this->as(fn ($t) => $t->post(self::HOST . "/dhiran/loans/{$l->id}/pay-installment", ['idempotency_key' => 'inst-key-0002']))->assertSessionHas('success');
+        // the same form sent twice is recorded once
+        $this->as(fn ($t) => $t->post(self::HOST . "/dhiran/loans/{$l->id}/pay-installment", ['idempotency_key' => 'inst-key-0002']));
+        $this->assertSame(2, (int) $l->fresh()->interest_periods_paid);
+        $this->assertSame(2, \Illuminate\Support\Facades\DB::table('dhiran_payments')->where('dhiran_loan_id', $l->id)->where('type', 'advance_interest')->count());
+    }
+
+    public function test_the_installment_needs_the_pay_permission(): void
+    {
+        $l = $this->advanceLoan();
+        $this->activate($l);
+        $role = new Role();
+        $role->forceFill(['name' => 'viewer', 'display_name' => 'Viewer', 'shop_id' => $this->shop->id])->save();
+        $role->permissions()->sync(Permission::where('name', 'dhiran.view')->pluck('id'));
+        $viewer = User::create(['mobile_number' => '9390019001', 'password' => bcrypt('x'), 'realm' => 'dhiran', 'email' => 'v@example.com',
+            'is_active' => true, 'email_verified_at' => now(), 'shop_id' => $this->shop->id, 'role_id' => $role->id]);
+        \Illuminate\Support\Carbon::setTestNow(\Illuminate\Support\Carbon::parse('2026-12-24 10:00', 'Asia/Kolkata'));
+
+        TenantContext::runFor($this->shop->id, fn () => $this->actingAs($viewer)
+            ->post(self::HOST . "/dhiran/loans/{$l->id}/pay-installment", ['idempotency_key' => 'inst-key-0003']))->assertForbidden();
     }
 }
