@@ -47,6 +47,8 @@ class DhiranLoan extends Model
         'min_lock_months',
         'grace_period_days',
         'min_interest_months',
+        'advance_interest_months',
+        'interest_prepaid',
         'status',
         'renewed_count',
         'renewed_from_id',
@@ -66,6 +68,16 @@ class DhiranLoan extends Model
         'interest_capitalised',
         'created_by',
     ];
+
+    /** The first months' interest taken at the counter when the loan was given (0 when none), from the payment that recorded it. */
+    public function advanceInterestAmount(): float
+    {
+        if (! (int) $this->advance_interest_months) {
+            return 0.0;
+        }
+
+        return round((float) DhiranPayment::where('dhiran_loan_id', $this->id)->where('type', 'advance_interest')->sum('amount'), 2);
+    }
 
     protected $casts = [
         'kyc_pan'                   => 'encrypted', // borrower PII, never queried by value
@@ -96,6 +108,8 @@ class DhiranLoan extends Model
         'min_lock_months'           => 'integer',
         'grace_period_days'         => 'integer',
         'min_interest_months'       => 'integer',
+        'advance_interest_months'   => 'integer',
+        'interest_prepaid'          => 'decimal:2',
         'renewed_count'             => 'integer',
     ];
 

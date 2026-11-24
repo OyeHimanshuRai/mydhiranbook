@@ -17,7 +17,7 @@
         foreach ($errors->getMessages() as $k => $msgs) {
             if (preg_match('/^items\.(\d+)\./', $k, $m)) { $itemErrors[(int) $m[1]][] = $msgs[0]; }
         }
-        $fieldIds = ['principal_amount', 'gold_rate_on_date', 'interest_rate_monthly', 'interest_type', 'tenure_months', 'penalty_rate_monthly', 'notes'];
+        $fieldIds = ['principal_amount', 'gold_rate_on_date', 'interest_rate_monthly', 'interest_type', 'advance_interest_months', 'tenure_months', 'penalty_rate_monthly', 'notes'];
         $anchorFor = fn ($k) => match (true) {
             $k === 'customer_id' => 'fm-customer-search',
             str_starts_with($k, 'items') => 'fm-step-items',
@@ -287,6 +287,21 @@
                                 <p class="fm-error" id="err-interest_type" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
                             @enderror
                         </div>
+                        @if($settings->advance_interest_enabled)
+                        <div class="fm-field">
+                            <label for="advance_interest_months" class="fm-label">Interest collection</label>
+                            <select name="advance_interest_months" id="advance_interest_months" x-model.number="advance_interest_months" class="fm-control"
+                                    @error('advance_interest_months') aria-invalid="true" aria-describedby="err-advance_interest_months" @enderror>
+                                <option value="0">Collected later, as it builds up</option>
+                                @foreach([1 => 'First month taken now', 2 => 'First 2 months taken now', 3 => 'First 3 months taken now'] as $m => $label)
+                                    <option value="{{ $m }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            @error('advance_interest_months')
+                                <p class="fm-error" id="err-advance_interest_months" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
+                            @enderror
+                        </div>
+                        @endif
                         <div class="fm-field">
                             <label for="tenure_months" class="fm-label">Tenure</label>
                             <div class="fm-affix">
@@ -358,6 +373,16 @@
                             <dd x-text="'{{ $sym }}' + money(processingFee)"></dd>
                             <input type="hidden" name="processing_fee" :value="processingFee">
                         </div>
+                        @if($settings->advance_interest_enabled)
+                        <div x-show="advanceInterest > 0" x-cloak>
+                            <dt>Interest taken now</dt>
+                            <dd x-text="'{{ $sym }}' + money(advanceInterest)"></dd>
+                        </div>
+                        <div class="fm-sum-main" x-show="advanceInterest > 0" x-cloak>
+                            <dt>Cash to hand over</dt>
+                            <dd x-text="'{{ $sym }}' + money((Number(principal_amount) || 0) - advanceInterest - processingFee)"></dd>
+                        </div>
+                        @endif
                     </dl>
                 </div>
             </section>
@@ -505,6 +530,7 @@
                 principal_amount: {{ old('principal_amount', 0) }},
                 interest_rate_monthly: {{ old('interest_rate_monthly', $defaults['interest_rate_monthly'] ?? 1.5) }},
                 interest_type: '{{ old('interest_type', $defaults['interest_type'] ?? 'flat') }}',
+                advance_interest_months: {{ (int) old('advance_interest_months', $settings->advance_interest_enabled ? $settings->advance_interest_default_months : 0) }},
                 tenure_months: {{ old('tenure_months', $defaults['tenure_months'] ?? 6) }},
                 penalty_rate_monthly: {{ old('penalty_rate_monthly', $defaults['penalty_rate_monthly'] ?? 2) }},
                 processingFeePercent: {{ $defaults['processing_fee_percent'] ?? 0 }},
@@ -564,6 +590,10 @@
                 },
                 get monthlyInterest() {
                     return (this.principal_amount || 0) * (this.interest_rate_monthly || 0) / 100;
+                },
+                get advanceInterest() {
+                    // first N months at the loan's monthly rate, to the paisa (the server computes the same figure)
+                    return Math.round((Number(this.principal_amount) || 0) * (Number(this.interest_rate_monthly) || 0) * (Number(this.advance_interest_months) || 0)) / 100;
                 },
                 get processingFee() {
                     // The shop's fee is either a % of the loan or a fixed amount (Dhiran settings).

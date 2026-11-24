@@ -263,6 +263,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             'penalty_rate_monthly'     => 'nullable|numeric|min:0|max:10',
             'processing_fee'           => 'nullable|numeric|min:0|max:999999999999.99',
             'processing_fee_type'      => 'nullable|in:flat,percent',
+            'advance_interest_months'  => 'nullable|integer|min:0|max:3', // the service also needs the shop's switch on
             // Aadhaar: accept a full 12-digit number OR an already-masked value, but
             // NEVER persist the full number (masked to last-4 before save below).
             'aadhaar'                  => ['nullable', 'string', 'max:20', 'regex:/^[0-9Xx\- ]{4,20}$/'],
@@ -291,6 +292,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             'penalty_rate_monthly'  => $data['penalty_rate_monthly'] ?? null,
             'processing_fee'        => $data['processing_fee'] ?? null,
             'processing_fee_type'   => $data['processing_fee_type'] ?? null,
+            'advance_interest_months' => $data['advance_interest_months'] ?? 0,
             // Privacy: store only a masked Aadhaar (last 4). The full number is
             // never persisted, logged, or shown. PAN is kept as-is for now.
             'kyc_aadhaar'           => \App\Support\AadhaarMask::mask($data['aadhaar'] ?? null),
@@ -769,11 +771,11 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
     /** Payment type chips on the customer profile: key => [label, stored types]. */
     private const PROFILE_PAYMENT_TYPES = [
         'disbursement' => ['Payout', ['disbursement']],
-        'interest'     => ['Interest', ['interest_payment', 'renewal_interest']],
+        'interest'     => ['Interest', ['interest_payment', 'renewal_interest', 'advance_interest']],
         'repayment'    => ['Repayment', ['principal_repayment']],
         'closure'      => ['Pre-closure', ['pre_closure']],
         'fee'          => ['Processing fee', ['processing_fee']],
-        'cancellation' => ['Cancellation', ['cancellation', 'fee_refund']],
+        'cancellation' => ['Cancellation', ['cancellation', 'fee_refund', 'advance_refund']],
     ];
 
     public function borrowerProfile(Customer $customer)
@@ -942,9 +944,13 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             'loan_number_prefix'            => ['nullable', 'string', 'max:10', 'regex:/^[A-Za-z0-9\-_]{1,10}$/'],
             'sms_reminders_enabled'         => 'nullable|boolean',
             'reminder_days_before_due'      => 'nullable|integer|min:1|max:30',
+            'advance_interest_enabled'      => 'nullable|boolean',
+            'advance_interest_default_months' => 'nullable|integer|min:1|max:3',
         ]);
 
         $data['sms_reminders_enabled'] = $request->boolean('sms_reminders_enabled');
+        $data['advance_interest_enabled'] = $request->boolean('advance_interest_enabled');
+        $data['advance_interest_default_months'] = $data['advance_interest_default_months'] ?? 1;
 
         $settings = DhiranSettings::getForShop($shopId);
         $settings->update($data);

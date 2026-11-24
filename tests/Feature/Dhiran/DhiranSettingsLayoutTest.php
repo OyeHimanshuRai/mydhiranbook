@@ -20,7 +20,7 @@ class DhiranSettingsLayoutTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_settings_are_five_described_cards_with_labelled_fields(): void
+    public function test_settings_are_six_described_cards_with_labelled_fields(): void
     {
         $shop = self::createDhiranShop([
             'name' => 'Pawn Co', 'shop_type' => 'dhiran', 'phone' => '9390012000',
@@ -47,12 +47,12 @@ class DhiranSettingsLayoutTest extends TestCase
         preg_match_all('/<h2 class="st-title"[^>]*>([^<]+)</', $board, $m);
         $this->assertSame(
             // 2026-11-12: the Reminders card is gone; the receipt texts moved to the Receipt page until something actually sends reminders.
-            ['Interest', 'Loan value (LTV)', 'Loan limits and fee', 'Tenure and forfeiture', 'Loan numbers'],
+            ['Interest', 'Loan value (LTV)', 'Loan limits and fee', 'Tenure and forfeiture', 'Advance interest', 'Loan numbers'],
             array_map('trim', $m[1]),
-            'five cards, one heading each'
+            'six cards, one heading each'
         );
-        $this->assertSame(5, substr_count($board, 'class="st-grid"'), 'each card lays its fields out in one grid (two columns only from 900px, in CSS)');
-        $this->assertSame(5, substr_count($board, 'class="st-desc"'), 'each card says in one line what it is for');
+        $this->assertSame(6, substr_count($board, 'class="st-grid"'), 'each card lays its fields out in one grid (two columns only from 900px, in CSS)');
+        $this->assertSame(6, substr_count($board, 'class="st-desc"'), 'each card says in one line what it is for');
         $this->assertStringNotContainsString('max-w-3xl', $html, 'no narrow single column');
         foreach (['default_interest_rate_monthly', 'default_ltv_ratio', 'high_value_threshold', 'processing_fee_value', 'grace_period_days', 'loan_number_prefix'] as $field) {
             $this->assertStringContainsString('name="' . $field . '"', $board, "still saves {$field}");
@@ -60,7 +60,7 @@ class DhiranSettingsLayoutTest extends TestCase
 
         // Labels, hints and errors are wired: every control has a label[for], numbers carry a keypad hint and a unit, and there is one save button.
         preg_match_all('/<(?:input|select)\b[^>]*\bname="(?!_)[^"]+"[^>]*>/', $board, $controls);
-        $this->assertCount(16, $controls[0], 'all sixteen settings are still posted');
+        $this->assertCount(18, $controls[0], 'all sixteen settings plus the two advance-interest controls are posted');
         foreach ($controls[0] as $tag) {
             $this->assertMatchesRegularExpression('/\bid="([^"]+)"/', $tag);
             preg_match('/\bid="([^"]+)"/', $tag, $id);

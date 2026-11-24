@@ -22,6 +22,8 @@ class DhiranSettings extends Model
         'default_tenure_months',
         'default_min_lock_months',
         'default_min_interest_months',
+        'advance_interest_enabled',
+        'advance_interest_default_months',
         'min_loan_amount',
         'max_loan_amount',
         'processing_fee_type',
@@ -41,6 +43,8 @@ class DhiranSettings extends Model
 
     protected $casts = [
         'is_enabled'                    => 'boolean',
+        'advance_interest_enabled'      => 'boolean',
+        'advance_interest_default_months' => 'integer',
         'kyc_mandatory'                 => 'boolean',
         'sms_reminders_enabled'         => 'boolean',
         'default_interest_rate_monthly' => 'decimal:2',
@@ -89,6 +93,7 @@ class DhiranSettings extends Model
                 'Summary' => [
                     'summary_market_value' => 'Total market value', 'summary_ltv' => 'LTV applied',
                     'summary_principal' => 'Principal disbursed', 'summary_fee' => 'Processing fee',
+                    'summary_advance' => 'Advance interest taken', 'summary_cash' => 'Cash handed to borrower',
                 ],
                 'Footer' => [
                     'terms' => 'Terms and conditions', 'signatures' => 'Signature lines', 'footer_note' => 'Computer-generated note',

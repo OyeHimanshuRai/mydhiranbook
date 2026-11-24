@@ -287,6 +287,23 @@ class DhiranService
                 }
             }
 
+            // ── Advance interest (the first N months taken at the counter) ──
+            // Never for an old loan brought in from the paper book. The shop must have switched it on; 1..3 months.
+            $advanceMonths = $broughtForward ? 0 : (int) ($params['advance_interest_months'] ?? 0);
+            $advanceInterest = 0.0;
+            if ($advanceMonths !== 0) {
+                if (! $settings->advance_interest_enabled) {
+                    throw new LogicException('Advance interest is not switched on for this shop.');
+                }
+                if ($advanceMonths < 1 || $advanceMonths > 3) {
+                    throw new LogicException('Advance interest can cover 1 to 3 months.');
+                }
+                $advanceInterest = round($principalAmount * $interestRateMonthly / 100 * $advanceMonths, 2);
+                if ($advanceInterest <= 0 || $advanceInterest >= $principalAmount) {
+                    throw new LogicException('Advance interest must be more than zero and less than the loan amount.');
+                }
+            }
+
             // ── Generate loan number ─────────────────────────
             $loanNumber = $broughtForward ? (string) $params['loan_number'] : $this->generateLoanNumber($shop);
 
@@ -324,7 +341,9 @@ class DhiranService
                 'outstanding_interest'     => $shopsInterest ?? 0,
                 'outstanding_penalty'      => 0,
                 'interest_accrued_through' => $accruedThrough,
-                'total_interest_collected' => 0,
+                'total_interest_collected' => $advanceInterest,
+                'advance_interest_months'  => $advanceMonths,
+                'interest_prepaid'         => $advanceInterest,
                 'total_penalty_collected'  => 0,
                 'total_principal_collected' => round($principalAmount - $owed, 2),
                 'brought_forward'          => $broughtForward,
@@ -484,6 +503,55 @@ class DhiranService
                 ]);
             }
 
+            // ── Advance interest (cash in): the customer is handed the loan less this ──
+            if ($advanceInterest > 0) {
+                $advance = DhiranPayment::record([
+                    'shop_id'                    => $shop->id,
+                    'dhiran_loan_id'             => $loan->id,
+                    'payment_date'               => $loanDate->toDateString(),
+                    'type'                       => 'advance_interest',
+                    'amount'                     => $advanceInterest,
+                    'direction'                  => 'in',
+                    'payment_method'             => $paymentMethod,
+                    'interest_component'         => $advanceInterest,
+                    'penalty_component'          => 0,
+                    'principal_component'        => 0,
+                    'processing_fee_component'   => 0,
+                    'outstanding_principal_after' => $principalAmount,
+                    'outstanding_interest_after' => 0,
+                    'outstanding_penalty_after'  => 0,
+                    'notes'                      => "Advance interest for {$advanceMonths} month(s): {$loanNumber}",
+                    'created_by'                 => $createdBy,
+                ]);
+
+                DhiranCashEntry::record([
+                    'shop_id'            => $shop->id,
+                    'dhiran_loan_id'     => $loan->id,
+                    'dhiran_payment_id'  => $advance->id,
+                    'entry_date'         => $loanDate->toDateString(),
+                    'type'               => 'in',
+                    'amount'             => $advanceInterest,
+                    'source_type'        => 'advance_interest',
+                    'payment_method'     => $paymentMethod,
+                    'description'        => "Advance interest for {$advanceMonths} month(s): {$loanNumber}",
+                    'created_by'         => $createdBy,
+                ]);
+
+                DhiranLedgerEntry::record([
+                    'shop_id'                 => $shop->id,
+                    'dhiran_loan_id'          => $loan->id,
+                    'dhiran_payment_id'       => $advance->id,
+                    'entry_type'              => 'advance_interest',
+                    'direction'               => 'credit',
+                    'amount'                  => $advanceInterest,
+                    'balance_after'           => $principalAmount,
+                    'interest_balance_after'  => 0,
+                    'penalty_balance_after'   => 0,
+                    'note'                    => "Advance interest collected for {$advanceMonths} month(s): {$loanNumber}",
+                    'created_by'              => $createdBy,
+                ]);
+            }
+
             return $loan->fresh(['items', 'payments']);
         });
     }
@@ -573,13 +641,15 @@ class DhiranService
                 DhiranLedgerEntry::record($base + ['entry_type' => 'cancellation', 'direction' => 'credit', 'amount' => $principal,
                     'balance_after' => 0, 'interest_balance_after' => 0, 'penalty_balance_after' => 0, 'note' => $note]);
             } else {
-                $this->reversePayout($loan, $base, $method, $principal, $fee, $note);
+                $this->reversePayout($loan, $base, $method, $principal, $fee, $note, round((float) $loan->total_interest_collected, 2));
             }
 
             $loan->items()->where('status', 'pledged')->update(['status' => 'released', 'released_at' => now(), 'released_by' => $actor]);
             $loan->status = 'cancelled';
             $loan->outstanding_principal = 0;
             $loan->outstanding_interest = 0;
+            $loan->interest_prepaid = 0;
+            $loan->total_interest_collected = 0; // a cancelled loan never happened: the advance went back
             $loan->closed_at = now();
             $loan->closure_notes = $reason !== '' ? "Cancelled: {$reason}" : 'Cancelled';
             $loan->save();
@@ -587,7 +657,7 @@ class DhiranService
     }
 
     /** The cancellation's reversal of what creation booked: principal back in, fee back out, ledger to 0. */
-    private function reversePayout(DhiranLoan $loan, array $base, string $method, float $principal, float $fee, string $note): void
+    private function reversePayout(DhiranLoan $loan, array $base, string $method, float $principal, float $fee, string $note, float $advance = 0): void
     {
         $back = DhiranPayment::record($base + [
             'payment_date' => today()->toDateString(), 'type' => 'cancellation', 'amount' => $principal, 'direction' => 'in',
@@ -612,6 +682,20 @@ class DhiranService
             DhiranLedgerEntry::record($base + ['dhiran_payment_id' => $refund->id, 'entry_type' => 'fee_refund', 'direction' => 'debit',
                 'amount' => $fee, 'balance_after' => 0, 'interest_balance_after' => 0, 'penalty_balance_after' => 0,
                 'note' => "Processing fee refunded: {$loan->loan_number}"]);
+        }
+
+        if ($advance > 0) { // a cancelled pending loan gives the advance interest back: nothing was lent, nothing is kept
+            $note = "Advance interest returned: {$loan->loan_number}";
+            $refund = DhiranPayment::record($base + [
+                'payment_date' => today()->toDateString(), 'type' => 'advance_refund', 'amount' => $advance, 'direction' => 'out',
+                'payment_method' => $method, 'interest_component' => $advance, 'penalty_component' => 0, 'principal_component' => 0,
+                'processing_fee_component' => 0, 'outstanding_principal_after' => 0, 'outstanding_interest_after' => 0,
+                'outstanding_penalty_after' => 0, 'notes' => $note,
+            ]);
+            DhiranCashEntry::record($base + ['dhiran_payment_id' => $refund->id, 'entry_date' => today()->toDateString(), 'type' => 'out',
+                'amount' => $advance, 'source_type' => 'advance_refund', 'payment_method' => $method, 'description' => $note]);
+            DhiranLedgerEntry::record($base + ['dhiran_payment_id' => $refund->id, 'entry_type' => 'advance_refund', 'direction' => 'debit',
+                'amount' => $advance, 'balance_after' => 0, 'interest_balance_after' => 0, 'penalty_balance_after' => 0, 'note' => $note]);
         }
     }
 
@@ -689,7 +773,7 @@ class DhiranService
                         continue;
                     }
                     $accrued += ($outstandingPrincipal + $capitalised) * $perDay * $cursor->diffInDays($monthEnd);
-                    $capitalised = $outstandingInterest + $accrued; // everything unpaid at this month end now earns interest
+                    $capitalised = max(0.0, $outstandingInterest + $accrued - (float) $loan->interest_prepaid); // everything unpaid (net of the advance) at this month end now earns interest
                     $cursor = $monthEnd;
                 }
                 $accrued += ($outstandingPrincipal + $capitalised) * $perDay * $cursor->diffInDays($today);
@@ -725,7 +809,12 @@ class DhiranService
             }
 
             // ── Update loan balances ─────────────────────────
-            $newOutstandingInterest = round($outstandingInterest + $interestAccrual, 2);
+            // The advance taken at the counter pays the first days: it is spent before the customer owes anything.
+            $prepaid = (float) $loan->interest_prepaid;
+            $prepaidUsed = round(min($prepaid, $interestAccrual), 2);
+            $loan->interest_prepaid = round($prepaid - $prepaidUsed, 2);
+            $interestBeforeOffset = round($outstandingInterest + $interestAccrual, 2);
+            $newOutstandingInterest = round($interestBeforeOffset - $prepaidUsed, 2);
             $newOutstandingPenalty  = round($outstandingPenalty + $penaltyAccrual, 2);
 
             $loan->outstanding_interest     = $newOutstandingInterest;
@@ -742,7 +831,7 @@ class DhiranService
                     'direction'               => 'debit',
                     'amount'                  => $interestAccrual,
                     'balance_after'           => (float) $loan->outstanding_principal,
-                    'interest_balance_after'  => $newOutstandingInterest,
+                    'interest_balance_after'  => $interestBeforeOffset,
                     'penalty_balance_after'   => $newOutstandingPenalty,
                     'note'                    => "Interest accrual: {$days} days ({$loan->interest_type})",
                     'meta'                    => json_encode([
@@ -751,6 +840,22 @@ class DhiranService
                         'rate_monthly'    => $interestRateMonthly,
                         'accrual_amount'  => $interestAccrual,
                     ]),
+                ]);
+            }
+
+            // ── Ledger entry for the advance spent against this accrual ──
+            if ($prepaidUsed > 0) {
+                DhiranLedgerEntry::record([
+                    'shop_id'                 => $loan->shop_id,
+                    'dhiran_loan_id'          => $loan->id,
+                    'entry_type'              => 'advance_applied',
+                    'direction'               => 'credit',
+                    'amount'                  => $prepaidUsed,
+                    'balance_after'           => (float) $loan->outstanding_principal,
+                    'interest_balance_after'  => $newOutstandingInterest,
+                    'penalty_balance_after'   => $newOutstandingPenalty,
+                    'note'                    => 'Advance interest applied (already collected at the counter)',
+                    'meta'                    => json_encode(['applied' => $prepaidUsed, 'advance_left' => (float) $loan->interest_prepaid]),
                 ]);
             }
 
