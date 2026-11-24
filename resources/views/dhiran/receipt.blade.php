@@ -100,7 +100,7 @@
         <dl class="rc-rows rc-summary">
             @if($show('summary_market_value'))<div class="rc-row"><dt>Total Market Value</dt><dd>{{ $cur }}{{ number_format($totalValue, 2) }}</dd></div>@endif
             @if($show('summary_ltv'))<div class="rc-row"><dt>LTV Applied</dt><dd>{{ number_format($loan->ltv_percent ?? 0, 1) }}%</dd></div>@endif
-            @if($show('summary_principal'))<div class="rc-row rc-strong"><dt>Principal Amount Disbursed</dt><dd>{{ $cur }}{{ number_format($loan->principal_amount, 2) }}</dd></div>@endif
+            @if($show('summary_principal'))<div class="rc-row rc-strong"><dt>{{ $loan->advanceInterestAmount() > 0 ? 'Loan Amount (on this ticket)' : 'Principal Amount Disbursed' }}</dt><dd>{{ $cur }}{{ number_format($loan->principal_amount, 2) }}</dd></div>@endif
             @if($show('summary_fee') && ($loan->processing_fee ?? 0) > 0)<div class="rc-row"><dt>Processing Fee</dt><dd>{{ $cur }}{{ number_format($loan->processing_fee, 2) }}</dd></div>@endif
             @if($advance > 0 && $show('summary_advance'))<div class="rc-row"><dt>Advance Interest ({{ $loan->advance_interest_months }} month{{ $loan->advance_interest_months > 1 ? 's' : '' }})</dt><dd>{{ $cur }}{{ number_format($advance, 2) }}</dd></div>@endif
             @if($advance > 0 && $show('summary_cash'))<div class="rc-row rc-strong"><dt>Cash Handed to Borrower</dt><dd>{{ $cur }}{{ number_format((float) $loan->principal_amount - $advance - (float) ($loan->processing_fee ?? 0), 2) }}</dd></div>@endif

@@ -1050,11 +1050,13 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             ->paginate($filters::perPage($request))
             ->withQueryString();
 
-        $totalInterest = (float) $period()->sum('interest_component');
-        $totalPenalty  = (float) $period()->sum('penalty_component');
+        // Money paid back out (a cancelled loan returning its advance interest) counts negative, so it nets off the interest it reverses.
+        $sgn = "(case when direction = 'out' then -1 else 1 end)";
+        $totalInterest = (float) $period()->toBase()->selectRaw("coalesce(sum(interest_component * {$sgn}), 0) as v")->value('v');
+        $totalPenalty  = (float) $period()->toBase()->selectRaw("coalesce(sum(penalty_component * {$sgn}), 0) as v")->value('v');
         // The table footer covers every listed payment, not only this page.
-        $footer = (array) $rows()->toBase()->selectRaw('coalesce(sum(amount), 0) as amount, coalesce(sum(interest_component), 0) as interest,'
-            . ' coalesce(sum(penalty_component), 0) as penalty, coalesce(sum(principal_component), 0) as principal')->first();
+        $footer = (array) $rows()->toBase()->selectRaw("coalesce(sum(amount * {$sgn}), 0) as amount, coalesce(sum(interest_component * {$sgn}), 0) as interest,"
+            . " coalesce(sum(penalty_component * {$sgn}), 0) as penalty, coalesce(sum(principal_component * {$sgn}), 0) as principal")->first();
 
         return view('dhiran.reports.interest', compact('payments', 'totalInterest', 'totalPenalty', 'footer', 'from', 'to', 'filters'));
     }

@@ -30,6 +30,7 @@ class AdvanceInterestTest extends TestCase
     private DhiranService $svc;
     private Shop $shop;
     private Customer $customer;
+    private User $owner;
 
     protected function setUp(): void
     {
@@ -47,7 +48,7 @@ class AdvanceInterestTest extends TestCase
         $role = new Role();
         $role->forceFill(['name' => 'owner', 'display_name' => 'Owner', 'shop_id' => $this->shop->id])->save();
         $role->permissions()->sync(Permission::query()->pluck('id'));
-        User::create(['mobile_number' => '9390078000', 'password' => bcrypt('x'), 'realm' => 'dhiran', 'email' => 'a@example.com',
+        $this->owner = User::create(['mobile_number' => '9390078000', 'password' => bcrypt('x'), 'realm' => 'dhiran', 'email' => 'a@example.com',
             'is_active' => true, 'email_verified_at' => now(), 'shop_id' => $this->shop->id, 'role_id' => $role->id]);
         $this->customer = $this->t(fn () => Customer::create(['shop_id' => $this->shop->id, 'first_name' => 'Adv', 'last_name' => 'Ance', 'mobile' => '9815580001']));
     }
@@ -240,5 +241,51 @@ class AdvanceInterestTest extends TestCase
         $this->assertSame(0.00, $this->cash($l, 'in'));
         $f = $this->accrueOn($l, '2026-01-31');
         $this->assertEqualsWithDelta(2000.00, (float) $f->outstanding_interest, 0.011);
+    }
+
+    public function test_the_interest_report_nets_a_cancelled_advance_to_zero(): void
+    {
+        $l = $this->loan(['status' => 'pending_evidence']);
+        $this->t(fn () => $this->svc->cancelPendingLoan($this->fresh($l), 'mistake'));
+
+        $data = $this->t(function () {
+            $this->actingAs($this->owner);
+            $req = \Illuminate\Http\Request::create('http://127.0.0.1:8787/dhiran/reports', 'GET', ['type' => 'interest']);
+            $this->app->instance('request', $req);
+            view()->share('errors', new \Illuminate\Support\ViewErrorBag);
+
+            return app(\App\Http\Controllers\DhiranController::class)->reportInterest($req)->getData();
+        });
+        $this->assertEquals(0.0, $data['totalInterest'], 'the advance in and the same advance back out net to nothing');
+        $this->assertEquals(0.0, (float) $data['footer']['interest']);
+    }
+
+    public function test_a_renewal_does_not_inherit_the_advance(): void
+    {
+        foreach (['2026-01-11', '2026-02-10'] as $day) {
+            $l = $this->loan();
+            $this->at($day);
+            $new = $this->t(fn () => $this->svc->renewLoan($this->fresh($l)));
+            $this->assertSame(0, (int) $new->advance_interest_months, $day);
+            $this->assertEquals(0.00, (float) $new->interest_prepaid, $day);
+            $this->assertSame('renewed', $this->fresh($l)->status);
+        }
+    }
+
+    public function test_compound_across_several_month_ends_is_the_same_in_one_accrual_or_many(): void
+    {
+        foreach ([1, 2] as $months) {
+            $a = $this->loan(['interest_type' => 'compound', 'advance_interest_months' => $months]);
+            $b = $this->loan(['interest_type' => 'compound', 'advance_interest_months' => $months]);
+            $this->accrueOn($a, '2026-04-05');
+            foreach (['2026-01-20', '2026-02-01', '2026-02-25', '2026-03-01', '2026-03-20', '2026-04-05'] as $d) {
+                $this->accrueOn($b, $d);
+            }
+            $x = $this->fresh($a);
+            $y = $this->fresh($b);
+            foreach (['outstanding_interest', 'interest_prepaid', 'interest_capitalised'] as $col) {
+                $this->assertEqualsWithDelta((float) $x->$col, (float) $y->$col, 0.03, "{$months} month(s): {$col}");
+            }
+        }
     }
 }

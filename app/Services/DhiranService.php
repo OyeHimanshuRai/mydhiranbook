@@ -641,7 +641,7 @@ class DhiranService
                 DhiranLedgerEntry::record($base + ['entry_type' => 'cancellation', 'direction' => 'credit', 'amount' => $principal,
                     'balance_after' => 0, 'interest_balance_after' => 0, 'penalty_balance_after' => 0, 'note' => $note]);
             } else {
-                $this->reversePayout($loan, $base, $method, $principal, $fee, $note, round((float) $loan->total_interest_collected, 2));
+                $this->reversePayout($loan, $base, $method, $principal, $fee, $note, $loan->advanceInterestAmount());
             }
 
             $loan->items()->where('status', 'pledged')->update(['status' => 'released', 'released_at' => now(), 'released_by' => $actor]);
