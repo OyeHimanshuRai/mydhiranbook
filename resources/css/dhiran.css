@@ -1517,7 +1517,7 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 .nc-x svg { width: 20px; height: 20px; }
 .nc-head h3 { margin: 0; font-size: var(--fl-fs-h1); line-height: var(--fl-lh-head); font-weight: 600; color: var(--dh-ink); }
 .nc-head p { margin: 2px 0 0; color: var(--dh-muted); font-size: var(--fl-fs-cell); }
-.nc-body { flex: 1 1 auto; overflow: auto; display: grid; gap: var(--sp-2); padding: var(--sp-4) var(--sp-5); }
+.nc-body { flex: 1 1 auto; overflow: auto; display: grid; grid-auto-rows: max-content; align-content: start; gap: var(--sp-2); padding: var(--sp-4) var(--sp-5); }
 .nc-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: var(--tap); padding: var(--sp-3) var(--sp-4); border: 1px solid var(--dh-line); border-left-width: 4px; border-radius: var(--r-sm); background: var(--dh-card); color: var(--dh-ink); text-decoration: none; }
 .nc-row:hover, .nc-row:focus-visible { background: var(--dh-muted-surface); }
 .nc-danger { border-left-color: var(--dh-danger); }

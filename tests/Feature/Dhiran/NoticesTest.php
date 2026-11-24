@@ -91,7 +91,24 @@ class NoticesTest extends TestCase
         $this->loan(['maturity_date' => '2026-05-01', 'grace_period_days' => 0, 'forfeiture_notice_sent_at' => '2026-05-20 10:00:00', 'forfeiture_deadline' => '2026-06-15']); // deadline today: ready
         $this->loan(['maturity_date' => '2026-05-01', 'grace_period_days' => 0, 'forfeiture_notice_sent_at' => '2026-06-10 10:00:00', 'forfeiture_deadline' => '2026-07-10']); // notice out, waiting: nothing to do
         $this->loan(['maturity_date' => '2026-09-30']);                                                // far away
-        $this->assertSame(['forfeit_ready' => 1, 'forfeit_notice' => 1, 'forfeit_soon' => 1], $this->counts());
+        $this->assertSame(['forfeit_ready' => 1, 'forfeit_notice' => 1, 'forfeit_soon' => 1, 'mat_w3' => 1], $this->counts()); // the 30 Jun loan also matures in 15 days
+    }
+
+    public function test_loans_reaching_maturity_are_counted_in_the_same_windows_and_link_to_them(): void
+    {
+        $at = fn (string $day) => ['maturity_date' => $day, 'grace_period_days' => 90];   // long grace: no forfeiture rows muddy the count
+        $a = $this->loan($at('2026-06-15'));   // today: 0 days
+        $this->loan($at('2026-06-18'));        // 3 days
+        $this->loan($at('2026-06-20'));        // 5 days
+        $this->loan($at('2026-07-10'));        // 25 days
+        $this->loan($at('2026-07-16'));        // 31 days: not yet
+        $this->loan($at('2026-06-14'));        // yesterday: past maturity, not "reaching"
+        $this->loan($at('2026-06-16') + ['status' => 'closed']);
+        $this->assertSame(['mat_w1' => 2, 'mat_w2' => 1, 'mat_w3' => 1], $this->counts());
+        $urls = collect(Notices::forShop($this->shop->id))->pluck('url', 'key');
+        $this->assertSame(route('dhiran.loans', ['maturity' => 'w1']), $urls['mat_w1']);
+        $page = $this->actingAs($this->owner)->get($urls['mat_w1'])->assertOk();
+        $page->assertSee($a->loan_number)->assertSee('Matures in 3 days');
     }
 
     public function test_pending_loans_and_other_shops_and_closed_loans(): void

@@ -24,6 +24,9 @@ final class Notices
         'forfeit_soon'   => ['warn', 'Past maturity soon. Talk to the customer before the notice goes out.', ['forfeit' => 'soon']],
         'inst_w2'        => ['info', 'Interest installments coming up.', ['installment' => 'w2']],
         'inst_w3'        => ['info', 'Interest installments coming up.', ['installment' => 'w3']],
+        'mat_w1'         => ['warn', 'The loan period ends. Ask the customer to pay, renew or take the items back.', ['maturity' => 'w1']],
+        'mat_w2'         => ['info', 'Loans reaching their maturity date.', ['maturity' => 'w2']],
+        'mat_w3'         => ['info', 'Loans reaching their maturity date.', ['maturity' => 'w3']],
     ];
 
     /** Defaults for a shop's notification settings (dhiran_settings.notices_*). */
@@ -52,19 +55,22 @@ final class Notices
     }
 
     /** The phrase after "N loans": uses the shop's own day windows. */
-    private static function text(string $key, array $o): string
+    private static function text(string $key, array $o, int $n = 2): string
     {
         [$a, $b, $c] = $o['days'];
 
         return match ($key) {
             'forfeit_ready' => 'ready to forfeit',
-            'forfeit_notice' => 'need a forfeiture notice',
+            'forfeit_notice' => $n === 1 ? 'needs a forfeiture notice' : 'need a forfeiture notice',
             'inst_late' => 'with interest installment overdue',
             'pending' => 'waiting for evidence',
             'inst_w1' => "with interest due in $a days",
             'inst_w2' => 'with interest due in '.($a + 1)."–$b days",
             'inst_w3' => 'with interest due in '.($b + 1)."–$c days",
             'forfeit_soon' => "near forfeiture (within {$o['forfeit_days']} days)",
+            'mat_w1' => "reaching maturity in $a days",
+            'mat_w2' => 'reaching maturity in '.($a + 1)."–$b days",
+            'mat_w3' => 'reaching maturity in '.($b + 1)."–$c days",
         };
     }
 
@@ -75,6 +81,7 @@ final class Notices
 
         return [
             'installment' => ['late' => 'Interest installment late', 'w1' => 'Interest due in '.$o['days'][0].' days', 'w2' => 'Interest due in '.($o['days'][0] + 1).'–'.$o['days'][1].' days', 'w3' => 'Interest due in '.($o['days'][1] + 1).'–'.$o['days'][2].' days'],
+            'maturity' => ['w1' => 'Matures in '.$o['days'][0].' days', 'w2' => 'Matures in '.($o['days'][0] + 1).'–'.$o['days'][1].' days', 'w3' => 'Matures in '.($o['days'][1] + 1).'–'.$o['days'][2].' days'],
             'forfeit' => ['soon' => 'Forfeiture within '.$o['forfeit_days'].' days', 'notice' => 'Forfeiture notice due', 'ready' => 'Ready to forfeit'],
         ];
     }
@@ -98,6 +105,9 @@ final class Notices
             'inst_w1'        => ["$installment AND $nextDue BETWEEN ?::date AND ?::date + ?::integer", [$today, $today, $o['days'][0]]],
             'inst_w2'        => ["$installment AND $nextDue BETWEEN ?::date + ?::integer AND ?::date + ?::integer", [$today, $o['days'][0] + 1, $today, $o['days'][1]]],
             'inst_w3'        => ["$installment AND $nextDue BETWEEN ?::date + ?::integer AND ?::date + ?::integer", [$today, $o['days'][1] + 1, $today, $o['days'][2]]],
+            'mat_w1'         => ["$active AND dhiran_loans.maturity_date::date BETWEEN ?::date AND ?::date + ?::integer", [$today, $today, $o['days'][0]]],
+            'mat_w2'         => ["$active AND dhiran_loans.maturity_date::date BETWEEN ?::date + ?::integer AND ?::date + ?::integer", [$today, $o['days'][0] + 1, $today, $o['days'][1]]],
+            'mat_w3'         => ["$active AND dhiran_loans.maturity_date::date BETWEEN ?::date + ?::integer AND ?::date + ?::integer", [$today, $o['days'][1] + 1, $today, $o['days'][2]]],
             'forfeit_soon'   => ["$plain AND $point BETWEEN ?::date AND ?::date + ?::integer", [$today, $today, $o['forfeit_days']]],
             'forfeit_notice' => ["$plain AND $point < ?::date", [$today]],
             'forfeit_ready'  => ["$active AND dhiran_loans.forfeiture_notice_sent_at IS NOT NULL AND COALESCE(dhiran_loans.forfeiture_deadline, dhiran_loans.forfeiture_notice_sent_at::date) <= ?::date", [$today]],
@@ -105,12 +115,21 @@ final class Notices
     }
 
     private const BAND_KEY = ['late' => 'inst_late', 'w1' => 'inst_w1', 'w2' => 'inst_w2', 'w3' => 'inst_w3'];
+    private const MATURITY_KEY = ['w1' => 'mat_w1', 'w2' => 'mat_w2', 'w3' => 'mat_w3'];
     private const STAGE_KEY = ['soon' => 'forfeit_soon', 'notice' => 'forfeit_notice', 'ready' => 'forfeit_ready'];
 
     /** Loans-list filter ?installment=late|w1|w2|w3 (windows are the shop's own day settings). */
     public static function installmentWhere(Builder $q, string $band, int $shopId): Builder
     {
         [$sql, $bind] = self::condition(self::BAND_KEY[$band], self::options($shopId));
+
+        return $q->whereRaw($sql, $bind);
+    }
+
+    /** Loans-list filter ?maturity=w1|w2|w3: active loans whose maturity date falls in the shop's own windows. */
+    public static function maturityWhere(Builder $q, string $band, int $shopId): Builder
+    {
+        [$sql, $bind] = self::condition(self::MATURITY_KEY[$band], self::options($shopId));
 
         return $q->whereRaw($sql, $bind);
     }
@@ -156,7 +175,7 @@ final class Notices
             }
             $rows[] = [
                 'key' => $key, 'tone' => $tone, 'count' => $n,
-                'title' => $n.' '.($n === 1 ? 'loan' : 'loans').' '.self::text($key, $o),
+                'title' => $n.' '.($n === 1 ? 'loan' : 'loans').' '.self::text($key, $o, $n),
                 'hint' => $hint,
                 'url' => $n === 1 ? route('dhiran.show', (int) $row[$key.'_id']) : route('dhiran.loans', $filter),
             ];
