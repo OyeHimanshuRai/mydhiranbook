@@ -87,7 +87,8 @@ class DhiranLoan extends Model
             return 0.0;
         }
 
-        return round((float) DhiranPayment::where('dhiran_loan_id', $this->id)->where('type', 'advance_interest')->sum('amount'), 2);
+        // the loan-day advance is the first advance_interest payment; later monthly installments use the same type
+        return round((float) DhiranPayment::where('dhiran_loan_id', $this->id)->where('type', 'advance_interest')->orderBy('id')->value('amount'), 2);
     }
 
     protected $casts = [

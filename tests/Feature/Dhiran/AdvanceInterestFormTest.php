@@ -204,4 +204,36 @@ class AdvanceInterestFormTest extends TestCase
         TenantContext::runFor($this->shop->id, fn () => $this->actingAs($viewer)
             ->post(self::HOST . "/dhiran/loans/{$l->id}/pay-installment", ['idempotency_key' => 'inst-key-0003']))->assertForbidden();
     }
+
+    public function test_the_ticket_still_shows_the_loan_day_advance_after_a_later_installment(): void
+    {
+        $l = $this->advanceLoan();
+        $this->activate($l);
+        \Illuminate\Support\Carbon::setTestNow(\Illuminate\Support\Carbon::parse('2026-12-24 10:00', 'Asia/Kolkata'));
+        $this->as(fn ($t) => $t->post(self::HOST . "/dhiran/loans/{$l->id}/pay-installment", ['idempotency_key' => 'inst-key-0004']))->assertSessionHas('success');
+
+        $html = $this->as(fn ($t) => $t->get(self::HOST . "/dhiran/loans/{$l->id}/receipt"))->getContent();
+        $this->assertStringContainsString('Advance Interest (1 month)', $html);
+        $this->assertStringContainsString('2,000.00', $html);
+        $this->assertStringContainsString('98,000.00', $html, 'cash handed over on the loan day does not change');
+        $this->assertStringNotContainsString('4,066.67', $html);
+        $this->assertStringNotContainsString('95,933.33', $html);
+    }
+
+    public function test_the_installment_form_carries_a_submit_once_key_and_the_list_flags_it_when_due_or_late(): void
+    {
+        $l = $this->advanceLoan();
+        $this->activate($l);
+        $show = $this->as(fn ($t) => $t->get(self::HOST . "/dhiran/loans/{$l->id}"))->getContent();
+        $this->assertMatchesRegularExpression('#action="[^"]*/loans/' . $l->id . '/pay-installment"[^>]*>.*?name="idempotency_key" value="[0-9a-f-]{36}"#s', $show);
+
+        $list = fn () => $this->as(fn ($t) => $t->get(self::HOST . '/dhiran/loans'))->getContent();
+        $this->assertStringNotContainsString('Interest due', $list(), '30 days away: nothing to flag yet');
+
+        \Illuminate\Support\Carbon::setTestNow(\Illuminate\Support\Carbon::parse('2026-12-20 10:00', 'Asia/Kolkata'));
+        $this->assertStringContainsString('Interest due 24 Dec', $list());
+
+        \Illuminate\Support\Carbon::setTestNow(\Illuminate\Support\Carbon::parse('2026-12-29 10:00', 'Asia/Kolkata'));
+        $this->assertStringContainsString('Interest late 5 d', $list());
+    }
 }

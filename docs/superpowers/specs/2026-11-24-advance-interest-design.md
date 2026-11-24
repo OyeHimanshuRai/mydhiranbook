@@ -48,7 +48,8 @@ Money paths: accrual, settlement, cancel. Needs the Ruthless LoanEngine/LoanMath
 - Period k = [loan date + (k-1) months, loan date + k months), calendar months from the loan day with no overflow (24 Nov, 24 Dec, 24 Jan; 31 Jan + 1 month = 28 Feb). Same arithmetic as maturity and compound month ends.
 - Amount = interest for the actual days in the period (rate / 100 / 30 per day, as accrual already does). A 31-day period costs 31 days of interest; a 30-day one costs 30. The earlier flat "rate x N" advance is replaced by this (first advance = days of periods 1..N).
 - **flat / daily:** principal still owed x per-day rate x days.
-- **compound:** unpaid interest joins the base at each month anniversary. Installments are paid ahead, so nothing is unpaid at an anniversary and the periods are simple interest on principal; only an `interest_capitalised` left by earlier lateness counts, and only until the next anniversary. This is the same base `accrueInterest` uses, so a paid installment is spent to exactly zero at the period end.
+- **compound:** an installment clears every bit of unpaid interest, so nothing is unpaid at a month anniversary and no interest is charged on interest in the amount (the loan model also drops `interest_capitalised` to the interest still owed, i.e. 0). The amount is therefore the same simple per-day figure as flat/daily. Compounding still happens in `accrueInterest` for a customer who does NOT pay: unpaid interest joins the base at each anniversary, and the next installment then clears that larger arrears amount.
+- **Several months late:** one payment clears all arrears and pays the rest of the month today falls in (`interest_periods_paid` jumps to that month), so the clerk never has to collect twice.
 
 ## "Amount to cover through period end E" (one function, used by creation and by every installment)
 `need = max(0, outstanding_interest + coverInterest(today -> E) - interest_prepaid)`

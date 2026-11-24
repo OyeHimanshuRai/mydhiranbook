@@ -299,7 +299,7 @@ class DhiranService
                     throw new LogicException('Advance interest can cover 1 to 3 months.');
                 }
                 // The first N months, each at its real number of days (rate / 30 per day): Nov 24 to Dec 24 is 30 days, Dec 24 to Jan 24 is 31.
-                $advanceInterest = round($this->coverInterest($interestRateMonthly, $interestType, $loanDate->copy(), $loanDate->copy()->addMonthsNoOverflow($advanceMonths), $loanDate, $principalAmount, 0.0), 2);
+                $advanceInterest = round($this->coverInterest($interestRateMonthly, $loanDate->copy(), $loanDate->copy()->addMonthsNoOverflow($advanceMonths), $principalAmount), 2);
                 if ($advanceInterest <= 0 || $advanceInterest >= $principalAmount) {
                     throw new LogicException('Advance interest must be more than zero and less than the loan amount.');
                 }
@@ -663,36 +663,13 @@ class DhiranService
      * ══════════════════════════════════════════════════════════ */
 
     /**
-     * Interest that covers [from, to) when the customer's unpaid interest is cleared in the same payment, at the real number of days
-     * (rate / 100 / 30 per day). flat / daily: simple interest on the principal still owed. compound: unpaid interest joins the base at each
-     * loan-month anniversary, but nothing is unpaid then (it is paid ahead), so only an interest_capitalised left by earlier lateness counts,
-     * and only until the next anniversary. This is the base accrueInterest uses, so what is paid here is spent to zero at the period end.
+     * Interest that covers [from, to) at the real number of days (rate / 100 / 30 per day) on the principal still owed. The same for flat,
+     * daily and compound: an installment clears every bit of unpaid interest, so for a compound loan nothing is unpaid at an anniversary
+     * (DhiranLoan::booted() also drops interest_capitalised to the interest still owed, i.e. 0) and no interest is charged on interest.
      */
-    private function coverInterest(float $rateMonthly, string $interestType, Carbon $from, Carbon $to, Carbon $loanDate, float $principal, float $capitalised): float
+    private function coverInterest(float $rateMonthly, Carbon $from, Carbon $to, float $principal): float
     {
-        if ($from->gte($to)) {
-            return 0.0;
-        }
-        $perDay = $rateMonthly / 100 / 30;
-        if ($interestType !== 'compound') {
-            return $principal * $perDay * $from->diffInDays($to);
-        }
-        $total = 0.0;
-        $cursor = $from->copy();
-        $base = $principal + $capitalised;
-        $k = 1;
-        while (($end = $loanDate->copy()->addMonthsNoOverflow($k))->lte($cursor)) {
-            $k++;
-        }
-        while ($cursor->lt($to)) {
-            $stop = $end->lt($to) ? $end : $to;
-            $total += $base * $perDay * $cursor->diffInDays($stop);
-            $cursor = $stop->copy();
-            $base = $principal; // past an anniversary everything before it was paid
-            $end = $loanDate->copy()->addMonthsNoOverflow(++$k);
-        }
-
-        return $total;
+        return $from->gte($to) ? 0.0 : $principal * ($rateMonthly / 100 / 30) * $from->diffInDays($to);
     }
 
     /** The cash-in payment, cash entry and ledger credit for interest taken ahead (day-0 advance and every monthly installment). */
@@ -720,13 +697,24 @@ class DhiranService
         return $payment;
     }
 
-    /** What the next monthly installment costs today: the interest already owed plus the rest of the period, less any advance still unspent. */
+    /** The last period an installment paid today covers: the next unpaid one, or the month today falls in when the customer is several months late. */
+    private function installmentTarget(DhiranLoan $loan): int
+    {
+        $loanDate = Carbon::parse($loan->loan_date)->startOfDay();
+        $elapsed = 0;
+        while ($loanDate->copy()->addMonthsNoOverflow($elapsed + 1)->lte(today())) {
+            $elapsed++;
+        }
+
+        return max((int) $loan->interest_periods_paid + 1, $elapsed + 1);
+    }
+
+    /** What the installment costs today: the interest already owed plus the rest of the month today falls in (or the next unpaid month), less any advance still unspent. */
     private function installmentNeed(DhiranLoan $loan): float
     {
         $loanDate = Carbon::parse($loan->loan_date)->startOfDay();
-        $end = $loanDate->copy()->addMonthsNoOverflow((int) $loan->interest_periods_paid + 1);
-        $ahead = $this->coverInterest((float) $loan->interest_rate_monthly, $loan->interest_type, today(), $end, $loanDate,
-            (float) $loan->outstanding_principal, (float) $loan->interest_capitalised);
+        $end = $loanDate->copy()->addMonthsNoOverflow($this->installmentTarget($loan));
+        $ahead = $this->coverInterest((float) $loan->interest_rate_monthly, today(), $end, (float) $loan->outstanding_principal);
 
         // interest_remainder: the fraction of a paisa accrued but not yet booked, so the amount is right to the paisa
         return max(0.0, round((float) $loan->outstanding_interest + (float) $loan->interest_remainder + $ahead - (float) $loan->interest_prepaid, 2));
@@ -763,12 +751,13 @@ class DhiranService
                 throw new LogicException('The next installment is not due yet (due ' . $due->format('d M Y') . ').');
             }
             $amount = $this->installmentNeed($loan);
+            $target = $this->installmentTarget($loan);
             $owed = (float) $loan->outstanding_interest;
             $toOwed = round(min($amount, $owed), 2);
             $loan->outstanding_interest = round($owed - $toOwed, 2);
             $loan->interest_prepaid = round((float) $loan->interest_prepaid + ($amount - $toOwed), 2);
             $loan->total_interest_collected = round((float) $loan->total_interest_collected + $amount, 2);
-            $loan->interest_periods_paid = (int) $loan->interest_periods_paid + 1;
+            $loan->interest_periods_paid = $target;
             $loan->save();
 
             if ($amount <= 0) {

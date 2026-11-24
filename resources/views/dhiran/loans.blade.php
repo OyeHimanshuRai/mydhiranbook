@@ -57,6 +57,11 @@
                                 <td data-label="Status" data-cell="status" class="text-center">
                                     {{-- The "upload proof" hint is the badge's tooltip, not a second line under it (one value per cell). --}}
                                     <x-dhiran.status :value="$loan->status" :title="$loan->status === 'pending_evidence' ? 'Upload the required proof to activate this loan' : null" />
+                                    {{-- Paid in advance, month by month: only when the next installment is due within a week or late --}}
+                                    @php $instDue = $loan->status === 'active' ? $loan->nextInstallmentDue() : null; $instDays = $instDue ? (int) today()->diffInDays($instDue, false) : null; @endphp
+                                    @if($instDue && $instDays <= 7)
+                                        <div><span class="dh-status dh-status--{{ $instDays < 0 ? 'danger' : 'warning' }}" title="Interest is paid in advance: next installment due {{ $instDue->format('d M Y') }}">{{ $instDays < 0 ? 'Interest late ' . abs($instDays) . ' d' : 'Interest due ' . $instDue->format('d M') }}</span></div>
+                                    @endif
                                 </td>
                                 <td data-label="Maturity" class="whitespace-nowrap">{{ $loan->maturity_date ? $loan->maturity_date->format('d M Y') : '---' }}</td>
                                 <td data-label="Actions" data-cell="hide" data-low="2" class="text-center">

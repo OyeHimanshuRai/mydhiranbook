@@ -374,9 +374,10 @@ class AdvanceInterestTest extends TestCase
         } else {
             $this->assertEqualsWithDelta($simple, (float) $mar->outstanding_interest, 0.05, "{$type}: simple interest, nothing on interest");
         }
-        $this->payInstallmentOn($l, '2027-03-05'); // period 3 (to Feb 24, already past): settles what is owed
-        $this->payInstallmentOn($l, '2027-03-05'); // period 4 (Feb 24 to Mar 24): the rest of March
+        $this->payInstallmentOn($l, '2027-03-05'); // one payment: settles everything owed and pays the rest of the month Mar 5 falls in
         $f = $this->fresh($l);
+        $this->assertSame(4, (int) $f->interest_periods_paid, 'moved on to the month we are in, not just one period');
+        $this->assertSame('2027-03-24', $f->nextInstallmentDue()->toDateString());
         $this->assertEquals(0.00, (float) $f->outstanding_interest);
         $end = $this->accrueOn($l, '2027-03-24');
         $this->assertEqualsWithDelta(0.0, (float) $end->outstanding_interest, 0.05, $type);
