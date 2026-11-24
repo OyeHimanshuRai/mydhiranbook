@@ -453,17 +453,43 @@ class AdvanceInterestTest extends TestCase
         $this->assertEquals(0.0, (float) $data['footer']['interest']);
     }
 
-    public function test_a_renewal_does_not_inherit_the_advance(): void
+    public function test_a_renewal_keeps_the_method_and_takes_the_first_months_again(): void
     {
-        foreach ([10, 40] as $n) {
+        foreach ([10 => '2026-12-04', 40 => '2027-01-03'] as $n => $date) {
             $l = $this->loan();
             $this->at($this->day($n));
             $new = $this->t(fn () => $this->svc->renewLoan($this->fresh($l)));
-            $this->assertSame(0, (int) $new->advance_interest_months, "day {$n}");
-            $this->assertSame(0, (int) $new->interest_periods_paid, "day {$n}");
-            $this->assertEquals(0.00, (float) $new->interest_prepaid, "day {$n}");
+
+            $this->assertSame(1, (int) $new->advance_interest_months, "day {$n}");
+            $this->assertSame(1, (int) $new->interest_periods_paid, "day {$n}");
+            $this->assertEquals(2066.67, (float) $new->interest_prepaid, "day {$n}: {$date} to the next month is 31 days");
+            $this->assertEquals(0.00, (float) $new->outstanding_interest);
+            $this->assertSame(Carbon::parse($date)->addMonthNoOverflow()->toDateString(), $new->nextInstallmentDue()->toDateString());
             $this->assertSame('renewed', $this->fresh($l)->status);
+            $this->assertSame(1, DB::table('dhiran_payments')->where('dhiran_loan_id', $new->id)->where('type', 'advance_interest')->count());
         }
+    }
+
+    public function test_a_renewal_of_a_loan_paid_afterwards_stays_that_way(): void
+    {
+        $l = $this->loan(['advance_interest_months' => 0]);
+        $this->at($this->day(10));
+        $new = $this->t(fn () => $this->svc->renewLoan($this->fresh($l)));
+
+        $this->assertSame(0, (int) $new->advance_interest_months);
+        $this->assertEquals(0.00, (float) $new->interest_prepaid);
+        $this->assertNull($new->nextInstallmentDue());
+    }
+
+    public function test_a_renewal_does_not_take_an_advance_when_the_shop_switched_it_off_since(): void
+    {
+        $l = $this->loan();
+        DhiranSettings::getForShop($this->shop->id)->update(['advance_interest_enabled' => false]);
+        $this->at($this->day(10));
+        $new = $this->t(fn () => $this->svc->renewLoan($this->fresh($l)));
+
+        $this->assertSame(0, (int) $new->advance_interest_months);
+        $this->assertEquals(0.00, (float) $new->interest_prepaid);
     }
 
     public function test_it_is_refused_when_the_shop_has_not_enabled_it(): void

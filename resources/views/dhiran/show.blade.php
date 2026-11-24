@@ -462,6 +462,9 @@
             <p class="dd-takes">To renew, collect {{ $rupee($renewDue) }} now: interest and penalty due (at least the minimum interest), up to {{ $through }}. Interest for any days since is added.</p>
             <x-dhiran.pay-method id="rn-method" label="Paid by" autofocus />
         @endif
+        @if((int) $loan->advance_interest_months > 0)
+            <p class="dd-takes">This loan is paid in advance, so the renewed loan is too: its first {{ $loan->advance_interest_months }} month{{ $loan->advance_interest_months > 1 ? 's' : '' }} of interest is also taken now, at the rate and tenure below. The advance not yet used on this loan stays with the shop.</p>
+        @endif
         <div>
             <label for="rn-tenure">New Tenure (Months)</label>
             <input id="rn-tenure" type="number" inputmode="numeric" name="tenure_months" min="1" @if($renewDue <= 0) autofocus @endif value="{{ $loan->tenure_months }}" class="dh-form-control dd-input">

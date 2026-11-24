@@ -1675,6 +1675,14 @@ class DhiranService
             $newLoanDate    = today();
             $newMaturity    = $newLoanDate->copy()->addMonthsNoOverflow($newTenureVal);
 
+            // A loan paid in advance stays paid in advance: the new loan takes the same number of first months now
+            // (the old loan's unspent advance stays with the shop). Only while the shop still allows it.
+            $keepMonths = ((int) $loan->advance_interest_months > 0 && DhiranSettings::getForShop($loan->shop_id)->advance_interest_enabled) ? (int) $loan->advance_interest_months : 0;
+            $newAdvance = $keepMonths ? round($this->coverInterest($newRateVal, $newLoanDate->copy(), $newLoanDate->copy()->addMonthsNoOverflow($keepMonths), $oldPrincipal), 2) : 0.0;
+            if ($newAdvance <= 0 || $newAdvance >= $oldPrincipal) {
+                [$keepMonths, $newAdvance] = [0, 0.0];
+            }
+
             $newLoan = DhiranLoan::create([
                 'shop_id'                  => $loan->shop_id,
                 'customer_id'              => $loan->customer_id,
@@ -1698,7 +1706,10 @@ class DhiranService
                 'outstanding_interest'     => 0,
                 'outstanding_penalty'      => 0,
                 'interest_accrued_through' => $newLoanDate->toDateString(),
-                'total_interest_collected' => 0,
+                'total_interest_collected' => $newAdvance,
+                'advance_interest_months'  => $keepMonths,
+                'interest_periods_paid'    => $keepMonths,
+                'interest_prepaid'         => $newAdvance,
                 'total_penalty_collected'  => 0,
                 'total_principal_collected' => 0,
                 'tenure_months'            => $newTenureVal,
@@ -1739,6 +1750,11 @@ class DhiranService
                 ]),
                 'created_by'              => $this->actor($loan),
             ]);
+
+            if ($newAdvance > 0) {
+                $this->bookAdvanceInterest($newLoan, $newAdvance, $method, $this->actor($loan), $newLoanDate->toDateString(), 0.0,
+                    "Advance interest for {$keepMonths} month(s) on renewal: {$newLoanNumber}");
+            }
 
             return $newLoan->fresh(['items']);
         });
