@@ -65,7 +65,8 @@ class CustomerKycExposureTest extends TestCase
 
         $html = $this->visit($user, '/dhiran/create')->assertOk()->getContent();
 
-        $this->assertStringContainsString('Asha', $html);
+        $this->assertStringNotContainsString('Asha', $html); // the borrower book is searched on typing, never embedded
+        $this->assertStringNotContainsString('9100000001', $html);
         $this->assertStringNotContainsString('QWERT9876Z', $html);
         $this->assertStringNotContainsString('ID-SECRET-77', $html);
     }

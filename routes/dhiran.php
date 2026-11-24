@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Route;
 
             // Inline borrower creation from the New Loan page (Dhiran-scoped).
             Route::post('/customers', [\App\Http\Controllers\DhiranController::class, 'storeCustomer'])->middleware('can:dhiran.create')->name('customers.store');
+            // New Loan borrower picker: at most 8 active matches for what was typed (declared before /borrowers/{customer}).
+            Route::get('/borrowers/search', [\App\Http\Controllers\DhiranController::class, 'searchBorrowers'])->middleware(['can:dhiran.create', 'throttle:60,1'])->name('borrowers.search');
             // Save a customer's details without a loan (declared before /borrowers/{customer}).
             Route::get('/borrowers/create', [\App\Http\Controllers\DhiranController::class, 'createCustomer'])->middleware('can:dhiran.create')->name('borrowers.create');
 

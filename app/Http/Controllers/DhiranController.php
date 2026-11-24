@@ -84,17 +84,12 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
 
         abort_unless($settings->is_enabled, 403, 'Dhiran module is not enabled.');
 
-        $customers = Customer::where('shop_id', $shopId)
-            ->orderBy('first_name')
-            ->orderBy('last_name')
-            ->get(['id', 'first_name', 'last_name', 'mobile', 'address', 'state_code']); // no pan / id_number: they ride in the page source (kyc() serves one on selection)
-
-        // Preselect a borrower when arriving from the borrower profile / list
-        // (?customer_id=). Only honoured if that customer belongs to this shop.
-        $preselectedCustomerId = null;
-        if ($request->filled('customer_id')) {
-            $preselectedCustomerId = $customers->firstWhere('id', (int) $request->customer_id)?->id;
-        }
+        // Preselect a borrower when arriving from the borrower profile / list (?customer_id=). Only this shop's own,
+        // active borrower is honoured. The page never carries the borrower book: the picker searches on typing (searchBorrowers).
+        $wanted = $request->query('customer_id', $request->old('customer_id')); // old(): the form came back after a refusal
+        $preselectedCustomer = filled($wanted) ? Customer::where('shop_id', $shopId)->active()->find((int) $wanted) : null;
+        $preselectedCustomerId = $preselectedCustomer?->id;
+        $preselected = $preselectedCustomer ? $this->borrowerOption($preselectedCustomer) : null;
 
         // The shop's Dhiran settings seed the form (the view read $defaults, which was never passed, so it always
         // showed built-in values whatever the shop had set).
@@ -113,7 +108,34 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             'max_loan'               => (float) $settings->max_loan_amount,
         ];
 
-        return view('dhiran.create', compact('settings', 'customers', 'preselectedCustomerId', 'defaults'));
+        return view('dhiran.create', compact('settings', 'preselected', 'preselectedCustomerId', 'defaults'));
+    }
+
+    /** What the New Loan picker needs about a borrower: no PAN / ID (kyc() serves those for the one picked). */
+    private function borrowerOption(Customer $c): array
+    {
+        return [
+            'id' => $c->id, 'name' => trim($c->first_name . ' ' . ($c->last_name ?? '')),
+            'mobile' => $c->mobile ?? '', 'address' => $c->address ?? '', 'state_code' => $c->state_code ?? '',
+        ];
+    }
+
+    /** New Loan borrower picker: this shop's active borrowers matching name / mobile / address, 8 at most. */
+    public function searchBorrowers(Request $request)
+    {
+        $q = trim((string) $request->query('q', ''));
+        $rows = [];
+        if (mb_strlen($q) >= 2) {
+            $like = '%' . addcslashes(mb_substr($q, 0, 60), '\\%_') . '%';
+            $rows = Customer::where('shop_id', auth()->user()->shop_id)->active()
+                ->where(fn ($w) => $w->whereRaw("(first_name || ' ' || COALESCE(last_name, '')) ILIKE ?", [$like])
+                    ->orWhere('mobile', 'ilike', $like)->orWhere('address', 'ilike', $like))
+                ->orderBy('first_name')->orderBy('last_name')->limit(8)
+                ->get(['id', 'first_name', 'last_name', 'mobile', 'address', 'state_code'])
+                ->map(fn ($c) => $this->borrowerOption($c))->all();
+        }
+
+        return response()->json($rows)->header('Cache-Control', 'no-store, private');
     }
 
     /** One borrower's PAN / ID number for the New Loan form, fetched when that borrower is picked (never the whole list). */

@@ -80,7 +80,7 @@
                             @keydown.escape="customerDropdownOpen = false; document.getElementById('fm-customer-search').focus()"
                             @keydown.arrow-down.prevent="$event.target.closest('li')?.nextElementSibling?.querySelector('button')?.focus()"
                             @keydown.arrow-up.prevent="($event.target.closest('li')?.previousElementSibling?.querySelector('button') || document.getElementById('fm-customer-search'))?.focus()">
-                            <template x-for="c in filteredCustomers" :key="c.id">
+                            <template x-for="c in results" :key="c.id">
                                 <li role="presentation">
                                     <button type="button" role="option" class="fm-combo-opt" @click="selectCustomer(c)">
                                         <span class="fm-combo-name" x-text="c.name"></span>
@@ -88,7 +88,7 @@
                                     </button>
                                 </li>
                             </template>
-                            <li class="fm-combo-none" x-show="filteredCustomers.length === 0" role="presentation" x-text="customers.length === 0 ? 'No borrowers saved yet. Add the first one with the button below.' : 'No borrower matches. Check the spelling or add a new borrower.'"></li>
+                            <li class="fm-combo-none" x-show="searchState !== 'done' || results.length === 0" role="presentation" aria-live="polite" x-text="searchState === 'loading' ? 'Searching…' : (searchState === 'failed' ? 'Could not search. Check your connection and try again.' : (searchState === 'done' ? 'No borrower matches. Check the spelling or add a new borrower.' : 'Type at least 2 letters or digits.'))"></li>
                         </ul>
                         @error('customer_id')
                             <p class="fm-error" id="err-customer_id" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
@@ -473,20 +473,18 @@
             Alpine.data('dhiranCreateForm', () => ({
                 // The borrower is one value, selectedCustomer; the posted id is read from it, so the form can never
                 // send an id for a borrower the screen does not show (owner 2026-11-12, state-machine audit).
-                initialCustomerId: '{{ old('customer_id', $preselectedCustomerId ?? '') }}',
+                preselected: {{ Illuminate\Support\Js::from($preselected ?? null) }},
                 get customer_id() {
                     return this.selectedCustomer ? this.selectedCustomer.id : '';
                 },
                 customerDisplayName: '',
                 customerDropdownOpen: false,
                 customerSearch: '',
-                customers: {{ Illuminate\Support\Js::from(($customers ?? collect())->map(fn ($c) => [
-                    'id'     => $c->id,
-                    'name'   => trim($c->first_name . ' ' . ($c->last_name ?? '')),
-                    'mobile' => $c->mobile ?? '',
-                    'address' => $c->address ?? '',
-                    'state_code' => $c->state_code ?? '',
-                ])->values()) }},
+                // Matches for what was typed, fetched from the server (8 at most): the page never carries the borrower book.
+                results: [],
+                searchState: 'idle', // idle | loading | done | failed
+                searchTimer: null,
+                searchSeq: 0,
                 selectedCustomer: null,
                 // Add Borrower dialog: one state, 'closed' -> 'open' -> 'saving' -> 'closed' (saved) or 'open' (refused).
                 nbState: 'closed',
@@ -580,21 +578,31 @@
                     this.items.forEach((_, i) => this.recalcItem(i));
                     // If a borrower was preselected (?customer_id= from the borrower
                     // profile/list), show their name in the picker on load.
-                    if (this.initialCustomerId) {
-                        const c = this.customers.find(x => String(x.id) === String(this.initialCustomerId));
-                        if (c) this.selectCustomer(c, true);
-                    }
+                    if (this.preselected) this.selectCustomer(this.preselected, true);
                 },
 
-                get filteredCustomers() {
-                    const q = (this.customerSearch || '').toLowerCase();
-                    if (!q) return []; // suggestions only after typing: never list the whole customer book on focus
-                    return this.customers.filter(c =>
-                        [c.name, c.mobile, c.address].join(' ').toLowerCase().includes(q));
+                searchBorrowers() {
+                    const q = (this.customerSearch || '').trim();
+                    clearTimeout(this.searchTimer);
+                    const seq = ++this.searchSeq; // an older answer never overwrites a newer one
+                    if (q.length < 2) { this.results = []; this.searchState = 'idle'; return; } // suggestions only after typing
+                    this.searchState = 'loading';
+                    this.searchTimer = setTimeout(async () => {
+                        try {
+                            const res = await fetch('{{ route('dhiran.borrowers.search') }}?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } });
+                            if (!res.ok) throw new Error(res.status);
+                            const rows = await res.json();
+                            if (seq !== this.searchSeq) return;
+                            this.results = rows; this.searchState = 'done';
+                        } catch (e) {
+                            if (seq === this.searchSeq) { this.results = []; this.searchState = 'failed'; }
+                        }
+                    }, 250);
                 },
 
                 handleCustomerSearchInput() {
                     this.customerDropdownOpen = this.customerSearch.trim().length > 0;
+                    this.searchBorrowers();
                     if (this.selectedCustomer && this.customerSearch.trim() !== (this.selectedCustomer.name || '')) {
                         this.selectedCustomer = null;
                         this.customerDisplayName = '';
@@ -624,6 +632,7 @@
                     this.customerDisplayName = customer.name + (customer.mobile ? ' (' + customer.mobile + ')' : '');
                     this.customerSearch = customer.name || '';
                     this.customerDropdownOpen = false;
+                    this.results = []; this.searchSeq++; // drop any search still in flight
                     if (!keepExistingKyc) { this.loanPan = ''; this.loanAadhaar = ''; } // never keep the previous borrower's KYC
                     // PAN / ID are not in the page: fetch this one borrower's, then prefill as before.
                     try {
@@ -679,13 +688,6 @@
                             state_code: out.customer.state_code || '',
                         };
 
-                        // Add to the list if new; update it if the mobile matched an existing borrower.
-                        const existingIndex = this.customers.findIndex(c => c.id === savedCustomer.id);
-                        if (existingIndex === -1) {
-                            this.customers.unshift(savedCustomer);
-                        } else {
-                            this.customers.splice(existingIndex, 1, { ...this.customers[existingIndex], ...savedCustomer });
-                        }
                         this.selectCustomer(savedCustomer);
                         this.nbState = 'closed';
                         this.nb = { first_name: '', last_name: '', mobile: '', pan: '', id_number: '', state_code: '', address: '' };
