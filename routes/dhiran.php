@@ -85,7 +85,7 @@ use Illuminate\Support\Facades\Route;
             Route::get('/settings', [\App\Http\Controllers\DhiranController::class, 'settings'])->middleware('can:dhiran.settings')->name('settings');
             Route::patch('/settings', [\App\Http\Controllers\DhiranController::class, 'updateSettings'])->middleware('can:dhiran.settings')->name('settings.update');
             Route::get('/settings/receipt', [\App\Http\Controllers\DhiranReceiptSettingsController::class, 'edit'])->middleware('can:dhiran.settings')->name('settings.receipt.edit');
-            Route::get('/settings/receipt/sample/{doc}', [\App\Http\Controllers\DhiranReceiptSettingsController::class, 'sample'])->middleware('can:dhiran.settings')->whereIn('doc', ['pledge', 'payment', 'notice'])->name('settings.receipt.sample');
+            Route::get('/settings/receipt/sample/{doc}', [\App\Http\Controllers\DhiranReceiptSettingsController::class, 'sample'])->middleware('can:dhiran.settings')->whereIn('doc', ['pledge', 'payment', 'notice', 'closure'])->name('settings.receipt.sample');
             Route::patch('/settings/receipt', [\App\Http\Controllers\DhiranReceiptSettingsController::class, 'update'])->middleware('can:dhiran.settings')->name('settings.receipt');
 
             // Reports — reports permission

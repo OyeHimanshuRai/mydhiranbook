@@ -50,7 +50,7 @@ class SampleDocumentsTest extends TestCase
     public function test_every_document_has_a_sample_even_with_no_loans_and_nothing_is_saved(): void
     {
         $this->assertSame(0, DhiranLoan::withoutGlobalScopes()->count());
-        foreach (['pledge' => 'Pledge Receipt', 'payment' => 'Payment Receipt', 'notice' => 'Forfeiture Notice'] as $doc => $title) {
+        foreach (['pledge' => 'Pledge Receipt', 'payment' => 'Payment Receipt', 'notice' => 'Forfeiture Notice', 'closure' => 'Closure Certificate'] as $doc => $title) {
             $html = $this->sample($doc)->assertOk()->getContent();
             $this->assertStringContainsString('SAMPLE', $html, "{$doc} is marked as a sample");
             $this->assertStringContainsString('made-up details', $html);
@@ -86,15 +86,33 @@ class SampleDocumentsTest extends TestCase
         $this->assertStringNotContainsString('Edit notice', $this->sample('notice')->getContent());
         $cashier = $this->userWith('9390026001', 'cashier', Permission::whereIn('name', ['dhiran.view', 'dhiran.pay'])->pluck('id'));
         $this->sample('pledge', $cashier)->assertForbidden();
-        TenantContext::runFor($this->shop->id, fn () => $this->actingAs($this->owner)->get(self::HOST . '/dhiran/settings/receipt/sample/closure'))->assertNotFound();
+        TenantContext::runFor($this->shop->id, fn () => $this->actingAs($this->owner)->get(self::HOST . '/dhiran/settings/receipt/sample/invoice'))->assertNotFound();
     }
 
     public function test_receipt_settings_links_a_sample_for_each_document(): void
     {
         $html = TenantContext::runFor($this->shop->id, fn () => $this->actingAs($this->owner)->get(self::HOST . '/dhiran/settings/receipt'))->assertOk()->getContent();
-        foreach (['pledge', 'payment', 'notice'] as $doc) {
+        foreach (['pledge', 'payment', 'notice', 'closure'] as $doc) {
             $this->assertStringContainsString("/dhiran/settings/receipt/sample/{$doc}", $html);
         }
         $this->assertStringContainsString('See a sample', $html);
+    }
+
+    public function test_the_closure_certificate_has_switches_and_a_sample_showing_a_settled_loan(): void
+    {
+        $html = $this->sample('closure')->getContent();
+        foreach (['This is to certify', 'Total Collected', 'Settled in full; all items returned.', "Borrower's Signature", 'Gold chain'] as $needle) {
+            $this->assertStringContainsString($needle, $html, $needle);
+        }
+        $this->assertStringNotContainsString('Back to Loan', $html, 'a sample has no real loan to go back to');
+
+        DhiranSettings::getForShop($this->shop->id)->update(['hidden_receipt_fields' => ['closure.amount_total', 'closure.items_table', 'closure.statement', 'closure.signatures', 'closure.closure_notes']]);
+        $off = $this->sample('closure')->getContent();
+        foreach (['Total Collected', 'This is to certify', 'Settled in full', 'items-table', 'signature-line'] as $needle) {
+            $this->assertStringNotContainsString($needle, substr($off, strpos($off, 'class="receipt-page"')), "{$needle} is switched off");
+        }
+        $this->assertStringContainsString('Interest Collected', $off, 'what stays on still prints');
+        $this->assertStringContainsString('DH-000001', $off, 'the loan number is always printed');
+        $this->assertArrayNotHasKey('loan_number', array_merge(...array_values(DhiranSettings::RECEIPT_FIELDS['closure']['groups'])));
     }
 }

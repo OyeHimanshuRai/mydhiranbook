@@ -3,7 +3,7 @@
 @php
     use App\Models\Dhiran\DhiranSettings;
     $receipts = DhiranSettings::RECEIPT_FIELDS;
-    $lead = ['pledge' => 'Given to the borrower when a loan is made.', 'payment' => 'Given every time a payment is received.', 'notice' => 'Sent when a loan is overdue and the notice is issued.'];
+    $lead = ['pledge' => 'Given to the borrower when a loan is made.', 'payment' => 'Given every time a payment is received.', 'notice' => 'Sent when a loan is overdue and the notice is issued.', 'closure' => 'Given to the borrower when the loan is settled and the items are returned.'];
     $total = fn ($def) => collect($def['groups'])->sum(fn ($f) => count($f));
     $on = fn ($receipt, $fields) => collect(array_keys($fields))->filter(fn ($k) => in_array("$receipt.$k", $printed, true))->count();
 @endphp

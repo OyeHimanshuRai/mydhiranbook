@@ -40,6 +40,14 @@ class DhiranReceiptSettingsController extends Controller
         'payment.balance_principal' => 'Loan amount still to pay', 'payment.balance_interest' => 'Interest still to pay',
         'payment.balance_penalty' => 'Penalty still to pay', 'payment.balance_total' => 'Everything still to pay',
         'payment.signatures' => 'A line for the signature',
+        'closure.shop_name' => 'Your shop name at the top', 'closure.shop_address' => 'Your shop address under the name', 'closure.shop_contact' => 'Shop phone and email, when saved',
+        'closure.shop_gstin' => 'Printed only if the shop has one', 'closure.title' => 'The words "Closure Certificate"', 'closure.generated_on' => 'The day the certificate was printed',
+        'closure.lender' => 'A box naming the shop', 'closure.borrower_name' => "The borrower's name", 'closure.borrower_contact' => "The borrower's phone and address",
+        'closure.loan_date' => 'The day the loan was given', 'closure.principal' => 'The loan amount', 'closure.closed_on' => 'The day the loan was closed',
+        'closure.statement' => '"This is to certify that the loan has been settled..."', 'closure.items_table' => 'Each item that was returned, with its weights',
+        'closure.amount_principal' => 'The loan amount', 'closure.amount_interest' => 'Interest paid over the loan', 'closure.amount_penalty' => 'Penalty paid, if any',
+        'closure.amount_fee' => 'The processing fee, if any', 'closure.amount_total' => 'Everything paid in all',
+        'closure.footer_text' => 'The closing text you write below', 'closure.closure_notes' => 'Printed only if notes were written', 'closure.signatures' => 'Borrower, date and shop signature lines',
         'notice.shop_name' => 'Your shop name at the top', 'notice.shop_address' => 'Your shop address under the name', 'notice.shop_contact' => 'Shop phone and email, when saved',
         'notice.shop_gstin' => 'Printed only if the shop has one', 'notice.title' => 'The words "Forfeiture Notice"', 'notice.notice_date' => 'The day the notice was issued',
         'notice.from' => 'A box naming the shop', 'notice.to_name' => "The borrower's name", 'notice.to_contact' => "The borrower's phone and address",
@@ -101,11 +109,15 @@ class DhiranReceiptSettingsController extends Controller
             'kyc_pan' => 'ABCDE1234F', 'kyc_aadhaar' => 'XXXX XXXX 1234', 'terms_text' => $settings->receipt_terms_text ?: 'Interest is charged per month. Items not redeemed by the maturity date and grace period may be forfeited and sold.',
             'forfeiture_notice_sent_at' => $overdue ? $today->copy()->subDay() : null, 'forfeiture_deadline' => $overdue ? $today->copy()->addDays(29)->toDateString() : null,
         ]);
+        if ($doc === 'closure') { // a loan settled in full: everything paid, items back with the borrower
+            $loan->forceFill(['status' => 'closed', 'closed_at' => $today, 'outstanding_principal' => 0, 'total_principal_collected' => 50000, 'total_interest_collected' => 6000, 'total_penalty_collected' => 0,
+                'loan_date' => $today->copy()->subMonths(6)->toDateString(), 'maturity_date' => $today->toDateString(), 'closure_notes' => 'Settled in full; all items returned.']);
+        }
         $loan->id = 0; // not a real record: only so links on the page can be built
         $loan->setRelation('customer', $customer);
         $loan->setRelation('items', collect([
-            (new \App\Models\Dhiran\DhiranLoanItem())->forceFill(['description' => 'Gold chain', 'metal_type' => 'gold', 'purity' => 22, 'gross_weight' => 12.5, 'stone_weight' => 0.5, 'net_metal_weight' => 12, 'fine_weight' => 11, 'market_value' => 66000, 'loan_value' => 49500, 'huid' => 'AB12CD', 'status' => 'pledged']),
-            (new \App\Models\Dhiran\DhiranLoanItem())->forceFill(['description' => 'Silver anklet', 'metal_type' => 'silver', 'purity' => 925, 'gross_weight' => 40, 'stone_weight' => 0, 'net_metal_weight' => 40, 'fine_weight' => 37, 'market_value' => 3400, 'loan_value' => 2550, 'huid' => null, 'status' => 'pledged']),
+            (new \App\Models\Dhiran\DhiranLoanItem())->forceFill(['description' => 'Gold chain', 'metal_type' => 'gold', 'purity' => 22, 'gross_weight' => 12.5, 'stone_weight' => 0.5, 'quantity' => 1, 'net_metal_weight' => 12, 'fine_weight' => 11, 'market_value' => 66000, 'loan_value' => 49500, 'huid' => 'AB12CD', 'status' => 'pledged']),
+            (new \App\Models\Dhiran\DhiranLoanItem())->forceFill(['description' => 'Silver anklet', 'metal_type' => 'silver', 'purity' => 925, 'gross_weight' => 40, 'stone_weight' => 0, 'quantity' => 1, 'net_metal_weight' => 40, 'fine_weight' => 37, 'market_value' => 3400, 'loan_value' => 2550, 'huid' => null, 'status' => 'pledged']),
         ]));
         $sample = true;
 
@@ -125,6 +137,10 @@ class DhiranReceiptSettingsController extends Controller
             $show = \App\Models\Dhiran\DhiranSettings::receiptVisibility((int) $shop->id, 'payment');
 
             return view('dhiran.payment-receipt', compact('loan', 'payment', 'show', 'sample'));
+        }
+
+        if ($doc === 'closure') {
+            return view('dhiran.closure-certificate', compact('loan', 'sample'));
         }
 
         return view('dhiran.forfeiture-notice', compact('loan', 'sample'));

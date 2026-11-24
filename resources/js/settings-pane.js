@@ -18,7 +18,7 @@ window.rsReceiptSettings = (opts) => ({
     submit: saveGuard.submit,
     snapshot() { const d = new FormData(this.$root); d.delete('_token'); return new URLSearchParams(d).toString(); },
     init() {
-        const names = ['pledge', 'payment', 'notice'];
+        const names = ['pledge', 'payment', 'notice', 'closure'];
         let want = location.hash.slice(1);
         if (!names.includes(want)) { try { want = sessionStorage.getItem('rs-tab'); } catch (e) { want = null; } }
         this.tab = names.includes(want) ? want : 'pledge';
@@ -32,7 +32,7 @@ window.rsReceiptSettings = (opts) => ({
         this.tab = t;
         try { sessionStorage.setItem('rs-tab', t); history.replaceState(history.state, '', '#' + t); } catch (e) {}
     },
-    move(step) { const n = ['pledge', 'payment', 'notice']; const t = n[(n.indexOf(this.tab) + step + n.length) % n.length]; this.setTab(t); this.$nextTick(() => document.getElementById('rs-tab-' + t).focus()); },
+    move(step) { const n = ['pledge', 'payment', 'notice', 'closure']; const t = n[(n.indexOf(this.tab) + step + n.length) % n.length]; this.setTab(t); this.$nextTick(() => document.getElementById('rs-tab-' + t).focus()); },
     recount() {
         const counts = {}, panels = {}, len = {};
         this.$root.querySelectorAll('[data-rs-group]').forEach((g) => {

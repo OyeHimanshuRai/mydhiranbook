@@ -126,6 +126,24 @@ class DhiranSettings extends Model
                 'Footer' => ['signatures' => 'Signature lines'],
             ],
         ],
+        'closure' => [
+            'label' => 'Closure certificate',
+            'groups' => [
+                'Heading' => [
+                    'shop_name' => 'Shop name', 'shop_address' => 'Shop address', 'shop_contact' => 'Shop phone and email',
+                    'shop_gstin' => 'Shop GSTIN', 'title' => 'Document title', 'generated_on' => 'Date it was generated',
+                ],
+                'Parties' => ['lender' => 'Lender (the shop)', 'borrower_name' => 'Borrower name', 'borrower_contact' => 'Borrower phone and address'],
+                'Loan' => ['loan_date' => 'Loan date', 'principal' => 'Principal', 'closed_on' => 'Closed on'],
+                'Statement' => ['statement' => 'The statement that the loan is settled and items returned'],
+                'Items' => ['items_table' => 'Table of items returned'],
+                'Amounts collected' => [
+                    'amount_principal' => 'Principal', 'amount_interest' => 'Interest', 'amount_penalty' => 'Penalty',
+                    'amount_fee' => 'Processing fee', 'amount_total' => 'Total collected',
+                ],
+                'Footer' => ['footer_text' => 'Your closing text (set below)', 'closure_notes' => 'Notes written when the loan was closed', 'signatures' => 'Signature lines'],
+            ],
+        ],
         'notice' => [
             'label' => 'Forfeiture notice',
             'groups' => [
