@@ -603,6 +603,7 @@ class DhiranService
                 $this->reversePayout($loan, $base, $method, $principal, $fee, $note, $loan->advanceInterestAmount());
             }
 
+            \App\Services\Dhiran\LoanLog::bulkItems($loan, 'released', 'returned to the borrower (loan cancelled)');
             $loan->items()->where('status', 'pledged')->update(['status' => 'released', 'released_at' => now(), 'released_by' => $actor]);
             $loan->status = 'cancelled';
             $loan->outstanding_principal = 0;
@@ -913,6 +914,14 @@ class DhiranService
                         'accrual_amount'  => $interestAccrual,
                     ]),
                 ]);
+            }
+
+            // ── The log line for this accrual (a system step: nobody typed it) ──
+            if ($interestAccrual > 0 || $penaltyAccrual > 0) {
+                \App\Services\Dhiran\LoanLog::forLoan($loan, 'interest.accrued', 'system',
+                    'Interest accrued ₹' . \App\Support\IndianNumber::format($interestAccrual, 2) . ($penaltyAccrual > 0 ? ' and penalty ₹' . \App\Support\IndianNumber::format($penaltyAccrual, 2) : '') . " for {$days} day" . ($days === 1 ? '' : 's')
+                    . ($prepaidUsed > 0 ? ' (₹' . \App\Support\IndianNumber::format($prepaidUsed, 2) . ' covered by interest paid in advance)' : ''),
+                    ['days' => $days, 'interest' => $interestAccrual, 'penalty' => $penaltyAccrual, 'covered_by_advance' => $prepaidUsed, 'interest_owed' => $newOutstandingInterest, 'penalty_owed' => $newOutstandingPenalty]);
             }
 
             // ── Ledger entry for the advance spent against this accrual ──
@@ -1731,6 +1740,7 @@ class DhiranService
             ]);
 
             // ── Transfer pledged items to new loan ───────────
+            \App\Services\Dhiran\LoanLog::bulkItems($loan, 'moved', "moved to the renewed loan {$newLoan->loan_number}", $newLoan);
             $loan->items()->where('status', 'pledged')->update([
                 'dhiran_loan_id' => $newLoan->id,
             ]);
@@ -1797,6 +1807,7 @@ class DhiranService
 
         // Release all remaining pledged items. released_by must be set for
         // audit consistency with the per-item releaseItem() path (see M5 fix).
+        \App\Services\Dhiran\LoanLog::bulkItems($loan, 'released', 'returned to the borrower (loan closed)');
         $loan->items()->where('status', 'pledged')->update([
             'status'      => 'released',
             'released_at' => now(),
@@ -1905,6 +1916,7 @@ class DhiranService
             $totalWrittenOff     = round($writtenOffPrincipal + $writtenOffInterest + $writtenOffPenalty, 2);
 
             // ── Mark all pledged items as forfeited ──────────
+            \App\Services\Dhiran\LoanLog::bulkItems($loan, 'forfeited', 'forfeited (loan forfeited)');
             $loan->items()->where('status', 'pledged')->update([
                 'status'       => 'forfeited',
                 'forfeited_at' => now(),

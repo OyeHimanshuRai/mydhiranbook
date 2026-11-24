@@ -57,6 +57,8 @@ use Illuminate\Support\Facades\Route;
             Route::post('/loans/{loan}/forfeit', [\App\Http\Controllers\DhiranController::class, 'forfeit'])->middleware('can:dhiran.forfeit')->name('forfeit');
 
             // Printable documents — view permission
+            Route::get('/loans/{loan}/activity', [\App\Http\Controllers\DhiranController::class, 'activity'])->middleware('can:dhiran.audit')->name('activity');
+            Route::get('/loans/{loan}/activity/export', [\App\Http\Controllers\DhiranController::class, 'activityExport'])->middleware('can:dhiran.audit')->name('activity.export');
             Route::get('/loans/{loan}/tag', [\App\Http\Controllers\DhiranController::class, 'tag'])->middleware('can:dhiran.view')->name('tag');
             Route::get('/loans/{loan}/receipt', [\App\Http\Controllers\DhiranController::class, 'receipt'])->middleware('can:dhiran.view')->name('receipt');
             Route::get('/loans/{loan}/closure-certificate', [\App\Http\Controllers\DhiranController::class, 'closureCertificate'])->middleware('can:dhiran.view')->name('closure-certificate');

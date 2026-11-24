@@ -351,7 +351,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             }
             try {
                 app(\App\Services\Dhiran\DhiranAttachmentService::class)->store($file, (int) $loan->shop_id,
-                    \App\Models\Dhiran\DhiranAttachment::OWNER_ITEM, (int) $item->id, 'item_photo', auth()->id());
+                    \App\Models\Dhiran\DhiranAttachment::OWNER_ITEM, (int) $item->id, 'item_photo', auth()->id(), (int) $loan->id);
                 $saved++;
             } catch (\LogicException $e) {
                 $failed[] = 'item ' . ($n + 1) . ': ' . $e->getMessage();
@@ -366,7 +366,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             }
             try {
                 app(\App\Services\Dhiran\DhiranAttachmentService::class)->store($request->file($field), (int) $loan->shop_id,
-                    \App\Models\Dhiran\DhiranAttachment::OWNER_CUSTOMER, (int) $loan->customer_id, $field, auth()->id());
+                    \App\Models\Dhiran\DhiranAttachment::OWNER_CUSTOMER, (int) $loan->customer_id, $field, auth()->id(), (int) $loan->id);
                 $idSaved++;
             } catch (\LogicException $e) {
                 $failed[] = $label . ': ' . $e->getMessage();
@@ -460,7 +460,12 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             $installment = ['due' => $due, 'amount' => $this->dhiranService->installmentAmount($loan), 'days' => (int) today()->diffInDays($due, false)];
         }
 
-        return view('dhiran.show', compact('loan', 'attachments', 'evidence', 'installment'));
+        // The newest lines of the loan's log, for people who may read it (the full, filterable log is on its own page).
+        $activity = auth()->user()->can('dhiran.audit')
+            ? \App\Models\Dhiran\LoanEvent::where('dhiran_loan_id', $loan->id)->orderByDesc('occurred_at')->orderByDesc('id')->limit(12)->get()
+            : null;
+
+        return view('dhiran.show', compact('loan', 'attachments', 'evidence', 'installment', 'activity'));
     }
 
     /* ================================================================
@@ -751,8 +756,54 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         $shop = $loan->shop; // the lender named on the receipt (the view fell back to "Dhiran" without it)
 
         $show = DhiranSettings::receiptVisibility((int) $loan->shop_id, 'pledge');
+        \App\Services\Dhiran\LoanLog::forLoan($loan, 'document.printed', 'print', 'Pledge receipt opened for printing');
 
         return view('dhiran.receipt', compact('loan', 'shop', 'show'));
+    }
+
+    /** The loan's log, filtered the way the page asks (what / who / from / to), newest first. */
+    private function activityQuery(Request $request, DhiranLoan $loan)
+    {
+        $tz = config('app.timezone');
+        $q = \App\Models\Dhiran\LoanEvent::where('dhiran_loan_id', $loan->id)->orderByDesc('occurred_at')->orderByDesc('id');
+        $f = array_filter([
+            'cat' => array_key_exists((string) $request->query('cat'), \App\Models\Dhiran\LoanEvent::CATEGORIES) ? $request->query('cat') : null,
+            'who' => $request->query('who') ? (string) $request->query('who') : null,
+            'from' => preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $request->query('from')) ? $request->query('from') : null,
+            'to' => preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $request->query('to')) ? $request->query('to') : null,
+        ]);
+        $q->when($f['cat'] ?? null, fn ($w, $v) => $w->where('category', $v))
+          ->when($f['who'] ?? null, fn ($w, $v) => $w->where('actor_name', $v))
+          ->when($f['from'] ?? null, fn ($w, $v) => $w->where('occurred_at', '>=', \Illuminate\Support\Carbon::parse($v, $tz)->startOfDay()))
+          ->when($f['to'] ?? null, fn ($w, $v) => $w->where('occurred_at', '<=', \Illuminate\Support\Carbon::parse($v, $tz)->endOfDay()));
+
+        return [$q, $f];
+    }
+
+    /** One loan's private activity log: every transaction, release, upload, change and print, day by day with the time. */
+    public function activity(Request $request, DhiranLoan $loan)
+    {
+        abort_unless((int) $loan->shop_id === (int) auth()->user()->shop_id, 404);
+        [$q, $filters] = $this->activityQuery($request, $loan);
+        $events = $q->paginate(100)->withQueryString();
+        $actors = \App\Models\Dhiran\LoanEvent::where('dhiran_loan_id', $loan->id)->distinct()->orderBy('actor_name')->pluck('actor_name');
+
+        return view('dhiran.activity', compact('loan', 'events', 'filters', 'actors'));
+    }
+
+    public function activityExport(Request $request, DhiranLoan $loan)
+    {
+        abort_unless((int) $loan->shop_id === (int) auth()->user()->shop_id, 404);
+        [$q] = $this->activityQuery($request, $loan);
+        \App\Services\Dhiran\LoanLog::forLoan($loan, 'document.exported', 'system', 'Activity log exported to CSV');
+        $tz = config('app.timezone');
+
+        return \App\Services\Dhiran\DhiranCsv::download('activity-' . $loan->loan_number, ['Date', 'Time', 'Who', 'Type', 'What happened', 'Details', 'IP'],
+            $q->reorder()->orderBy('occurred_at')->orderBy('id')->get()->map(fn ($e) => [  // read now, inside the shop's context (a single loan's log is small)
+                $e->occurred_at->timezone($tz)->format('Y-m-d'), $e->occurred_at->timezone($tz)->format('H:i:s'), $e->actor_name,
+                \App\Models\Dhiran\LoanEvent::CATEGORIES[$e->category] ?? $e->category, $e->summary,
+                $e->details ? json_encode($e->details, JSON_UNESCAPED_UNICODE) : '', $e->ip,
+            ]));
     }
 
     /** The slip stuck on the bag or packet of pledged items kept in the locker. */
@@ -763,6 +814,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         $shop = $loan->shop;
 
         $width = (int) request()->query('w') === 80 ? 80 : 58; // bill roll width in mm
+        \App\Services\Dhiran\LoanLog::forLoan($loan, 'document.printed', 'print', "Item tag opened for printing ({$width} mm)");
 
         return view('dhiran.tag', compact('loan', 'shop', 'width'));
     }
@@ -773,6 +825,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         abort_unless(in_array($loan->status, ['closed', 'forfeited']), 422, 'Loan is still active.');
 
         $loan->load(['customer', 'items', 'payments']);
+        \App\Services\Dhiran\LoanLog::forLoan($loan, 'document.printed', 'print', 'Closure certificate opened for printing');
 
         return view('dhiran.closure-certificate', compact('loan'));
     }
@@ -786,6 +839,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
                 ->with('error', 'A forfeiture notice can be issued only after the loan matures and its grace period ends.');
         }
         $loan->load(['customer', 'items']);
+        \App\Services\Dhiran\LoanLog::forLoan($loan, 'document.printed', 'print', 'Forfeiture notice opened for printing');
 
         return view('dhiran.forfeiture-notice', compact('loan'));
     }
@@ -797,6 +851,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
 
         $loan->load('customer');
         $show = DhiranSettings::receiptVisibility((int) $loan->shop_id, 'payment');
+        \App\Services\Dhiran\LoanLog::forLoan($loan, 'document.printed', 'print', 'Payment receipt DPR-' . str_pad((string) $payment->id, 5, '0', STR_PAD_LEFT) . ' opened for printing', ['payment_id' => $payment->id]);
 
         return view('dhiran.payment-receipt', compact('loan', 'payment', 'show'));
     }

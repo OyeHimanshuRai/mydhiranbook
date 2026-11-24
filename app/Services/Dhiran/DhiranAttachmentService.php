@@ -49,6 +49,7 @@ class DhiranAttachmentService
         int $ownerId,
         string $documentType,
         ?int $uploadedBy = null,
+        ?int $loanId = null, // the loan an upload made from the New Loan form belongs to (a borrower's document has no loan of its own)
     ): DhiranAttachment {
         if (! $file->isValid()) {
             throw new LogicException('The uploaded file is not valid.');
@@ -92,7 +93,7 @@ class DhiranAttachmentService
             $disk->putFileAs($dir, $file, $filename);
         }
 
-        return DhiranAttachment::create([
+        $attachment = DhiranAttachment::create([
             'shop_id'       => $shopId,
             'owner_type'    => $ownerType,
             'owner_id'      => $ownerId,
@@ -104,6 +105,22 @@ class DhiranAttachmentService
             'size_bytes'    => $file->getSize(),
             'uploaded_by'   => $uploadedBy,
         ]);
+
+        // The upload is a line in the loan's activity log (the loan it hangs on: its own, its item's, or the one named by the caller).
+        $logLoan = match ($ownerType) {
+            DhiranAttachment::OWNER_LOAN => $ownerId,
+            DhiranAttachment::OWNER_ITEM => (int) \App\Models\Dhiran\DhiranLoanItem::withoutGlobalScopes()->whereKey($ownerId)->value('dhiran_loan_id'),
+            default => $loanId,
+        };
+        if ($logLoan) {
+            $type = ucfirst(str_replace('_', ' ', $documentType));
+            \App\Services\Dhiran\LoanLog::record($shopId, (int) $logLoan, 'document.uploaded', 'document',
+                "Uploaded {$type}: " . mb_substr((string) $file->getClientOriginalName(), 0, 80) . ($ownerType === DhiranAttachment::OWNER_CUSTOMER ? " (kept on the borrower's profile)" : ''),
+                ['attachment_id' => $attachment->id, 'document_type' => $documentType, 'file' => $attachment->original_name, 'size_kb' => (int) round($file->getSize() / 1024),
+                 'kept_on' => $ownerType === DhiranAttachment::OWNER_ITEM ? 'item' : ($ownerType === DhiranAttachment::OWNER_CUSTOMER ? 'borrower' : 'loan')]);
+        }
+
+        return $attachment;
     }
 
     public const MAX_PIXELS = 20_000_000; // same bound as the profile-photo encoder

@@ -314,3 +314,46 @@
 .dh-app .dd-activate-card form .btn { width: 100%; justify-content: center; }
 .dh-app .dd-activate-note { margin: 0; font-size: var(--fl-fs-body); color: var(--dh-muted); font-weight: 400; }
 @media (min-width: 641px) { .dh-app .dd-activate-card form .btn { width: auto; min-width: 16rem; } }
+.dh-app td .dd-sub { display: block; }
+
+/* ---- Activity log: one day at a time, the time on every line, each line opens to its full details ---- */
+.dh-app .al-filters { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: flex-end; margin-top: var(--sp-4); }
+.dh-app .al-filters label { display: grid; gap: var(--sp-1); font-size: var(--fl-fs-cell); font-weight: 600; color: var(--dh-muted); min-width: 0; }
+.dh-app .al-filters .dh-form-control { min-width: 150px; }
+.dh-app .al-day { margin-top: var(--sp-5); }
+.dh-app .al-day:first-of-type { margin-top: 0; }
+.dh-app .al-day-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); padding-bottom: var(--sp-2); border-bottom: 2px solid var(--dh-ink); }
+.dh-app .al-day-title { margin: 0; font-size: var(--fl-fs-body); font-weight: 700; color: var(--dh-ink); }
+.dh-app .al-day-count { font-size: var(--fl-fs-cell); color: var(--dh-muted); white-space: nowrap; }
+.dh-app .al-list { list-style: none; margin: 0; padding: 0; }
+.dh-app .al-item { display: grid; grid-template-columns: 5.2rem minmax(0, 1fr); gap: var(--sp-3); padding: var(--sp-2) 0; border-bottom: 1px solid var(--dh-line-soft); }
+.dh-app .al-time { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--dh-ink); font-size: var(--fl-fs-cell); padding-top: 2px; white-space: nowrap; }
+.dh-app .al-body { min-width: 0; }
+.dh-app .al-body > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-2) var(--sp-3); cursor: pointer; list-style: none; }
+.dh-app .al-body > summary::-webkit-details-marker { display: none; }
+.dh-app .al-body > summary::before { content: '▸'; color: var(--dh-muted); font-size: 11px; transition: transform .15s ease; }
+.dh-app .al-body[open] > summary::before { transform: rotate(90deg); }
+.dh-app .al-body > summary:focus-visible { outline: 2px solid var(--dh-focus); outline-offset: 2px; border-radius: 4px; }
+.dh-app .al-text { font-size: var(--fl-fs-body); color: var(--dh-ink); overflow-wrap: anywhere; flex: 1 1 18rem; min-width: 0; }
+.dh-app .al-who { font-size: var(--fl-fs-cell); color: var(--dh-muted); white-space: nowrap; }
+.dh-app .al-loan { font: 600 var(--fl-fs-cell)/1 var(--kh-mono, monospace); }
+.dh-app .al-chip { font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--dh-line); background: var(--dh-muted-surface); color: var(--dh-ink); }
+.dh-app .al-chip--money { background: var(--dh-success-soft, #e7f4ec); border-color: transparent; color: #17623a; }
+.dh-app .al-chip--item { background: #eef1f8; border-color: transparent; color: #243a6e; }
+.dh-app .al-chip--document { background: #f3eefb; border-color: transparent; color: #4a2c82; }
+.dh-app .al-chip--loan { background: #fdeceb; border-color: transparent; color: #8a1c1c; }
+.dh-app .al-chip--print { background: #f1f1f1; border-color: transparent; color: #444; }
+.dh-app .al-chip--system { background: transparent; border-style: dashed; color: var(--dh-muted); }
+.dh-app .al-item--system .al-text { color: var(--dh-muted); }
+.dh-app .al-details { margin: var(--sp-2) 0 var(--sp-1); padding: var(--sp-3); background: var(--dh-muted-surface); border: 1px solid var(--dh-line); border-radius: var(--kh-radius); display: grid; gap: var(--sp-1); }
+.dh-app .al-details > div { display: grid; grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr); gap: var(--sp-3); font-size: var(--fl-fs-cell); }
+.dh-app .al-details dt { color: var(--dh-muted); margin: 0; }
+.dh-app .al-details dd { margin: 0; color: var(--dh-ink); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.dh-app .al-muted { color: var(--dh-muted); }
+.dh-app .al-empty { margin: 0; color: var(--dh-muted); }
+.dh-app .al-pager { margin-top: var(--sp-4); }
+@media (max-width: 640px) {
+    .dh-app .al-item { grid-template-columns: 1fr; gap: var(--sp-1); }
+    .dh-app .al-details > div { grid-template-columns: 1fr; gap: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .dh-app .al-body > summary::before { transition: none; } }

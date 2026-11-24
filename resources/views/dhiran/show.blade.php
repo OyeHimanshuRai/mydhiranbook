@@ -277,7 +277,14 @@
                             <td data-label="Fine Wt" class="num">{{ number_format($item->fine_weight, 3) }}g</td>
                             <td data-label="Market Val" class="num">{{ $rupee($item->market_value) }}</td>
                             <td data-label="Loan Val" class="num strong">{{ $rupee($item->loan_value) }}</td>
-                            <td data-label="Status"><x-dhiran.status :value="$item->status ?? 'pledged'" /></td>
+                            <td data-label="Status">
+                                <x-dhiran.status :value="$item->status ?? 'pledged'" />
+                                @if(($item->status ?? '') === 'released' && $item->released_at)
+                                    {{-- the log of the release: when, by whom and the condition note typed at the counter --}}
+                                    <span class="dd-sub">{{ $item->released_at->format('d M Y') }}{{ $item->releasedBy?->name ? ' · ' . $item->releasedBy->name : '' }}</span>
+                                    @if($item->release_condition_note)<span class="dd-sub">{{ $item->release_condition_note }}</span>@endif
+                                @endif
+                            </td>
                             <td data-label="HUID">{{ $item->huid ?? '---' }}</td>
                         </tr>
                     @empty
@@ -356,7 +363,13 @@
                         <tr>
                             <x-dhiran.sno :rows="null" :n="$loop->iteration" />
                             <td data-label="Date">{{ $payment->payment_date ? $payment->payment_date->format('d M Y') : '---' }}</td>
-                            <td data-cell="title" data-label="Type" class="strong">{{ $payment->type ? ucwords(str_replace('_', ' ', $payment->type)) : '---' }}</td>
+                            <td data-cell="title" data-label="Type" class="strong">
+                                @if(str_starts_with((string) $payment->notes, 'Item release payment:'))
+                                    Item Release<span class="dd-sub">{{ trim(substr((string) $payment->notes, strlen('Item release payment:'))) }}</span>
+                                @else
+                                    {{ $payment->type ? ucwords(str_replace('_', ' ', $payment->type)) : '---' }}
+                                @endif
+                            </td>
                             <td data-cell="amount" data-label="Amount" class="num strong">{{ $rupee($payment->amount) }}</td>
                             <td data-label="Principal" class="num">{{ $rupee($payment->principal_component ?? 0) }}</td>
                             <td data-label="Interest" class="num">{{ $rupee($payment->interest_component ?? 0) }}</td>
@@ -370,6 +383,17 @@
                 </tbody>
             </table>
         </section>
+
+        {{-- Activity log: the loan's own private record of everything that happened to it (only for people the owner allows) --}}
+        @if(($activity ?? null) !== null)
+        <section class="dd-card dd-card-pad" aria-labelledby="dd-act-log-h">
+            <div class="dd-head">
+                <h2 id="dd-act-log-h" class="dd-h">Activity log</h2>
+                <a href="{{ route('dhiran.activity', $loan) }}" class="dd-tlink">Open full log</a>
+            </div>
+            <x-dhiran.loan-log :events="$activity" />
+        </section>
+        @endif
 
         {{-- Notes --}}
         @if($loan->notes)

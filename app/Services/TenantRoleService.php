@@ -14,7 +14,7 @@ class TenantRoleService
                 if ($role->wasRecentlyCreated || $name === 'owner') {
                     $permissions=match($name) {
                         'owner'=>Permission::pluck('id'),
-                        'manager'=>Permission::whereNotIn('name',['settings.edit','staff.manage'])->pluck('id'),
+                        'manager'=>Permission::whereNotIn('name',['settings.edit','staff.manage','dhiran.audit'])->pluck('id'),
                         'staff','operator'=>Permission::whereIn('name',['dhiran.view','dhiran.create','dhiran.pay'])->pluck('id'),
                         'cashier'=>Permission::whereIn('name',['dhiran.view','dhiran.pay'])->pluck('id'),
                         default=>Permission::where('name','dhiran.view')->pluck('id'),

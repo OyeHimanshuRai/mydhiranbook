@@ -319,6 +319,8 @@ class DhiranLoan extends Model
     {
         // Compound monthly rest: the capitalised (month-end unpaid) interest can never exceed the interest still owed.
         // One rule here covers every path that reduces interest (payments, releases, pre-close, renewal, forfeiture).
+        static::created(fn (self $loan) => \App\Services\Dhiran\LoanLog::loanCreated($loan));
+        static::updated(fn (self $loan) => \App\Services\Dhiran\LoanLog::loanChanged($loan));
         static::saving(function (self $loan) {
             if ((float) $loan->interest_capitalised > (float) $loan->outstanding_interest) {
                 $loan->interest_capitalised = max(0, (float) $loan->outstanding_interest);

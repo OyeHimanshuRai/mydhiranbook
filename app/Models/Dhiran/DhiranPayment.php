@@ -36,6 +36,12 @@ class DhiranPayment extends Model
         };
     }
 
+    protected static function booted(): void
+    {
+        // every transaction is a line in the loan's activity log, written in the same transaction
+        static::created(fn (self $p) => \App\Services\Dhiran\LoanLog::payment($p));
+    }
+
     public static function record(array $attributes): self
     {
         $model = new self();

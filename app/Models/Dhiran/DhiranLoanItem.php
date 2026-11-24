@@ -62,6 +62,12 @@ class DhiranLoanItem extends Model
         return $this->belongsTo(Shop::class);
     }
 
+    protected static function booted(): void
+    {
+        static::created(fn (self $i) => \App\Services\Dhiran\LoanLog::itemAdded($i));
+        static::updated(fn (self $i) => \App\Services\Dhiran\LoanLog::itemChanged($i));
+    }
+
     public function releasedBy()
     {
         return $this->belongsTo(User::class, 'released_by');
