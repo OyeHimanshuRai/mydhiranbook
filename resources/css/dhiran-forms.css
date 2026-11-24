@@ -230,3 +230,4 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
 /* The per-loan switch in the Loan terms header: compact, to the right of the title. */
 .dh-app .fm-card-head .fm-head-switch { margin: 0 0 0 auto; padding: 0; border: 0; flex: none; align-items: center; gap: var(--sp-3); width: auto; min-height: 0; }
 .dh-app .fm-card-head .fm-head-switch .ui-switch-label { font-size: var(--fl-fs-cell); text-align: right; }
+.dh-app .fm-card-head .fm-head-switch:not(.is-locked):hover { background: none; box-shadow: none; } /* the settings lists tint a hovered row; the header switch stays flat */
