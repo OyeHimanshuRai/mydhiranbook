@@ -9,7 +9,7 @@
 
     <x-dhiran.page-header>
         <div>
-            <h1 class="page-title">Dhiran Cash Book</h1>
+            <h1 class="page-title">Cash Book</h1>
             <p class="text-sm text-gray-500 mt-1">All cash inflows and outflows for pledge (gold & silver) loans</p>
         </div>
         <div class="page-actions">
@@ -35,7 +35,7 @@
 
         {{-- Table --}}
         <div class="dh-table-card" data-list-frame>
-            <div class="dh-table-wrap" data-list-scroll tabindex="0" role="region" aria-label="Dhiran cashbook entries">
+            <div class="dh-table-wrap" data-list-scroll tabindex="0" role="region" aria-label="Cash book entries">
                 <table class="dh-table jf-table dh-stack">
                     <thead>
                         <tr>

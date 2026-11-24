@@ -14,7 +14,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#7a1a1d">
 <title>@yield('title','MyDhiranBook platform') · MyDhiranBook admin</title>
-<link rel="icon" href="/dhiran-favicon.svg">
+<link rel="icon" href="/mydhiranbook-favicon.svg">
 <script>document.documentElement.classList.add('js')</script>
 @vite('resources/css/admin.css')
 </head>

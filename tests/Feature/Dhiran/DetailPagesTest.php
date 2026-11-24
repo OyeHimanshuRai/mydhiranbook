@@ -186,7 +186,7 @@ class DetailPagesTest extends TestCase
 
         $this->assertSame(1, substr_count($html, route('dhiran.activate')), 'one form posts the activation');
         $this->assertStringContainsString('What happens next', $html);
-        $this->assertStringContainsString('Activate Dhiran Module', $html);
+        $this->assertStringContainsString('Activate Pledge Loans', $html);
         $this->assertStringNotContainsString('da-feature-card', $html, 'no feature grid');
     }
 }
