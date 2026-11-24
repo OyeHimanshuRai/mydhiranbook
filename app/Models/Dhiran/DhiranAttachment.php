@@ -28,7 +28,7 @@ class DhiranAttachment extends Model
     /** Allowed document types (validation allow-list). */
     public const DOCUMENT_TYPES = [
         'item_photo',
-        'id_proof_front', 'id_proof_back', 'address_proof', 'borrower_photo',
+        'id_proof_front', 'id_proof_back', 'pan_card', 'address_proof', 'borrower_photo',
         'pledge_agreement', 'signed_terms', 'valuation_proof', 'loan_document',
     ];
 

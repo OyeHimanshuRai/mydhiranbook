@@ -101,8 +101,12 @@ class PhotosAtCreationTest extends TestCase
         $this->assertStringContainsString("'items['+index+'][photo]'", $html);
         $this->assertStringContainsString('data-photo-form-file', $html, 'the borrower dialog carries the photo control');
         $this->assertStringContainsString('x-ref="camDialog"', $html, 'the live-camera dialog for item photos');
-        $this->assertStringContainsString('openCamera(index)', $html, 'each item card has a Take photo button');
-        $this->assertStringContainsString('Add photo', $html);
+        $this->assertStringContainsString("openCamera({ kind: 'item', index })", $html, 'each item card has a camera button');
+        $this->assertStringContainsString("openCamera({ kind: 'doc', key: d.key })", $html, 'and so do the ID proof and PAN card');
+        $this->assertStringContainsString('Upload a photo of item', $html, 'an upload icon button');
+        $this->assertStringContainsString('viewPhoto(item.photoUrl', $html, 'the photo opens full size');
+        $this->assertStringContainsString('x-ref="photoView"', $html);
+        $this->assertStringContainsString('PAN card', $html);
     }
 
     public function test_item_photos_are_saved_as_item_evidence_in_the_order_listed(): void
@@ -170,13 +174,40 @@ class PhotosAtCreationTest extends TestCase
     public function test_the_form_has_the_id_proof_inputs_and_the_kyc_call_says_if_one_is_on_file(): void
     {
         $html = $this->as(fn ($t) => $t->get(self::HOST . '/dhiran/create'))->getContent();
-        $this->assertStringContainsString('name="id_proof_front"', $html);
-        $this->assertStringContainsString('name="id_proof_back"', $html);
+        foreach (['id_proof_front', 'id_proof_back', 'pan_card'] as $key) {
+            $this->assertStringContainsString("key: '{$key}'", $html, "{$key} has its upload slot");
+        }
+        $this->assertStringContainsString(':name="d.key"', $html, 'each slot posts under its own field name');
 
         $kyc = fn () => $this->as(fn ($t) => $t->getJson(self::HOST . "/dhiran/borrowers/{$this->customer->id}/kyc"))->json('has_id_proof');
         $this->assertFalse($kyc());
         TenantContext::runFor($this->shop->id, fn () => app(\App\Services\Dhiran\DhiranAttachmentService::class)->store(
             UploadedFile::fake()->image('id.jpg', 100, 100), $this->shop->id, DhiranAttachment::OWNER_CUSTOMER, $this->customer->id, 'id_proof_front', $this->owner->id));
         $this->assertTrue($kyc());
+    }
+
+    public function test_the_pan_card_photo_is_saved_to_the_borrower_like_the_id_proof(): void
+    {
+        $this->as(fn ($t) => $t->post(self::HOST . '/dhiran', $this->loanForm([$this->item('Chain')]) + ['pan_card' => UploadedFile::fake()->image('pan.jpg', 200, 120)]))->assertSessionHasNoErrors();
+        $this->assertSame(1, DhiranAttachment::withoutGlobalScopes()->where('owner_type', DhiranAttachment::OWNER_CUSTOMER)->where('owner_id', $this->customer->id)->where('document_type', 'pan_card')->count());
+
+        $this->as(fn ($t) => $t->post(self::HOST . '/dhiran', $this->loanForm([$this->item('Chain')]) + ['pan_card' => UploadedFile::fake()->create('pan.exe', 5, 'application/octet-stream')]))->assertSessionHasErrors('pan_card');
+    }
+
+    public function test_the_borrower_photo_comes_back_with_the_picker_and_after_saving_so_the_customer_card_can_show_it(): void
+    {
+        $r = $this->as(fn ($t) => $t->post(self::HOST . '/dhiran/customers', [
+            'first_name' => 'Rita', 'mobile' => '9815600009', 'customer_photo' => UploadedFile::fake()->image('face.jpg', 300, 300),
+        ], ['Accept' => 'application/json']))->assertCreated();
+        $this->assertStringContainsString('/photo', (string) $r->json('customer.photo_url'), 'the saved response carries the photo address');
+
+        $hit = $this->as(fn ($t) => $t->getJson(self::HOST . '/dhiran/borrowers/search?q=Rita'))->json('0');
+        $this->assertSame($r->json('customer.photo_url'), $hit['photo_url'], 'search results carry it too');
+
+        $plain = $this->as(fn ($t) => $t->getJson(self::HOST . '/dhiran/borrowers/search?q=Pho'))->json('0');
+        $this->assertNull($plain['photo_url'], 'no photo, no address');
+
+        $html = $this->as(fn ($t) => $t->get(self::HOST . '/dhiran/create'))->getContent();
+        $this->assertStringContainsString('fm-avatar-btn', $html, 'the Customer card has the borrower photo');
     }
 }

@@ -65,7 +65,7 @@ class BorrowerSearchTest extends TestCase
             $this->assertSame('Meena Test', $r->json('0.name'), $q);
         }
         $this->assertStringContainsString('no-store', (string) $this->search('meen')->headers->get('Cache-Control'));
-        $this->assertSame(['id', 'name', 'mobile', 'address', 'state_code'], array_keys($this->search('meen')->json('0')));
+        $this->assertSame(['id', 'name', 'mobile', 'address', 'state_code', 'photo_url'], array_keys($this->search('meen')->json('0')));
         $this->assertStringNotContainsString('ABCDE1234F', $this->search('meen')->getContent());
     }
 

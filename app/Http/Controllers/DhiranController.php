@@ -87,7 +87,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         // Preselect a borrower when arriving from the borrower profile / list (?customer_id=). Only this shop's own,
         // active borrower is honoured. The page never carries the borrower book: the picker searches on typing (searchBorrowers).
         $wanted = $request->query('customer_id', $request->old('customer_id')); // old(): the form came back after a refusal
-        $preselectedCustomer = filled($wanted) ? Customer::where('shop_id', $shopId)->active()->find((int) $wanted) : null;
+        $preselectedCustomer = filled($wanted) ? Customer::where('shop_id', $shopId)->active()->with('profilePhoto')->find((int) $wanted) : null;
         $preselectedCustomerId = $preselectedCustomer?->id;
         $preselected = $preselectedCustomer ? $this->borrowerOption($preselectedCustomer) : null;
 
@@ -117,6 +117,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         return [
             'id' => $c->id, 'name' => trim($c->first_name . ' ' . ($c->last_name ?? '')),
             'mobile' => $c->mobile ?? '', 'address' => $c->address ?? '', 'state_code' => $c->state_code ?? '',
+            'photo_url' => $c->profilePhoto?->url(), // the borrower's photo, shown in the Customer card
         ];
     }
 
@@ -127,7 +128,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         $rows = [];
         if (mb_strlen($q) >= 2) {
             $like = '%' . addcslashes(mb_substr($q, 0, 60), '\\%_') . '%';
-            $rows = Customer::where('shop_id', auth()->user()->shop_id)->active()
+            $rows = Customer::where('shop_id', auth()->user()->shop_id)->active()->with('profilePhoto')
                 ->where(fn ($w) => $w->whereRaw("(first_name || ' ' || COALESCE(last_name, '')) ILIKE ?", [$like])
                     ->orWhere('mobile', 'ilike', $like)->orWhere('address', 'ilike', $like))
                 ->orderBy('first_name')->orderBy('last_name')->limit(8)
@@ -246,6 +247,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
                 'pan'        => $customer->pan,
                 'id_number'  => $customer->id_number,
                 'state_code' => $customer->state_code,
+                'photo_url'  => $customer->load('profilePhoto')->profilePhoto?->url(),
             ],
             'photo_error' => $photoError,
         ], 201);
@@ -285,6 +287,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             'items.*.photo'            => ['nullable', 'file', 'max:8192', 'mimes:jpg,jpeg,png'], // a photo of each item, saved with the loan so activation needs no second trip
             'id_proof_front'           => ['nullable', 'file', 'max:8192', 'mimes:jpg,jpeg,png,pdf'], // the borrower's ID proof, saved to the borrower
             'id_proof_back'            => ['nullable', 'file', 'max:8192', 'mimes:jpg,jpeg,png,pdf'],
+            'pan_card'                 => ['nullable', 'file', 'max:8192', 'mimes:jpg,jpeg,png,pdf'], // a photo of the PAN card
             // Aadhaar: accept a full 12-digit number OR an already-masked value, but
             // NEVER persist the full number (masked to last-4 before save below).
             'aadhaar'                  => ['nullable', 'string', 'max:20', 'regex:/^[0-9Xx\- ]{4,20}$/'],
@@ -357,7 +360,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
 
         // The borrower's ID proof (front, back) is kept on the borrower, like one added from the profile, so later loans reuse it.
         $idSaved = 0;
-        foreach (['id_proof_front' => 'ID proof front', 'id_proof_back' => 'ID proof back'] as $field => $label) {
+        foreach (['id_proof_front' => 'ID proof front', 'id_proof_back' => 'ID proof back', 'pan_card' => 'PAN card'] as $field => $label) {
             if (! $request->hasFile($field)) {
                 continue;
             }

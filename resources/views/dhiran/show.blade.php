@@ -315,6 +315,7 @@
                         <option value="id_proof_back">ID proof (back)</option>
                         <option value="address_proof">Address proof</option>
                         <option value="borrower_photo">Borrower photo</option>
+                        <option value="pan_card">PAN card</option>
                         <option value="pledge_agreement">Pledge agreement</option>
                         <option value="signed_terms">Signed terms</option>
                         <option value="valuation_proof">Valuation proof</option>

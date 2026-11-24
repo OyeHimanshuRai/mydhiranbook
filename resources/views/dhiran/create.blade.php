@@ -100,7 +100,15 @@
                     </button>
 
                     <div class="fm-picked" x-show="selectedCustomer" x-cloak aria-live="polite">
-                        <p class="fm-picked-name" x-text="selectedCustomer && selectedCustomer.name ? selectedCustomer.name : 'Borrower'"></p>
+                        <div class="fm-picked-head">
+                            <button type="button" class="fm-avatar-btn" @click="selectedCustomer && selectedCustomer.photoUrl && viewPhoto(selectedCustomer.photoUrl, selectedCustomer.name)" :disabled="!(selectedCustomer && selectedCustomer.photoUrl)" :aria-label="selectedCustomer && selectedCustomer.photoUrl ? 'View the borrower photo full size' : 'No borrower photo'" :title="selectedCustomer && selectedCustomer.photoUrl ? 'View full size' : 'No photo yet'">
+                                <span class="customer-avatar">
+                                    <span x-show="!(selectedCustomer && selectedCustomer.photoUrl)" x-text="borrowerInitials"></span>
+                                    <img x-show="selectedCustomer && selectedCustomer.photoUrl" :src="selectedCustomer ? selectedCustomer.photoUrl : ''" alt="" decoding="async">
+                                </span>
+                            </button>
+                            <p class="fm-picked-name" x-text="selectedCustomer && selectedCustomer.name ? selectedCustomer.name : 'Borrower'"></p>
+                        </div>
                         <dl class="fm-facts">
                             <div><dt>Mobile</dt><dd x-text="selectedCustomer && selectedCustomer.mobile ? selectedCustomer.mobile : 'Not added'"></dd></div>
                             <div><dt>State code</dt><dd x-text="selectedCustomer && selectedCustomer.state_code ? selectedCustomer.state_code : 'Not added'"></dd></div>
@@ -228,18 +236,23 @@
                             <div class="fm-field fm-wide">
                                 <span class="fm-label">Photo of this item</span>
                                 <div class="fm-photo-row">
-                                    <img class="fm-photo-thumb" :src="item.photoUrl" alt="" x-show="item.photoUrl" x-cloak>
-                                    {{-- The file input covers the whole button (invisible), so a tap or click reaches it directly in every browser. --}}
-                                    <span class="btn btn-secondary fm-photo-btn">
-                                        <x-icon name="upload" size="16" /><span x-text="item.photoFile ? 'Change photo' : 'Add photo'">Add photo</span>
-                                        <input type="file" accept="image/jpeg,image/png" class="fm-photo-input" @change="pickItemPhoto(index, $event)" :aria-label="(item.photoFile ? 'Change photo of item ' : 'Add photo of item ') + (index + 1)">
-                                    </span>
-                                    {{-- Live camera with a preview (laptop webcam, tablet or phone); Add photo stays for a file or the gallery. --}}
-                                    <button type="button" class="btn btn-secondary" @click="openCamera(index)" :aria-label="'Take a photo of item ' + (index + 1) + ' with the camera'">
-                                        <x-icon name="camera" size="16" /> Take photo
+                                    <button type="button" class="fm-thumb-btn" x-show="item.photoUrl" x-cloak @click="viewPhoto(item.photoUrl, 'Item ' + (index + 1))" :aria-label="'View the photo of item ' + (index + 1) + ' full size'" title="View full size">
+                                        <img class="fm-photo-thumb" :src="item.photoUrl" alt="">
                                     </button>
-                                    <button type="button" class="btn btn-secondary" x-show="item.photoFile" x-cloak @click="clearItemPhoto(index)" :aria-label="'Remove photo of item ' + (index + 1)"><x-icon name="trash-2" size="16" /></button>
+                                    <button type="button" class="btn btn-secondary fm-photo-act" @click="document.getElementById('it-photo-pick-' + index).click()" :title="item.photoFile ? 'Change photo (upload a file)' : 'Upload a photo'" :aria-label="(item.photoFile ? 'Change photo of item ' : 'Upload a photo of item ') + (index + 1)">
+                                        <x-icon name="upload" size="18" />
+                                    </button>
+                                    <button type="button" class="btn btn-secondary fm-photo-act" @click="openCamera({ kind: 'item', index })" title="Take a photo with the camera" :aria-label="'Take a photo of item ' + (index + 1) + ' with the camera'">
+                                        <x-icon name="camera" size="18" />
+                                    </button>
+                                    <button type="button" class="btn btn-secondary fm-photo-act" x-show="item.photoFile" x-cloak @click="viewPhoto(item.photoUrl, 'Item ' + (index + 1))" :aria-label="'View the photo of item ' + (index + 1) + ' full size'" title="View full size">
+                                        <x-icon name="eye" size="18" />
+                                    </button>
+                                    <button type="button" class="btn btn-secondary fm-photo-act" x-show="item.photoFile" x-cloak @click="clearItemPhoto(index)" :aria-label="'Remove photo of item ' + (index + 1)" title="Remove photo">
+                                        <x-icon name="trash-2" size="18" />
+                                    </button>
                                 </div>
+                                <input type="file" hidden :id="'it-photo-pick-' + index" accept="image/jpeg,image/png" @change="pickItemPhoto(index, $event)">
                                 <p class="fm-error" role="alert" x-show="item.photoError" x-cloak><x-icon name="circle-alert" size="16" /><span x-text="item.photoError"></span></p>
                                 {{-- The file that is posted: filled from the item's own photo at submit, so removing or reordering items can never mismatch a photo. --}}
                                 <input type="file" class="fm-sr" tabindex="-1" aria-hidden="true" :id="'it-photo-submit-' + index" :name="'items['+index+'][photo]'">
@@ -439,7 +452,7 @@
                     <span class="fm-num" aria-hidden="true">4</span>
                     <div>
                         <h2 class="fm-title" id="fm-h-kyc">KYC &amp; notes</h2>
-                        <p class="fm-desc">PAN and ID number come from the borrower's saved profile. Add the ID proof photo here.</p>
+                        <p class="fm-desc">PAN and ID number come from the borrower's saved profile. Add the ID proof and PAN card photos here.</p>
                     </div>
                 </header>
                 <div class="fm-card-body">
@@ -455,22 +468,41 @@
                     @error('aadhaar')
                         <p class="fm-error" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
                     @enderror
-                    {{-- The borrower's ID proof, saved to the borrower: the last thing activation needs after the item photo. --}}
+                    {{-- The borrower's ID proof and PAN card, saved to the borrower: upload a file or take a live photo. --}}
                     <div class="fm-grid">
-                        <div class="fm-field">
-                            <label for="id_proof_front" class="fm-label">ID proof, front</label>
-                            <input type="file" name="id_proof_front" id="id_proof_front" accept="image/jpeg,image/png,application/pdf" class="fm-control" @change="checkIdProof($event)">
-                        </div>
-                        <div class="fm-field">
-                            <label for="id_proof_back" class="fm-label">ID proof, back</label>
-                            <input type="file" name="id_proof_back" id="id_proof_back" accept="image/jpeg,image/png,application/pdf" class="fm-control" @change="checkIdProof($event)">
-                        </div>
+                        <template x-for="d in docDefs" :key="d.key">
+                            <div class="fm-field">
+                                <span class="fm-label" x-text="d.label"></span>
+                                <div class="fm-photo-row">
+                                    <button type="button" class="fm-thumb-btn" x-show="docs[d.key].url" x-cloak @click="viewPhoto(docs[d.key].url, d.label)" :aria-label="'View ' + d.label + ' full size'" title="View full size">
+                                        <img class="fm-photo-thumb" :src="docs[d.key].url" alt="">
+                                    </button>
+                                    <span class="fm-doc-chip" x-show="docs[d.key].pdf" x-cloak><x-icon name="file-text" size="18" /><span x-text="docs[d.key].name"></span></span>
+                                    <button type="button" class="btn btn-secondary fm-photo-act" @click="document.getElementById('doc-pick-' + d.key).click()" :title="'Upload ' + d.label" :aria-label="'Upload ' + d.label">
+                                        <x-icon name="upload" size="18" />
+                                    </button>
+                                    <button type="button" class="btn btn-secondary fm-photo-act" @click="openCamera({ kind: 'doc', key: d.key })" :title="'Take a photo of ' + d.label" :aria-label="'Take a photo of ' + d.label + ' with the camera'">
+                                        <x-icon name="camera" size="18" />
+                                    </button>
+                                    <button type="button" class="btn btn-secondary fm-photo-act" x-show="docs[d.key].url" x-cloak @click="viewPhoto(docs[d.key].url, d.label)" :aria-label="'View ' + d.label + ' full size'" title="View full size">
+                                        <x-icon name="eye" size="18" />
+                                    </button>
+                                    <button type="button" class="btn btn-secondary fm-photo-act" x-show="docs[d.key].file" x-cloak @click="clearDoc(d.key)" :aria-label="'Remove ' + d.label" title="Remove">
+                                        <x-icon name="trash-2" size="18" />
+                                    </button>
+                                </div>
+                                <input type="file" hidden :id="'doc-pick-' + d.key" accept="image/jpeg,image/png,application/pdf" @change="pickDoc(d.key, $event)">
+                                <p class="fm-error" role="alert" x-show="docs[d.key].error" x-cloak><x-icon name="circle-alert" size="16" /><span x-text="docs[d.key].error"></span></p>
+                                {{-- The file that is posted: filled from the slot at submit. --}}
+                                <input type="file" class="fm-sr" tabindex="-1" aria-hidden="true" :id="'doc-submit-' + d.key" :name="d.key">
+                            </div>
+                        </template>
                     </div>
                     <p class="fm-note" x-show="selectedCustomer && selectedCustomer.hasIdProof" x-cloak>This borrower already has an ID proof saved. Add one here only if it has changed.</p>
                     <p class="fm-note">JPG, PNG or PDF, up to 8 MB each. Saved to the borrower's profile.</p>
-                    <p class="fm-error" role="alert" x-show="idProofError" x-cloak><x-icon name="circle-alert" size="16" /><span x-text="idProofError"></span></p>
                     @error('id_proof_front')<p class="fm-error" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>@enderror
                     @error('id_proof_back')<p class="fm-error" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>@enderror
+                    @error('pan_card')<p class="fm-error" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>@enderror
                     <div class="fm-field">
                         <label for="notes" class="fm-label">Notes</label>
                         <textarea name="notes" id="notes" rows="3" placeholder="Anything else to remember about this loan" class="fm-control">{{ old('notes') }}</textarea>
@@ -499,8 +531,8 @@
             <div class="fm-dialog-card">
                 <div class="fm-dialog-head">
                     <div>
-                        <h2 id="fm-cam-title" x-text="camIndex === null ? 'Take photo' : 'Photo of item ' + (camIndex + 1)">Take photo</h2>
-                        <p>Hold the item in view, then take the photo.</p>
+                        <h2 id="fm-cam-title" x-text="camTitle">Take photo</h2>
+                        <p>Hold it in view, then take the photo.</p>
                     </div>
                     <button type="button" class="btn btn-secondary fm-dialog-x" @click="closeCamera()" title="Close"><x-icon name="x" size="18" /><span class="fm-sr">Close</span></button>
                 </div>
@@ -514,6 +546,15 @@
                     <button type="button" class="btn btn-primary" @click="captureItemPhoto()"><x-icon name="camera" size="16" /> Take photo</button>
                 </div>
             </div>
+        </dialog>
+
+        {{-- Full-size view of any photo on this form (item, ID proof, PAN card, borrower). Click outside, Esc or Close to leave. --}}
+        <dialog class="fm-view" x-ref="photoView" aria-label="Photo, full size" @cancel.prevent="closePhotoView()" @click="closePhotoView()">
+            <figure class="fm-view-card" @click.stop>
+                <button type="button" class="btn btn-secondary fm-view-x" @click="closePhotoView()" title="Close"><x-icon name="x" size="18" /><span class="fm-sr">Close</span></button>
+                <img :src="viewUrl" :alt="viewTitle">
+                <figcaption x-text="viewTitle"></figcaption>
+            </figure>
         </dialog>
 
         {{-- Add new borrower: a full-height sheet on phones, a centred dialog from 768px. The native dialog gives the focus trap, Esc and the scrim. --}}
@@ -601,10 +642,45 @@
                 // Add Borrower dialog: one state, 'closed' -> 'open' -> 'saving' -> 'closed' (saved) or 'open' (refused).
                 nbState: 'closed',
                 borrowerNote: '',
-                idProofError: '',
-                checkIdProof(ev) {
+                // ID proof and PAN card: each slot holds its file (chosen or taken with the camera) until the form is sent.
+                docDefs: [{ key: 'id_proof_front', label: 'ID proof, front' }, { key: 'id_proof_back', label: 'ID proof, back' }, { key: 'pan_card', label: 'PAN card' }],
+                docs: {
+                    id_proof_front: { file: null, url: '', name: '', pdf: false, error: '' },
+                    id_proof_back: { file: null, url: '', name: '', pdf: false, error: '' },
+                    pan_card: { file: null, url: '', name: '', pdf: false, error: '' },
+                },
+                pickDoc(key, ev) {
                     const f = ev.target.files && ev.target.files[0];
-                    if (f && f.size > 8 * 1024 * 1024) { this.idProofError = 'That file is over 8 MB. Choose a smaller one.'; ev.target.value = ''; } else { this.idProofError = ''; }
+                    ev.target.value = '';
+                    this.setDoc(key, f);
+                },
+                setDoc(key, f) {
+                    const d = this.docs[key];
+                    if (!f || !d) return;
+                    const pdf = f.type === 'application/pdf';
+                    if (!pdf && !/^image\/(jpeg|png)$/.test(f.type)) { d.error = 'Choose a JPG, PNG or PDF file.'; return; }
+                    if (f.size > 8 * 1024 * 1024) { d.error = 'That file is over 8 MB. Choose a smaller one.'; return; }
+                    if (d.url) URL.revokeObjectURL(d.url);
+                    d.file = f; d.name = f.name; d.pdf = pdf; d.url = pdf ? '' : URL.createObjectURL(f); d.error = '';
+                },
+                clearDoc(key) {
+                    const d = this.docs[key];
+                    if (d.url) URL.revokeObjectURL(d.url);
+                    d.file = null; d.url = ''; d.name = ''; d.pdf = false; d.error = '';
+                },
+                // One full-size viewer for every photo on the form.
+                viewUrl: '', viewTitle: '',
+                viewPhoto(url, title) {
+                    if (!url) return;
+                    this.viewUrl = url; this.viewTitle = title || '';
+                    this.$refs.photoView.showModal();
+                },
+                closePhotoView() {
+                    if (this.$refs.photoView?.open) this.$refs.photoView.close();
+                },
+                get borrowerInitials() {
+                    const n = (this.selectedCustomer && this.selectedCustomer.name ? this.selectedCustomer.name : '').trim().split(/\s+/).filter(Boolean);
+                    return ((n[0] || '')[0] || '') + ((n[1] || '')[0] || '') || 'CU';
                 },
                 nbError: '',
                 nbField: '',
@@ -792,6 +868,7 @@
                 },
 
                 async selectCustomer(customer, keepExistingKyc = false) {
+                    customer.photoUrl = customer.photo_url || customer.photoUrl || '';
                     this.selectedCustomer = customer;
                     this.customerDisplayName = customer.name + (customer.mobile ? ' (' + customer.mobile + ')' : '');
                     this.customerSearch = customer.name || '';
@@ -855,6 +932,7 @@
                             pan: out.customer.pan || '',
                             id_number: out.customer.id_number || '',
                             state_code: out.customer.state_code || '',
+                            photoUrl: out.customer.photo_url || '',
                         };
 
                         this.selectCustomer(savedCustomer);
@@ -893,9 +971,10 @@
                     item.photoFile = f; item.photoUrl = URL.createObjectURL(f); item.photoError = '';
                 },
                 // Live camera for an item photo: one shared dialog, the same camera helper as the borrower photo.
-                camIndex: null, camError: '', camCanSwitch: false, cam: null,
-                async openCamera(index) {
-                    this.camIndex = index; this.camError = '';
+                camTarget: null, camTitle: 'Take photo', camError: '', camCanSwitch: false, cam: null,
+                async openCamera(target) {
+                    this.camTarget = target; this.camError = '';
+                    this.camTitle = target.kind === 'item' ? 'Photo of item ' + (target.index + 1) : (this.docDefs.find(d => d.key === target.key) || {}).label || 'Take photo';
                     const dialog = this.$refs.camDialog;
                     if (!dialog.open) dialog.showModal();
                     this.cam = this.cam || new window.PhotoCamera(this.$refs.camVideo);
@@ -919,14 +998,15 @@
                     canvas.getContext('2d').drawImage(v, 0, 0);
                     canvas.toBlob(blob => {
                         if (!blob) { this.camError = 'Capture failed. Try again, or use Add photo.'; return; }
-                        this.setItemPhoto(this.camIndex, new File([blob], 'item-camera.jpg', { type: 'image/jpeg' }));
+                        const shot = new File([blob], 'camera-photo.jpg', { type: 'image/jpeg' });
+                        if (this.camTarget.kind === 'item') this.setItemPhoto(this.camTarget.index, shot); else this.setDoc(this.camTarget.key, shot);
                         this.closeCamera();
                     }, 'image/jpeg', 0.92);
                 },
                 closeCamera() {
                     this.cam?.stop();
                     if (this.$refs.camDialog?.open) this.$refs.camDialog.close();
-                    this.camIndex = null; this.camError = '';
+                    this.camTarget = null; this.camError = '';
                 },
 
                 clearItemPhoto(index) {
@@ -1040,6 +1120,13 @@
                     // Recalculate all items before submit
                     this.items.forEach((_, i) => this.recalcItem(i));
                     // each item's own photo goes into the file input named for its position, so the server pairs them right
+                    this.docDefs.forEach(d => {
+                        const el = document.getElementById('doc-submit-' + d.key);
+                        if (!el) return;
+                        const dt = new DataTransfer();
+                        if (this.docs[d.key].file) dt.items.add(this.docs[d.key].file);
+                        el.files = dt.files;
+                    });
                     this.items.forEach((it, i) => {
                         const el = document.getElementById('it-photo-submit-' + i);
                         if (!el) return;

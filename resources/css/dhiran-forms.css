@@ -235,8 +235,23 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
 /* A photo of a pledged item, on the item card: thumbnail, add/change, remove. */
 .dh-app .fm-photo-row { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
 .dh-app .fm-photo-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: var(--kh-radius); border: 1px solid var(--kh-field-edge); background: var(--dh-muted-surface); }
-.dh-app .fm-photo-btn { position: relative; cursor: pointer; }
-.dh-app .fm-photo-btn:focus-within { outline: 2px solid var(--dh-focus); outline-offset: 2px; }
 
-.dh-app .fm-photo-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; font-size: 0; }
 .dh-app .fm-cam-video { display: block; width: 100%; max-height: 60vh; background: #000; border-radius: var(--kh-radius); object-fit: contain; }
+
+/* Photo and document controls: small icon buttons (upload, camera, view, remove), a thumbnail that opens full size. */
+.dh-app .fm-photo-row .btn.fm-photo-act { min-width: 44px; min-height: 44px; padding: 0; justify-content: center; }
+.dh-app .fm-thumb-btn { padding: 0; border: 0; background: none; border-radius: var(--kh-radius); cursor: zoom-in; line-height: 0; }
+.dh-app .fm-thumb-btn:focus-visible, .dh-app .fm-avatar-btn:focus-visible { outline: 2px solid var(--dh-focus); outline-offset: 2px; }
+.dh-app .fm-doc-chip { display: inline-flex; align-items: center; gap: var(--sp-2); max-width: 100%; padding: 0 var(--sp-3); min-height: 44px; border: 1px solid var(--kh-field-edge); border-radius: var(--kh-radius); background: var(--dh-muted-surface); color: var(--dh-ink); font-size: var(--fl-fs-cell); overflow-wrap: anywhere; }
+.dh-app .fm-picked-head { display: flex; align-items: center; gap: var(--sp-3); margin: 0 0 var(--sp-2); }
+.dh-app .fm-picked-head .fm-picked-name { margin: 0; }
+.dh-app .fm-avatar-btn { padding: 0; border: 0; background: none; border-radius: 50%; line-height: 0; cursor: zoom-in; flex: none; }
+.dh-app .fm-avatar-btn:disabled { cursor: default; }
+.dh-app .fm-picked-head .customer-avatar { width: 56px; height: 56px; flex-basis: 56px; font-size: 18px; }
+/* The full-size viewer */
+.dh-app .fm-view { width: min(94vw, 960px); max-width: 94vw; max-height: 94vh; padding: 0; border: 0; background: transparent; overflow: visible; }
+.dh-app .fm-view::backdrop { background: rgba(10, 14, 24, .72); }
+.dh-app .fm-view-card { position: relative; margin: 0; display: grid; gap: var(--sp-2); justify-items: center; }
+.dh-app .fm-view-card img { max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: var(--kh-radius); background: #fff; }
+.dh-app .fm-view-card figcaption { color: #fff; font-size: var(--fl-fs-body); }
+.dh-app .fm-view-card .btn.fm-view-x { position: absolute; top: calc(var(--sp-2) * -1); right: calc(var(--sp-2) * -1); min-width: 44px; min-height: 44px; padding: 0; justify-content: center; z-index: 1; }
