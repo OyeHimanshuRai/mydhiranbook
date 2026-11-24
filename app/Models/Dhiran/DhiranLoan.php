@@ -50,6 +50,7 @@ class DhiranLoan extends Model
         'advance_interest_months',
         'interest_periods_paid',
         'interest_prepaid',
+        'forfeiture_notice_edit',
         'status',
         'renewed_count',
         'renewed_from_id',
@@ -122,6 +123,7 @@ class DhiranLoan extends Model
         'min_interest_months'       => 'integer',
         'advance_interest_months'   => 'integer',
         'interest_periods_paid'     => 'integer',
+        'forfeiture_notice_edit'    => 'array',
         'interest_prepaid'          => 'decimal:2',
         'renewed_count'             => 'integer',
     ];

@@ -80,6 +80,11 @@
                 <x-settings.panel title="Loan numbers" desc="The text shown before each loan number.">
                     <div class="st-grid">
                         <x-settings.field name="loan_number_prefix" id="ds-prefix" label="Loan number prefix" type="text" maxlength="10" placeholder="DH-" autocomplete="off" :value="$v('loan_number_prefix')" hint="Numbers continue from the last loan." />
+                        <x-settings.field name="loan_number_digits" id="ds-digits" label="Loan number length" type="select" hint="How a new number is padded with zeros. Numbers already issued do not change.">
+                            @foreach([1 => '1 (DH-1)', 3 => '3 (DH-001)', 4 => '4 (DH-0001)', 6 => '6 (DH-000001)'] as $value => $label)
+                                <option value="{{ $value }}" @selected((int) $v('loan_number_digits', 6) === $value)>{{ $label }}</option>
+                            @endforeach
+                        </x-settings.field>
                     </div>
                 </x-settings.panel>
 

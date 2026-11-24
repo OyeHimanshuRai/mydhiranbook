@@ -846,6 +846,27 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         return view('dhiran.forfeiture-notice', compact('loan'));
     }
 
+    /** Save the owner's own wording of the notice, or put the system-generated text back. Every change is a line in the loan's log. */
+    public function updateForfeitureNotice(Request $request, DhiranLoan $loan)
+    {
+        abort_unless((int) $loan->shop_id === (int) auth()->user()->shop_id, 404);
+        abort_unless($loan->status === 'active' && $loan->forfeitureNoticeSent(), 422, 'The notice can be edited while the loan is active and after the notice has been sent.');
+
+        $before = $loan->forfeiture_notice_edit;
+        if ($request->boolean('reset')) {
+            $loan->forceFill(['forfeiture_notice_edit' => null])->save();
+            \App\Services\Dhiran\LoanLog::forLoan($loan, 'document.edited', 'document', 'Forfeiture notice put back to the system-generated text', ['before' => $before]);
+
+            return redirect()->route('dhiran.forfeiture-notice', $loan)->with('success', 'The system-generated notice is back.');
+        }
+        $data = $request->validate(['body' => ['required', 'string', 'max:5000'], 'warning' => ['required', 'string', 'max:1000']]);
+        $edit = ['body' => str_replace("\r\n", "\n", $data['body']), 'warning' => str_replace("\r\n", "\n", $data['warning']), 'by' => auth()->user()->name, 'at' => now()->toIso8601String()];
+        $loan->forceFill(['forfeiture_notice_edit' => $edit])->save();
+        \App\Services\Dhiran\LoanLog::forLoan($loan, 'document.edited', 'document', 'Forfeiture notice wording edited', ['before' => $before, 'after' => $edit]);
+
+        return redirect()->route('dhiran.forfeiture-notice', $request->input('then') === 'print' ? ['loan' => $loan, 'print' => 1] : $loan)->with('success', 'Notice saved.');
+    }
+
     public function paymentReceipt(DhiranLoan $loan, DhiranPayment $payment)
     {
         abort_unless((int) $loan->shop_id === (int) auth()->user()->shop_id, 404);
@@ -1111,11 +1132,13 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             'reminder_days_before_due'      => 'nullable|integer|min:1|max:30',
             'advance_interest_enabled'      => 'nullable|boolean',
             'advance_interest_default_months' => 'nullable|integer|min:1|max:3',
+            'loan_number_digits'            => 'nullable|integer|min:1|max:8',
         ]);
 
         $data['sms_reminders_enabled'] = $request->boolean('sms_reminders_enabled');
         $data['advance_interest_enabled'] = $request->boolean('advance_interest_enabled');
         $data['advance_interest_default_months'] = $data['advance_interest_default_months'] ?? 1;
+        $data['loan_number_digits'] = $data['loan_number_digits'] ?? DhiranSettings::getForShop($shopId)->loan_number_digits ?? 6;
 
         $settings = DhiranSettings::getForShop($shopId);
         $settings->update($data);

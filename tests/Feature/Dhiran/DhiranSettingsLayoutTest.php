@@ -60,7 +60,7 @@ class DhiranSettingsLayoutTest extends TestCase
 
         // Labels, hints and errors are wired: every control has a label[for], numbers carry a keypad hint and a unit, and there is one save button.
         preg_match_all('/<(?:input|select)\b[^>]*\bname="(?!_)[^"]+"[^>]*>/', $board, $controls);
-        $this->assertCount(18, $controls[0], 'all sixteen settings plus the two advance-interest controls are posted');
+        $this->assertCount(19, $controls[0], 'all sixteen settings, the two advance-interest controls and the loan number length are posted');
         foreach ($controls[0] as $tag) {
             $this->assertMatchesRegularExpression('/\bid="([^"]+)"/', $tag);
             preg_match('/\bid="([^"]+)"/', $tag, $id);

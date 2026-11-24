@@ -2171,6 +2171,6 @@ class DhiranService
 
         $sequence = BusinessIdentifierService::nextCounter($shop->id, BusinessIdentifierService::KEY_DHIRAN);
 
-        return $prefix . str_pad((string) $sequence, 6, '0', STR_PAD_LEFT);
+        return $prefix . str_pad((string) $sequence, max(1, (int) ($settings->loan_number_digits ?: 6)), '0', STR_PAD_LEFT); // digits = 1 means no leading zeros
     }
 }

@@ -62,6 +62,7 @@ use Illuminate\Support\Facades\Route;
             Route::get('/loans/{loan}/tag', [\App\Http\Controllers\DhiranController::class, 'tag'])->middleware('can:dhiran.view')->name('tag');
             Route::get('/loans/{loan}/receipt', [\App\Http\Controllers\DhiranController::class, 'receipt'])->middleware('can:dhiran.view')->name('receipt');
             Route::get('/loans/{loan}/closure-certificate', [\App\Http\Controllers\DhiranController::class, 'closureCertificate'])->middleware('can:dhiran.view')->name('closure-certificate');
+            Route::patch('/loans/{loan}/forfeiture-notice', [\App\Http\Controllers\DhiranController::class, 'updateForfeitureNotice'])->middleware('can:dhiran.forfeit')->name('forfeiture-notice.update');
             Route::get('/loans/{loan}/forfeiture-notice', [\App\Http\Controllers\DhiranController::class, 'forfeitureNotice'])->middleware('can:dhiran.view')->name('forfeiture-notice');
             Route::get('/loans/{loan}/payments/{payment}/receipt', [\App\Http\Controllers\DhiranController::class, 'paymentReceipt'])->middleware('can:dhiran.view')->name('payment-receipt');
 

@@ -20,7 +20,7 @@ final class LoanLog
     private const NOISE = [
         'outstanding_principal', 'outstanding_interest', 'outstanding_penalty', 'interest_accrued_through', 'interest_remainder',
         'penalty_remainder', 'interest_capitalised', 'interest_prepaid', 'interest_periods_paid', 'total_interest_collected',
-        'total_penalty_collected', 'total_principal_collected', 'closed_at', 'renewed_count', 'updated_at',
+        'total_penalty_collected', 'total_principal_collected', 'closed_at', 'renewed_count', 'updated_at', 'forfeiture_notice_edit',
     ];
 
     /** Personal identifiers: the log says they changed, never what they were. */

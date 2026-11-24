@@ -26,7 +26,52 @@
         // A reprint keeps the day the notice was issued and the deadline that was given, whatever day it is printed on.
         $issuedOn = $loan->forfeiture_notice_sent_at ? \Illuminate\Support\Carbon::parse($loan->forfeiture_notice_sent_at)->timezone(config('app.timezone')) : now();
         $deadline = $loan->forfeitureDeadline() ?? $issuedOn->copy()->addDays($forfeitureNoticeDays);
+        // The system-generated wording (plain text, so it can be edited), and the owner's own wording when they saved one.
+        $n2 = fn ($v) => number_format((float) $v, 2);
+        $systemBody = $loan->forfeiture_notice_text ?: "This notice is issued in connection with Pledge Loan {$loan->loan_number} dated {$loanDate} for a principal amount of {$n2($loan->principal_amount)}.\n\n"
+            . "The above loan has matured on {$maturityDate} and the grace period ended on {$graceEnd}. Despite reminders, the outstanding amount of {$n2($totalOutstanding)} remains unpaid.\n\n"
+            . "You are hereby requested to settle the total outstanding amount within {$forfeitureNoticeDays} days from the date of this notice, failing which we shall be constrained to forfeit and dispose of the pledged ornaments as per the terms of the loan agreement.";
+        $systemWarning = "WARNING: If the outstanding amount is not settled within {$forfeitureNoticeDays} days from the date of this notice (i.e. by {$deadline->format('d M Y')}), the pledged gold ornaments will be forfeited and disposed of to recover the dues without further notice.";
+        $edit = $loan->forfeiture_notice_edit;
+        $showSystem = request()->boolean('original') || ! $edit;
+        $bodyText = $showSystem ? $systemBody : $edit['body'];
+        $warningText = $showSystem ? $systemWarning : $edit['warning'];
+        $canEdit = auth()->user()?->can('dhiran.forfeit') && $loan->status === 'active' && $loan->forfeitureNoticeSent();
     @endphp
+
+    <style>@media print { .notice-tools { display: none !important; } }
+        .notice-tools { max-width: 760px; margin: 12px auto 0; display: grid; gap: 8px; }
+        .notice-tools .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
+        .notice-tools .note { font-size: 13px; color: #555; margin: 0; flex: 1 1 14rem; }
+        .notice-tools form { display: grid; gap: 8px; padding: 12px; border: 1px solid #bbb; border-radius: 6px; background: #fff; }
+        .notice-tools label { font-weight: 600; font-size: 13px; display: grid; gap: 4px; }
+        .notice-tools textarea { width: 100%; font: inherit; font-weight: 400; padding: 8px; border: 1px solid #999; border-radius: 4px; }
+    </style>
+    <div class="notice-tools">
+        <div class="row">
+            @if($edit && $showSystem)<p class="note">Showing the system-generated notice. Your edited version is saved.</p>@elseif($edit)<p class="note">Showing your edited notice (saved by {{ $edit['by'] ?? 'someone' }}).</p>@else<p class="note">Showing the system-generated notice.</p>@endif
+            <button type="button" class="btn" onclick="window.print()">{{ $showSystem ? 'Print system notice' : 'Print edited notice' }}</button>
+            @if($edit && ! $showSystem)<a class="btn" href="{{ route('dhiran.forfeiture-notice', ['loan' => $loan, 'original' => 1]) }}">View system notice</a>@endif
+            @if($edit && $showSystem)<a class="btn" href="{{ route('dhiran.forfeiture-notice', $loan) }}">View edited notice</a>@endif
+            @if($canEdit)<button type="button" class="btn" onclick="document.getElementById('notice-editor').hidden = !document.getElementById('notice-editor').hidden">Edit notice</button>@endif
+        </div>
+        @if($canEdit)
+            <form id="notice-editor" method="POST" action="{{ route('dhiran.forfeiture-notice.update', $loan) }}" hidden>
+                @csrf @method('PATCH')
+                <label>Letter <textarea name="body" rows="10" maxlength="5000" required>{{ old('body', $edit['body'] ?? $systemBody) }}</textarea></label>
+                <label>Warning <textarea name="warning" rows="4" maxlength="1000" required>{{ old('warning', $edit['warning'] ?? $systemWarning) }}</textarea></label>
+                <p class="note">The loan facts and amounts above the letter always come from the loan. Every edit is written to the loan's activity log.</p>
+                <div class="row">
+                    <button type="submit" name="then" value="print" class="btn">Save and print</button>
+                    <button type="submit" class="btn">Save</button>
+                    @if($edit)<button type="submit" name="reset" value="1" class="btn" formnovalidate onclick="return confirm('Go back to the system-generated notice? Your edited wording will be removed (it stays in the activity log).')">Use system text</button>@endif
+                </div>
+            </form>
+        @endif
+        @if(session('success'))<p class="note" role="status">{{ session('success') }}</p>@endif
+        @if($errors->any())<p class="note" role="alert">{{ $errors->first() }}</p>@endif
+    </div>
+    @if(request()->boolean('print'))<script>window.addEventListener('load', () => window.print());</script>@endif
 
     <div class="receipt-page">
         <div class="receipt">
@@ -105,34 +150,12 @@
 
                 <section class="notice-body">
                     <p>Dear <strong>{{ $customer?->name ?? 'Sir/Madam' }}</strong>,</p>
-
-                    @if($loan->forfeiture_notice_text)
-                        {!! nl2br(e($loan->forfeiture_notice_text)) !!}
-                    @else
-                        <p>
-                            This notice is issued in connection with Pledge Loan <strong>{{ $loan->loan_number }}</strong>
-                            dated <strong>{{ $loanDate }}</strong> for a principal amount of
-                            <strong>{{ number_format((float) $loan->principal_amount, 2) }}</strong>.
-                        </p>
-                        <p>
-                            The above loan has matured on <strong>{{ $maturityDate }}</strong> and the grace period
-                            ended on <strong>{{ $graceEnd }}</strong>. Despite reminders, the outstanding amount of
-                            <strong>{{ number_format($totalOutstanding, 2) }}</strong> remains unpaid.
-                        </p>
-                        <p>
-                            You are hereby requested to settle the total outstanding amount within
-                            <strong>{{ $forfeitureNoticeDays }} days</strong> from the date of this notice,
-                            failing which we shall be constrained to forfeit and dispose of the pledged ornaments
-                            as per the terms of the loan agreement.
-                        </p>
-                    @endif
+                    @foreach(preg_split('/\n\s*\n/', trim($bodyText)) as $para)
+                        <p>{!! nl2br(e($para)) !!}</p>
+                    @endforeach
                 </section>
 
-                <section class="warning-box">
-                    WARNING: If the outstanding amount is not settled within {{ $forfeitureNoticeDays }} days from the date
-                    of this notice (i.e. by {{ $deadline->format('d M Y') }}), the pledged
-                    gold ornaments will be forfeited and disposed of to recover the dues without further notice.
-                </section>
+                <section class="warning-box">{!! nl2br(e($warningText)) !!}</section>
 
                 <div class="signature-row">
                     <div class="signature-block">
@@ -146,7 +169,6 @@
         </div>
 
         <div class="actions">
-            <button type="button" class="btn" onclick="window.print()">Print</button>
             <a class="btn" href="{{ route('dhiran.show', $loan) }}">Back to Loan</a>
         </div>
     </div>
