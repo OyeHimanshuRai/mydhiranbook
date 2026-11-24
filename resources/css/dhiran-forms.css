@@ -1,3 +1,4 @@
+@import './dhiran-receipt-settings.css'; /* the switch (.ui-switch*) is shared with the settings pages */
 /* Forms family: New Loan, Add Old Loan (+ file upload and its review), Add Customer. Loads AFTER dhiran.css.
    Same rules as the settings family: spacing --sp-* (ui-tokens.css), type and control size --fl-* (ui-fluid.css), colours dhiran-tokens.css only.
    Controls are --fl-ctl-h (44px up to 1023px) with 16px type so iOS never zooms; fields sit two to a row from 560px; nothing has a fixed width. */
@@ -225,3 +226,7 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
 .dh-app .fm-problems { margin: var(--sp-1) 0 0; padding-left: var(--sp-4); font-size: 0.875rem; color: var(--dh-danger); font-weight: 500; }
 .dh-app .fm-ticket { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; }
 @container dhl (max-width: 559px) { .dh-app .fm-check-body { flex: 1 1 58%; } }
+
+/* The per-loan switch in the Loan terms header: compact, to the right of the title. */
+.dh-app .fm-card-head .fm-head-switch { margin: 0 0 0 auto; padding: 0; border: 0; flex: none; align-items: center; gap: var(--sp-3); width: auto; min-height: 0; }
+.dh-app .fm-card-head .fm-head-switch .ui-switch-label { font-size: var(--fl-fs-cell); text-align: right; }

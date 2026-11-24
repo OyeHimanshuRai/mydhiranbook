@@ -1677,7 +1677,9 @@ class DhiranService
 
             // A loan paid in advance stays paid in advance: the new loan takes the same number of first months now
             // (the old loan's unspent advance stays with the shop). Only while the shop still allows it.
-            $keepMonths = ((int) $loan->advance_interest_months > 0 && DhiranSettings::getForShop($loan->shop_id)->advance_interest_enabled) ? (int) $loan->advance_interest_months : 0;
+            // Never more months than the old loan took, the new tenure, or the 1..3 limit createLoan enforces.
+            $keepMonths = ((int) $loan->advance_interest_months > 0 && DhiranSettings::getForShop($loan->shop_id)->advance_interest_enabled)
+                ? min((int) $loan->advance_interest_months, $newTenureVal, 3) : 0;
             $newAdvance = $keepMonths ? round($this->coverInterest($newRateVal, $newLoanDate->copy(), $newLoanDate->copy()->addMonthsNoOverflow($keepMonths), $oldPrincipal), 2) : 0.0;
             if ($newAdvance <= 0 || $newAdvance >= $oldPrincipal) {
                 [$keepMonths, $newAdvance] = [0, 0.0];

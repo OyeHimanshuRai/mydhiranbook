@@ -89,16 +89,21 @@ class AdvanceInterestFormTest extends TestCase
     {
         $html = $this->as(fn ($t) => $t->get(self::HOST . '/dhiran/create'))->getContent();
         $this->assertStringNotContainsString('name="advance_interest_months"', $html);
+        $this->assertStringNotContainsString('id="advance_on"', $html, 'no switch when the shop has not allowed it');
         $this->assertStringNotContainsString('Cash to hand over', $html);
 
         $this->enable(2);
         $html = $this->as(fn ($t) => $t->get(self::HOST . '/dhiran/create'))->getContent();
         $this->assertStringContainsString('name="advance_interest_months"', $html);
-        $this->assertStringContainsString('Paid in advance, month by month: first month now', $html);
+        $this->assertStringContainsString('id="advance_on"', $html, 'the per-loan switch in the Loan terms header');
+        $this->assertStringContainsString('Interest paid in advance', $html);
+        $this->assertStringContainsString('First month now', $html);
+        $this->assertStringContainsString('<input type="hidden" name="advance_interest_months" value="0"', $html, 'switched off posts a plain 0');
         $this->assertStringContainsString('Next installment due', $html);
         $this->assertStringContainsString("serverToday: '2026-11-24'", $html);
         $this->assertStringContainsString('Cash to hand over', $html);
-        $this->assertStringContainsString('advance_interest_months: 2,', $html, 'the shop default is preselected');
+        $this->assertStringContainsString('advance_months_choice: 2,', $html, 'the shop default months are preselected');
+        $this->assertStringContainsString('advance_on: true,', $html, 'the switch starts on when the shop allows it');
     }
 
     public function test_new_loan_with_the_advance_books_it_and_without_does_not(): void

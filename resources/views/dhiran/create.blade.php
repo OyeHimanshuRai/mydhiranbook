@@ -240,6 +240,16 @@
                         <h2 class="fm-title" id="fm-h-terms">Loan terms</h2>
                         <p class="fm-desc">Amount, interest and period.</p>
                     </div>
+                    @if($settings->advance_interest_enabled)
+                    {{-- This loan only: switching it never changes the shop's Loan settings. --}}
+                    <label class="ui-switch-row fm-head-switch" for="advance_on">
+                        <span class="ui-switch-text"><span class="ui-switch-label">Interest paid in advance</span></span>
+                        <span class="ui-switch">
+                            <input type="checkbox" role="switch" id="advance_on" class="ui-switch-input" x-model="advance_on">
+                            <span class="ui-switch-track" aria-hidden="true"><span class="ui-switch-thumb"></span></span>
+                        </span>
+                    </label>
+                    @endif
                 </header>
                 <div class="fm-card-body">
                     <div class="fm-grid">
@@ -288,12 +298,13 @@
                             @enderror
                         </div>
                         @if($settings->advance_interest_enabled)
-                        <div class="fm-field">
-                            <label for="advance_interest_months" class="fm-label">Interest collection</label>
-                            <select name="advance_interest_months" id="advance_interest_months" x-model.number="advance_interest_months" class="fm-control"
+                        <div class="fm-field" x-show="advance_on" x-cloak>
+                            <label for="advance_interest_months" class="fm-label">Months taken now</label>
+                            {{-- Off posts a single 0 (a paid-afterwards loan); on posts the chosen months and the next installment falls due each month after. --}}
+                            <input type="hidden" name="advance_interest_months" value="0" :disabled="advance_on">
+                            <select name="advance_interest_months" id="advance_interest_months" x-model.number="advance_months_choice" :disabled="!advance_on" class="fm-control"
                                     @error('advance_interest_months') aria-invalid="true" aria-describedby="err-advance_interest_months" @enderror>
-                                <option value="0">Paid afterwards, as it builds up</option>
-                                @foreach([1 => 'Paid in advance, month by month: first month now', 2 => 'Paid in advance, month by month: first 2 months now', 3 => 'Paid in advance, month by month: first 3 months now'] as $m => $label)
+                                @foreach([1 => 'First month now', 2 => 'First 2 months now', 3 => 'First 3 months now'] as $m => $label)
                                     <option value="{{ $m }}">{{ $label }}</option>
                                 @endforeach
                             </select>
@@ -534,7 +545,10 @@
                 principal_amount: {{ old('principal_amount', 0) }},
                 interest_rate_monthly: {{ old('interest_rate_monthly', $defaults['interest_rate_monthly'] ?? 1.5) }},
                 interest_type: '{{ old('interest_type', $defaults['interest_type'] ?? 'flat') }}',
-                advance_interest_months: {{ (int) old('advance_interest_months', $settings->advance_interest_enabled ? $settings->advance_interest_default_months : 0) }},
+                // Per loan: the header switch (starts on when the shop allows it, as before) and the months chosen. Off means paid afterwards.
+                advance_on: {{ $settings->advance_interest_enabled && (old('advance_interest_months') === null || (int) old('advance_interest_months') > 0) ? 'true' : 'false' }},
+                advance_months_choice: {{ max(1, min(3, (int) (old('advance_interest_months') ?: $settings->advance_interest_default_months))) }},
+                get advanceMonths() { return this.advance_on ? (Number(this.advance_months_choice) || 0) : 0; },
                 tenure_months: {{ old('tenure_months', $defaults['tenure_months'] ?? 6) }},
                 penalty_rate_monthly: {{ old('penalty_rate_monthly', $defaults['penalty_rate_monthly'] ?? 2) }},
                 processingFeePercent: {{ $defaults['processing_fee_percent'] ?? 0 }},
@@ -605,7 +619,7 @@
                     return new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), Math.min(d, last)));
                 },
                 get advanceDays() {
-                    const n = Number(this.advance_interest_months) || 0;
+                    const n = this.advanceMonths;
                     if (!n) return 0;
                     const [y, m, d] = this.serverToday.split('-').map(Number);
                     return Math.round((this.monthsFromToday(n) - new Date(Date.UTC(y, m - 1, d))) / 86400000);
@@ -614,7 +628,7 @@
                     return Math.round((Number(this.principal_amount) || 0) * (Number(this.interest_rate_monthly) || 0) * this.advanceDays / 30) / 100;
                 },
                 get nextInstallmentLabel() {
-                    const n = Number(this.advance_interest_months) || 0;
+                    const n = this.advanceMonths;
                     return n ? this.monthsFromToday(n).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }) : '';
                 },
                 get processingFee() {

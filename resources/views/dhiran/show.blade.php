@@ -456,22 +456,32 @@
         <x-dhiran.pay-method id="pc-method" autofocus />
     </x-dhiran.sheet>
 
-    @php $renewDue = $isActive ? $service->renewalDue($loan) : 0; @endphp
+    @php
+        $renewDue = $isActive ? $service->renewalDue($loan) : 0;
+        // Paid in advance: the renewed loan takes its first months' interest on the renewal day too, so the clerk sees how much (it follows the rate typed below).
+        $renewAdv = null;
+        if ($isActive && (int) $loan->advance_interest_months > 0 && \App\Models\Dhiran\DhiranSettings::getForShop($loan->shop_id)->advance_interest_enabled) {
+            $n = min((int) $loan->advance_interest_months, 3);
+            $renewAdv = ['months' => $n, 'days' => (int) today()->diffInDays(today()->addMonthsNoOverflow($n)), 'principal' => (float) $loan->outstanding_principal];
+        }
+    @endphp
     <x-dhiran.sheet id="renewModal" title="Renew Loan" :sub="$loan->loan_number . ' · ' . ($loan->customer->name ?? '')" :action="route('dhiran.renew', $loan)" submit="Renew Loan" busy="Renewing…">
         @if($renewDue > 0)
             <p class="dd-takes">To renew, collect {{ $rupee($renewDue) }} now: interest and penalty due (at least the minimum interest), up to {{ $through }}. Interest for any days since is added.</p>
             <x-dhiran.pay-method id="rn-method" label="Paid by" autofocus />
         @endif
-        @if((int) $loan->advance_interest_months > 0)
-            <p class="dd-takes">This loan is paid in advance, so the renewed loan is too: its first {{ $loan->advance_interest_months }} month{{ $loan->advance_interest_months > 1 ? 's' : '' }} of interest is also taken now, at the rate and tenure below. The advance not yet used on this loan stays with the shop.</p>
-        @endif
-        <div>
-            <label for="rn-tenure">New Tenure (Months)</label>
-            <input id="rn-tenure" type="number" inputmode="numeric" name="tenure_months" min="1" @if($renewDue <= 0) autofocus @endif value="{{ $loan->tenure_months }}" class="dh-form-control dd-input">
-        </div>
-        <div>
-            <label for="rn-rate">New Interest Rate (%/month)</label>
-            <input id="rn-rate" type="number" step="0.01" inputmode="decimal" name="interest_rate_monthly" value="{{ $loan->interest_rate_monthly }}" class="dh-form-control dd-input">
+        <div x-data="{ rate: {{ (float) $loan->interest_rate_monthly }}, adv: @js($renewAdv) }" class="dd-fields">
+            @if($renewAdv)
+                <p class="dd-takes">This loan is paid in advance, so the renewed loan is too: collect <strong x-text="'₹' + (Math.round(adv.principal * (Number(rate) || 0) * adv.days / 30) / 100).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></strong> more now, the first {{ $renewAdv['months'] }} month{{ $renewAdv['months'] > 1 ? 's' : '' }} of the new loan's interest at the rate below. The advance not yet used on this loan stays with the shop.</p>
+            @endif
+            <div>
+                <label for="rn-tenure">New Tenure (Months)</label>
+                <input id="rn-tenure" type="number" inputmode="numeric" name="tenure_months" min="1" @if($renewDue <= 0) autofocus @endif value="{{ $loan->tenure_months }}" class="dh-form-control dd-input">
+            </div>
+            <div>
+                <label for="rn-rate">New Interest Rate (%/month)</label>
+                <input id="rn-rate" type="number" step="0.01" inputmode="decimal" name="interest_rate_monthly" x-model.number="rate" value="{{ $loan->interest_rate_monthly }}" class="dh-form-control dd-input">
+            </div>
         </div>
     </x-dhiran.sheet>
 </x-dhiran-layout>

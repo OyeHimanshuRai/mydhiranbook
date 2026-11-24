@@ -470,6 +470,16 @@ class AdvanceInterestTest extends TestCase
         }
     }
 
+    public function test_a_renewal_never_takes_more_months_than_the_new_tenure(): void
+    {
+        $l = $this->loan(['advance_interest_months' => 3]);
+        $this->at($this->day(10));
+        $new = $this->t(fn () => $this->svc->renewLoan($this->fresh($l), 2));
+
+        $this->assertSame(2, (int) $new->advance_interest_months, 'a 2 month loan cannot take 3 months in advance');
+        $this->assertSame(2, (int) $new->interest_periods_paid);
+    }
+
     public function test_a_renewal_of_a_loan_paid_afterwards_stays_that_way(): void
     {
         $l = $this->loan(['advance_interest_months' => 0]);
