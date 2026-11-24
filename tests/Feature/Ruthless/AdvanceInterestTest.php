@@ -317,6 +317,72 @@ class AdvanceInterestTest extends TestCase
         $this->assertEqualsWithDelta(0.0, (float) $end->interest_prepaid, 0.05, "{$type}: nothing left over");
     }
 
+    #[DataProvider('interestTypes')]
+    public function test_every_month_paid_on_time_costs_its_real_days_and_ends_at_zero_for_every_type(string $type): void
+    {
+        // due date => days in the period it pays: Dec 24 to Jan 24 = 31, Jan 24 to Feb 24 = 31, Feb 24 to Mar 24 = 28, Mar 24 to Apr 24 = 31
+        $l = $this->loan(['interest_type' => $type]);
+        $periods = ['2026-12-24' => [31, '2027-01-24'], '2027-01-24' => [31, '2027-02-24'], '2027-02-24' => [28, '2027-03-24'], '2027-03-24' => [31, '2027-04-24']];
+        foreach ($periods as $due => [$days, $end]) {
+            $expected = round(100000 * 0.02 / 30 * $days, 2);
+            $this->assertEqualsWithDelta($expected, $this->amountOn($l, $due), 0.02, "{$type}: {$due} pays {$days} days");
+            $this->payInstallmentOn($l, $due);
+            $f = $this->accrueOn($l, $end);
+            $this->assertEqualsWithDelta(0.0, (float) $f->outstanding_interest, 0.05, "{$type}: nothing owed at {$end}");
+            $this->assertEqualsWithDelta(0.0, (float) $f->interest_prepaid, 0.05, "{$type}: nothing left over at {$end}");
+        }
+        $this->assertSame(5, (int) $this->fresh($l)->interest_periods_paid);
+    }
+
+    #[DataProvider('interestTypes')]
+    public function test_a_part_payment_then_the_installment_ends_at_zero_for_every_type(string $type): void
+    {
+        $l = $this->loan(['interest_type' => $type]);
+        $this->at($this->day(15));
+        $this->t(fn () => $this->svc->recordPayment($this->fresh($l), 20000));
+
+        $this->assertEquals(1453.33, $this->amountOn($l, '2026-12-24'), "{$type}: 31 days on 80000 less the 200 left");
+        $this->payInstallmentOn($l, '2026-12-24');
+        $end = $this->accrueOn($l, '2027-01-24');
+        $this->assertEqualsWithDelta(0.0, (float) $end->outstanding_interest, 0.05, $type);
+        $this->assertEqualsWithDelta(0.0, (float) $end->interest_prepaid, 0.05, $type);
+    }
+
+    #[DataProvider('interestTypes')]
+    public function test_the_first_advance_and_early_close_follow_every_type(string $type): void
+    {
+        $this->assertEquals(2000.00, (float) $this->loan(['interest_type' => $type])->interest_prepaid, "{$type}: 30 days");
+        $this->assertEquals(4066.67, (float) $this->loan(['interest_type' => $type, 'advance_interest_months' => 2])->interest_prepaid, "{$type}: 61 days");
+
+        $l = $this->loan(['interest_type' => $type]);
+        $this->at($this->day(20));
+        $this->t(fn () => $this->svc->recordPayment($this->fresh($l), 100000));
+        $this->assertSame('closed', $this->fresh($l)->status, "{$type}: pays the principal only, the advance stays with the shop");
+    }
+
+    #[DataProvider('interestTypes')]
+    public function test_a_missed_month_is_settled_exactly_for_every_type_and_only_compound_charges_interest_on_interest(string $type): void
+    {
+        $l = $this->loan(['interest_type' => $type]);
+        $this->payInstallmentOn($l, '2026-12-24');
+        // nothing paid after Jan 24: Mar 5 is 40 days later (31 to Feb 24, then 9)
+        $mar = $this->accrueOn($l, '2027-03-05');
+        $simple = round(100000 * 0.02 / 30 * 40, 2); // Jan 24 to Mar 5 on 100000
+
+        if ($type === 'compound') {
+            $this->assertGreaterThan($simple + 0.5, (float) $mar->outstanding_interest, 'unpaid interest at the Feb 24 anniversary earns interest');
+        } else {
+            $this->assertEqualsWithDelta($simple, (float) $mar->outstanding_interest, 0.05, "{$type}: simple interest, nothing on interest");
+        }
+        $this->payInstallmentOn($l, '2027-03-05'); // period 3 (to Feb 24, already past): settles what is owed
+        $this->payInstallmentOn($l, '2027-03-05'); // period 4 (Feb 24 to Mar 24): the rest of March
+        $f = $this->fresh($l);
+        $this->assertEquals(0.00, (float) $f->outstanding_interest);
+        $end = $this->accrueOn($l, '2027-03-24');
+        $this->assertEqualsWithDelta(0.0, (float) $end->outstanding_interest, 0.05, $type);
+        $this->assertEqualsWithDelta(0.0, (float) $end->interest_prepaid, 0.05, $type);
+    }
+
     public static function interestTypes(): array
     {
         return ['flat' => ['flat'], 'daily' => ['daily'], 'compound' => ['compound']];
