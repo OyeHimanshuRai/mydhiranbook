@@ -32,6 +32,8 @@
             . "The above loan has matured on {$maturityDate} and the grace period ended on {$graceEnd}. Despite reminders, the outstanding amount of {$n2($totalOutstanding)} remains unpaid.\n\n"
             . "You are hereby requested to settle the total outstanding amount within {$forfeitureNoticeDays} days from the date of this notice, failing which we shall be constrained to forfeit and dispose of the pledged ornaments as per the terms of the loan agreement.";
         $systemWarning = "WARNING: If the outstanding amount is not settled within {$forfeitureNoticeDays} days from the date of this notice (i.e. by {$deadline->format('d M Y')}), the pledged gold ornaments will be forfeited and disposed of to recover the dues without further notice.";
+        $show = \App\Models\Dhiran\DhiranSettings::receiptVisibility((int) $loan->shop_id, 'notice'); // the owner's Settings > Receipt switches; the Loan Number is always printed
+        $any = fn (string ...$keys) => collect($keys)->contains(fn ($k) => $show($k));
         $edit = $loan->forfeiture_notice_edit;
         $showSystem = request()->boolean('original') || ! $edit;
         $bodyText = $showSystem ? $systemBody : $edit['body'];
@@ -77,49 +79,49 @@
         <div class="receipt">
             <header class="receipt-head">
                 <div>
-                    <div class="brand-mark">
+                    @if($show('title'))<div class="brand-mark">
                         <x-icon name="triangle-alert" />
                         FORFEITURE NOTICE
-                    </div>
-                    <p class="shop-name">{{ $shopName }}</p>
-                    @if($shopAddress)
+                    </div>@endif
+                    @if($show('shop_name'))<p class="shop-name">{{ $shopName }}</p>@endif
+                    @if($shopAddress && $show('shop_address'))
                         <p class="shop-meta">{{ $shopAddress }}</p>
                     @endif
-                    <p class="shop-meta">
+                    @if($show('shop_contact'))<p class="shop-meta">
                         @if($shopContact) {{ $shopContact }} @endif
                         @if($shopContact && $shopEmail) &middot; @endif
                         @if($shopEmail) {{ $shopEmail }} @endif
-                    </p>
-                    @if($shopGstin)
+                    </p>@endif
+                    @if($shopGstin && $show('shop_gstin'))
                         <p class="shop-meta">GSTIN: {{ $shopGstin }}</p>
                     @endif
                 </div>
                 <div>
-                    <h1 class="receipt-title">Forfeiture Notice</h1>
-                    <div class="receipt-sub">Date: {{ $issuedOn->format('d M Y') }}</div>
+                    @if($show('title'))<h1 class="receipt-title">Forfeiture Notice</h1>@endif
+                    @if($show('notice_date'))<div class="receipt-sub">Date: {{ $issuedOn->format('d M Y') }}</div>@endif
                     <span class="receipt-pill">{{ $loan->loan_number }}</span>
                 </div>
             </header>
 
             <div class="receipt-body">
                 <section class="detail-grid">
-                    <article class="detail-card">
+                    @if($show('from'))<article class="detail-card">
                         <p class="detail-label">From</p>
                         <p class="detail-name">{{ $shopName }}</p>
                         @if($shopAddress)
                             <p class="detail-text">{{ $shopAddress }}</p>
                         @endif
-                    </article>
-                    <article class="detail-card">
+                    </article>@endif
+                    @if($any('to_name', 'to_contact'))<article class="detail-card">
                         <p class="detail-label">To</p>
-                        <p class="detail-name">{{ $customer?->name ?? 'Walk-in Customer' }}</p>
-                        <p class="detail-text">
+                        @if($show('to_name'))<p class="detail-name">{{ $customer?->name ?? 'Walk-in Customer' }}</p>@endif
+                        @if($show('to_contact'))<p class="detail-text">
                             {{ \App\Support\Mobile::forDisplay($customer?->mobile) ?: 'No mobile available' }}
                             @if($customer?->address)
                                 <br>{{ $customer->address }}
                             @endif
-                        </p>
-                    </article>
+                        </p>@endif
+                    </article>@endif
                 </section>
 
                 <section class="meta-strip">
@@ -127,44 +129,44 @@
                         <p class="meta-box-label">Loan No.</p>
                         <p class="meta-box-value">{{ $loan->loan_number }}</p>
                     </div>
-                    <div class="meta-box">
+                    @if($show('loan_date'))<div class="meta-box">
                         <p class="meta-box-label">Loan Date</p>
                         <p class="meta-box-value">{{ $loanDate }}</p>
-                    </div>
-                    <div class="meta-box">
+                    </div>@endif
+                    @if($show('maturity_date'))<div class="meta-box">
                         <p class="meta-box-label">Maturity Date</p>
                         <p class="meta-box-value">{{ $maturityDate }}</p>
-                    </div>
-                    <div class="meta-box">
+                    </div>@endif
+                    @if($show('days_overdue'))<div class="meta-box">
                         <p class="meta-box-label">Days Overdue</p>
                         <p class="meta-box-value">{{ $loan->maturity_date ? max(0, (int) $loan->maturity_date->copy()->startOfDay()->diffInDays($issuedOn->copy()->startOfDay(), false)) : 0 }}</p>
-                    </div>
+                    </div>@endif
                 </section>
 
-                <section class="ledger">
-                    <div class="ledger-row"><span>Outstanding Principal</span><strong>{{ number_format((float) $loan->outstanding_principal, 2) }}</strong></div>
-                    <div class="ledger-row"><span>Outstanding Interest</span><strong>{{ number_format((float) $loan->outstanding_interest, 2) }}</strong></div>
-                    <div class="ledger-row"><span>Outstanding Penalty</span><strong>{{ number_format((float) $loan->outstanding_penalty, 2) }}</strong></div>
-                    <div class="ledger-row ledger-total"><span>Total Outstanding</span><strong>{{ number_format($totalOutstanding, 2) }}</strong></div>
-                </section>
+                @if($any('principal_due', 'interest_due', 'penalty_due', 'total_due'))<section class="ledger">
+                    @if($show('principal_due'))<div class="ledger-row"><span>Outstanding Principal</span><strong>{{ number_format((float) $loan->outstanding_principal, 2) }}</strong></div>@endif
+                    @if($show('interest_due'))<div class="ledger-row"><span>Outstanding Interest</span><strong>{{ number_format((float) $loan->outstanding_interest, 2) }}</strong></div>@endif
+                    @if($show('penalty_due'))<div class="ledger-row"><span>Outstanding Penalty</span><strong>{{ number_format((float) $loan->outstanding_penalty, 2) }}</strong></div>@endif
+                    @if($show('total_due'))<div class="ledger-row ledger-total"><span>Total Outstanding</span><strong>{{ number_format($totalOutstanding, 2) }}</strong></div>@endif
+                </section>@endif
 
-                <section class="notice-body">
+                @if($show('letter'))<section class="notice-body">
                     <p>Dear <strong>{{ $customer?->name ?? 'Sir/Madam' }}</strong>,</p>
                     @foreach(preg_split('/\n\s*\n/', trim($bodyText)) as $para)
                         <p>{!! nl2br(e($para)) !!}</p>
                     @endforeach
-                </section>
+                </section>@endif
 
-                <section class="warning-box">{!! nl2br(e($warningText)) !!}</section>
+                @if($show('warning'))<section class="warning-box">{!! nl2br(e($warningText)) !!}</section>@endif
 
-                <div class="signature-row">
+                @if($show('signatures'))<div class="signature-row">
                     <div class="signature-block">
                         <div class="signature-line">Date</div>
                     </div>
                     <div class="signature-block">
                         <div class="signature-line">For {{ $shopName }}</div>
                     </div>
-                </div>
+                </div>@endif
             </div>
         </div>
 

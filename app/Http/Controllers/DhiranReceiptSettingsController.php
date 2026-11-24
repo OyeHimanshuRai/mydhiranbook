@@ -40,6 +40,12 @@ class DhiranReceiptSettingsController extends Controller
         'payment.balance_principal' => 'Loan amount still to pay', 'payment.balance_interest' => 'Interest still to pay',
         'payment.balance_penalty' => 'Penalty still to pay', 'payment.balance_total' => 'Everything still to pay',
         'payment.signatures' => 'A line for the signature',
+        'notice.shop_name' => 'Your shop name at the top', 'notice.shop_address' => 'Your shop address under the name', 'notice.shop_contact' => 'Shop phone and email, when saved',
+        'notice.shop_gstin' => 'Printed only if the shop has one', 'notice.title' => 'The words "Forfeiture Notice"', 'notice.notice_date' => 'The day the notice was issued',
+        'notice.from' => 'A box naming the shop', 'notice.to_name' => "The borrower's name", 'notice.to_contact' => "The borrower's phone and address",
+        'notice.loan_date' => 'The day the loan was given', 'notice.maturity_date' => 'The day the loan fell due', 'notice.days_overdue' => 'How late the loan was when the notice was issued',
+        'notice.principal_due' => 'Loan amount still to pay', 'notice.interest_due' => 'Interest still to pay', 'notice.penalty_due' => 'Penalty still to pay', 'notice.total_due' => 'Everything still to pay',
+        'notice.letter' => 'The letter to the borrower (you can edit its wording on the notice)', 'notice.warning' => 'The warning with the last date', 'notice.signatures' => 'Date and shop signature lines',
     ];
 
     public function edit()

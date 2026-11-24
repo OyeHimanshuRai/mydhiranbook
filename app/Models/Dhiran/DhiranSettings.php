@@ -126,6 +126,20 @@ class DhiranSettings extends Model
                 'Footer' => ['signatures' => 'Signature lines'],
             ],
         ],
+        'notice' => [
+            'label' => 'Forfeiture notice',
+            'groups' => [
+                'Heading' => [
+                    'shop_name' => 'Shop name', 'shop_address' => 'Shop address', 'shop_contact' => 'Shop phone and email',
+                    'shop_gstin' => 'Shop GSTIN', 'title' => 'Document title', 'notice_date' => 'Date of the notice',
+                ],
+                'Parties' => ['from' => 'From (the shop)', 'to_name' => 'Borrower name', 'to_contact' => 'Borrower phone and address'],
+                'Loan' => ['loan_date' => 'Loan date', 'maturity_date' => 'Maturity date', 'days_overdue' => 'Days overdue'],
+                'Amount due' => ['principal_due' => 'Outstanding principal', 'interest_due' => 'Outstanding interest', 'penalty_due' => 'Outstanding penalty', 'total_due' => 'Total outstanding'],
+                'Letter' => ['letter' => 'The letter', 'warning' => 'The warning with the deadline'],
+                'Footer' => ['signatures' => 'Signature lines'],
+            ],
+        ],
     ];
 
     /** Every switchable "receipt.key" string. */

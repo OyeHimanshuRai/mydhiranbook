@@ -135,4 +135,51 @@ class ForfeitureNoticeReprintTest extends TestCase
         DhiranLoan::withoutGlobalScopes()->whereKey($loan->id)->update(['status' => 'closed']);
         $this->save($shop, $owner, $loan, ['body' => 'Late edit.', 'warning' => 'Warn.'])->assertStatus(422);
     }
+
+    public function test_the_owner_chooses_what_the_notice_shows_in_receipt_settings(): void
+    {
+        [$shop, $owner, $loan] = $this->noticeLoan();
+        $printed = fn (string $html) => substr($html, strpos($html, 'class="receipt-page"')); // the document, not the owner's editor box above it
+        $all = $printed($this->page($shop, $owner, $loan)->getContent());
+        foreach (['Outstanding Principal', 'Total Outstanding', 'WARNING:', 'meta-box-label">Days Overdue', 'Dear', 'signature-line'] as $needle) {
+            $this->assertStringContainsString($needle, $all, "{$needle} shows by default");
+        }
+
+        DhiranSettings::getForShop($shop->id)->update(['hidden_receipt_fields' => ['notice.total_due', 'notice.warning', 'notice.days_overdue', 'notice.signatures', 'notice.to_contact']]);
+        $some = $printed($this->page($shop, $owner, $loan)->getContent());
+        $this->assertStringNotContainsString('Total Outstanding', $some);
+        $this->assertStringNotContainsString('WARNING:', $some);
+        $this->assertStringNotContainsString('meta-box-label">Days Overdue', $some, 'the box is off (the letter text may still mention it)');
+        $this->assertStringNotContainsString('signature-line', $some);
+        $this->assertStringContainsString('Outstanding Principal', $some, 'what stays switched on still prints');
+        $this->assertStringContainsString($loan->loan_number, $some, 'the loan number is always printed');
+
+        DhiranSettings::getForShop($shop->id)->update(['hidden_receipt_fields' => array_map(fn ($k) => "notice.$k", array_merge(...array_values(array_map('array_keys', DhiranSettings::RECEIPT_FIELDS['notice']['groups']))))]);
+        $none = $printed($this->page($shop, $owner, $loan)->assertOk()->getContent());
+        $this->assertStringContainsString($loan->loan_number, $none, 'even with everything off, the loan number prints');
+        $this->assertStringNotContainsString('Outstanding Principal', $none);
+    }
+
+    public function test_no_document_lets_the_loan_number_be_switched_off(): void
+    {
+        [$shop, $owner] = $this->noticeLoan();
+        foreach (DhiranSettings::RECEIPT_FIELDS as $receipt => $def) {
+            foreach ($def['groups'] as $fields) {
+                $this->assertArrayNotHasKey('loan_number', $fields, "{$receipt} has no switch for the loan number");
+            }
+        }
+        $html = TenantContext::runFor($shop->id, fn () => $this->actingAs($owner)->get('http://127.0.0.1:8787/dhiran/settings/receipt'))->getContent();
+        foreach (array_keys(DhiranSettings::RECEIPT_FIELDS) as $receipt) {
+            $this->assertStringContainsString("id=\"rs-{$receipt}-loan_number\"", $html, "{$receipt}: the locked, always-printed loan number row");
+            $this->assertStringNotContainsString("value=\"{$receipt}.loan_number\"", $html);
+        }
+    }
+
+    public function test_receipt_settings_lists_the_notice_as_a_third_document(): void
+    {
+        [$shop, $owner] = $this->noticeLoan();
+        $html = TenantContext::runFor($shop->id, fn () => $this->actingAs($owner)->get('http://127.0.0.1:8787/dhiran/settings/receipt'))->assertOk()->getContent();
+        $this->assertStringContainsString('Forfeiture notice', $html);
+        $this->assertStringContainsString('name="show[]" value="notice.warning"', $html);
+    }
 }
