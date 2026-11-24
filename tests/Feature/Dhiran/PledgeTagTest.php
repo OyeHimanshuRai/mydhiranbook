@@ -57,6 +57,8 @@ class PledgeTagTest extends TestCase
             $this->assertStringContainsString($needle, $html, $needle);
         }
         $this->assertStringContainsString('2 items', $html);
+        $this->assertStringContainsString('size: 58mm auto', $html, 'bill size by default, not a full page');
+        $this->assertStringContainsString('size: 80mm auto', $this->fetch("/dhiran/loans/{$this->loan->id}/tag?w=80")->getContent(), 'an 80 mm roll on request');
         $this->assertStringNotContainsString('9815610001', $html, 'the mobile number is not printed on a tag that sits on a bag');
     }
 

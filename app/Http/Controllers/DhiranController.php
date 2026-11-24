@@ -762,7 +762,9 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         $loan->load(['customer', 'items']);
         $shop = $loan->shop;
 
-        return view('dhiran.tag', compact('loan', 'shop'));
+        $width = (int) request()->query('w') === 80 ? 80 : 58; // bill roll width in mm
+
+        return view('dhiran.tag', compact('loan', 'shop', 'width'));
     }
 
     public function closureCertificate(DhiranLoan $loan)
