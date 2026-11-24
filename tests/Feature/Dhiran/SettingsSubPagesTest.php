@@ -82,7 +82,7 @@ class SettingsSubPagesTest extends TestCase
         foreach ($pages as $path => $label) {
             $html = $this->page($owner, $path)->assertOk()->getContent();
             [$all, $cur] = $this->items($html);
-            $this->assertSame(['Loan settings', 'Receipt settings', 'Users & roles', 'Plan & billing'], $all, $path);
+            $this->assertSame(['Loan settings', 'Receipt settings', 'Notifications', 'Users & roles', 'Plan & billing'], $all, $path);
             $this->assertCount(1, $cur, $path);
             $this->assertStringStartsWith(explode(' ', $label)[0], $cur[0], $path);
             $this->assertStringContainsString($label, html_entity_decode(strip_tags($html)), "$path heading");
@@ -158,7 +158,7 @@ class SettingsSubPagesTest extends TestCase
     {
         $user = $this->userWith($this->shop(), ['dhiran.view', 'dhiran.settings']);
         [$all] = $this->items($this->page($user, '/dhiran/settings')->assertOk()->getContent());
-        $this->assertSame(['Loan settings', 'Receipt settings'], $all);
+        $this->assertSame(['Loan settings', 'Receipt settings', 'Notifications'], $all);
         $this->page($user, '/settings')->assertForbidden();
     }
 

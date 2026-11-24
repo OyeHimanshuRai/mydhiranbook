@@ -53,7 +53,7 @@
         <aside class="dh-sidebar" id="dh-sidebar" x-ref="sidebar" :role="drawer ? 'dialog' : null" :aria-modal="drawer ? 'true' : null" :aria-label="drawer ? 'Main menu' : null">
             <div class="dh-sidebar-head">
                 <a href="{{ route('dhiran.loans') }}" class="dh-brand" aria-label="MyDhiranBook, Loans" @click="show = false">
-                    <span class="dh-wordmark" aria-hidden="true">dhiran<span>.</span></span>
+                    <span class="dh-wordmark" aria-hidden="true">mydhiranbook<span>.</span></span>
                 </a>
                 <button type="button" class="dh-sidebar-close"
                         @click="closeMenu()"
@@ -127,6 +127,7 @@
                         <div class="min-w-0">
                             <h1 class="page-title">{{ $title ?? 'MyDhiranBook' }}</h1>
                         </div>
+                        <x-dhiran.notice-bell />
                     </div>
                 </div>
             @endif
@@ -144,6 +145,7 @@
         </main>
     </div>
     <div id="global-toast" class="global-toast" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true"></div>
+    @if((bool) auth()->user()?->shop_id)<x-dhiran.notice-card />@endif
     @stack('scripts')
 </body>
 </html>

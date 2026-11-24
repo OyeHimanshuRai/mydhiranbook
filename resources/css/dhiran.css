@@ -899,7 +899,7 @@ turbo-frame#dh-results { display: contents; }  /* list pages make it the scroll 
 }
 .dh-app .dh-page-header > .dh-page-header-content { display: flex; align-items: center; flex: 1 1 auto; gap: var(--sp-3); min-width: 0; }
 .dh-header-mobile-fab { margin-left: var(--sp-3); }
-.dh-app .dh-page-header-content > :not(.dh-header-toggle):not(.page-actions) { flex: 1 1 0; min-width: 0; }
+.dh-app .dh-page-header-content > :not(.dh-header-toggle):not(.page-actions):not(.dh-bell) { flex: 1 1 0; min-width: 0; }
 .page-title {
     margin: 0; max-width: 100%; color: var(--dh-ink); font-size: var(--fl-fs-h1); line-height: var(--fl-lh-head);
     font-weight: 600; letter-spacing: -0.01em; overflow-wrap: break-word; text-wrap: balance;
@@ -1275,8 +1275,9 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
     .dh-page-header::after { display: none; }
     .dh-page-header :is(.page-title, h1) { color: var(--kh-on-cloth); }
     .dh-page-header :is(.page-subtitle, p) { color: var(--kh-on-cloth-soft); }
-    .dh-header-toggle, .dh-header-mobile-fab-toggle { background: transparent; color: var(--kh-on-cloth); border-color: var(--kh-cloth-line); }
-    .dh-header-toggle:active, .dh-header-mobile-fab-toggle:active, .dh-header-mobile-fab-shell.is-open .dh-header-mobile-fab-toggle { background: color-mix(in srgb, #fff 12%, transparent); }
+    .dh-header-toggle, .dh-header-mobile-fab-toggle, .dh-page-header .dh-bell { background: transparent; color: var(--kh-on-cloth); border-color: var(--kh-cloth-line); }
+    .dh-page-header .dh-bell { border-color: transparent; }
+    .dh-header-toggle:active, .dh-page-header .dh-bell:active, .dh-header-mobile-fab-toggle:active, .dh-header-mobile-fab-shell.is-open .dh-header-mobile-fab-toggle { background: color-mix(in srgb, #fff 12%, transparent); }
     .dh-page-header :is(a, button):focus-visible { outline-color: var(--kh-focus-on-cloth); }
     /* Actions pinned onto the cloth: the primary is a white button, the rest outline in white. */
     .dh-page-header .page-actions .btn { background: transparent; border-color: var(--kh-cloth-line); color: var(--kh-on-cloth); }
@@ -1502,3 +1503,30 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 [role="tabpanel"]:not([hidden]) { animation: kh-fade 140ms var(--ease-out); }
 
 @media print { .dh-table-card::before, .dh-stat::before, .dh-sidebar::after { display: none; } }
+
+/* Notices: the bell in the header band and the big centred card (owner 2026-11-24). Warn and info are an outline colour, never a fill. */
+.dh-bell { position: relative; flex: none; display: grid; place-items: center; width: var(--tap); height: var(--tap); padding: 0; border: 1px solid transparent; border-radius: var(--r-sm); background: transparent; color: var(--dh-ink-soft); cursor: pointer; }
+.dh-bell:hover { background: var(--dh-muted-surface); }
+.dh-bell svg { width: 22px; height: 22px; }
+.dh-bell-n { position: absolute; top: 2px; right: 2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--dh-danger); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
+.dh-app dialog.nc { width: min(100% - 32px, 38rem); max-height: min(90dvh, 42rem); }
+.dh-app dialog.nc[open] { display: flex; flex-direction: column; }
+.nc-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-5) var(--sp-5) var(--sp-3); border-bottom: 1px solid var(--dh-line); }
+.nc-x { flex: none; display: grid; place-items: center; width: var(--tap); height: var(--tap); margin: calc(var(--sp-2) * -1) calc(var(--sp-2) * -1) 0 0; padding: 0; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--dh-ink-soft); cursor: pointer; }
+.nc-x:hover { background: var(--dh-muted-surface); }
+.nc-x svg { width: 20px; height: 20px; }
+.nc-head h3 { margin: 0; font-size: var(--fl-fs-h1); line-height: var(--fl-lh-head); font-weight: 600; color: var(--dh-ink); }
+.nc-head p { margin: 2px 0 0; color: var(--dh-muted); font-size: var(--fl-fs-cell); }
+.nc-body { flex: 1 1 auto; overflow: auto; display: grid; gap: var(--sp-2); padding: var(--sp-4) var(--sp-5); }
+.nc-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: var(--tap); padding: var(--sp-3) var(--sp-4); border: 1px solid var(--dh-line); border-left-width: 4px; border-radius: var(--r-sm); background: var(--dh-card); color: var(--dh-ink); text-decoration: none; }
+.nc-row:hover, .nc-row:focus-visible { background: var(--dh-muted-surface); }
+.nc-danger { border-left-color: var(--dh-danger); }
+.nc-warn { border-left-color: var(--dh-warning-line); }
+.nc-info { border-left-color: var(--dh-line); }
+.nc-text { display: grid; gap: 2px; min-width: 0; }
+.nc-text strong { font-size: var(--fl-fs-body); font-weight: 600; overflow-wrap: anywhere; }
+.nc-text span { color: var(--dh-muted); font-size: var(--fl-fs-cell); }
+.nc-go { flex: none; display: inline-flex; align-items: center; gap: 2px; color: var(--dh-accent); font-weight: 600; font-size: var(--fl-fs-cell); }
+.nc-go svg { width: 16px; height: 16px; }
+.nc-empty { margin: 0; padding: var(--sp-6) 0; text-align: center; color: var(--dh-muted); }
+.nc-foot { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--sp-2); padding: var(--sp-3) var(--sp-5) var(--sp-4); border-top: 1px solid var(--dh-line); }

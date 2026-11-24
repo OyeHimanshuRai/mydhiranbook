@@ -9,6 +9,7 @@
     $items = array_filter([
         'loan' => ['Loan settings', route('dhiran.settings'), $user->can('dhiran.settings')],
         'receipt' => ['Receipt settings', route('dhiran.settings.receipt.edit'), $user->can('dhiran.settings')],
+        'notices' => ['Notifications', route('dhiran.settings.notices'), $user->can('dhiran.settings')],
         'users' => ['Users & roles', route('settings.edit', ['tab' => 'staff']), $user->can('staff.view')],
         'billing' => ['Plan & billing', route('subscription.status'), $user->isShopOwner()],
     ], fn ($i) => $i[2]);

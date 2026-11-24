@@ -86,6 +86,9 @@ use Illuminate\Support\Facades\Route;
             Route::patch('/settings', [\App\Http\Controllers\DhiranController::class, 'updateSettings'])->middleware('can:dhiran.settings')->name('settings.update');
             Route::get('/settings/receipt', [\App\Http\Controllers\DhiranReceiptSettingsController::class, 'edit'])->middleware('can:dhiran.settings')->name('settings.receipt.edit');
             Route::get('/settings/receipt/sample/{doc}', [\App\Http\Controllers\DhiranReceiptSettingsController::class, 'sample'])->middleware('can:dhiran.settings')->whereIn('doc', ['pledge', 'payment', 'notice', 'closure'])->name('settings.receipt.sample');
+            Route::post('/notices/seen', [\App\Http\Controllers\DhiranNoticeSettingsController::class, 'seen'])->middleware('can:dhiran.view')->name('notices.seen');
+            Route::get('/settings/notifications', [\App\Http\Controllers\DhiranNoticeSettingsController::class, 'edit'])->middleware('can:dhiran.settings')->name('settings.notices');
+            Route::patch('/settings/notifications', [\App\Http\Controllers\DhiranNoticeSettingsController::class, 'update'])->middleware('can:dhiran.settings')->name('settings.notices.update');
             Route::patch('/settings/receipt', [\App\Http\Controllers\DhiranReceiptSettingsController::class, 'update'])->middleware('can:dhiran.settings')->name('settings.receipt');
 
             // Reports — reports permission

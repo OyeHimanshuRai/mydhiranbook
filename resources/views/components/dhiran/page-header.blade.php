@@ -126,7 +126,7 @@
                 </div>
             @endif
         @endif
-
+        <x-dhiran.notice-bell />
     </div>
 
     @if($hasHeaderActions)

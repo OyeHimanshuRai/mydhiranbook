@@ -30,6 +30,10 @@ final class DhiranListFilters
     public const METALS = ['gold' => 'Gold', 'silver' => 'Silver', 'other' => 'Other'];
     public const OVERDUE = ['1-30' => '1–30 days late', '31-90' => '31–90 days late', '90+' => 'Over 90 days late'];
     public const MATURING = ['7' => 'Due in 7 days', '30' => 'Due in 30 days'];
+    /** Interest installments (paid-in-advance loans), by days until the next one is due; the notices card links here. */
+    public const INSTALLMENT = ['late' => 'Interest installment late', 'w1' => 'Interest due soon', 'w2' => 'Interest due later this week', 'w3' => 'Interest due this month']; // labels shown as chips come from Notices::filterLabels (the shop's own windows)
+    /** Where a loan stands before forfeiture: soon = the forfeiture point (maturity + grace) is within 30 days, notice = notice due now, ready = the notice deadline has come. */
+    public const FORFEIT = ['soon' => 'Forfeiture within 30 days', 'notice' => 'Forfeiture notice due', 'ready' => 'Ready to forfeit'];
     public const CASH_TYPES = ['in' => 'Money in', 'out' => 'Money out'];
     public const PER_PAGE = [20, 50, 100];
 
@@ -59,6 +63,8 @@ final class DhiranListFilters
             'amount_max' => ['nullable', 'numeric', 'min:0'],
             'overdue'    => ['nullable', Rule::in(array_keys(self::OVERDUE))],
             'maturing'   => ['nullable', Rule::in(array_keys(self::MATURING))],
+            'installment' => ['nullable', Rule::in(array_keys(self::INSTALLMENT))],
+            'forfeit'    => ['nullable', Rule::in(array_keys(self::FORFEIT))],
             'cash'       => ['nullable', Rule::in(array_keys(self::CASH_TYPES))], // not "type": the reports hub uses that
             'search'     => ['nullable', 'string', 'max:100'],
         ]);
@@ -123,8 +129,9 @@ final class DhiranListFilters
         if (isset($keep['period'])) {
             $chips[] = ['label' => $keep['period'] === 'custom' ? $this->period->label : self::PERIODS[$keep['period']], 'url' => $url(['period', 'from', 'to'])];
         }
-        foreach (['status' => self::STATUSES, 'metal' => self::METALS, 'overdue' => self::OVERDUE, 'maturing' => self::MATURING, 'cash' => self::CASH_TYPES] as $key => $labels) {
+        foreach (['status' => self::STATUSES, 'metal' => self::METALS, 'overdue' => self::OVERDUE, 'maturing' => self::MATURING, 'installment' => self::INSTALLMENT, 'forfeit' => self::FORFEIT, 'cash' => self::CASH_TYPES] as $key => $labels) {
             if (isset($keep[$key])) {
+                $labels = Notices::filterLabels((int) auth()->user()->shop_id)[$key] ?? $labels;
                 $chips[] = ['label' => $labels[$keep[$key]], 'url' => $url([$key])];
             }
         }
@@ -203,6 +210,13 @@ final class DhiranListFilters
         }
         if ($days = $this->get('maturing')) {
             $q->where('status', 'active')->whereBetween('maturity_date', [$today->toDateString(), $today->addDays((int) $days)->toDateString()]);
+        }
+
+        if ($band = $this->get('installment')) {
+            \App\Services\Dhiran\Notices::installmentWhere($q, $band, (int) auth()->user()->shop_id);
+        }
+        if ($stage = $this->get('forfeit')) {
+            \App\Services\Dhiran\Notices::forfeitWhere($q, $stage, (int) auth()->user()->shop_id);
         }
 
         return $q;

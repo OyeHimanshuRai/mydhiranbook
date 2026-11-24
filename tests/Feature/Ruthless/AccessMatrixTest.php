@@ -360,7 +360,8 @@ class AccessMatrixTest extends AdminTestCase
         $bad = []; $tried = 0;
         foreach ($this->routes() as $r) {
             $isShop = $this->mwHas($r, 'shop') || str_starts_with($r['uri'], 'subscription/');
-            if (! $isShop || $r['uri'] === 'subscription/payment/webhook') { continue; }
+            // notices/seen only records the caller's own "I saw today's card" (a per-user date, no shop data): any viewer may send it.
+            if (! $isShop || in_array($r['uri'], ['subscription/payment/webhook', 'dhiran/notices/seen'], true)) { continue; }
             foreach ($this->writes($r) as $m) {
                 $res = $this->send($m, $this->url($r, $w['ids']), $this->payload($w));
                 $tried++;

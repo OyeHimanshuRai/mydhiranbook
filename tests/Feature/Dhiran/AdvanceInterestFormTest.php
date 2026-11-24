@@ -175,7 +175,7 @@ class AdvanceInterestFormTest extends TestCase
         $plain = DhiranLoan::withoutGlobalScopes()->where('shop_id', $this->shop->id)->orderByDesc('id')->first();
         $this->activate($plain);
         $html = $this->as(fn ($t) => $t->get(self::HOST . "/dhiran/loans/{$plain->id}"))->getContent();
-        $this->assertStringNotContainsString('Interest installment', $html);
+        $this->assertStringNotContainsString('id="dd-inst-h"', $html); // the loan's own installment card (the shop-wide notice card may still mention installments)
     }
 
     public function test_collecting_the_installment_through_the_screen(): void

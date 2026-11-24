@@ -40,9 +40,17 @@ class DhiranSettings extends Model
         'sms_reminders_enabled',
         'reminder_days_before_due',
         'hidden_receipt_fields',
+        'notices_popup',
+        'notices_off',
+        'notices_forfeit_days',
+        'notices_interest_days',
     ];
 
     protected $casts = [
+        'notices_popup'                 => 'boolean',
+        'notices_off'                   => 'array',
+        'notices_interest_days'         => 'array',
+        'notices_forfeit_days'          => 'integer',
         'is_enabled'                    => 'boolean',
         'advance_interest_enabled'      => 'boolean',
         'advance_interest_default_months' => 'integer',

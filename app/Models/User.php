@@ -8,7 +8,7 @@ class User extends Authenticatable
     protected $fillable = ['name', 'email', 'password', 'shop_id', 'role', 'is_active','mobile_number','role_id','realm','email_verified_at','first_name','last_name','terms_accepted_at'];
     protected $attributes = ['is_active'=>true];
     protected $hidden = ['password', 'remember_token', 'email_verify_otp'];
-    protected $casts = ['password'=>'hashed', 'is_active'=>'boolean','email_verified_at'=>'datetime','terminated_at'=>'datetime','terms_accepted_at'=>'datetime','email_otp_expires_at'=>'datetime'];
+    protected $casts = ['password'=>'hashed', 'is_active'=>'boolean','email_verified_at'=>'datetime','terminated_at'=>'datetime','terms_accepted_at'=>'datetime','notices_seen_on'=>'date','email_otp_expires_at'=>'datetime'];
     protected static function booted(): void
     {
         static::creating(function (self $user): void {
