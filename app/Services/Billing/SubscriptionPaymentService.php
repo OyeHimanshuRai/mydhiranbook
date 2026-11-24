@@ -114,12 +114,12 @@ class SubscriptionPaymentService
     private function persistTerm(Plan $plan, string $cycle, float $price, string $paymentId, string $orderId, ?User $actor, ?ShopSubscription $hint): ShopSubscription
     {
         try {
-            [$sub, $created] = DB::transaction(function () use ($plan, $cycle, $price, $paymentId, $orderId, $actor, $hint) {
+            $sub = DB::transaction(function () use ($plan, $cycle, $price, $paymentId, $orderId, $actor, $hint) {
                 // re-read the payer under the lock: the actor object may predate onboarding attaching a shop
                 $payer = $actor ? User::whereKey($actor->id)->lockForUpdate()->first() : null;
                 $shopId = $payer?->shop_id ?? $hint?->shop_id;
                 if ($shopId) { Shop::whereKey($shopId)->lockForUpdate()->first(); }
-                if ($existing = $this->findExistingSubscription($paymentId)) { return [$existing, false]; }
+                if ($existing = $this->findExistingSubscription($paymentId)) { return $existing; }
                 if (ShopSubscription::where('razorpay_order_id', $orderId)->exists()) {
                     throw new \LogicException("Order {$orderId} is already paid by another payment; this one needs a refund.");
                 }
@@ -141,7 +141,8 @@ class SubscriptionPaymentService
                     'reason' => ($previous ? 'Renewal' : 'Payment').' via Razorpay: '.$paymentId.($previous ? " (previous subscription #{$previous->id})" : ''),
                 ]);
                 $this->receipts->issueSafely($sub);
-                return [$sub, true];
+                $this->markPaymentResolved($paymentId, $sub); // same transaction: a crash can never leave the term applied but the row open
+                return $sub;
             });
         } catch (UniqueConstraintViolationException $e) {
             Log::info('Concurrent payment application caught by unique constraint', ['payment_id' => $paymentId]);
@@ -154,7 +155,6 @@ class SubscriptionPaymentService
             return $sub;
         }
 
-        if ($created) { $this->markPaymentResolved($paymentId, $sub); }
         return $sub;
     }
 
@@ -176,7 +176,10 @@ class SubscriptionPaymentService
      */
     public function finalizeCapturedPayment(string $orderId, string $paymentId): ShopSubscription
     {
-        if ($existing = $this->findExistingSubscription($paymentId)) { return $existing; }
+        if ($existing = $this->findExistingSubscription($paymentId)) {
+            $this->markPaymentResolved($paymentId, $existing); // heals a row whose flag was lost before the atomic resolve existed
+            return $existing;
+        }
         // an admin dismissed this payment by hand (refunded/ignored): a later capture or reconcile must not grant a term for it
         if (SubscriptionEvent::where('event_type', 'payment.unresolved')->where('after->payment_id', $paymentId)->whereNotNull('after->resolved_by_admin_id')->exists()) {
             throw new \LogicException('This payment was dismissed by an admin; no term granted.');

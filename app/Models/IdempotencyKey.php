@@ -6,10 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Idempotency key cache row for /api/mobile/v1/ mutations.
+ * Submit-once key row for the Dhiran money forms.
  *
- * Written and read by App\Http\Middleware\EnsureIdempotency. Pruned by
- * `mobile:prune-idempotency-keys`. Deliberately has NO BelongsToShop global
+ * Written and read by App\Http\Middleware\DhiranSubmitOnce. Pruned daily by
+ * `dhiran:prune-idempotency-keys` (keys older than 30 days). Deliberately has NO BelongsToShop global
  * scope: the middleware queries by explicit (shop_id, user_id, key) tuple.
  */
 class IdempotencyKey extends Model
