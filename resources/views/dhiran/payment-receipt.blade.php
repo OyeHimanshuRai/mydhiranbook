@@ -21,6 +21,7 @@
     @include('dhiran._receipt-css')
 </head>
 <body class="rc-body dh-doc-payment-receipt">
+    @if($sample ?? false) @include('dhiran._sample-banner') @endif
     <div class="rc-bar actions">
         <button type="button" class="rc-btn btn" onclick="window.print()">Print</button>
         <a class="rc-btn rc-btn-light btn" href="{{ route('dhiran.show', $loan) }}">Back to Loan</a>

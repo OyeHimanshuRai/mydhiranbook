@@ -29,6 +29,7 @@
     @include('dhiran._receipt-css')
 </head>
 <body class="rc-body dh-doc-pledge-receipt">
+    @if($sample ?? false) @include('dhiran._sample-banner') @endif
     <div class="rc-bar receipt-no-print">
         <button type="button" class="rc-btn receipt-print-btn" onclick="window.print()"><x-icon name="printer" /> Print Receipt</button>
     </div>

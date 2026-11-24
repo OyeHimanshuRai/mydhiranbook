@@ -58,7 +58,6 @@ class DhiranReceiptSettingsController extends Controller
             'hints' => self::HINTS,
             // A refused save (text too long) comes back with what was posted: show those switches, not the stored ones.
             'printed' => session()->hasOldInput() ? (array) old('show', []) : array_values(array_diff($keys, $settings->hidden_receipt_fields ?? [])),
-            'sampleLoan' => DhiranLoan::query()->latest('id')->first(), // BelongsToShop scopes it to this shop
         ]);
     }
 
@@ -77,5 +76,57 @@ class DhiranReceiptSettingsController extends Controller
             ->update(['hidden_receipt_fields' => array_values(array_diff($keys, $data['show'] ?? []))] + Arr::except($data, 'show')); // text fields are saved only when posted
 
         return redirect()->route('dhiran.settings.receipt.edit')->with('success', 'Receipt settings saved.');
+    }
+
+    /**
+     * A sample of one document, built from made-up records that are never saved, so a shop with no loans yet can see what it prints.
+     * It is the real view with the owner's saved switches applied; the sample banner and mark say it is not real.
+     */
+    public function sample(string $doc)
+    {
+        $user = auth()->user();
+        $shop = $user->shop;
+        $settings = \App\Models\Dhiran\DhiranSettings::getForShop((int) $shop->id);
+        $today = now();
+        $number = ($settings->loan_number_prefix ?: 'DH-') . str_pad('1', max(1, (int) ($settings->loan_number_digits ?: 6)), '0', STR_PAD_LEFT);
+
+        $customer = new \App\Models\Customer(['first_name' => 'Sample', 'last_name' => 'Borrower', 'mobile' => '9876543210', 'address' => '12 Sample Street, Pune']);
+        $overdue = $doc === 'notice';
+        $loan = (new \App\Models\Dhiran\DhiranLoan())->forceFill([
+            'shop_id' => $shop->id, 'loan_number' => $number, 'status' => 'active', 'interest_type' => 'flat', 'interest_rate_monthly' => 2, 'tenure_months' => 6,
+            'loan_date' => $overdue ? $today->copy()->subMonths(7)->toDateString() : $today->toDateString(),
+            'maturity_date' => $overdue ? $today->copy()->subMonth()->toDateString() : $today->copy()->addMonths(6)->toDateString(),
+            'principal_amount' => 50000, 'processing_fee' => 250, 'ltv_ratio_applied' => 75, 'grace_period_days' => (int) ($settings->grace_period_days ?: 5),
+            'outstanding_principal' => 50000, 'outstanding_interest' => $overdue ? 2166.67 : 0, 'outstanding_penalty' => $overdue ? 250 : 0, 'advance_interest_months' => 0,
+            'kyc_pan' => 'ABCDE1234F', 'kyc_aadhaar' => 'XXXX XXXX 1234', 'terms_text' => $settings->receipt_terms_text ?: 'Interest is charged per month. Items not redeemed by the maturity date and grace period may be forfeited and sold.',
+            'forfeiture_notice_sent_at' => $overdue ? $today->copy()->subDay() : null, 'forfeiture_deadline' => $overdue ? $today->copy()->addDays(29)->toDateString() : null,
+        ]);
+        $loan->id = 0; // not a real record: only so links on the page can be built
+        $loan->setRelation('customer', $customer);
+        $loan->setRelation('items', collect([
+            (new \App\Models\Dhiran\DhiranLoanItem())->forceFill(['description' => 'Gold chain', 'metal_type' => 'gold', 'purity' => 22, 'gross_weight' => 12.5, 'stone_weight' => 0.5, 'net_metal_weight' => 12, 'fine_weight' => 11, 'market_value' => 66000, 'loan_value' => 49500, 'huid' => 'AB12CD', 'status' => 'pledged']),
+            (new \App\Models\Dhiran\DhiranLoanItem())->forceFill(['description' => 'Silver anklet', 'metal_type' => 'silver', 'purity' => 925, 'gross_weight' => 40, 'stone_weight' => 0, 'net_metal_weight' => 40, 'fine_weight' => 37, 'market_value' => 3400, 'loan_value' => 2550, 'huid' => null, 'status' => 'pledged']),
+        ]));
+        $sample = true;
+
+        if ($doc === 'pledge') {
+            $show = \App\Models\Dhiran\DhiranSettings::receiptVisibility((int) $shop->id, 'pledge');
+
+            return view('dhiran.receipt', compact('loan', 'shop', 'show', 'sample'));
+        }
+        if ($doc === 'payment') {
+            $payment = (new \App\Models\Dhiran\DhiranPayment())->forceFill([
+                'type' => 'interest_payment', 'direction' => 'in', 'amount' => 1000, 'payment_method' => 'upi', 'payment_date' => $today->toDateString(),
+                'interest_component' => 1000, 'principal_component' => 0, 'penalty_component' => 0, 'processing_fee_component' => 0,
+                'outstanding_principal_after' => 50000, 'outstanding_interest_after' => 0, 'outstanding_penalty_after' => 0,
+            ]);
+            $payment->id = 1;
+            $payment->created_at = $today;
+            $show = \App\Models\Dhiran\DhiranSettings::receiptVisibility((int) $shop->id, 'payment');
+
+            return view('dhiran.payment-receipt', compact('loan', 'payment', 'show', 'sample'));
+        }
+
+        return view('dhiran.forfeiture-notice', compact('loan', 'sample'));
     }
 }

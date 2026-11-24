@@ -106,7 +106,7 @@ class AccessMatrixTest extends AdminTestCase
         $targetAdmin = $this->admin(['email' => 'target-admin@example.test', 'role' => 'support', 'permissions' => []]);
 
         return compact('a', 'b', 'ownerA', 'staffA', 'viewerA', 'ownerB', 'readerA', 'delegateA', 'roles', 'loan', 'cust', 'loanB', 'custB', 'sub') + ['ids' => [
-            'loan' => $loan->id, 'payment' => $pay->id, 'customer' => $cust->id, 'item' => $itemRow->id, 'attachment' => $att->id, 'token' => $token,
+            'loan' => $loan->id, 'payment' => $pay->id, 'customer' => $cust->id, 'item' => $itemRow->id, 'attachment' => $att->id, 'token' => $token, 'doc' => 'pledge',
             'staff' => $staffA->id, 'role' => $roles['staff']->id, 'invoice' => $inv->id, 'shop' => $a->id, 'plan' => Plan::orderBy('id')->value('id'),
             'admin' => $targetAdmin->id, 'event' => $event->id,
         ], 'oldLoan' => $oldLoan, 'att' => $att];
@@ -310,6 +310,7 @@ class AccessMatrixTest extends AdminTestCase
         $tried = 0;
         foreach ($this->routes() as $r) {
             if (! $this->isShopApp($r) || ! $r['params'] || $this->isAdminProtected($r)) { continue; }
+            if ($r['params'] === ['doc']) { continue; } // the made-up sample documents: no object id, always the caller's own shop (SampleDocumentsTest)
             $url = $this->url($r, $w['ids']);
             foreach ($r['methods'] as $m) {
                 $res = $this->send($m, $url, $this->payload($w));

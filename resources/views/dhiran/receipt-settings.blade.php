@@ -30,10 +30,10 @@
                         :aria-selected="tab === '{{ $receipt }}'" :tabindex="tab === '{{ $receipt }}' ? 0 : -1" @click="setTab('{{ $receipt }}')">{{ $def['label'] }}</button>
             @endforeach
         </div>
-        @if($sampleLoan)
-            <a class="rs-sample" href="{{ route('dhiran.receipt', $sampleLoan) }}" target="_blank" rel="noopener" x-show="tab === 'pledge'"
-               title="Opens the latest loan's receipt with the saved settings">See a sample <x-icon name="external-link" size="16" /><span class="rs-sr"> (opens in a new tab, shows saved settings)</span></a>
-        @endif
+        @foreach($receipts as $receipt => $def)
+            <a class="rs-sample" href="{{ route('dhiran.settings.receipt.sample', $receipt) }}" target="_blank" rel="noopener" x-show="tab === '{{ $receipt }}'" @unless($loop->first) style="display: none" @endunless
+               title="Opens a made-up {{ strtolower($def['label']) }} with your saved settings">See a sample <x-icon name="external-link" size="16" /><span class="rs-sr"> (opens in a new tab, made-up details, shows saved settings)</span></a>
+        @endforeach
     </div>
 
     @foreach($receipts as $receipt => $def)

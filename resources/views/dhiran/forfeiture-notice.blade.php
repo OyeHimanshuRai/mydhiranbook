@@ -38,9 +38,10 @@
         $showSystem = request()->boolean('original') || ! $edit;
         $bodyText = $showSystem ? $systemBody : $edit['body'];
         $warningText = $showSystem ? $systemWarning : $edit['warning'];
-        $canEdit = auth()->user()?->can('dhiran.forfeit') && $loan->status === 'active' && $loan->forfeitureNoticeSent();
+        $canEdit = ! ($sample ?? false) && auth()->user()?->can('dhiran.forfeit') && $loan->status === 'active' && $loan->forfeitureNoticeSent();
     @endphp
 
+    @if($sample ?? false) @include('dhiran._sample-banner') @endif
     <style>@media print { .notice-tools { display: none !important; } }
         .notice-tools { max-width: 760px; margin: 12px auto 0; display: grid; gap: 8px; }
         .notice-tools .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; }
@@ -171,7 +172,7 @@
         </div>
 
         <div class="actions">
-            <a class="btn" href="{{ route('dhiran.show', $loan) }}">Back to Loan</a>
+            @unless($sample ?? false)<a class="btn" href="{{ route('dhiran.show', $loan) }}">Back to Loan</a>@endunless
         </div>
     </div>
 </body>

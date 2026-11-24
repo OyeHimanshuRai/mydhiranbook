@@ -154,16 +154,19 @@ class ReceiptSettingsTest extends TestCase
         $this->assertStringContainsString('role="status"', $html);
     }
 
-    public function test_sample_link_needs_a_loan_in_this_shop(): void
+    public function test_the_sample_links_work_before_any_loan_and_never_point_at_a_real_loan(): void
     {
         [$a, $ownerA] = $this->shopWithOwner('9390100012');
         [$b] = $this->shopWithOwner('9390100013');
-        $this->assertStringNotContainsString('See a sample', $this->receiptHtml($ownerA, $a, '/dhiran/settings/receipt')->getContent());
+        $html = $this->receiptHtml($ownerA, $a, '/dhiran/settings/receipt')->getContent();
+        $this->assertStringContainsString('See a sample', $html, 'offered even with no loans yet');
+        foreach (['pledge', 'payment', 'notice'] as $doc) {
+            $this->assertStringContainsString("/dhiran/settings/receipt/sample/{$doc}", $html);
+        }
         [$loanB] = $this->loanWithPayment($b);
-        $this->assertStringNotContainsString('See a sample', $this->receiptHtml($ownerA, $a, '/dhiran/settings/receipt')->getContent(), 'another shop\'s loan is never offered');
         [$loanA] = $this->loanWithPayment($a);
         $html = $this->receiptHtml($ownerA, $a, '/dhiran/settings/receipt')->getContent();
-        $this->assertStringContainsString("/dhiran/loans/{$loanA->id}/receipt", $html);
+        $this->assertStringNotContainsString("/dhiran/loans/{$loanA->id}/receipt", $html, 'a made-up sample, not a real borrower\'s receipt');
         $this->assertStringNotContainsString("/dhiran/loans/{$loanB->id}/receipt", $html);
     }
 
