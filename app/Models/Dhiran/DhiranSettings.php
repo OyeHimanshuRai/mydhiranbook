@@ -108,7 +108,7 @@ class DhiranSettings extends Model
                     'title' => 'Document title',
                 ],
                 'Payment' => [
-                    'receipt_no' => 'Receipt number', 'payment_date' => 'Payment date and time', 'method' => 'Payment method',
+                    'receipt_no' => 'Receipt number', 'payment_for' => 'What the payment is for', 'payment_date' => 'Payment date and time', 'method' => 'Payment method',
                 ],
                 'Received from' => [
                     'customer_name' => 'Name', 'customer_mobile' => 'Contact number', 'customer_address' => 'Address',

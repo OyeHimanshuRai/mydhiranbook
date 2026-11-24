@@ -241,4 +241,22 @@ class AdvanceInterestFormTest extends TestCase
         \Illuminate\Support\Carbon::setTestNow(\Illuminate\Support\Carbon::parse('2026-12-29 10:00', 'Asia/Kolkata'));
         $this->assertStringContainsString('Interest late 5 d', $list());
     }
+
+    public function test_the_loan_page_tells_the_two_receipts_apart_and_the_payment_receipt_says_what_it_is_for(): void
+    {
+        $l = $this->advanceLoan();
+        $this->activate($l);
+        \Illuminate\Support\Carbon::setTestNow(\Illuminate\Support\Carbon::parse('2026-12-24 10:00', 'Asia/Kolkata'));
+        $this->as(fn ($t) => $t->post(self::HOST . "/dhiran/loans/{$l->id}/pay-installment", ['idempotency_key' => 'inst-key-0009']))->assertSessionHas('success');
+
+        $page = $this->as(fn ($t) => $t->get(self::HOST . "/dhiran/loans/{$l->id}"))->getContent();
+        $this->assertStringContainsString('Pledge Receipt', $page, 'the loan receipt');
+        $this->assertStringContainsString('Payment Receipt', $page, 'one per payment');
+
+        $payment = \App\Models\Dhiran\DhiranPayment::withoutGlobalScopes()->where('dhiran_loan_id', $l->id)->where('type', 'advance_interest')->orderByDesc('id')->first();
+        $html = $this->as(fn ($t) => $t->get(self::HOST . "/dhiran/loans/{$l->id}/payments/{$payment->id}/receipt"))->getContent();
+        $this->assertStringContainsString('Payment Receipt', $html);
+        $this->assertStringContainsString('Payment For', $html);
+        $this->assertStringContainsString('Interest paid in advance', $html);
+    }
 }

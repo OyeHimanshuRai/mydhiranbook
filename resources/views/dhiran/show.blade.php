@@ -30,7 +30,7 @@
         </div>
         <div class="page-actions">
             <x-dhiran.btn-collapse icon="arrow-left" label="All Loans" :href="route('dhiran.loans')" />
-            <x-dhiran.btn-collapse icon="printer" label="Print Receipt" :href="route('dhiran.receipt', $loan)" target="_blank" data-dh-mobile-pin="true" />
+            <x-dhiran.btn-collapse icon="printer" label="Pledge Receipt" :href="route('dhiran.receipt', $loan)" target="_blank" data-dh-mobile-pin="true" />
         </div>
     </x-dhiran.page-header>
 
@@ -359,7 +359,7 @@
                             <td data-label="Interest" class="num">{{ $rupee($payment->interest_component ?? 0) }}</td>
                             <td data-label="Penalty" class="num">{{ $rupee($payment->penalty_component ?? 0) }}</td>
                             <td data-label="Method"><span class="dd-method">{{ \App\Models\Dhiran\DhiranPayment::methodLabel($payment->payment_method) }}</span></td>
-                            <td data-cell="act" data-label="Receipt"><a href="{{ route('dhiran.payment-receipt', [$loan, $payment]) }}" target="_blank" class="dd-tlink">Print Receipt</a></td>
+                            <td data-cell="act" data-label="Receipt"><a href="{{ route('dhiran.payment-receipt', [$loan, $payment]) }}" target="_blank" class="dd-tlink">Payment Receipt</a></td>
                         </tr>
                     @empty
                         <tr><td colspan="9" class="is-empty">No payments recorded yet</td></tr>

@@ -117,7 +117,7 @@ class DetailPagesTest extends TestCase
             $this->assertStringContainsString('<span class="btn-text">', $button);
             $this->assertDoesNotMatchRegularExpression('/Pre-Close|Execute Forfeit|Cancel loan|Release|Renew/', $button);
         }
-        $this->assertStringContainsString('<span class="btn-text">Print Receipt</span>', $html);
+        $this->assertStringContainsString('<span class="btn-text">Pledge Receipt</span>', $html);
         $this->assertStringContainsString('<span class="btn-text">All Loans</span>', $html);
     }
 

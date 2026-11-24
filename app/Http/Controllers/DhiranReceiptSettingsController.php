@@ -31,7 +31,7 @@ class DhiranReceiptSettingsController extends Controller
         'pledge.footer_note' => '"Computer-generated" line with the date',
         'payment.shop_name' => 'Your shop name at the top', 'payment.shop_address' => 'Your shop address under the name',
         'payment.shop_contact' => 'Shop phone and email, when saved', 'payment.title' => 'The words "Payment Receipt"',
-        'payment.receipt_no' => 'The number of this receipt', 'payment.payment_date' => 'When the money was received',
+        'payment.receipt_no' => 'The number of this receipt', 'payment.payment_for' => 'Interest, repayment, installment and so on', 'payment.payment_date' => 'When the money was received',
         'payment.method' => 'Cash, UPI, bank and so on',
         'payment.customer_name' => 'Who paid', 'payment.customer_mobile' => "The payer's phone number", 'payment.customer_address' => "The payer's address",
         'payment.principal_component' => 'How much went to the loan amount', 'payment.interest_component' => 'How much went to interest',

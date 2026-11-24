@@ -205,7 +205,7 @@ class DhiranLifecycleUiTest extends TestCase
 
         $html = $this->renderShow($shop, $owner, $loan->id);
         $this->assertStringContainsString(route('dhiran.payment-receipt', [$loan->id, $payment->id]), $html);
-        $this->assertStringContainsString('Print Receipt', $html);
+        $this->assertStringContainsString('Payment Receipt', $html);
     }
 
     // 11, 12, 13. Print-document routes are shop-scoped (cross-shop fails).

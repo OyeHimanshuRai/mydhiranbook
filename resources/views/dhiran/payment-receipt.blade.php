@@ -39,6 +39,7 @@
         <section class="rc-sec">
             <dl class="rc-rows rc-cols">
                 <div class="rc-row"><dt>Loan No.</dt><dd>{{ $loan->loan_number }}</dd></div>
+                @if($show('payment_for'))<div class="rc-row"><dt>Payment For</dt><dd>{{ ['advance_interest' => 'Interest paid in advance', 'interest_payment' => 'Interest', 'renewal_interest' => 'Renewal interest', 'principal_repayment' => 'Principal repayment', 'pre_closure' => 'Pre-closure', 'processing_fee' => 'Processing fee', 'disbursement' => 'Loan payout', 'cancellation' => 'Cancellation'][$payment->type] ?? ucwords(str_replace('_', ' ', (string) $payment->type)) }}</dd></div>@endif
                 @if($show('receipt_no'))<div class="rc-row"><dt>Receipt No</dt><dd>{{ $receiptNo }}</dd></div>@endif
                 @if($show('payment_date'))<div class="rc-row"><dt>Payment Date</dt><dd>{{ $paymentDate }}, {{ $paymentTime }}</dd></div>@endif
                 @if($show('method'))<div class="rc-row"><dt>Method</dt><dd>{{ \App\Models\Dhiran\DhiranPayment::methodLabel($payment->payment_method ?? 'cash') }}</dd></div>@endif
