@@ -93,6 +93,8 @@ class DhiranAttachmentService
             $disk->putFileAs($dir, $file, $filename);
         }
 
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
         $attachment = DhiranAttachment::create([
             'shop_id'       => $shopId,
             'owner_type'    => $ownerType,
@@ -118,6 +120,12 @@ class DhiranAttachmentService
                 "Uploaded {$type}: " . mb_substr((string) $file->getClientOriginalName(), 0, 80) . ($ownerType === DhiranAttachment::OWNER_CUSTOMER ? " (kept on the borrower's profile)" : ''),
                 ['attachment_id' => $attachment->id, 'document_type' => $documentType, 'file' => $attachment->original_name, 'size_kb' => (int) round($file->getSize() / 1024),
                  'kept_on' => $ownerType === DhiranAttachment::OWNER_ITEM ? 'item' : ($ownerType === DhiranAttachment::OWNER_CUSTOMER ? 'borrower' : 'loan')]);
+        }
+        \Illuminate\Support\Facades\DB::commit();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\DB::rollBack(); // no upload without its log line, and no orphan file
+            $disk->delete($path);
+            throw $e;
         }
 
         return $attachment;

@@ -36,7 +36,7 @@
         </section>
 
         <section class="dd-card dd-card-pad" aria-label="Activity">
-            <x-dhiran.loan-log :events="$events" />
+            <x-dhiran.loan-log :events="$events" :day-totals="$dayTotals" />
             <div class="al-pager">{{ $events->links() }}</div>
         </section>
     </div>

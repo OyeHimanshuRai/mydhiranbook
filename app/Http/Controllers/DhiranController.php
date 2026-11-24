@@ -462,7 +462,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
 
         // The newest lines of the loan's log, for people who may read it (the full, filterable log is on its own page).
         $activity = auth()->user()->can('dhiran.audit')
-            ? \App\Models\Dhiran\LoanEvent::where('dhiran_loan_id', $loan->id)->orderByDesc('occurred_at')->orderByDesc('id')->limit(12)->get()
+            ? \App\Models\Dhiran\LoanEvent::where('dhiran_loan_id', $loan->id)->where('category', '!=', 'system')->orderByDesc('occurred_at')->orderByDesc('id')->limit(12)->get() // people's actions; the daily system lines live on the full log
             : null;
 
         return view('dhiran.show', compact('loan', 'attachments', 'evidence', 'installment', 'activity'));
@@ -787,8 +787,10 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         [$q, $filters] = $this->activityQuery($request, $loan);
         $events = $q->paginate(100)->withQueryString();
         $actors = \App\Models\Dhiran\LoanEvent::where('dhiran_loan_id', $loan->id)->distinct()->orderBy('actor_name')->pluck('actor_name');
+        // the real number of lines on each day (a day can run over two pages), under the same filters
+        $dayTotals = (clone $q)->reorder()->selectRaw("to_char(occurred_at AT TIME ZONE ?, 'YYYY-MM-DD') as d, count(*) as c", [config('app.timezone')])->groupBy('d')->pluck('c', 'd')->all();
 
-        return view('dhiran.activity', compact('loan', 'events', 'filters', 'actors'));
+        return view('dhiran.activity', compact('loan', 'events', 'filters', 'actors', 'dayTotals'));
     }
 
     public function activityExport(Request $request, DhiranLoan $loan)

@@ -55,9 +55,9 @@ final class LoanLog
         ]);
     }
 
-    public static function forLoan(DhiranLoan $loan, string $event, string $category, string $summary, array $details = []): LoanEvent
+    public static function forLoan(DhiranLoan $loan, string $event, string $category, string $summary, array $details = [], ?array $actor = null): LoanEvent
     {
-        return self::record((int) $loan->shop_id, (int) $loan->id, $event, $category, $summary, $details);
+        return self::record((int) $loan->shop_id, (int) $loan->id, $event, $category, $summary, $details, null, $actor);
     }
 
     /** A payment row was written: every transaction (money in or out) is a line. */

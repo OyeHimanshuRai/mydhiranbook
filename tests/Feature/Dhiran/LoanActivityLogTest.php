@@ -326,6 +326,69 @@ class LoanActivityLogTest extends TestCase
         $this->assertSame('Earlier record', $rebuilt->first()->actor_name);
     }
 
+    public function test_the_accrual_inside_a_persons_payment_is_the_systems_line_not_theirs(): void
+    {
+        $this->at('2026-03-11 09:00');
+        $this->actingAs($this->owner);
+        $this->t(fn () => $this->svc->recordInterestPayment($this->fresh(), 200)); // accrual runs first, inside this person's payment
+
+        $accrual = $this->events('interest.accrued')->first();
+        $this->assertNotNull($accrual);
+        $this->assertSame('System', $accrual->actor_name);
+        $this->assertNull($accrual->user_id);
+        $payment = $this->events('payment.interest_payment')->first();
+        $this->assertSame($this->owner->name, $payment->actor_name, 'the payment itself is theirs');
+    }
+
+    public function test_the_loan_page_preview_shows_what_people_did_not_the_daily_system_lines(): void
+    {
+        $this->at('2026-03-11 09:00');
+        $this->t(fn () => $this->svc->accrueInterest($this->fresh())); // what the daily scheduled job does
+        $this->assertCount(1, $this->events('interest.accrued'));
+
+        $page = $this->fetch("/dhiran/loans/{$this->loan->id}")->getContent();
+        $preview = substr($page, strpos($page, 'dd-act-log-h'), 6000);
+        $this->assertStringContainsString('Loan paid out', $preview);
+        $this->assertStringNotContainsString('Interest accrued', $preview, 'system lines do not crowd out payments and uploads');
+        $this->assertStringContainsString('Interest accrued', $this->fetch("/dhiran/loans/{$this->loan->id}/activity")->getContent(), 'the full log has them');
+    }
+
+    public function test_a_days_count_is_the_real_total_even_when_the_day_runs_over_a_page(): void
+    {
+        $rows = [];
+        for ($n = 0; $n < 120; $n++) {
+            $rows[] = ['shop_id' => $this->shop->id, 'dhiran_loan_id' => $this->loan->id, 'actor_name' => 'System', 'event' => 'interest.accrued', 'category' => 'system',
+                'summary' => "Filler {$n}", 'occurred_at' => '2026-03-01 12:00:00+05:30', 'created_at' => now()];
+        }
+        DB::table('dhiran_loan_events')->insert($rows);
+        $total = $this->events()->count();
+
+        $html = $this->fetch("/dhiran/loans/{$this->loan->id}/activity")->getContent();
+        $this->assertStringContainsString("{$total} events", $html, 'not the 100 rows of this page');
+    }
+
+    public function test_the_loan_page_names_the_release_and_shows_who_and_the_condition_note(): void
+    {
+        $this->at('2026-03-11 12:00');
+        $ring = DhiranLoanItem::withoutGlobalScopes()->where('dhiran_loan_id', $this->loan->id)->where('description', 'Gold ring')->first();
+        $this->actingAs($this->owner);
+        $min = $this->t(fn () => $this->svc->releaseMinimum($this->fresh(), $ring));
+        $this->t(fn () => $this->svc->releaseItem($this->fresh(), $ring->fresh(), $min + 1000, 'cash', 'Returned in good condition'));
+
+        $page = $this->fetch("/dhiran/loans/{$this->loan->id}")->getContent();
+        $this->assertStringContainsString('Item Release', $page, 'Payment History says what the payment was');
+        $this->assertStringContainsString('Returned in good condition', $page, 'the Items table keeps the condition note');
+        $this->assertStringContainsString('11 Mar 2026', $page);
+    }
+
+    public function test_print_links_are_not_prefetched_so_hovering_cannot_write_a_log_line(): void
+    {
+        $page = $this->fetch("/dhiran/loans/{$this->loan->id}")->getContent();
+        foreach (['/receipt', '/tag', '/payments/'] as $needle) {
+            $this->assertMatchesRegularExpression('#href="[^"]*' . preg_quote($needle, '#') . '[^"]*"[^>]*data-turbo-prefetch="false"|data-turbo-prefetch="false"[^>]*href="[^"]*' . preg_quote($needle, '#') . '#', $page, "{$needle} link");
+        }
+    }
+
     private function fresh(): DhiranLoan
     {
         return DhiranLoan::withoutGlobalScopes()->findOrFail($this->loan->id);

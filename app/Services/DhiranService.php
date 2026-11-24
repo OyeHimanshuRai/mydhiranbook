@@ -921,7 +921,8 @@ class DhiranService
                 \App\Services\Dhiran\LoanLog::forLoan($loan, 'interest.accrued', 'system',
                     'Interest accrued ₹' . \App\Support\IndianNumber::format($interestAccrual, 2) . ($penaltyAccrual > 0 ? ' and penalty ₹' . \App\Support\IndianNumber::format($penaltyAccrual, 2) : '') . " for {$days} day" . ($days === 1 ? '' : 's')
                     . ($prepaidUsed > 0 ? ' (₹' . \App\Support\IndianNumber::format($prepaidUsed, 2) . ' covered by interest paid in advance)' : ''),
-                    ['days' => $days, 'interest' => $interestAccrual, 'penalty' => $penaltyAccrual, 'covered_by_advance' => $prepaidUsed, 'interest_owed' => $newOutstandingInterest, 'penalty_owed' => $newOutstandingPenalty]);
+                    ['days' => $days, 'interest' => $interestAccrual, 'penalty' => $penaltyAccrual, 'covered_by_advance' => $prepaidUsed, 'interest_owed' => $newOutstandingInterest, 'penalty_owed' => $newOutstandingPenalty],
+                    ['id' => null, 'name' => 'System']); // accrual runs when anyone opens the loan: it is the system's step, not the viewer's
             }
 
             // ── Ledger entry for the advance spent against this accrual ──

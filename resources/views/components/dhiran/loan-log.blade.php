@@ -1,4 +1,4 @@
-@props(['events', 'showLoan' => false])
+@props(['events', 'showLoan' => false, 'dayTotals' => []])
 @php
     // A loan's activity log, one day at a time (newest first), the time on every line, and each line opens to its full details.
     $tz = config('app.timezone');
@@ -29,7 +29,8 @@
     <section class="al-day" aria-label="{{ \Illuminate\Support\Carbon::parse($day)->format('l, d M Y') }}">
         <div class="al-day-head">
             <h3 class="al-day-title">{{ \Illuminate\Support\Carbon::parse($day)->format('l, d M Y') }}</h3>
-            <span class="al-day-count">{{ $list->count() }} {{ $list->count() === 1 ? 'event' : 'events' }}</span>
+            @php $total = (int) ($dayTotals[$day] ?? $list->count()); @endphp
+            <span class="al-day-count">{{ $total }} {{ $total === 1 ? 'event' : 'events' }}</span>
         </div>
         <ol class="al-list">
             @foreach($list as $e)
