@@ -19,7 +19,7 @@
             <p class="st-notice">
                 <x-icon name="info" size="20" />
                 <span>Staff accounts: <strong>{{ $staffCount }}{{ $staffLimit !== -1 ? ' of ' . $staffLimit : '' }}</strong> used.
-                    @if($staffLimit !== -1){{ $staffLimit - $staffCount }} slot(s) remaining after this one.@else Unlimited on your plan.@endif</span>
+                    @if($staffLimit !== -1){{ $staffLimit - $staffCount }} slot(s) remaining after this one.@else Unlimited.@endif</span>
             </p>
             @include('staff._form')
         </div>

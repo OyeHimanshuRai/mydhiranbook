@@ -9,7 +9,7 @@
 <body class="dh-doc-body dh-doc-closure-certificate">
     @php
         $shop = auth()->user()?->shop;
-        $shopName = $shop?->name ?: 'Dhiran';
+        $shopName = $shop?->name ?: 'MyDhiranBook';
         $shopAddress = $shop?->address ?? null;
         $shopContact = $shop?->mobile ?? $shop?->phone ?? auth()->user()?->mobile ?? null;
         $shopEmail = auth()->user()?->email;

@@ -15,8 +15,6 @@ class User extends Authenticatable
             $user->name ??= trim(($user->first_name ?? '').' '.($user->last_name ?? '')) ?: ($user->mobile_number ?? $user->email);
         });
     }
-    /** Captured-payment subscriptions waiting for a business (paid before the shop exists). */
-    public function paidShoplessSubscriptions() { return \App\Models\Platform\ShopSubscription::where('user_id',$this->id)->whereNull('shop_id')->whereIn('status',['active','grace'])->whereRaw('GREATEST(ends_at, grace_ends_at) >= ?',[today()->toDateString()]); } // same rule as ShopSubscription::grantsAccessToday
     public function shop() { return $this->belongsTo(Shop::class); }
     public function assignedRole() { return $this->belongsTo(Role::class, 'role_id'); }
     public function hasRole(string $name): bool { return $this->role_id && $this->assignedRole?->name === $name && (int)$this->assignedRole?->shop_id === (int)$this->shop_id; }

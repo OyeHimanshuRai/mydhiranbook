@@ -148,7 +148,7 @@ class DhiranService
             Shop::whereKey($shop->id)->lockForUpdate()->value('id');
             $limit = $shop->itemLimit();
             if ($limit !== -1 && $shop->pledgedItemCount() + count($items) > $limit) {
-                throw new LogicException("Item limit reached: your plan allows {$limit} pledged items and this loan would exceed it. Close or release items, or upgrade your plan.");
+                throw new LogicException("Item limit reached: your access allows {$limit} pledged items and this loan would exceed it. Close or release items, or contact us to raise this limit.");
             }
 
             $settings = DhiranSettings::getForShop($shop->id);
@@ -297,6 +297,9 @@ class DhiranService
                 }
                 if ($advanceMonths < 1 || $advanceMonths > 3) {
                     throw new LogicException('Advance interest can cover 1 to 3 months.');
+                }
+                if ($advanceMonths > $tenureMonths) {
+                    throw new LogicException('Advance interest cannot cover more months than the loan runs.');
                 }
                 // The first N months, each at its real number of days (rate / 30 per day): Nov 24 to Dec 24 is 30 days, Dec 24 to Jan 24 is 31.
                 $advanceInterest = round($this->coverInterest($interestRateMonthly, $loanDate->copy(), $loanDate->copy()->addMonthsNoOverflow($advanceMonths), $principalAmount), 2);
@@ -1910,6 +1913,7 @@ class DhiranService
         DB::transaction(function () use ($loan, $actorId): void {
             $loan = $this->lockActive($loan);
             $this->assertForfeitureStage($loan, 'ready');
+            $this->accrueInterest($loan); // the write-off records everything owed up to today, not up to the last nightly run
 
             $writtenOffPrincipal = (float) $loan->outstanding_principal;
             $writtenOffInterest  = (float) $loan->outstanding_interest;
@@ -2169,8 +2173,12 @@ class DhiranService
         $settings = DhiranSettings::getForShop($shop->id);
         $prefix   = trim($settings->loan_number_prefix ?: 'DH-');
 
-        $sequence = BusinessIdentifierService::nextCounter($shop->id, BusinessIdentifierService::KEY_DHIRAN);
+        // A prefix that ends in digits can reproduce an older number (prefix 'DH-1' + 1 and 'DH-' + 11 are both 'DH-11'): skip taken numbers.
+        do {
+            $sequence = BusinessIdentifierService::nextCounter($shop->id, BusinessIdentifierService::KEY_DHIRAN);
+            $number = $prefix . str_pad((string) $sequence, max(1, (int) ($settings->loan_number_digits ?: 6)), '0', STR_PAD_LEFT); // digits = 1 means no leading zeros
+        } while (DhiranLoan::withoutGlobalScopes()->where('shop_id', $shop->id)->where('loan_number', $number)->exists());
 
-        return $prefix . str_pad((string) $sequence, max(1, (int) ($settings->loan_number_digits ?: 6)), '0', STR_PAD_LEFT); // digits = 1 means no leading zeros
+        return $number;
     }
 }

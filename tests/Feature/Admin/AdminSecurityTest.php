@@ -29,7 +29,7 @@ class AdminSecurityTest extends AdminTestCase
             'PATCH admin/shops/{shop}'=>['/admin/shops/'.$shop->id,['status'=>'suspended','reason'=>'Audit']],
             'POST admin/shops/{shop}/subscription'=>['/admin/shops/'.$shop->id.'/subscription',['plan'=>'dhiran_yearly','billing_cycle'=>'yearly','ends_at'=>$ends,'reason'=>'Audit']],
             'POST admin/shops/{shop}/subscription/terminate'=>['/admin/shops/'.$shop->id.'/subscription/terminate',['reason'=>'Audit']],
-            'PATCH admin/plans/{plan}'=>['/admin/plans/'.$plan->id,['price_monthly'=>1667,'price_yearly'=>19999,'grace_days'=>14,'staff_limit'=>7,'max_items'=>3000,'is_active'=>1,'reason'=>'Audit']],
+            'PATCH admin/plans/{plan}'=>['/admin/plans/'.$plan->id,['grace_days'=>14,'staff_limit'=>7,'max_items'=>3000,'reason'=>'Audit']],
             'POST admin/accounts'=>['/admin/accounts',['name'=>'New Support','email'=>'new@example.test','password'=>'Long-enough-pass-1']],
             'PATCH admin/accounts/{admin}'=>['/admin/accounts/'.$support->id,['is_active'=>0]],
         ];

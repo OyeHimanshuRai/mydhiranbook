@@ -110,7 +110,7 @@ final class Notices
             'mat_w3'         => ["$active AND dhiran_loans.maturity_date::date BETWEEN ?::date + ?::integer AND ?::date + ?::integer", [$today, $o['days'][1] + 1, $today, $o['days'][2]]],
             'forfeit_soon'   => ["$plain AND $point BETWEEN ?::date AND ?::date + ?::integer", [$today, $today, $o['forfeit_days']]],
             'forfeit_notice' => ["$plain AND $point < ?::date", [$today]],
-            'forfeit_ready'  => ["$active AND dhiran_loans.forfeiture_notice_sent_at IS NOT NULL AND COALESCE(dhiran_loans.forfeiture_deadline, dhiran_loans.forfeiture_notice_sent_at::date) <= ?::date", [$today]],
+            'forfeit_ready'  => ["$active AND dhiran_loans.forfeiture_notice_sent_at IS NOT NULL AND COALESCE(dhiran_loans.forfeiture_deadline, dhiran_loans.forfeiture_notice_sent_at::date + COALESCE((SELECT st.forfeiture_notice_days FROM dhiran_settings st WHERE st.shop_id = dhiran_loans.shop_id LIMIT 1), 0)) <= ?::date", [$today]],
         };
     }
 
@@ -182,7 +182,9 @@ final class Notices
         }
 
         // The shop's own one-year access: told from 30 days before it ends (not switchable: it is the only warning before the block).
-        $ends = \App\Models\Shop::find($shopId)?->currentSubscription()?->ends_at;
+        $endRaw = DB::table('shop_subscriptions')->where('shop_id', $shopId)->where('status', '!=', 'cancelled')
+            ->selectRaw('max(greatest(ends_at, coalesce(grace_ends_at, ends_at))) as e')->value('e'); // same cut-off as Shop::accessUntil, one query
+        $ends = $endRaw ? \Illuminate\Support\Carbon::parse($endRaw) : null;
         if ($ends) {
             $left = (int) today()->diffInDays($ends->copy()->startOfDay(), false);
             if ($left >= 0 && $left <= 30) {

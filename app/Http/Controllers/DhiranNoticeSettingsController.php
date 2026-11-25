@@ -30,7 +30,7 @@ class DhiranNoticeSettingsController extends Controller
         $shopId = auth()->user()->shop_id;
         $keys = array_keys(Notices::toggles(Notices::options($shopId)));
         $d = $request->validate([
-            'days'         => ['required', 'array', 'size:3'],
+            'days'         => ['required', 'array:0,1,2', 'size:3'],
             'days.*'       => ['required', 'integer', 'min:1', 'max:90'],
             'forfeit_days' => ['required', 'integer', 'min:1', 'max:90'],
             'show'         => ['nullable', 'array'],

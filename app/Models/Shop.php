@@ -16,6 +16,13 @@ class Shop extends Model
         return $live()->where(fn ($q) => $q->whereNull('starts_at')->orWhereDate('starts_at','<=',today()))->orderByRaw('ends_at desc nulls last')->orderByDesc('id')->first()
             ?? $live()->orderBy('starts_at')->orderBy('id')->first();
     }
+    /** The last day the shop can use the software: the latest cut-off (end, or the end of any grace) over its live terms; $startedOnly ignores terms that have not begun. */
+    public function accessUntil(bool $startedOnly = false): ?\Illuminate\Support\Carbon
+    {
+        $rows = $this->subscriptions()->where('status','!=','cancelled')->get();
+        if ($startedOnly) { $rows = $rows->filter(fn ($r) => $r->starts_at === null || $r->starts_at->toDateString() <= today()->toDateString()); }
+        return $rows->flatMap(fn ($r) => [$r->ends_at, $r->grace_ends_at])->filter()->max();
+    }
     public function hasEdition(string $edition): bool
     {
         return $edition === 'dhiran' && (bool) $this->currentSubscription()?->grantsAccessToday();

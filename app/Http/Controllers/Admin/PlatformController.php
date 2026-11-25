@@ -26,7 +26,7 @@ class PlatformController
     /** Approved shops whose access term ends within 30 days, has ended, or was never granted: the admin extends them from here. */
     private function ending()
     {
-        $ends="(select max(s.ends_at) from shop_subscriptions s where s.shop_id=shops.id and s.status!='cancelled')";
+        $ends="(select max(greatest(s.ends_at, coalesce(s.grace_ends_at, s.ends_at))) from shop_subscriptions s where s.shop_id=shops.id and s.status!='cancelled')";
         return Shop::where('status','active')->selectRaw("shops.*, $ends as access_ends")
             ->whereRaw("coalesce($ends,'1900-01-01') <= ?",[today()->addDays(30)->toDateString()])
             ->orderByRaw('access_ends asc nulls first')->limit(50)->get();

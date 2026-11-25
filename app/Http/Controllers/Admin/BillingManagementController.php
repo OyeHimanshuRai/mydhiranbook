@@ -33,7 +33,7 @@ class BillingManagementController
             $floor=collect([today(),$sub?->starts_at,...$live->pluck('ends_at')])->filter()->max();
             if ($data['ends_at'] < $floor->toDateString()) { throw ValidationException::withMessages(['ends_at'=>'To shorten or revoke access, terminate the subscription.']); }
             $before=$sub?->only(self::TRACK);
-            $values=['plan_id'=>$plan->id,'billing_cycle'=>$data['billing_cycle'],'status'=>'active','ends_at'=>$data['ends_at'],'grace_ends_at'=>Carbon::parse($data['ends_at'])->addDays($plan->grace_days),'cancelled_at'=>null,'updated_by_admin_id'=>$admin->id,'actor_type'=>'admin'];
+            $values=['plan_id'=>$plan->id,'billing_cycle'=>$data['billing_cycle'],'status'=>'active','ends_at'=>$data['ends_at'],'grace_ends_at'=>Carbon::parse($data['ends_at']),'cancelled_at'=>null,'updated_by_admin_id'=>$admin->id,'actor_type'=>'admin'];
             if ($sub) { $sub->update($values); } else { $sub=ShopSubscription::create($values+['shop_id'=>$shop->id,'starts_at'=>today()]); }
             $after=$sub->fresh()->only(self::TRACK);
             SubscriptionEvent::create(['shop_subscription_id'=>$sub->id,'shop_id'=>$shop->id,'admin_id'=>$admin->id,'event_type'=>$before?'admin_updated':'admin_granted','before'=>$before,'after'=>$after,'reason'=>$data['reason']]);

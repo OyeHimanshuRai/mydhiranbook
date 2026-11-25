@@ -55,7 +55,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         $settings->update(['is_enabled' => true]);
 
         return redirect()->route('dhiran.dashboard')
-            ->with('success', 'Dhiran module activated successfully.');
+            ->with('success', 'Pledge Loans activated successfully.');
     }
 
     /**
@@ -82,7 +82,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         $shopId   = auth()->user()->shop_id;
         $settings = DhiranSettings::getForShop($shopId);
 
-        abort_unless($settings->is_enabled, 403, 'Dhiran module is not enabled.');
+        abort_unless($settings->is_enabled, 403, 'Pledge Loans is not enabled.');
 
         // Preselect a borrower when arriving from the borrower profile / list (?customer_id=). Only this shop's own,
         // active borrower is honoured. The page never carries the borrower book: the picker searches on typing (searchBorrowers).
@@ -163,7 +163,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
     {
         $shopId   = auth()->user()->shop_id;
         $settings = DhiranSettings::getForShop($shopId);
-        abort_unless($settings->is_enabled, 403, 'Dhiran module is not enabled.');
+        abort_unless($settings->is_enabled, 403, 'Pledge Loans is not enabled.');
 
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
@@ -258,7 +258,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         $shopId = auth()->user()->shop_id;
 
         $settings = DhiranSettings::getForShop($shopId);
-        abort_unless($settings->is_enabled, 403, 'Dhiran module is not enabled.');
+        abort_unless($settings->is_enabled, 403, 'Pledge Loans is not enabled.');
 
         // A metal rate is only needed for metal-valued items of that metal. A
         // pure-silver or pure-Other (appraised) loan must not be forced to enter a
@@ -667,7 +667,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
     {
         $shopId   = auth()->user()->shop_id;
         $settings = DhiranSettings::getForShop($shopId);
-        abort_unless($settings->is_enabled, 403, 'Dhiran module is not enabled.');
+        abort_unless($settings->is_enabled, 403, 'Pledge Loans is not enabled.');
 
         $data = $request->validate([
             'owner_type'    => ['required', 'in:dhiran_loan,dhiran_loan_item,customer'],
@@ -945,7 +945,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
     /** Save a customer's details without starting a loan. */
     public function createCustomer()
     {
-        abort_unless(DhiranSettings::getForShop(auth()->user()->shop_id)->is_enabled, 403, 'Dhiran module is not enabled.');
+        abort_unless(DhiranSettings::getForShop(auth()->user()->shop_id)->is_enabled, 403, 'Pledge Loans is not enabled.');
 
         return view('dhiran.borrowers.create');
     }

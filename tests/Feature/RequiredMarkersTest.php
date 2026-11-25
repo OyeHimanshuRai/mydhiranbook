@@ -338,10 +338,8 @@ class RequiredMarkersTest extends TestCase
         $this->seedAdminAndPlans();
         $html = $this->get('/admin/plans')->assertOk()->getContent();
 
-        $this->assertMatchesRegularExpression('~<label for="plan-\d+-price_monthly">Monthly price \(₹\) <span class="ui-req" aria-hidden="true">\*</span></label>~', $html);
+        $this->assertMatchesRegularExpression('~<label for="plan-\d+-grace_days">Grace days <span class="ui-req" aria-hidden="true">\*</span></label>~', $html);
         $this->assertMatchesRegularExpression('~<label for="plan-\d+-reason">Reason</label>~', $html);
-        $this->assertMatchesRegularExpression('~<label for="plan-\d+-price_yearly">Yearly price \(₹\)</label>~', $html, 'nullable on the server');
-        $this->assertDoesNotMatchRegularExpression('~\s:?(aria-)?required\b~', $this->tagOf($html, preg_match('~id="(plan-\d+-price_yearly)"~', $html, $m) ? $m[1] : 'none'));
         $this->assertStringNotContainsString(self::LEGEND, $html);
     }
 

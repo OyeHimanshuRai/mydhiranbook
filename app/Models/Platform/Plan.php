@@ -14,12 +14,6 @@ class Plan extends Model
 
     public function subscriptions(): HasMany { return $this->hasMany(ShopSubscription::class); }
 
-    /** Whole rupees charged for a cycle ('yearly', anything else = monthly). */
-    public function priceFor(string $cycle): int
-    {
-        return (int) round((float) ($cycle === 'yearly' ? $this->price_yearly : $this->price_monthly));
-    }
-
     /** A plan sells exactly one cycle: yearly when it has a yearly price, otherwise monthly. */
     public function sellsCycle(string $cycle): bool
     {

@@ -5,7 +5,7 @@
 
 @php
     $slotMarkup = trim((string) $slot);
-    // Dhiran views pass their title/actions as slot children (legacy style).
+    // Pledge-loan views pass their title/actions as slot children (legacy style).
     $useSlotLayout = $title === null && $subtitle === null && $slotMarkup !== '';
     $hasHeaderActions = ($useSlotLayout && str_contains($slotMarkup, 'page-actions')) || isset($actions);
 @endphp

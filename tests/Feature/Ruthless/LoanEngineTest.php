@@ -941,6 +941,7 @@ class LoanEngineTest extends TestCase
         $this->at('2026-03-13');
         $this->refused($forfeit, 'deadline not reached');
         $this->at('2026-03-14');
+        $this->t(fn () => $this->svc->accrueInterest($this->fresh($l))); // forfeiture books what is owed today, so accrue first
         $before = $this->fresh($l);
         $sum = (float) $before->outstanding_principal + (float) $before->outstanding_interest + (float) $before->outstanding_penalty;
         $forfeit();

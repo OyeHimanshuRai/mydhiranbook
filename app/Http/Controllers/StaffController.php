@@ -16,12 +16,9 @@ class StaffController extends Controller
 {
     use RespondsDynamically;
 
-    /** A lapsed shop has no plan limit to quote; otherwise name the cap. */
     private function staffBlockedMessage(\App\Models\Shop $shop, string $hint = ''): string
     {
-        return $shop->isLapsed()
-            ? 'Your MyDhiranBook plan has ended. Renew it to add staff.'
-            : trim("Staff limit reached ({$shop->staffLimit()} accounts allowed on your plan). {$hint}");
+        return trim("Staff limit reached ({$shop->staffLimit()} accounts allowed). {$hint}");
     }
 
     public function index()
@@ -35,7 +32,7 @@ class StaffController extends Controller
 
         if (!$shop->canAddStaff()) {
             return redirect()->route('settings.edit', ['tab' => 'staff'])
-                ->with('error', $this->staffBlockedMessage($shop, 'Remove an existing member or upgrade your plan.'));
+                ->with('error', $this->staffBlockedMessage($shop, 'Remove an existing member or contact us to raise this limit.'));
         }
 
         // Scope roles to this shop only, exclude owner

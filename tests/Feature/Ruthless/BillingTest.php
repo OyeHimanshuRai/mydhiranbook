@@ -248,7 +248,7 @@ class BillingTest extends AdminTestCase
         $owner = $this->shopUser(); $s = $this->term($owner->shop, 'dhiran_monthly', $this->d(-32), $this->d(-2), $this->d(5), 'grace');
         $this->grant($owner->shop_id, $this->d(28), 'dhiran_monthly', 'monthly')->assertSessionHasNoErrors();
         $s->refresh();
-        $this->assertSame(['active', $this->d(28), $this->d(35)], [$s->status, $s->ends_at->toDateString(), $s->grace_ends_at->toDateString()]);
+        $this->assertSame(['active', $this->d(28), $this->d(28)], [$s->status, $s->ends_at->toDateString(), $s->grace_ends_at->toDateString()]);
         $this->assertSame(1, ShopSubscription::count());
     }
 
@@ -266,7 +266,7 @@ class BillingTest extends AdminTestCase
         $this->grant($shopId, $this->d(31), 'dhiran_monthly', 'monthly')->assertSessionHasNoErrors();
         $this->assertSame(3, ShopSubscription::where('shop_id', $shopId)->count());
         $new = ShopSubscription::where('shop_id', $shopId)->where('status', 'active')->sole();
-        $this->assertSame([$this->d(0), $this->d(31), $this->d(38)], [$new->starts_at->toDateString(), $new->ends_at->toDateString(), $new->grace_ends_at->toDateString()]);
+        $this->assertSame([$this->d(0), $this->d(31), $this->d(31)], [$new->starts_at->toDateString(), $new->ends_at->toDateString(), $new->grace_ends_at->toDateString()]);
         $this->assertNull($new->cancelled_at);
         $this->assertTrue($owner->shop->fresh()->hasEdition('dhiran'));
         $this->assertSame($new->id, $owner->shop->fresh()->currentSubscription()->id);

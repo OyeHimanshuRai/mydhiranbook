@@ -15,6 +15,12 @@ use Illuminate\Support\Facades\DB;
 /** Onboarding: verify email -> business form -> wait for an admin to approve the shop (no payment step). */
 class DhiranOnboardingController extends Controller
 {
+    /** Free text must be valid UTF-8 without control characters (a NUL byte or broken bytes reach the database as an error). */
+    private static function clean(): array
+    {
+        return ['regex:/^[^\x00-\x08\x0B\x0C\x0E-\x1F\x7F]*$/', fn ($attr, $value, $fail) => is_string($value) && ! mb_check_encoding($value, 'UTF-8') ? $fail('The '.$attr.' contains characters we cannot store.') : null];
+    }
+
     /** The old plans step is gone: old links land on the business form. */
     public function plans()
     {
@@ -32,10 +38,10 @@ class DhiranOnboardingController extends Controller
     {
         $auth = Auth::user();
         if ($auth->shop_id) { return redirect()->route('dhiran.pending'); }
-        $request->merge(['phone' => Mobile::normalize($request->input('phone')) ?? $request->input('phone')]);
+        if (is_string($request->input('phone'))) { $request->merge(['phone' => Mobile::normalize($request->input('phone')) ?? $request->input('phone')]); }
         $data = $request->validate([
-            'name' => 'required|string|max:150', 'phone' => ['required', new IndianMobileRule()],
-            'address' => 'required|string|max:500', 'loan_number_prefix' => 'nullable|string|max:12|alpha_dash',
+            'name' => ['required', 'string', 'max:150', ...self::clean()], 'phone' => ['required', 'string', new IndianMobileRule()],
+            'address' => ['required', 'string', 'max:500', ...self::clean()], 'loan_number_prefix' => 'nullable|string|max:10|alpha_dash',
         ]);
 
         $created = DB::transaction(function () use ($auth, $data, $roles) {
@@ -59,6 +65,7 @@ class DhiranOnboardingController extends Controller
         if (!$user->shop_id) { return redirect()->route('dhiran.onboarding'); }
         $shop = $user->shop;
         if ($shop->status === 'active') { return redirect('/')->with('success', 'Your shop is approved. Welcome to MyDhiranBook!'); }
+        if (!$user->is_active || $shop->status === 'suspended') { return redirect()->route('dhiran.blocked'); }
         abort_unless($shop->awaitsApproval(), 403);
         $prefix = $shop->status === 'rejected' ? (string) (TenantContext::runFor($shop->id, fn () => DhiranSettings::getForShop($shop->id)->loan_number_prefix) ?? '') : '';
         return view('dhiran.onboarding.pending', ['shop' => $shop, 'rejected' => $shop->status === 'rejected', 'prefix' => $prefix]);
@@ -68,11 +75,11 @@ class DhiranOnboardingController extends Controller
     public function resubmit(Request $request)
     {
         $auth = Auth::user();
-        abort_unless($auth->shop_id && $auth->isShopOwner(), 403);
-        $request->merge(['phone' => Mobile::normalize($request->input('phone')) ?? $request->input('phone')]);
+        abort_unless($auth->shop_id && $auth->is_active && $auth->isShopOwner(), 403);
+        if (is_string($request->input('phone'))) { $request->merge(['phone' => Mobile::normalize($request->input('phone')) ?? $request->input('phone')]); }
         $data = $request->validate([
-            'name' => 'required|string|max:150', 'phone' => ['required', new IndianMobileRule()],
-            'address' => 'required|string|max:500', 'loan_number_prefix' => 'nullable|string|max:12|alpha_dash',
+            'name' => ['required', 'string', 'max:150', ...self::clean()], 'phone' => ['required', 'string', new IndianMobileRule()],
+            'address' => ['required', 'string', 'max:500', ...self::clean()], 'loan_number_prefix' => 'nullable|string|max:10|alpha_dash',
         ]);
         $sent = DB::transaction(function () use ($auth, $data, $request) {
             $shop = Shop::whereKey($auth->shop_id)->lockForUpdate()->firstOrFail();
@@ -97,9 +104,9 @@ class DhiranOnboardingController extends Controller
         if (!$user->shop_id) { return redirect()->route('dhiran.onboarding'); }
         $shop = $user->shop;
         if ($shop->awaitsApproval()) { return redirect()->route('dhiran.pending'); }
-        abort_unless($shop->status === 'active', 403);
+        if (!$user->is_active || $shop->status !== 'active') { return redirect()->route('dhiran.blocked'); }
         if ($shop->hasEdition('dhiran')) { return redirect('/'); }
-        return view('dhiran.onboarding.ended', ['shop' => $shop, 'endedOn' => $shop->subscriptions()->where('status', '!=', 'cancelled')->max('ends_at'), 'owner' => $user->isShopOwner()]);
+        return view('dhiran.onboarding.ended', ['shop' => $shop, 'endedOn' => $shop->accessUntil(true), 'owner' => $user->isShopOwner()]);
     }
 
     /** Why this person cannot use the software: their own account was switched off, or the whole shop was suspended. */

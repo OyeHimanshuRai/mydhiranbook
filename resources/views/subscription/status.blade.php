@@ -13,7 +13,7 @@
         $phone ? '<a href="tel:'.e(preg_replace('/[^+\d]/', '', $phone)).'">'.e($phone).'</a>' : null,
     ])->filter()->implode(' or ');
 @endphp
-<x-subscription-page title="Your plan" :settings="$hasShop" footer>
+<x-subscription-page title="Your access" :settings="$hasShop" footer>
 @if($hasShop)
     <x-dhiran.page-header>
         <x-dhiran.settings-nav active="billing" as="title" />
@@ -23,7 +23,7 @@
         <x-dhiran.settings-nav active="billing" switcher />
         <x-settings.live />
         <div class="st-page">
-            <x-settings.panel title="Your plan" :desc="$subscription ? null : 'No access term yet.'">
+            <x-settings.panel title="Your access" :desc="$subscription ? null : 'No access term yet.'">
                 @if($subscription)
                     <p class="st-plan-line">
                         <span class="st-plan-name">{{ $subscription->plan?->name }}</span>
@@ -42,7 +42,7 @@
     </turbo-frame>
 @else
 <div class="ck">
-    <h1>Your plan</h1>
+    <h1>Your access</h1>
     <div class="ui-card ck-card">
         @if($subscription)
             <p>{{ $subscription->plan?->name }}: {{ $chip[0] }}</p>

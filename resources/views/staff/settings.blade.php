@@ -153,8 +153,8 @@
                     <div class="st-bar{{ $atLimit ? ' is-full' : ($pct >= 80 ? ' is-warn' : '') }}" role="img" aria-label="{{ $staffCount }} of {{ $staffLimit }} staff accounts used"><span style="--w: {{ $pct }}%"></span></div>
                 @endif
                 @if($atLimit)
-                    <p class="st-hint" id="st-limit-help">Your plan allows {{ $staffLimit }} staff accounts. Remove a person you no longer need
-                        @if(auth()->user()->isShopOwner()) or <a href="{{ route('subscription.status') }}">see how to extend your plan</a>@endif.</p>
+                    <p class="st-hint" id="st-limit-help">Your access allows {{ $staffLimit }} staff accounts. Remove a person you no longer need
+                        @if(auth()->user()->isShopOwner()) or <a href="{{ route('subscription.status') }}">contact us to extend your access</a>@endif.</p>
                 @endif
             </div>
         </x-settings.panel>

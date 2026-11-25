@@ -18,13 +18,13 @@ class BillingAdminTest extends AdminTestCase
         $end=today()->addMonth();
         $this->grant($shop,'dhiran_monthly','monthly',$end->toDateString())->assertRedirect();
         $sub=ShopSubscription::where('shop_id',$shop->id)->sole();
-        $this->assertSame([$end->toDateString(),$end->copy()->addDays(7)->toDateString(),'monthly','active'],[$sub->ends_at->toDateString(),$sub->grace_ends_at->toDateString(),$sub->billing_cycle,$sub->status]);
+        $this->assertSame([$end->toDateString(),$end->toDateString(),'monthly','active'],[$sub->ends_at->toDateString(),$sub->grace_ends_at->toDateString(),$sub->billing_cycle,$sub->status]);
         $this->assertNull($sub->price_paid); $this->assertNull($sub->razorpay_payment_id);
         $this->assertTrue($shop->fresh()->hasEdition('dhiran'));
         // upgrade: same live row, plan + cycle + grace follow the plan
         $end2=today()->addYear(); $this->grant($shop,'dhiran_yearly','yearly',$end2->toDateString())->assertRedirect();
         $this->assertSame(1,ShopSubscription::where('shop_id',$shop->id)->count());
-        $sub->refresh(); $this->assertSame(['yearly',$end2->copy()->addDays(14)->toDateString()],[$sub->billing_cycle,$sub->grace_ends_at->toDateString()]);
+        $sub->refresh(); $this->assertSame(['yearly',$end2->toDateString()],[$sub->billing_cycle,$sub->grace_ends_at->toDateString()]);
         $this->assertSame(2,SubscriptionEvent::where('shop_id',$shop->id)->count());
         $this->assertDatabaseHas('subscription_events',['shop_subscription_id'=>$sub->id,'admin_id'=>$admin->id,'reason'=>'Goodwill']);
         $this->assertDatabaseHas('platform_audit_logs',['actor_admin_id'=>$admin->id,'action'=>'subscription.updated','target_id'=>$shop->id]);
@@ -52,7 +52,7 @@ class BillingAdminTest extends AdminTestCase
         $this->grant($shop,'dhiran_yearly','yearly',today()->addDays(20)->toDateString())->assertSessionHasErrors('ends_at');
         $this->assertSame($snap,[$old->fresh()->ends_at->toDateString(),$new->fresh()->ends_at->toDateString()]);
         $end=today()->addDays(100); $this->grant($shop,'dhiran_yearly','yearly',$end->toDateString())->assertRedirect();
-        $new->refresh(); $this->assertSame([$end->toDateString(),$end->copy()->addDays(14)->toDateString()],[$new->ends_at->toDateString(),$new->grace_ends_at->toDateString()]);
+        $new->refresh(); $this->assertSame([$end->toDateString(),$end->toDateString()],[$new->ends_at->toDateString(),$new->grace_ends_at->toDateString()]);
         $this->assertSame($snap[0],$old->fresh()->ends_at->toDateString());
         $this->assertTrue($shop->fresh()->hasEdition('dhiran'));
     }

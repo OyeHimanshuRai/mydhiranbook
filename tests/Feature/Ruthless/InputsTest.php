@@ -1340,16 +1340,12 @@ class InputsTest extends TestCase
 
     private function planBody(array $o = []): array
     {
-        return $o + ['price_monthly' => 1852, 'grace_days' => 7, 'staff_limit' => 3, 'max_items' => 1000, 'is_active' => 1];
+        return $o + ['grace_days' => 7, 'staff_limit' => 3, 'max_items' => 1000];
     }
 
     public static function badPlanInputs(): array
     {
         return [
-            'negative price'      => ['price_monthly', -1],
-            'huge price'          => ['price_monthly', 10000001],
-            'fractional price'    => ['price_monthly', '18.52'],
-            'text price'          => ['price_monthly', 'free'],
             'negative grace'      => ['grace_days', -1],
             'grace over 90'       => ['grace_days', 91],
             'staff limit zero'    => ['staff_limit', 0],
@@ -1357,52 +1353,20 @@ class InputsTest extends TestCase
             'max items zero'      => ['max_items', 0],
             'max items negative'  => ['max_items', -3],
             'max items huge'      => ['max_items', 1000001],
-            'active not boolean'  => ['is_active', 'maybe'],
             'reason too long'     => ['reason', str_repeat('r', 501)],
-            'missing price'       => ['price_monthly', null],
+            'missing grace'       => ['grace_days', null],
         ];
     }
 
     #[DataProvider('badPlanInputs')]
     public function test_plan_update_rejects_bad_numbers_and_changes_nothing(string $field, mixed $value): void
     {
-        // Rule: price 0..10,000,000 integer, grace 0..90, staff 1..1000, items 1..1,000,000, is_active boolean, reason <=500.
+        // Rule: grace 0..90, staff 1..1000, items 1..1,000,000, reason <=500.
         $this->signIn();
         $plan = $this->plan();
-        $before = $plan->only('price_monthly', 'grace_days', 'features');
+        $before = $plan->only('grace_days', 'features');
         $this->patch('/admin/plans/' . $plan->id, $this->planBody([$field => $value]))->assertSessionHasErrors($field);
-        $this->assertEquals($before, $plan->fresh()->only('price_monthly', 'grace_days', 'features'));
-    }
-
-    public function test_an_active_plan_cannot_be_priced_at_zero(): void
-    {
-        // Rule: no free plan (no free trial): a ₹0 monthly price on an active plan is refused (min is 0 today).
-        $this->signIn();
-        $plan = $this->plan();
-        $this->patch('/admin/plans/' . $plan->id, $this->planBody(['price_monthly' => 0]))->assertSessionHasErrors('price_monthly');
-        $this->assertSame(1852, (int) $plan->fresh()->price_monthly);
-    }
-
-    public function test_the_last_active_plan_cannot_be_deactivated_but_one_of_two_can(): void
-    {
-        // Rule: at least one plan stays active.
-        $this->signIn();
-        $monthly = $this->plan('dhiran_monthly');
-        $yearly = $this->plan('dhiran_yearly');
-        $this->patch('/admin/plans/' . $monthly->id, $this->planBody(['is_active' => 0]))->assertSessionHasNoErrors();
-        $this->assertFalse((bool) $monthly->fresh()->is_active);
-        $this->patch('/admin/plans/' . $yearly->id, $this->planBody(['price_monthly' => 0 + $yearly->price_monthly, 'is_active' => 0, 'grace_days' => 14, 'staff_limit' => 7, 'max_items' => 3000]))->assertSessionHasErrors('is_active');
-        $this->assertTrue((bool) $yearly->fresh()->is_active);
-    }
-
-    public function test_a_monthly_only_plan_never_gains_a_yearly_price(): void
-    {
-        // Rule: price_yearly is only editable on a plan that already sells yearly.
-        $this->signIn();
-        $plan = $this->plan('dhiran_monthly');
-        $this->assertNull($plan->price_yearly);
-        $this->patch('/admin/plans/' . $plan->id, $this->planBody(['price_yearly' => 19999]))->assertSessionHasNoErrors();
-        $this->assertNull($plan->fresh()->price_yearly);
+        $this->assertEquals($before, $plan->fresh()->only('grace_days', 'features'));
     }
 
     public function test_plan_update_for_an_unknown_id_is_404_and_audit_reason_html_is_escaped(): void

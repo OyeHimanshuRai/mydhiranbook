@@ -61,8 +61,8 @@ class EntitlementTest extends TestCase
         (new PlanSeeder)->run(); (new PlanSeeder)->run();
         $this->assertSame(2,Plan::count());
         $m=Plan::where('code','dhiran_monthly')->firstOrFail(); $y=Plan::where('code','dhiran_yearly')->firstOrFail();
-        $this->assertSame([1852,7],[$m->priceFor('monthly'),$m->grace_days]);
-        $this->assertSame([19999,14],[$y->priceFor('yearly'),$y->grace_days]);
+        $this->assertSame([1852,7],[(int)$m->price_monthly,$m->grace_days]);
+        $this->assertSame([19999,14],[(int)$y->price_yearly,$y->grace_days]);
     }
     public function test_registration_creates_no_trial(): void
     {

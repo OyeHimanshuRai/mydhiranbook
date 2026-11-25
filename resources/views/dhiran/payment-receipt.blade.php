@@ -2,7 +2,7 @@
     // $show('key'): the owner's Settings > Receipt switches. The Loan Number has no switch and is always printed.
     $any = fn (string ...$keys) => collect($keys)->contains(fn ($k) => $show($k));
     $shop = auth()->user()?->shop;
-    $shopName = $shop?->name ?: 'Dhiran';
+    $shopName = $shop?->name ?: 'MyDhiranBook';
     $shopContact = collect([$shop?->mobile ?? $shop?->phone ?? auth()->user()?->mobile, auth()->user()?->email])->filter()->implode(' · ');
     $customer = $loan->customer;
     $paymentDate = $payment->payment_date ? \Illuminate\Support\Carbon::parse($payment->payment_date)->format('d M Y') : '-';

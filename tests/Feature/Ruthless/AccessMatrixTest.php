@@ -503,7 +503,7 @@ class AccessMatrixTest extends AdminTestCase
             'PATCH admin/shops/{shop}' => ['status' => 'suspended', 'reason' => 'ruthless audit'],
             'POST admin/shops/{shop}/subscription' => ['plan' => 'dhiran_monthly', 'billing_cycle' => 'monthly', 'ends_at' => today()->addYears(5)->toDateString(), 'reason' => 'ruthless audit'], // after approve + extend the shop's term already ends ~2 years out; a grant may not shorten it
             'POST admin/shops/{shop}/subscription/terminate' => ['reason' => 'ruthless audit'],
-            'PATCH admin/plans/{plan}' => ['price_monthly' => 1852, 'price_yearly' => 19999, 'grace_days' => 7, 'staff_limit' => 3, 'max_items' => 1000, 'is_active' => 1, 'reason' => 'ruthless audit'],
+            'PATCH admin/plans/{plan}' => ['grace_days' => 7, 'staff_limit' => 3, 'max_items' => 1000, 'reason' => 'ruthless audit'],
             'POST admin/accounts' => ['name' => 'New Admin', 'email' => 'new-admin@example.test', 'password' => 'Admin-Created-12345', 'permissions' => []],
             'PATCH admin/accounts/{admin}' => ['is_active' => 1, 'permissions' => ['can_manage_shops']],
             default => [],
@@ -556,7 +556,7 @@ class AccessMatrixTest extends AdminTestCase
         $w = $this->world();
         $this->admin(['email' => 'super@example.test']);
         $this->signIn($this->admin(['email' => 'limited@example.test', 'role' => 'support', 'permissions' => array_values(array_diff(PlatformAdmin::PERMISSIONS, [$flag]))]));
-        $shop = $w['a']->fresh()->only('status'); $plan = Plan::find($w['ids']['plan'])->only('price_monthly');
+        $shop = $w['a']->fresh()->only('status'); $plan = Plan::find($w['ids']['plan'])->only('grace_days');
         $denied = 0; $bad = [];
         foreach ($this->adminRoutes() as $r) {
             foreach ($r['methods'] as $m) {
@@ -571,7 +571,7 @@ class AccessMatrixTest extends AdminTestCase
         $this->assertSame([], $bad);
         $this->assertGreaterThanOrEqual($denied, PlatformAuditLog::where('action', 'admin.permission_denied')->where('reason', $flag)->count(), 'denials must be audited');
         $this->assertSame($shop, $w['a']->fresh()->only('status'));
-        $this->assertSame($plan, Plan::find($w['ids']['plan'])->only('price_monthly'));
+        $this->assertSame($plan, Plan::find($w['ids']['plan'])->only('grace_days'));
     }
 
     #[DataProvider('adminFlags')]

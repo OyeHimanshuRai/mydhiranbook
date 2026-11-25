@@ -10,7 +10,7 @@ class ShopSubscription extends Model
 {
     public const STATUSES = ['active', 'grace', 'expired', 'cancelled'];
 
-    protected $fillable = ['shop_id', 'user_id', 'plan_id', 'status', 'billing_cycle', 'starts_at', 'ends_at', 'grace_ends_at', 'cancelled_at', 'price_paid', 'razorpay_order_id', 'razorpay_payment_id', 'updated_by_admin_id', 'actor_type', 'notes'];
+    protected $fillable = ['shop_id', 'user_id', 'plan_id', 'status', 'billing_cycle', 'starts_at', 'ends_at', 'grace_ends_at', 'cancelled_at', 'price_paid', 'updated_by_admin_id', 'actor_type', 'notes'];
 
     protected function casts(): array
     {

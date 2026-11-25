@@ -9,7 +9,7 @@
                 <div class="ck-grid">
                     <x-site.field wide name="name" label="Business name" req :value="old('name', $shop->name)" required maxlength="150" autocomplete="organization" />
                     <x-site.field name="phone" label="Business phone" type="tel" req :value="old('phone', $shop->phone)" required inputmode="numeric" maxlength="16" autocomplete="tel" placeholder="10-digit number" />
-                    <x-site.field name="loan_number_prefix" label="Loan receipt prefix" hint="Printed before every loan number." :value="old('loan_number_prefix', $prefix)" maxlength="12" autocapitalize="characters" />
+                    <x-site.field name="loan_number_prefix" label="Loan receipt prefix" hint="Printed before every loan number." :value="old('loan_number_prefix', $prefix)" maxlength="10" autocapitalize="characters" />
                     <x-site.field wide name="address" label="Business address" req :value="old('address', $shop->address)" required maxlength="500" autocomplete="street-address" />
                 </div>
                 <div class="sc-actions"><button type="submit" class="ui-btn sc-btn" data-busy="Sending…">Fix and send again</button></div>

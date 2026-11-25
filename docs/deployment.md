@@ -74,7 +74,7 @@ Session / cache / queue
 Mail (config/mail.php; only the `smtp` mailer is defined besides `log`)
 - `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT` (587), `MAIL_SCHEME`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`
 
-Business details (config/business.php; shown on the legal pages and the "Your plan" page)
+Business details (config/business.php; shown on the legal pages and the "Your access" page)
 - `BUSINESS_NAME`, `BUSINESS_LEGAL_NAME`, `BUSINESS_EMAIL`, `BUSINESS_PHONE`, `BUSINESS_ADDRESS`, `BUSINESS_JURISDICTION` (default `India`)
 
 Other keys read by config but not in `.env.example`: `BCRYPT_ROUNDS` (default 12), `MATERIALS_FETCH_ENABLED` (default false; the metal-rate fetch job is never scheduled).
@@ -129,6 +129,8 @@ Scheduled in `routes/console.php`, all `withoutOverlapping()`:
 - `dhiran:accrue-interest` daily
 - `dhiran:forfeiture-check` daily
 - `subscription:check-expiry` daily (active -> grace -> expired bookkeeping)
+- `dhiran:purge-old-loan-uploads` daily
+- `dhiran:prune-idempotency-keys` daily
 
 ### Queue worker
 
@@ -154,11 +156,11 @@ WantedBy=multi-user.target
 
 `--queue` must equal `QUEUE_NAME`. `--max-time` makes the worker exit hourly and systemd restarts it, which also picks up new code. Failed jobs go to the `failed_jobs` table (`php artisan queue:failed`).
 
-## 8. First platform admin
+## 7. First platform admin
 
 Create the first super admin on the server: `php artisan dhiran:create-admin you@example.com --name="Your Name"`. It prints a random temporary password once. Sign in at `/admin/login` within 24 hours: the app then shows a TOTP secret, enrols TOTP on the first valid code and issues recovery codes. First enrolment is refused after 24 hours from creation or the last password reset; use "Forgot password" on `/admin/login`: the emailed reset reopens the window and discards any authenticator secret that was shown but never confirmed. Admin sign-in is password plus TOTP.
 
-## 9. Backups
+## 8. Backups
 
 ```bash
 # database (nightly, keep copies off the server)
@@ -169,7 +171,7 @@ tar czf dhiran-files-$(date +%F).tgz -C /var/www/dhiran storage/app/private .env
 
 Restore: `pg_restore -d <new_db> dhiran-YYYY-MM-DD.dump`, unpack `storage/app/private`, then run the verification steps below. Store `.env` backups encrypted; it holds `APP_KEY` (without the same `APP_KEY`, encrypted columns cannot be read: admin `two_factor_secret` and borrower PII in `customers.pan`, `customers.id_number`, `dhiran_loans.kyc_pan` — losing the key loses that data; never rotate it without re-encrypting). Test a restore before launch.
 
-## 10. Upgrade and rollback
+## 9. Upgrade and rollback
 
 Upgrade:
 

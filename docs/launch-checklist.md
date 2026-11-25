@@ -35,7 +35,7 @@ Tick each box; fill the Results table at the end.
 - [ ] `/up` monitored; `queue:failed` reviewed
 
 ## Admin
-- [ ] First super admin created (GAP in `docs/deployment.md` section 8: no command exists)
+- [ ] First super admin created (GAP in `docs/deployment.md` section 7: no command exists)
 - [ ] Admin signs in at `/admin/login` with password plus TOTP; recovery codes stored
 - [ ] Only needed admins exist; each has least permissions
 

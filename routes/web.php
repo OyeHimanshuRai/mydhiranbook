@@ -2,34 +2,34 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ShopAuthController as Auth;
 Route::get('/login',[Auth::class,'loginForm'])->name('login');
-Route::post('/login',[Auth::class,'login'])->middleware('throttle:5,1');
+Route::post('/login',[Auth::class,'login'])->middleware('throttle:5,1,shop-login');
 Route::get('/register',[Auth::class,'registerForm']);
-Route::post('/register',[Auth::class,'register'])->middleware('throttle:5,1');
+Route::post('/register',[Auth::class,'register'])->middleware('throttle:5,1,shop-register');
 Route::post('/logout',[Auth::class,'logout'])->name('logout');
 Route::middleware('auth')->group(function () {
-    Route::post('/confirm-password',[\App\Http\Controllers\ConfirmPasswordController::class,'store'])->middleware('throttle:5,1')->name('password.confirm.store');
+    Route::post('/confirm-password',[\App\Http\Controllers\ConfirmPasswordController::class,'store'])->middleware('throttle:5,1,confirm-password')->name('password.confirm.store');
 });
 Route::get('/forgot-password',[\App\Http\Controllers\PasswordResetController::class,'forgotForm'])->name('password.request');
-Route::post('/forgot-password',[\App\Http\Controllers\PasswordResetController::class,'forgot'])->middleware('throttle:3,1')->name('password.email');
+Route::post('/forgot-password',[\App\Http\Controllers\PasswordResetController::class,'forgot'])->middleware('throttle:3,1,forgot-password')->name('password.email');
 Route::get('/reset-password/{token}',[\App\Http\Controllers\PasswordResetController::class,'resetForm'])->name('password.reset');
-Route::post('/reset-password',[\App\Http\Controllers\PasswordResetController::class,'reset'])->middleware('throttle:5,1')->name('password.store');
+Route::post('/reset-password',[\App\Http\Controllers\PasswordResetController::class,'reset'])->middleware('throttle:5,1,reset-password')->name('password.store');
 
 // Email verification (shopless owners still onboarding), the business form and the wait for an admin to approve the shop.
 Route::middleware('auth')->group(function() {
     $v=\App\Http\Controllers\EmailVerificationOtpController::class;
     Route::get('/verify-email',[$v,'show'])->name('dhiran.verify-email');
-    Route::post('/verify-email/send',[$v,'send'])->middleware('throttle:10,1')->name('dhiran.verify-email.send');
-    Route::post('/verify-email/verify',[$v,'verify'])->middleware('throttle:10,1')->name('dhiran.verify-email.verify');
-    Route::post('/verify-email/resend',[$v,'resend'])->middleware('throttle:10,1')->name('dhiran.verify-email.resend');
+    Route::post('/verify-email/send',[$v,'send'])->middleware('throttle:10,1,verify-send')->name('dhiran.verify-email.send');
+    Route::post('/verify-email/verify',[$v,'verify'])->middleware('throttle:10,1,verify-code')->name('dhiran.verify-email.verify');
+    Route::post('/verify-email/resend',[$v,'resend'])->middleware('throttle:10,1,verify-resend')->name('dhiran.verify-email.resend');
 });
 Route::middleware(['auth','dhiran.verified'])->prefix('onboarding')->group(function() {
     $o=\App\Http\Controllers\DhiranOnboardingController::class;
     Route::get('/plans',[$o,'plans'])->name('dhiran.plans');
     Route::get('/business',[$o,'create'])->name('dhiran.onboarding');
-    Route::post('/business',[$o,'store'])->middleware('throttle:10,1')->name('dhiran.onboarding.store');
+    Route::post('/business',[$o,'store'])->middleware('throttle:10,1,onboarding-store')->name('dhiran.onboarding.store');
 });
 Route::middleware(['auth','dhiran.verified'])->get('/pending',[\App\Http\Controllers\DhiranOnboardingController::class,'pending'])->name('dhiran.pending');
-Route::middleware(['auth','dhiran.verified','throttle:10,1'])->post('/pending/resubmit',[\App\Http\Controllers\DhiranOnboardingController::class,'resubmit'])->name('dhiran.resubmit');
+Route::middleware(['auth','dhiran.verified','throttle:10,1,onboarding-resubmit'])->post('/pending/resubmit',[\App\Http\Controllers\DhiranOnboardingController::class,'resubmit'])->name('dhiran.resubmit');
 Route::middleware(['auth','dhiran.verified'])->get('/access-ended',[\App\Http\Controllers\DhiranOnboardingController::class,'ended'])->name('dhiran.expired');
 Route::middleware('auth')->get('/account-blocked',[\App\Http\Controllers\DhiranOnboardingController::class,'blocked'])->name('dhiran.blocked');
 use App\Http\Controllers\SiteController;
@@ -44,19 +44,19 @@ use App\Http\Controllers\Admin\PlatformController as Platform;
 use App\Http\Controllers\Admin\{ShopManagementController as AdminShops,PlanController as AdminPlans,BillingManagementController as AdminBilling};
 Route::prefix('admin')->group(function() {
     Route::get('/login',[AdminAuth::class,'form'])->name('admin.login');
-    Route::post('/login',[AdminAuth::class,'login'])->middleware('throttle:5,1');
+    Route::post('/login',[AdminAuth::class,'login'])->middleware('throttle:5,1,admin-login');
     Route::get('/forgot-password',[AdminAuth::class,'forgotForm']);
-    Route::post('/forgot-password',[AdminAuth::class,'forgot'])->middleware('throttle:3,1');
+    Route::post('/forgot-password',[AdminAuth::class,'forgot'])->middleware('throttle:3,1,admin-forgot');
     Route::get('/reset-password/{token}',[AdminAuth::class,'resetForm'])->name('admin.password.reset');
-    Route::post('/reset-password',[AdminAuth::class,'reset'])->middleware('throttle:5,1');
+    Route::post('/reset-password',[AdminAuth::class,'reset'])->middleware('throttle:5,1,admin-reset');
     Route::middleware('admin.session:challenge')->group(function() {
-        Route::get('/mfa',[AdminAuth::class,'mfaForm']); Route::post('/mfa',[AdminAuth::class,'mfa'])->middleware('throttle:5,1');
+        Route::get('/mfa',[AdminAuth::class,'mfaForm']); Route::post('/mfa',[AdminAuth::class,'mfa'])->middleware('throttle:5,1,admin-mfa');
         Route::post('/logout',[AdminAuth::class,'logout']);
     });
     Route::middleware('admin.session')->group(function() {
         Route::get('/',[Platform::class,'dashboard']); Route::get('/audit',[Platform::class,'audit']);
-        Route::get('/requests',[AdminShops::class,'requests']); Route::post('/requests/{shop}/approve',[AdminShops::class,'approve'])->whereNumber('shop'); Route::post('/requests/{shop}/reject',[AdminShops::class,'reject'])->whereNumber('shop'); Route::post('/shops/{shop}/extend',[AdminShops::class,'extend'])->whereNumber('shop');
-        Route::get('/shops',[AdminShops::class,'index']); Route::get('/shops/{shop}',[AdminShops::class,'show'])->whereNumber('shop'); Route::patch('/shops/{shop}',[AdminShops::class,'update']);
+        Route::get('/requests',[AdminShops::class,'requests']); Route::post('/requests/{shop}/approve',[AdminShops::class,'approve']); Route::post('/requests/{shop}/reject',[AdminShops::class,'reject']); Route::post('/shops/{shop}/extend',[AdminShops::class,'extend']);
+        Route::get('/shops',[AdminShops::class,'index']); Route::get('/shops/{shop}',[AdminShops::class,'show']); Route::patch('/shops/{shop}',[AdminShops::class,'update']);
         Route::post('/shops/{shop}/subscription',[AdminBilling::class,'updateShopSubscription']); Route::post('/shops/{shop}/subscription/terminate',[AdminBilling::class,'terminateShopSubscription']);
         Route::get('/plans',[AdminPlans::class,'index']); Route::patch('/plans/{plan}',[AdminPlans::class,'update']);
         Route::get('/accounts',[Platform::class,'admins']); Route::post('/accounts',[Platform::class,'storeAdmin']); Route::patch('/accounts/{admin}',[Platform::class,'updateAdmin']);

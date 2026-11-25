@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 use App\Support\TenantContext;
 use Illuminate\Support\Facades\Auth;
 
-/** Read-only "Your plan" page: no payment, no plan choice. An admin grants and extends access. */
+/** Read-only "Your access" page: no payment, no plan choice. An admin grants and extends access. */
 class SubscriptionController extends Controller
 {
     public function status()
