@@ -16,9 +16,9 @@ class PlanAdminTest extends AdminTestCase
         $this->assertSame([2000,5,4,1200,false],[$plan->priceFor('monthly'),$plan->grace_days,$plan->feature('staff_limit'),$plan->feature('max_items'),$plan->is_active]);
         $this->assertTrue((bool)$plan->feature('customers'));
         $this->assertDatabaseHas('platform_audit_logs',['actor_admin_id'=>$admin->id,'action'=>'plan.updated','target_id'=>$plan->id]);
-        $u=User::create(['name'=>'B','email'=>'b@example.test','password'=>'Buyer-pass-12345','email_verified_at'=>now()]);
+        // an inactive plan is not offered on the public pricing page (no plan step in onboarding any more)
         \Illuminate\Support\Facades\Auth::shouldUse('web'); // one app instance serves both sessions in a test
-        $this->actingAs($u)->get(route('dhiran.plans'))->assertOk()->assertDontSee('MyDhiranBook Monthly')->assertSee('MyDhiranBook Yearly');
+        $this->get(route('site.pricing'))->assertOk()->assertDontSee('MyDhiranBook Monthly')->assertSee('MyDhiranBook Yearly');
     }
     public function test_cannot_deactivate_every_plan_or_set_invalid_values(): void
     {

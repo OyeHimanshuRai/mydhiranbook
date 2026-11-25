@@ -2,6 +2,7 @@
     $u = auth('platform_admin')->user();
     $nav = [
         ['/admin', 'Dashboard', null, 'admin'],
+        ['/admin/requests', 'New shop requests', 'can_manage_shops', 'admin/requests'],
         ['/admin/shops', 'Shops', 'can_manage_shops', 'admin/shops*'],
         ['/admin/plans', 'Plans', 'can_manage_plans', 'admin/plans'],
         ['/admin/unresolved-payments', 'Unresolved payments', 'can_manage_subscriptions', 'admin/unresolved-payments'],
@@ -21,7 +22,7 @@
 <body class="adm">
 <a href="#main" class="adm-skip">Skip to content</a>
 <aside class="adm-side" id="adm-side" aria-label="Platform admin">
-    <a href="/admin" class="adm-brand" aria-label="dhiran. platform admin home">dhiran<span>.</span></a>
+    <a href="/admin" class="adm-brand" aria-label="mydhiranbook platform admin home">mydhiranbook<span>.</span></a>
     <nav class="adm-nav" aria-label="Main">
         @foreach($nav as [$href, $label, $perm, $match])
             @if(!$perm || $u->hasPermission($perm))<a href="{{ $href }}" @if(request()->is($match)) aria-current="page" @endif>{{ $label }}</a>@endif
@@ -33,7 +34,7 @@
 <div class="adm-shell">
     <header class="adm-top">
         <button type="button" class="adm-burger" id="adm-burger" aria-expanded="false" aria-controls="adm-side">Menu</button>
-        <a href="/admin" class="adm-brand" aria-label="dhiran. platform admin home">dhiran<span>.</span></a>
+        <a href="/admin" class="adm-brand" aria-label="mydhiranbook platform admin home">mydhiranbook<span>.</span></a>
         <div class="adm-account"><span title="{{ $u->name }}">{{ $u->name }}</span><form action="/admin/logout" method="post">@csrf<button class="adm-btn adm-btn--ghost">Sign out</button></form></div>
     </header>
     <main class="adm-content" id="main" tabindex="-1">

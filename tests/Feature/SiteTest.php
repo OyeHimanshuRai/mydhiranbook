@@ -34,7 +34,7 @@ class SiteTest extends TestCase
     {
         (new PlanSeeder)->run();
         $owner = $this->newOwner();
-        $pages = [$this->get('/register'), $this->get('/login'), $this->actingAs($owner)->get(route('dhiran.plans'))];
+        $pages = [$this->get('/register'), $this->get('/login'), $this->actingAs($owner)->get(route('dhiran.onboarding'))];
         foreach ($pages as $r) {
             $r->assertOk();
             foreach (['/pricing', '/terms', '/privacy', '/refund', '/contact'] as $href) { $r->assertSee('href="'.$href.'"', false); }
@@ -55,7 +55,7 @@ class SiteTest extends TestCase
         $this->get('/')->assertOk()->assertSee('Get started');
         $this->actingAs($this->newOwner())->get('/')->assertRedirect(route('dhiran.dashboard'));
         // shopless owner still lands in the onboarding chain
-        $this->actingAs($this->newOwner())->followingRedirects()->get('/')->assertSee('Choose your MyDhiranBook plan');
+        $this->actingAs($this->newOwner())->followingRedirects()->get('/')->assertSee('Set up your MyDhiranBook business');
     }
 
     public function test_every_public_auth_and_checkout_page_has_viewport_and_one_shared_footer(): void
@@ -66,7 +66,7 @@ class SiteTest extends TestCase
         $unverified = $this->newOwner(['email_verified_at' => null]);
         $pages[] = $this->actingAs($unverified)->get(route('dhiran.verify-email'));
         $owner = $this->newOwner();
-        foreach ([route('dhiran.plans'), route('subscription.status')] as $url) {
+        foreach ([route('dhiran.onboarding'), route('subscription.status')] as $url) {
             $pages[] = $this->actingAs($owner)->get($url);
         }
         $paid = $this->newOwner(); $this->paidShopless($paid);

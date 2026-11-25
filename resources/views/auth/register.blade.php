@@ -1,5 +1,5 @@
 @extends('auth.base') @section('title','Create an account') @section('content')
-<h1>Your own book.</h1><p class="lede">Create your MyDhiranBook owner account. You choose a plan and set up your business next.</p>
+<h1>Your own book.</h1><p class="lede">Create your MyDhiranBook owner account. You add your business details next; we approve each new shop before it opens.</p>
 <form method="post" action="/register" data-once>@csrf
 <fieldset class="ui-group"><legend>About you</legend>
 <x-site.field name="name" label="Your name" req :value="old('name')" required autocomplete="name" />

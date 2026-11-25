@@ -14,7 +14,7 @@ Route::post('/forgot-password',[\App\Http\Controllers\PasswordResetController::c
 Route::get('/reset-password/{token}',[\App\Http\Controllers\PasswordResetController::class,'resetForm'])->name('password.reset');
 Route::post('/reset-password',[\App\Http\Controllers\PasswordResetController::class,'reset'])->middleware('throttle:5,1')->name('password.store');
 
-// Email verification (shopless owners still onboarding) and the pay-first onboarding chain.
+// Email verification (shopless owners still onboarding), the business form and the wait for an admin to approve the shop.
 Route::middleware('auth')->group(function() {
     $v=\App\Http\Controllers\EmailVerificationOtpController::class;
     Route::get('/verify-email',[$v,'show'])->name('dhiran.verify-email');
@@ -28,6 +28,7 @@ Route::middleware(['auth','dhiran.verified'])->prefix('onboarding')->group(funct
     Route::get('/business',[$o,'create'])->name('dhiran.onboarding');
     Route::post('/business',[$o,'store'])->middleware('throttle:10,1')->name('dhiran.onboarding.store');
 });
+Route::middleware(['auth','dhiran.verified'])->get('/pending',[\App\Http\Controllers\DhiranOnboardingController::class,'pending'])->name('dhiran.pending');
 use App\Http\Controllers\SiteController;
 Route::get('/pricing',[SiteController::class,'pricing'])->name('site.pricing');
 Route::view('/terms','site.terms')->name('site.terms');
@@ -52,6 +53,7 @@ Route::prefix('admin')->group(function() {
     });
     Route::middleware('admin.session')->group(function() {
         Route::get('/',[Platform::class,'dashboard']); Route::get('/audit',[Platform::class,'audit']);
+        Route::get('/requests',[AdminShops::class,'requests']); Route::post('/requests/{shop}/approve',[AdminShops::class,'approve'])->whereNumber('shop'); Route::post('/requests/{shop}/reject',[AdminShops::class,'reject'])->whereNumber('shop');
         Route::get('/shops',[AdminShops::class,'index']); Route::get('/shops/{shop}',[AdminShops::class,'show'])->whereNumber('shop'); Route::patch('/shops/{shop}',[AdminShops::class,'update']);
         Route::post('/shops/{shop}/subscription',[AdminBilling::class,'updateShopSubscription']); Route::post('/shops/{shop}/subscription/terminate',[AdminBilling::class,'terminateShopSubscription']);
         Route::get('/receipts/{invoice}',[AdminBilling::class,'receipt']);

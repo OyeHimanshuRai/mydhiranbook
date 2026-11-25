@@ -53,17 +53,4 @@ class ShopAdminTest extends AdminTestCase
         $this->actingAs($owner)->patch('/admin/shops/'.$shop->id,['status'=>'suspended','reason'=>'x'])->assertRedirect('/admin/login');
         $this->assertSame('active',$shop->fresh()->status);
     }
-    public function test_first_term_receipt_and_paid_event_follow_the_shop_after_onboarding(): void
-    {
-        \Illuminate\Support\Facades\Mail::fake(); (new \Database\Seeders\PlanSeeder)->run();
-        $rz=new \Tests\Support\FakeRazorpayClient; $this->app->instance(\App\Services\Billing\RazorpayClient::class,$rz);
-        $u=User::create(['name'=>'Buyer','email'=>'buyer@example.test','mobile_number'=>'9000000999','password'=>'a-long-test-password','role'=>'owner','terms_accepted_at'=>now(),'email_verified_at'=>now()]);
-        $plan=\App\Models\Platform\Plan::where('code','dhiran_yearly')->firstOrFail();
-        $rz->seedOrder('order_a',$plan->priceFor('yearly')*100,['plan_id'=>$plan->id,'billing_cycle'=>'yearly','user_id'=>$u->id]); $rz->seedPayment('pay_a','order_a');
-        $this->actingAs($u)->post('/subscription/payment/callback',['razorpay_order_id'=>'order_a','razorpay_payment_id'=>'pay_a','razorpay_signature'=>\Tests\Support\FakeRazorpayClient::paymentSignature('order_a','pay_a')]);
-        $this->actingAs($u)->post(route('dhiran.onboarding.store'),['name'=>'Sharma Gold','phone'=>'9876543210','address'=>'12 Main Road, Indore'])->assertRedirect('/');
-        $shop=Shop::sole(); $inv=PlatformInvoice::sole();
-        \Illuminate\Support\Facades\Auth::shouldUse('web'); $this->signIn($this->admin());
-        $this->get('/admin/shops/'.$shop->id)->assertOk()->assertSee($inv->invoice_number)->assertSee('subscription.paid');
-    }
 }

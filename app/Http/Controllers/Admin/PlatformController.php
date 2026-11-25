@@ -21,7 +21,7 @@ class PlatformController
         return view('admin.dashboard',['stats'=>[
             'shops'=>Shop::count(),'active'=>Shop::where('status','active')->count(),'suspended'=>Shop::where('status','suspended')->count(),
             'entitled'=>$entitled->distinct()->count('shop_id'),
-            'pending'=>DB::table('shop_subscriptions')->whereNull('shop_id')->count(),
+            'pending'=>Shop::where('status','pending')->count(),
             'collected'=>$paidThisMonth->sum('price_paid'),
             'unresolved'=>DB::table('subscription_events')->where('event_type','payment.unresolved')->whereRaw("(after->>'resolved_at') is null")->count(),
         ],'adminCount'=>PlatformAdmin::where('is_active',true)->count()]);

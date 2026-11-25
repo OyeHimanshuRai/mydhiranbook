@@ -4,6 +4,8 @@ use Illuminate\Database\Eloquent\Model;
 class Shop extends Model
 {
     protected $attributes = ['status'=>'active'];
+    /** A new shop waits for an admin to approve it (pending), or was turned down (rejected); only active shops open the software. */
+    public function awaitsApproval(): bool { return in_array($this->status, ['pending', 'rejected'], true); }
     public function users() { return $this->hasMany(User::class); }
     public function subscriptions() { return $this->hasMany(\App\Models\Platform\ShopSubscription::class); }
     /** The live term that has started (an early-renewed future term only counts once it starts); else the next one queued. */
@@ -29,5 +31,5 @@ class Shop extends Model
     }
     // a lapsed shop (refunded/terminated/expired) is collect-only: no new staff either, whatever the old plan allowed
     public function canAddStaff(): bool { return !$this->isLapsed() && ($this->staffLimit() === -1 || $this->currentStaffCount() < $this->staffLimit()); }
-    protected $fillable = ['name', 'phone', 'address', 'status', 'financial_lock_date'];
+    protected $fillable = ['name', 'phone', 'address', 'status', 'financial_lock_date', 'reviewed_at', 'review_note'];
 }

@@ -84,9 +84,9 @@ class BillingAdminTest extends AdminTestCase
         (new PlanSeeder)->run(); $this->signIn($this->admin());
         self::createDhiranShop(['name'=>'Live']); $b=Shop::create(['name'=>'Susp','status'=>'suspended']); self::activeSubscription($b,'active',today()->subDays(40));
         $plan=Plan::where('code','dhiran_yearly')->first();
-        ShopSubscription::create(['shop_id'=>null,'plan_id'=>$plan->id,'status'=>'active','billing_cycle'=>'yearly','starts_at'=>today(),'ends_at'=>today()->addYear(),'price_paid'=>19999,'razorpay_payment_id'=>'pay_1','actor_type'=>'self_service']);
+        Shop::create(['name'=>'Waiting','status'=>'pending']); ShopSubscription::create(['shop_id'=>null,'plan_id'=>$plan->id,'status'=>'active','billing_cycle'=>'yearly','starts_at'=>today(),'ends_at'=>today()->addYear(),'price_paid'=>19999,'razorpay_payment_id'=>'pay_1','actor_type'=>'self_service']);
         $m=$this->get('/admin')->assertOk()->viewData('stats');
-        $this->assertSame([2,1,1,1,1,19999],[$m['shops'],$m['active'],$m['suspended'],$m['entitled'],$m['pending'],(int)$m['collected']]);
+        $this->assertSame([3,1,1,1,1,19999],[$m['shops'],$m['active'],$m['suspended'],$m['entitled'],$m['pending'],(int)$m['collected']]);
     }
     public function test_admin_without_permission_403(): void
     {

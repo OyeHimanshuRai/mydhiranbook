@@ -23,7 +23,10 @@ class AdminSecurityTest extends AdminTestCase
         app(\App\Services\Billing\SubscriptionPaymentService::class)->recordUnresolvedPayment('order_A','pay_A','mismatch');
         $ev=SubscriptionEvent::where('event_type','payment.unresolved')->sole();
         $ends=today()->addYears(2)->toDateString();
+        $p1=\App\Models\Shop::create(['name'=>'Waiting A','status'=>'pending']); $p2=\App\Models\Shop::create(['name'=>'Waiting B','status'=>'pending']);
         $table=[
+            'POST admin/requests/{shop}/approve'=>['/admin/requests/'.$p1->id.'/approve',['plan'=>'dhiran_yearly','billing_cycle'=>'yearly','ends_at'=>$ends]],
+            'POST admin/requests/{shop}/reject'=>['/admin/requests/'.$p2->id.'/reject',['reason'=>'Audit']],
             'PATCH admin/shops/{shop}'=>['/admin/shops/'.$shop->id,['status'=>'suspended','reason'=>'Audit']],
             'POST admin/shops/{shop}/subscription'=>['/admin/shops/'.$shop->id.'/subscription',['plan'=>'dhiran_yearly','billing_cycle'=>'yearly','ends_at'=>$ends,'reason'=>'Audit']],
             'POST admin/shops/{shop}/subscription/terminate'=>['/admin/shops/'.$shop->id.'/subscription/terminate',['reason'=>'Audit']],

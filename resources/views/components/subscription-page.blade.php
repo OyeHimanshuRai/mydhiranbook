@@ -1,5 +1,5 @@
 @props(['title' => 'Subscription', 'footer' => false, 'settings' => false])
-@if(auth()->user()?->shop_id)
+@if(auth()->user()?->shop_id && auth()->user()->shop?->status === 'active')
 <x-dhiran-layout :title="$title" :footer="$footer" :settings="$settings"><div class="ck-shell">{{ $slot }}</div>@include('site._js')</x-dhiran-layout>
 @else
 <!doctype html><html lang="en"><head>@include('site._head', ['title' => $title])</head><body class="site">

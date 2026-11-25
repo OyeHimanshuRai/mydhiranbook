@@ -254,8 +254,8 @@ class AccessMatrixTest extends AdminTestCase
             'guest admin -> admin login' => ['guest', '/admin', '/admin/login', 200],
             'unverified dhiran -> verify' => ['unverified', '/dhiran', '/verify-email', 200],
             'unverified plans -> verify' => ['unverified', '/onboarding/plans', '/verify-email', 200],
-            'shopless dhiran -> plans' => ['verified-shopless', '/dhiran', '/onboarding/plans', 200],
-            'shopless business -> plans' => ['verified-shopless', '/onboarding/business', '/onboarding/plans', 200],
+            'shopless dhiran -> business' => ['verified-shopless', '/dhiran', '/onboarding/business', 200],
+            'shopless plans -> business' => ['verified-shopless', '/onboarding/plans', '/onboarding/business', 200],
             'paid dhiran -> business' => ['paid-shopless', '/dhiran', '/onboarding/business', 200],
             'paid plans -> business' => ['paid-shopless', '/onboarding/plans', '/onboarding/business', 200],
             'owner root -> loans' => ['owner-active', '/', '/dhiran/loans', 200],
@@ -466,6 +466,9 @@ class AccessMatrixTest extends AdminTestCase
     private const ADMIN_FLAGS = [
         'GET admin' => null,
         'GET admin/audit' => 'can_view_audit_logs',
+        'GET admin/requests' => 'can_manage_shops',
+        'POST admin/requests/{shop}/approve' => 'can_manage_shops',
+        'POST admin/requests/{shop}/reject' => 'can_manage_shops',
         'GET admin/shops' => 'can_manage_shops',
         'GET admin/shops/{shop}' => 'can_manage_shops',
         'PATCH admin/shops/{shop}' => 'can_suspend_shop',
@@ -492,6 +495,8 @@ class AccessMatrixTest extends AdminTestCase
     private function adminPayload(string $key, array $w): array
     {
         return match ($key) {
+            'POST admin/requests/{shop}/approve' => ['plan' => 'dhiran_monthly', 'billing_cycle' => 'monthly', 'ends_at' => today()->addMonth()->toDateString()],
+            'POST admin/requests/{shop}/reject' => ['reason' => 'ruthless audit'],
             'PATCH admin/shops/{shop}' => ['status' => 'suspended', 'reason' => 'ruthless audit'],
             'POST admin/shops/{shop}/subscription' => ['plan' => 'dhiran_monthly', 'billing_cycle' => 'monthly', 'ends_at' => today()->addDays(400)->toDateString(), 'reason' => 'ruthless audit'],
             'POST admin/shops/{shop}/subscription/terminate' => ['reason' => 'ruthless audit'],
@@ -603,7 +608,11 @@ class AccessMatrixTest extends AdminTestCase
                 $key = "$m {$r['uri']}";
                 if (self::ADMIN_FLAGS[$key] === 'challenge') { continue; }
                 $count = PlatformAuditLog::count();
+                // approve / reject only act on a shop that is waiting: make shop B wait for just this call
+                $waits = str_starts_with($key, 'POST admin/requests/');
+                if ($waits) { \App\Models\Shop::whereKey($w['b']->id)->update(['status' => 'pending']); }
                 $res = $this->send($m, $this->url($r, $ids), $this->adminPayload($key, $w)); $n++;
+                if ($waits) { \App\Models\Shop::whereKey($w['b']->id)->update(['status' => 'active']); }
                 if (! $res->isRedirect()) { $bad[] = "$key => {$res->getStatusCode()} (payload invalid?)"; continue; }
                 if (PlatformAuditLog::count() <= $count) { $bad[] = "$key wrote data but no audit row"; }
             }
