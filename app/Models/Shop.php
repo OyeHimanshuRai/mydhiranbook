@@ -4,6 +4,7 @@ use Illuminate\Database\Eloquent\Model;
 class Shop extends Model
 {
     protected $attributes = ['status'=>'active'];
+    protected $casts = ['reviewed_at'=>'datetime','resubmitted_at'=>'datetime'];
     /** A new shop waits for an admin to approve it (pending), or was turned down (rejected); only active shops open the software. */
     public function awaitsApproval(): bool { return in_array($this->status, ['pending', 'rejected'], true); }
     public function users() { return $this->hasMany(User::class); }
@@ -31,5 +32,5 @@ class Shop extends Model
     }
     // a lapsed shop (refunded/terminated/expired) is collect-only: no new staff either, whatever the old plan allowed
     public function canAddStaff(): bool { return !$this->isLapsed() && ($this->staffLimit() === -1 || $this->currentStaffCount() < $this->staffLimit()); }
-    protected $fillable = ['name', 'phone', 'address', 'status', 'financial_lock_date', 'reviewed_at', 'review_note'];
+    protected $fillable = ['name', 'phone', 'address', 'status', 'financial_lock_date', 'reviewed_at', 'review_note', 'submissions', 'resubmitted_at', 'previous_review_note'];
 }

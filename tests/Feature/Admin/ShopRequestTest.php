@@ -103,4 +103,17 @@ class ShopRequestTest extends AdminTestCase
         $this->actingAs($owner)->post('/admin/requests/'.$shop->id.'/approve', $this->approval())->assertRedirect('/admin/login');
         $this->assertSame('pending', $shop->fresh()->status);
     }
+
+    public function test_a_shop_the_owner_fixed_and_sent_again_shows_as_sent_again_with_the_earlier_reason(): void
+    {
+        Mail::fake(); (new PlanSeeder)->run(); $this->signIn($this->admin());
+        [$shop, $owner] = $this->waiting();
+        $this->post('/admin/requests/'.$shop->id.'/reject', ['reason' => 'Phone number is wrong'])->assertSessionHasNoErrors();
+        \Illuminate\Support\Facades\Auth::shouldUse('web');
+        $this->actingAs($owner->fresh())->post(route('dhiran.resubmit'), ['name' => 'Sharma Gold', 'phone' => '9876500099', 'address' => 'Main Road'])->assertRedirect(route('dhiran.pending'));
+        \Illuminate\Support\Facades\Auth::shouldUse('platform_admin');
+        $this->get('/admin/requests')->assertOk()->assertSee('Sent again (2)')->assertSee('Turned down before')->assertSee('Phone number is wrong')->assertSee('9876500099');
+        $this->post('/admin/requests/'.$shop->id.'/approve')->assertSessionHasNoErrors();   // and it can then be approved like any other
+        $this->assertSame('active', $shop->fresh()->status);
+    }
 }

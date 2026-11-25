@@ -290,3 +290,5 @@
 @media (min-width: 561px) { .sc-btn { width: auto; min-width: 14rem; } }
 @media (max-width: 400px) { .sc { padding: var(--sp-5) var(--sp-4); } }
 @media (prefers-reduced-motion: reduce) { .is-now .sc-dot::after { animation: none; } }
+
+.sc-form { margin: 0 0 var(--sp-4); text-align: left; }

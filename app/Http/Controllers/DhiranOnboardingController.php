@@ -60,7 +60,34 @@ class DhiranOnboardingController extends Controller
         $shop = $user->shop;
         if ($shop->status === 'active') { return redirect('/')->with('success', 'Your shop is approved. Welcome to MyDhiranBook!'); }
         abort_unless($shop->awaitsApproval(), 403);
-        return view('dhiran.onboarding.pending', ['shop' => $shop, 'rejected' => $shop->status === 'rejected']);
+        $prefix = $shop->status === 'rejected' ? (string) (TenantContext::runFor($shop->id, fn () => DhiranSettings::getForShop($shop->id)->loan_number_prefix) ?? '') : '';
+        return view('dhiran.onboarding.pending', ['shop' => $shop, 'rejected' => $shop->status === 'rejected', 'prefix' => $prefix]);
+    }
+
+    /** A rejected shop's owner fixes the details and sends them again: the shop waits in the admin's requests once more. */
+    public function resubmit(Request $request)
+    {
+        $auth = Auth::user();
+        abort_unless($auth->shop_id && $auth->isShopOwner(), 403);
+        $request->merge(['phone' => Mobile::normalize($request->input('phone')) ?? $request->input('phone')]);
+        $data = $request->validate([
+            'name' => 'required|string|max:150', 'phone' => ['required', new IndianMobileRule()],
+            'address' => 'required|string|max:500', 'loan_number_prefix' => 'nullable|string|max:12|alpha_dash',
+        ]);
+        $sent = DB::transaction(function () use ($auth, $data, $request) {
+            $shop = Shop::whereKey($auth->shop_id)->lockForUpdate()->firstOrFail();
+            if ($shop->status !== 'rejected') { return false; }
+            $before = $shop->only('name', 'phone', 'address', 'status');
+            $shop->update([
+                'name' => $data['name'], 'phone' => $data['phone'], 'address' => $data['address'], 'status' => 'pending',
+                'previous_review_note' => $shop->review_note, 'review_note' => null, 'reviewed_at' => null,
+                'submissions' => $shop->submissions + 1, 'resubmitted_at' => now(),
+            ]);
+            if (($data['loan_number_prefix'] ?? '') !== '') { TenantContext::runFor($shop->id, fn () => DhiranSettings::getForShop($shop->id)->update(['loan_number_prefix' => $data['loan_number_prefix']])); }
+            app(\App\Services\PlatformAuditService::class)->log(null, 'shop.resubmitted', 'shop', $shop->id, $before, $shop->only('name', 'phone', 'address', 'status') + ['submissions' => $shop->submissions], 'Owner fixed the details and sent them again', $request);
+            return true;
+        });
+        return redirect()->route('dhiran.pending')->with($sent ? 'success' : 'error', $sent ? 'Sent again. We will check it and email you.' : 'Your shop is not waiting for changes.');
     }
 
     /** Shown to every user of a shop whose one-year access has ended, until an admin extends it. */

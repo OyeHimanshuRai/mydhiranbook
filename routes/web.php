@@ -29,6 +29,7 @@ Route::middleware(['auth','dhiran.verified'])->prefix('onboarding')->group(funct
     Route::post('/business',[$o,'store'])->middleware('throttle:10,1')->name('dhiran.onboarding.store');
 });
 Route::middleware(['auth','dhiran.verified'])->get('/pending',[\App\Http\Controllers\DhiranOnboardingController::class,'pending'])->name('dhiran.pending');
+Route::middleware(['auth','dhiran.verified','throttle:10,1'])->post('/pending/resubmit',[\App\Http\Controllers\DhiranOnboardingController::class,'resubmit'])->name('dhiran.resubmit');
 Route::middleware(['auth','dhiran.verified'])->get('/access-ended',[\App\Http\Controllers\DhiranOnboardingController::class,'ended'])->name('dhiran.expired');
 Route::middleware('auth')->get('/account-blocked',[\App\Http\Controllers\DhiranOnboardingController::class,'blocked'])->name('dhiran.blocked');
 use App\Http\Controllers\SiteController;

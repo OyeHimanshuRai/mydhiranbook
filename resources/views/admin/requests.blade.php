@@ -12,9 +12,11 @@
 <article class="adm-panel rq-card" aria-labelledby="rq-{{ $shop->id }}">
   <header class="rq-top">
     <div class="rq-title"><h2 id="rq-{{ $shop->id }}">{{ $shop->name }}</h2>
-      <p>Shop #{{ $shop->id }} · {{ $shop->created_at?->diffForHumans() }} · {{ $shop->created_at?->format('d M Y, h:i A') }}</p></div>
-    <span class="adm-badge adm-badge--warn">Waiting</span>
+      @php $at = $shop->resubmitted_at ?? $shop->created_at; @endphp
+      <p>Shop #{{ $shop->id }} · {{ $at?->diffForHumans() }} · {{ $at?->format('d M Y, h:i A') }}</p></div>
+    <span class="adm-badge adm-badge--warn">{{ $shop->submissions > 1 ? 'Sent again ('.$shop->submissions.')' : 'Waiting' }}</span>
   </header>
+  @if($shop->previous_review_note)<p class="rq-prev"><strong>Turned down before:</strong> {{ $shop->previous_review_note }}</p>@endif
   <div class="rq-body">
     <div class="rq-info">
       <section aria-label="Business"><h3 class="rq-label">Business</h3>
