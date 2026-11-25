@@ -188,14 +188,14 @@ class DhiranBroughtForwardTest extends TestCase
         $this->assertSame('active', $paid->refresh()->status, 'a loan with payments is settled the normal way');
     }
 
-    public function test_the_module_is_its_own_page_found_in_the_menu_and_waits_for_a_paid_plan(): void
+    public function test_the_module_is_its_own_page_found_in_the_menu_and_waits_for_an_active_term(): void
     {
         $this->in(fn () => $this->get(self::HOST . '/dhiran/old-loans/create'))->assertOk()->assertSee('name="paper_loan_number"', false);
         $this->in(fn () => $this->get(self::HOST . '/dhiran/loans'))->assertSee(route('dhiran.old-loans.index'), false);
 
         \Illuminate\Support\Facades\DB::table('shop_subscriptions')->where('shop_id', $this->shop->id)->update(['status'=>'expired']);
         $this->owner = $this->owner->fresh(); // the signed-in user's shop editions were loaded by the requests above
-        $this->in(fn () => $this->get(self::HOST . '/dhiran/old-loans/create'))->assertRedirect(route('dhiran.dashboard'));
-        $this->in(fn () => $this->get(self::HOST . '/dhiran/old-loans'))->assertOk();
+        $this->in(fn () => $this->get(self::HOST . '/dhiran/old-loans/create'))->assertRedirect(route('dhiran.expired'));
+        $this->in(fn () => $this->get(self::HOST . '/dhiran/old-loans'))->assertRedirect(route('dhiran.expired')); // no read-only access either: the whole shop waits
     }
 }

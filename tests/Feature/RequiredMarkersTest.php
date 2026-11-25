@@ -114,7 +114,7 @@ class RequiredMarkersTest extends TestCase
             'two_factor_secret' => app(TotpService::class)->generateSecret(), 'two_factor_enabled' => true])->fresh();
         $this->post('/admin/login', ['email' => $admin->email, 'password' => 'Admin-pass-12345']);
         $this->post('/admin/mfa', ['code' => app(TotpService::class)->computeCode($admin->two_factor_secret, (int) floor(time() / 30))]);
-        foreach (['/admin/plans', '/admin/accounts', '/admin/shops/' . $this->shop->id, '/admin/unresolved-payments'] as $path) {
+        foreach (['/admin/plans', '/admin/accounts', '/admin/shops/' . $this->shop->id] as $path) {
             $this->assertNoOptionalWord($this->get($path)->assertOk()->getContent(), $path);
         }
     }
@@ -355,7 +355,7 @@ class RequiredMarkersTest extends TestCase
         $reset = $this->app['view']->make('admin.reset', ['token' => 't', 'email' => 'a@example.test'])->render();
         $this->assertStringNotContainsString(self::LEGEND, $reset);
         $this->assertStringNotContainsString('ui-req', $this->labelOf($reset, 'Confirm password'));
-        foreach (['/admin/shops/' . $this->shop->id, '/admin/unresolved-payments'] as $path) {
+        foreach (['/admin/shops/' . $this->shop->id] as $path) {
             $this->assertStringNotContainsString('ui-req', $this->visible($this->get($path)->assertOk()->getContent()), $path);
         }
     }

@@ -74,10 +74,11 @@ class ShopRequestTest extends AdminTestCase
     {
         Mail::fake(); (new PlanSeeder)->run(); $this->signIn($this->admin());
         [$shop] = $this->waiting();
-        $this->post('/admin/requests/'.$shop->id.'/approve', $this->approval(['ends_at' => today()->subDay()->toDateString()]))->assertSessionHasErrors('ends_at');
-        $this->post('/admin/requests/'.$shop->id.'/approve', $this->approval(['plan' => 'nope']))->assertSessionHasErrors('plan');
-        $this->assertSame('pending', $shop->fresh()->status);
-        $this->post('/admin/requests/'.$shop->id.'/approve', $this->approval())->assertSessionHasNoErrors();
+        // approval takes no fields: a bad posted plan or a past date is ignored, the shop still gets exactly the 1-year term
+        $this->post('/admin/requests/'.$shop->id.'/approve', $this->approval(['ends_at' => today()->subDay()->toDateString(), 'plan' => 'nope']))->assertSessionHasNoErrors();
+        $sub = $shop->fresh()->currentSubscription();
+        $this->assertSame('dhiran_yearly', $sub->plan->code);
+        $this->assertSame(today()->addYear()->toDateString(), $sub->ends_at->toDateString());
         $audits = PlatformAuditLog::count();
         $this->post('/admin/requests/'.$shop->id.'/reject', ['reason' => 'too late'])->assertSessionHas('error');
         $this->post('/admin/requests/'.$shop->id.'/approve', $this->approval())->assertSessionHas('error');

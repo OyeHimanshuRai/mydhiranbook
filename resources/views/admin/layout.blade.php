@@ -5,7 +5,6 @@
         ['/admin/requests', 'New shop requests', 'can_manage_shops', 'admin/requests'],
         ['/admin/shops', 'Shops', 'can_manage_shops', 'admin/shops*'],
         ['/admin/plans', 'Plans', 'can_manage_plans', 'admin/plans'],
-        ['/admin/unresolved-payments', 'Unresolved payments', 'can_manage_subscriptions', 'admin/unresolved-payments'],
         ['/admin/accounts', 'Admin accounts', 'can_manage_admins', 'admin/accounts'],
         ['/admin/audit', 'Audit log', 'can_view_audit_logs', 'admin/audit'],
     ];

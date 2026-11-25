@@ -33,7 +33,7 @@ class HardeningTest extends TestCase
     }
     public function test_pdf_attachment_is_not_sandboxed_so_browsers_can_view_it(): void
     {
-        $shop=self::createDhiranShop(['name'=>'Pdf shop']);
+        $shop=self::createDhiranShop(['name'=>'Pdf shop']); DhiranSettings::getForShop($shop->id)->update(['is_enabled'=>true]); // Dhiran must be set up, else the shop is sent to its dashboard (302)
         $owner=\App\Models\User::create(['name'=>'O','email'=>'pdf@example.test','password'=>'Local-pass-12345','shop_id'=>$shop->id,'role_id'=>app(\App\Services\TenantRoleService::class)->ensureDefaultsForShop($shop->id)['owner']->id]);
         Storage::fake('local'); Storage::disk('local')->put('dhiran/x/a.pdf','%PDF-1.4');
         $att=DhiranAttachment::create(['shop_id'=>$shop->id,'owner_type'=>DhiranAttachment::OWNER_LOAN,'owner_id'=>1,'document_type'=>'loan_document','file_disk'=>'local','file_path'=>'dhiran/x/a.pdf','original_name'=>'a.pdf','mime_type'=>'application/pdf','size_bytes'=>8]);

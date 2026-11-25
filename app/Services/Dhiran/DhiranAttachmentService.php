@@ -3,6 +3,7 @@
 namespace App\Services\Dhiran;
 
 use App\Models\Dhiran\DhiranAttachment;
+use App\Services\CustomerProfilePhotoEncoder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -15,7 +16,7 @@ use LogicException;
  * Safety:
  *  - Private disk only ('local' = storage/app/private); never 'public'/web-served.
  *  - Allow-list of extensions + MIME; size cap; dangerous types rejected.
- *  - Images are re-encoded via GD so EXIF/geolocation metadata is stripped.
+ *  - Images are oriented, shrunk to 2400 px and re-encoded via GD (JPEG q85) so EXIF/geolocation metadata is stripped.
  *  - Path is non-guessable (random filename) under a shop-scoped directory.
  *  - shop_id comes from the tenant context (BelongsToShop), never the request.
  */
@@ -76,9 +77,20 @@ class DhiranAttachmentService
             if ($size[0] * $size[1] > self::MAX_PIXELS) {
                 throw new LogicException('Image is too large (max 20 megapixels).');
             }
+            // Orienting copies the bitmap, so GD needs about 2x its size; running out of memory is a fatal error, not an exception.
+            $memoryLimit = ini_parse_quantity((string) ini_get('memory_limit'));
+            if ($memoryLimit > 0 && memory_get_usage(true) + $size[0] * $size[1] * 8 + 16 * 1024 * 1024 > $memoryLimit) {
+                throw new LogicException('This image needs more processing memory. Upload a smaller photo.');
+            }
         }
         if (! in_array($documentType, DhiranAttachment::DOCUMENT_TYPES, true)) {
             throw new LogicException('Unknown document type.');
+        }
+
+        $bytes = null; // PDFs are stored as uploaded; images as the compressed bytes
+        if ($realMime !== 'application/pdf') {
+            [$bytes, $realMime] = $this->compressImage($file, $size[2], $realMime);
+            $ext = $realMime === 'image/png' ? 'png' : 'jpg';
         }
 
         $dir      = "dhiran/{$shopId}/" . Str::random(2);
@@ -86,9 +98,8 @@ class DhiranAttachmentService
         $path     = "{$dir}/{$filename}";
         $disk     = Storage::disk(self::DISK);
 
-        if ($realMime === 'image/jpeg' || $realMime === 'image/png') {
-            // Re-encode through GD to strip EXIF/geolocation metadata.
-            $disk->put($path, $this->stripImageMetadata($file, $realMime));
+        if ($bytes !== null) {
+            $disk->put($path, $bytes);
         } else {
             $disk->putFileAs($dir, $file, $filename);
         }
@@ -104,7 +115,7 @@ class DhiranAttachmentService
             'file_path'     => $path,
             'original_name' => mb_substr((string) $file->getClientOriginalName(), 0, 255),
             'mime_type'     => $realMime,
-            'size_bytes'    => $file->getSize(),
+            'size_bytes'    => $bytes === null ? $file->getSize() : strlen($bytes),
             'uploaded_by'   => $uploadedBy,
         ]);
 
@@ -181,36 +192,64 @@ class DhiranAttachmentService
         return $path;
     }
 
-    /** Re-encode an image with GD to drop all metadata; returns the raw bytes. */
-    private function stripImageMetadata(UploadedFile $file, string $mime): string
+    /** Longest side of a stored image, in pixels (photos are never enlarged). */
+    public const IMAGE_MAX_SIDE = 2400;
+
+    public const JPEG_QUALITY = 85;
+
+    /**
+     * Upright, metadata-free, at most 2400 px, JPEG q85 (PNG only when it really has transparency).
+         * An image GD cannot read is refused, never stored raw.
+     *
+     * @return array{0:string,1:string} bytes, mime
+     */
+    private function compressImage(UploadedFile $file, int $type, string $mime): array
     {
-        $original = file_get_contents($file->getRealPath());
-
-        // Fail open: if GD can't decode this image (an unusual but still-valid
-        // photo from some phones/cameras), don't reject the operator's upload —
-        // store the original validated bytes. The file already passed the MIME +
-        // extension + size checks, so this is safe; we just couldn't strip EXIF.
-        $img = @imagecreatefromstring($original);
-        if ($img === false) {
-            return (string) $original;
+        $encoder = app(CustomerProfilePhotoEncoder::class);
+        $original = (string) file_get_contents($file->getRealPath());
+        $img = null;
+        try {
+            if ($type === IMAGETYPE_JPEG && ! $encoder->jpegIsComplete($original)) {
+                throw new LogicException('This photo looks incomplete or damaged. Upload it again or take a new one.');
+            }
+            $img = $encoder->normalize($file, $type, self::IMAGE_MAX_SIDE);
+            // Only a PNG with an alpha channel or tRNS chunk can be transparent: skip the pixel scan for everything else.
+            $png = $type === IMAGETYPE_PNG && (in_array(ord(substr($original, 25, 1)), [4, 6], true) || str_contains($original, 'tRNS')) && $this->hasTransparency($img);
+            ob_start();
+            try {
+                $ok = $png ? imagepng($img, null, 9) : imagejpeg($img, null, self::JPEG_QUALITY);
+                $bytes = (string) ob_get_contents();
+            } finally {
+                ob_end_clean();
+            }
+            if (! $ok || $bytes === '') {
+                throw new \RuntimeException('The image could not be compressed.');
+            }
+        } catch (LogicException $e) {
+            throw $e;
+        } catch (\Throwable) {
+            throw new LogicException('This image could not be processed. Upload another JPG or PNG photo.');
+        } finally {
+            if ($img instanceof \GdImage) {
+                imagedestroy($img);
+            }
         }
 
-        ob_start();
-        if ($mime === 'image/png') {
-            imagealphablending($img, false);
-            imagesavealpha($img, true);
-            imagepng($img);
-        } else {
-            imagejpeg($img, null, 88);
-        }
-        $bytes = ob_get_clean();
-        imagedestroy($img);
+        // Always the re-encoded bytes: keeping the original could keep appended code or metadata (a PNG with PHP after IEND).
+        return [$bytes, $png ? 'image/png' : 'image/jpeg'];
+    }
 
-        // If re-encoding produced nothing, keep the original rather than an empty file.
-        if ($bytes === false || $bytes === '') {
-            return (string) $original;
+    /** True when any pixel is not fully opaque (a PNG with an unused alpha channel is just a photo). */
+    private function hasTransparency(\GdImage $img): bool
+    {
+        for ($y = imagesy($img) - 1; $y >= 0; $y--) {
+            for ($x = imagesx($img) - 1; $x >= 0; $x--) {
+                if (imagecolorat($img, $x, $y) >> 24 & 0x7F) {
+                    return true;
+                }
+            }
         }
 
-        return (string) $bytes;
+        return false;
     }
 }

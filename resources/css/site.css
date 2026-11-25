@@ -258,3 +258,4 @@
 .ui-card, .auth-card, .ui-modal-card { border-radius: var(--kh-radius-card); }
 .ck-list th { border-bottom: 3px double var(--kh-text-3); font-size: var(--kh-fs-label); letter-spacing: var(--kh-label-track); text-transform: uppercase; font-weight: 600; color: var(--kh-text-2); }
 
+.ck-code { font: 400 72px/1 var(--font-display); color: var(--dh-muted); margin: 0 0 var(--sp-3); }

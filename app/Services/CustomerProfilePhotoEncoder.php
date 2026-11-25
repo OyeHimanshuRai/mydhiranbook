@@ -36,28 +36,14 @@ class CustomerProfilePhotoEncoder
             $this->reject('This image needs more processing memory. Choose a smaller image or take another photo.');
         }
 
-        $image = null;
         $resized = null;
         try {
             if (! function_exists('imagewebp') || ! function_exists('exif_read_data')) {
                 throw new RuntimeException('Image processing is unavailable.');
             }
-            $contents = file_get_contents($file->getPathname());
-            $image = @imagecreatefromstring($contents);
-            if (! $image) {
-                throw new RuntimeException('The image could not be decoded.');
-            }
-            $image = $this->orient($image, $this->orientation($file, $info[2], $contents));
-            $scale = min(1, 512 / max(imagesx($image), imagesy($image)));
-            $width = max(1, (int) round(imagesx($image) * $scale));
-            $height = max(1, (int) round(imagesy($image) * $scale));
-            $resized = imagecreatetruecolor($width, $height);
-            imagealphablending($resized, false);
-            imagesavealpha($resized, true);
-            imagefill($resized, 0, 0, imagecolorallocatealpha($resized, 0, 0, 0, 127));
-            if (! imagecopyresampled($resized, $image, 0, 0, 0, 0, $width, $height, imagesx($image), imagesy($image))) {
-                throw new RuntimeException('The image could not be resized.');
-            }
+            $resized = $this->normalize($file, $info[2], 512);
+            $width = imagesx($resized);
+            $height = imagesy($resized);
             // Target size is advisory: do not sacrifice identifying detail below quality 70.
             foreach ([80, 75, 70] as $quality) {
                 ob_start();
@@ -79,12 +65,40 @@ class CustomerProfilePhotoEncoder
         } catch (Throwable $e) {
             $this->reject('This photo could not be processed. Your existing photo is unchanged. Choose another JPEG, PNG or WebP image.');
         } finally {
-            if ($image instanceof GdImage) {
-                imagedestroy($image);
-            }
             if ($resized instanceof GdImage) {
                 imagedestroy($resized);
             }
+        }
+    }
+
+    /**
+     * Decodes an upload, applies its EXIF orientation and shrinks it so the longest side is at most $maxSide
+     * (never enlarged). The result is a fresh truecolor image that carries no metadata. Throws on any failure.
+     */
+    public function normalize(UploadedFile $file, int $type, int $maxSide): GdImage
+    {
+        $contents = (string) file_get_contents($file->getPathname());
+        $image = @imagecreatefromstring($contents);
+        if (! $image) {
+            throw new RuntimeException('The image could not be decoded.');
+        }
+        try {
+            $image = $this->orient($image, function_exists('exif_read_data') ? $this->orientation($file, $type, $contents) : 1);
+            $scale = min(1, $maxSide / max(imagesx($image), imagesy($image)));
+            $width = max(1, (int) round(imagesx($image) * $scale));
+            $height = max(1, (int) round(imagesy($image) * $scale));
+            $resized = imagecreatetruecolor($width, $height);
+            imagealphablending($resized, false);
+            imagesavealpha($resized, true);
+            imagefill($resized, 0, 0, imagecolorallocatealpha($resized, 0, 0, 0, 127));
+            if (! imagecopyresampled($resized, $image, 0, 0, 0, 0, $width, $height, imagesx($image), imagesy($image))) {
+                imagedestroy($resized);
+                throw new RuntimeException('The image could not be resized.');
+            }
+
+            return $resized;
+        } finally {
+            imagedestroy($image);
         }
     }
 
@@ -123,6 +137,7 @@ class CustomerProfilePhotoEncoder
         while ($offset + 8 <= $size) {
             $length = unpack($png ? 'N' : 'V', substr($contents, $offset + ($png ? 0 : 4), 4))[1];
             $chunk = substr($contents, $offset + ($png ? 4 : 0), 4);
+            if ($png && $chunk === 'IEND') break; // anything after the image's end (appended code, junk) is never read
             $padding = $png ? 4 : $length % 2;
             if ($length > $size - $offset - 8 - $padding) throw new RuntimeException('Invalid image metadata chunk.');
             if ($chunk === ($png ? 'eXIf' : 'EXIF')) {
@@ -151,7 +166,7 @@ class CustomerProfilePhotoEncoder
      * the end-of-image marker. Bytes after it (a Motion Photo's video, padding)
      * are not part of the image and are ignored.
      */
-    private function jpegIsComplete(string $bytes): bool
+    public function jpegIsComplete(string $bytes): bool
     {
         $size = strlen($bytes);
         if (! str_starts_with($bytes, "\xFF\xD8")) {

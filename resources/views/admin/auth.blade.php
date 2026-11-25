@@ -10,7 +10,7 @@
 </head>
 <body class="adm adm-auth">
 <a href="#main" class="adm-skip">Skip to content</a>
-<a href="/admin/login" class="adm-auth-brand" aria-label="dhiran. platform admin">dhiran<span>.</span></a>
+<a href="/admin/login" class="adm-auth-brand" aria-label="dhiran. platform admin">mydhiranbook<span>.</span></a>
 <main class="adm-auth-card" id="main">
     @if(session('success'))<div class="notice success" role="status">{{ session('success') }}</div>@endif
     @if($stray->isNotEmpty())<div class="notice error" role="alert"><ul>@foreach($stray as $m)<li>{{ $m }}</li>@endforeach</ul></div>@endif

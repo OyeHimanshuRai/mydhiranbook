@@ -94,40 +94,54 @@ class LifecycleTest extends TestCase
         $this->assertSame(1, DhiranLoan::withoutGlobalScopes()->where('shop_id', $owner->shop_id)->count());
     }
 
-    public function test_expired_shop_collect_only_allows_repay_release_close_blocks_new_loan(): void
+    public function test_expired_shop_is_sent_to_the_access_ended_page_on_every_page_and_write_and_nothing_changes(): void
     {
         $owner = $this->owner(); $c = $this->customer($owner);
         $sub = self::activeSubscription($owner->shop);
         $loan = $this->makeLoan($owner, $c);
-        $sub->update(['status' => 'expired', 'ends_at' => today()->subDays(30), 'grace_ends_at' => today()->subDays(16)]);
+        $sub->update(['status' => 'expired', 'ends_at' => today()->subDays(30), 'grace_ends_at' => today()->subDays(30)]);
+        $payments = fn () => \App\Models\Dhiran\DhiranPayment::withoutGlobalScopes()->where('dhiran_loan_id', $loan->id)->count();
+        $before = [$payments(), DhiranLoan::withoutGlobalScopes()->where('shop_id', $owner->shop_id)->count(), Customer::withoutGlobalScopes()->where('shop_id', $owner->shop_id)->count(), $loan->fresh()->status];
+        $ended = route('dhiran.expired');
 
-        $this->send($owner, 'GET', '/dhiran/loans/' . $loan->id)->assertOk();
-        $this->send($owner, 'POST', "/dhiran/loans/{$loan->id}/repay", ['amount' => 1000, 'payment_method' => 'cash', 'idempotency_key' => 'lapsed-key-01'])
-            ->assertSessionHas('success');
-        $this->assertSame(1, \App\Models\Dhiran\DhiranPayment::withoutGlobalScopes()->where('dhiran_loan_id', $loan->id)->where('direction', 'in')->count());
-        // release / pre-close / close are on the collect-only allowlist: not bounced with the lapsed message
-        foreach (['release-item', 'pre-close', 'close'] as $a) {
-            $this->send($owner, 'POST', "/dhiran/loans/{$loan->id}/{$a}", ['idempotency_key' => "lapsed-$a"])
-                ->assertSessionMissing('error', \App\Http\Middleware\EnsureDhiranEnabled::LAPSED);
+        // no collect-only mode any more: reads and writes alike land on the access-ended page
+        $this->send($owner, 'GET', '/dhiran/loans/' . $loan->id)->assertRedirect($ended);
+        $this->send($owner, 'GET', '/dhiran/create')->assertRedirect($ended);
+        $this->send($owner, 'POST', "/dhiran/loans/{$loan->id}/repay", ['amount' => 1000, 'payment_method' => 'cash', 'idempotency_key' => 'lapsed-key-01'])->assertRedirect($ended);
+        foreach (['release-item', 'pre-close', 'close', 'renew'] as $a) {
+            $this->send($owner, 'POST', "/dhiran/loans/{$loan->id}/{$a}", ['idempotency_key' => "lapsed-$a"])->assertRedirect($ended);
         }
-        // new business is refused
-        $this->send($owner, 'GET', '/dhiran/create')->assertRedirect(route('dhiran.dashboard'));
-        $this->send($owner, 'POST', '/dhiran', ['customer_id' => $c->id, 'principal_amount' => 10000, 'gold_rate_on_date' => 6000, 'idempotency_key' => 'lapsed-key-02', 'items' => $this->loanItems()])
-            ->assertRedirect(route('dhiran.dashboard'))->assertSessionHas('error', \App\Http\Middleware\EnsureDhiranEnabled::LAPSED);
-        $this->send($owner, 'POST', "/dhiran/loans/{$loan->id}/renew", ['idempotency_key' => 'lapsed-renew'])->assertSessionHas('error', \App\Http\Middleware\EnsureDhiranEnabled::LAPSED);
-        $this->send($owner, 'POST', '/dhiran/customers', ['first_name' => 'New', 'mobile' => '9815550003'])->assertSessionHas('error', \App\Http\Middleware\EnsureDhiranEnabled::LAPSED);
-        $this->assertSame(1, DhiranLoan::withoutGlobalScopes()->where('shop_id', $owner->shop_id)->count());
+        $this->send($owner, 'POST', '/dhiran', ['customer_id' => $c->id, 'principal_amount' => 10000, 'gold_rate_on_date' => 6000, 'idempotency_key' => 'lapsed-key-02', 'items' => $this->loanItems()])->assertRedirect($ended);
+        $this->send($owner, 'POST', '/dhiran/customers', ['first_name' => 'New', 'mobile' => '9815550003'])->assertRedirect($ended);
+        $this->send($owner, 'GET', '/access-ended')->assertOk()->assertSee('Your access has ended');
+        $this->assertSame($before, [$payments(), DhiranLoan::withoutGlobalScopes()->where('shop_id', $owner->shop_id)->count(), Customer::withoutGlobalScopes()->where('shop_id', $owner->shop_id)->count(), $loan->fresh()->status]);
     }
 
-    public function test_expired_shop_can_open_renew_page_and_renewal_restores_access(): void
+    public function test_expired_shop_can_open_the_read_only_plan_page_and_an_extension_restores_access(): void
     {
+        config(['business.email' => 'help@example.test']);
         $owner = $this->owner(); $c = $this->customer($owner);
-        self::activeSubscription($owner->shop, 'expired', today()->subDays(60));
-        $this->actingAs($owner)->get('/subscription/status')->assertOk()->assertSee('Renew with this plan');
-        $this->get('/subscription/payment')->assertStatus(302); // needs a chosen plan, not blocked by lapse
-        $this->post('/subscription/payment/callback', $this->paidOrder($owner))->assertRedirect(route('subscription.status'));
+        $sub = self::activeSubscription($owner->shop, 'expired', today()->subDays(60));
+        $this->actingAs($owner)->get('/subscription/status')->assertOk()->assertSee('Ended')->assertSee('To extend your access, contact us')->assertSee('help@example.test')
+            ->assertDontSee('Buy this plan')->assertDontSee('Renew with this plan')->assertDontSee('₹');
+        $this->assertTrue($owner->shop->fresh()->isLapsed());
+        $sub->update(['status' => 'active', 'ends_at' => today()->addYear(), 'grace_ends_at' => today()->addYear()->addDays(14)]); // what an admin extension does
         $this->assertTrue($owner->shop->fresh()->hasEdition('dhiran'));
         $this->send($owner, 'GET', '/dhiran/create')->assertOk();
+        $this->get('/subscription/status')->assertOk()->assertSee('Active');
+    }
+
+    public function test_plan_page_without_a_term_says_no_access_term_yet(): void
+    {
+        $owner = $this->owner();
+        $this->actingAs($owner)->get('/subscription/status')->assertOk()->assertSee('No access term yet');
+    }
+
+    public function test_removed_payment_routes_are_gone(): void
+    {
+        $owner = $this->owner();
+        foreach (['/subscription/payment', '/subscription/receipts/1'] as $url) { $this->actingAs($owner)->get($url)->assertNotFound(); }
+        foreach (['/subscription/choose', '/subscription/payment/initiate', '/subscription/payment/callback', '/subscription/payment/webhook'] as $url) { $this->actingAs($owner)->post($url)->assertStatus(404); }
     }
 
     public function test_staff_limit_blocks_extra_staff(): void

@@ -11,7 +11,7 @@ use App\Support\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-/** Settings is split into Loan | Receipt | Users | Plan & billing, with one shared sub-navigation. */
+/** Settings is split into Loan | Receipt | Users | Your plan, with one shared sub-navigation. */
 class SettingsSubPagesTest extends TestCase
 {
     use RefreshDatabase;
@@ -77,12 +77,12 @@ class SettingsSubPagesTest extends TestCase
             '/dhiran/settings' => 'Loan settings',
             '/dhiran/settings/receipt' => 'Receipt settings',
             '/settings?tab=staff' => 'Users & roles',
-            '/subscription/status' => 'Plan & billing',
+            '/subscription/status' => 'Your plan',
         ];
         foreach ($pages as $path => $label) {
             $html = $this->page($owner, $path)->assertOk()->getContent();
             [$all, $cur] = $this->items($html);
-            $this->assertSame(['Loan settings', 'Receipt settings', 'Notifications', 'Users & roles', 'Plan & billing'], $all, $path);
+            $this->assertSame(['Loan settings', 'Receipt settings', 'Notifications', 'Users & roles', 'Your plan'], $all, $path);
             $this->assertCount(1, $cur, $path);
             $this->assertStringStartsWith(explode(' ', $label)[0], $cur[0], $path);
             $this->assertStringContainsString($label, html_entity_decode(strip_tags($html)), "$path heading");
@@ -162,11 +162,11 @@ class SettingsSubPagesTest extends TestCase
         $this->page($user, '/settings')->assertForbidden();
     }
 
-    /** Loan, Users & roles and Plan & billing: one form (or panel set), the title switcher with the open page marked, a save action. */
+    /** Loan, Users & roles and Your plan: one form (or panel set), the title switcher with the open page marked, a save action. */
     public function test_loan_users_and_billing_pages_use_the_title_switcher_and_the_card_system(): void
     {
         $owner = $this->owner($this->shop());
-        foreach (['/dhiran/settings' => 'Loan settings', '/settings?tab=staff' => 'Users & roles', '/subscription/status' => 'Plan & billing'] as $path => $label) {
+        foreach (['/dhiran/settings' => 'Loan settings', '/settings?tab=staff' => 'Users & roles', '/subscription/status' => 'Your plan'] as $path => $label) {
             $html = $this->page($owner, $path)->assertOk()->getContent();
             $this->assertMatchesRegularExpression('/<button[^>]*data-section-switch[^>]*>.*?data-section-label>' . preg_quote(htmlspecialchars($label, ENT_QUOTES), '/') . '</s', $html, $path);
             $this->assertMatchesRegularExpression('/<nav class="dh-subnav"\s+id="settings-sections"\s+data-section-list/', $html, $path);
@@ -224,12 +224,13 @@ class SettingsSubPagesTest extends TestCase
         }
     }
 
-    public function test_plan_page_in_the_app_shell_shows_plan_badge_and_renew_choices(): void
+    public function test_plan_page_in_the_app_shell_is_read_only_with_a_contact_line(): void
     {
         $owner = $this->owner($this->shop());
         $html = $this->page($owner, '/subscription/status')->assertOk()->getContent();
-        $this->assertStringContainsString('st-plans', $html);
-        $this->assertMatchesRegularExpression('/>(Choose a plan|Renew)</', $html);
+        $this->assertStringContainsString('To extend your access, contact us', $html);
+        $this->assertStringNotContainsString('st-plans', $html);
+        $this->assertDoesNotMatchRegularExpression('/>(Choose a plan|Renew|Buy this plan)</', $html);
     }
 
     /** Tabs and roles switch in place: both panels are in the server HTML, tab controls are buttons, the first paint already shows the asked tab and role. */

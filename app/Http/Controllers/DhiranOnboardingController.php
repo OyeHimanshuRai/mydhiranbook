@@ -62,4 +62,26 @@ class DhiranOnboardingController extends Controller
         abort_unless($shop->awaitsApproval(), 403);
         return view('dhiran.onboarding.pending', ['shop' => $shop, 'rejected' => $shop->status === 'rejected']);
     }
+
+    /** Shown to every user of a shop whose one-year access has ended, until an admin extends it. */
+    public function ended()
+    {
+        $user = Auth::user();
+        if (!$user->shop_id) { return redirect()->route('dhiran.onboarding'); }
+        $shop = $user->shop;
+        if ($shop->awaitsApproval()) { return redirect()->route('dhiran.pending'); }
+        abort_unless($shop->status === 'active', 403);
+        if ($shop->hasEdition('dhiran')) { return redirect('/'); }
+        return view('dhiran.onboarding.ended', ['shop' => $shop, 'endedOn' => $shop->subscriptions()->where('status', '!=', 'cancelled')->max('ends_at'), 'owner' => $user->isShopOwner()]);
+    }
+
+    /** Why this person cannot use the software: their own account was switched off, or the whole shop was suspended. */
+    public function blocked()
+    {
+        $user = Auth::user();
+        $shop = $user->shop;
+        if ($user->is_active && (!$shop || $shop->status === 'active')) { return redirect('/'); }
+        if ($user->is_active && $shop->awaitsApproval()) { return redirect()->route('dhiran.pending'); }
+        return view('dhiran.onboarding.blocked', ['shop' => $shop, 'ownAccount' => !$user->is_active]);
+    }
 }

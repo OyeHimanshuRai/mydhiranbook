@@ -11,7 +11,7 @@
         'receipt' => ['Receipt settings', route('dhiran.settings.receipt.edit'), $user->can('dhiran.settings')],
         'notices' => ['Notifications', route('dhiran.settings.notices'), $user->can('dhiran.settings')],
         'users' => ['Users & roles', route('settings.edit', ['tab' => 'staff']), $user->can('staff.view')],
-        'billing' => ['Plan & billing', route('subscription.status'), $user->isShopOwner()],
+        'billing' => ['Your plan', route('subscription.status'), $user->isShopOwner()],
     ], fn ($i) => $i[2]);
 @endphp
 @if($as === 'title')

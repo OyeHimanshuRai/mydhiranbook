@@ -1,6 +1,6 @@
 <?php
 namespace Tests\Feature\Admin;
-use App\Models\Platform\{PlatformInvoice,SubscriptionEvent};
+use App\Models\Platform\SubscriptionEvent;
 use App\Models\{Shop,User};
 
 class ShopAdminTest extends AdminTestCase
@@ -12,15 +12,14 @@ class ShopAdminTest extends AdminTestCase
         $this->get('/admin/shops')->assertOk()->assertSee('Alpha Pawn')->assertSee('Beta Loans');
         $this->get('/admin/shops?q=alpha')->assertOk()->assertSee('Alpha Pawn')->assertDontSee('Beta Loans');
     }
-    public function test_shop_detail_shows_subscriptions_and_receipts(): void
+    public function test_shop_detail_shows_subscription_history_and_no_receipts(): void
     {
         $this->signIn($this->admin());
         $shop=Shop::create(['name'=>'Detail Shop']); $sub=self::activeSubscription($shop);
         User::create(['name'=>'Owner Person','email'=>'own@example.test','password'=>'Owner-pass-12345','shop_id'=>$shop->id,'mobile_number'=>'9876543210']);
-        SubscriptionEvent::create(['shop_subscription_id'=>$sub->id,'shop_id'=>$shop->id,'event_type'=>'payment.captured','reason'=>'History marker']);
-        $inv=PlatformInvoice::create(['shop_id'=>$shop->id,'shop_subscription_id'=>$sub->id,'plan_id'=>$sub->plan_id,'invoice_number'=>'DHR-2026-000777','invoice_sequence'=>777,'billing_cycle'=>'yearly','billing_period_start'=>today(),'billing_period_end'=>today()->addYear(),'amount_before_tax'=>19999,'total_amount'=>19999,'issued_at'=>now()]);
-        $this->get('/admin/shops/'.$shop->id)->assertOk()->assertSee('Owner Person')->assertSee('own@example.test')->assertSee('dhiran_yearly')->assertSee('History marker')->assertSee('DHR-2026-000777')->assertSee('/admin/receipts/'.$inv->id,false);
-        $this->get('/admin/receipts/'.$inv->id)->assertOk()->assertSee('DHR-2026-000777');
+        SubscriptionEvent::create(['shop_subscription_id'=>$sub->id,'shop_id'=>$shop->id,'event_type'=>'admin_granted','reason'=>'History marker']);
+        $this->get('/admin/shops/'.$shop->id)->assertOk()->assertSee('Owner Person')->assertSee('own@example.test')->assertSee('dhiran_yearly')->assertSee('History marker')->assertDontSee('Receipts');
+        $this->get('/admin/receipts/1')->assertNotFound();
     }
     public function test_suspend_requires_reason_and_blocks_shop_login_access(): void
     {
@@ -32,7 +31,9 @@ class ShopAdminTest extends AdminTestCase
         $this->assertSame('suspended',$shop->fresh()->status);
         $this->assertDatabaseHas('platform_audit_logs',['actor_admin_id'=>$admin->id,'action'=>'shop.updated','target_id'=>$shop->id,'reason'=>'Non-payment']);
         \Illuminate\Support\Facades\Auth::shouldUse('web'); // one app instance serves both sessions in a test
-        $this->actingAs($owner)->get('/dhiran/borrowers')->assertForbidden();
+        $this->actingAs($owner)->get('/dhiran/borrowers')->assertRedirect(route('dhiran.blocked'));
+        $this->actingAs($owner->fresh())->get(route('dhiran.blocked'))->assertOk()->assertSee('suspended');
+        $this->actingAs($owner->fresh())->getJson('/dhiran/borrowers')->assertForbidden(); // JSON callers still get a plain 403
         \Illuminate\Support\Facades\Auth::shouldUse('platform_admin');
         $this->patch('/admin/shops/'.$shop->id,['status'=>'active','reason'=>'Paid'])->assertRedirect();
         \Illuminate\Support\Facades\Auth::shouldUse('web');
@@ -49,7 +50,7 @@ class ShopAdminTest extends AdminTestCase
     public function test_shop_owner_session_cannot_reach_admin(): void
     {
         $shop=Shop::create(['name'=>'S']); $owner=User::create(['name'=>'O','email'=>'o@example.test','password'=>'Owner-pass-12345','shop_id'=>$shop->id]);
-        foreach (['/admin','/admin/shops','/admin/plans','/admin/unresolved-payments'] as $url) { $this->actingAs($owner)->get($url)->assertRedirect('/admin/login'); }
+        foreach (['/admin','/admin/shops','/admin/plans'] as $url) { $this->actingAs($owner)->get($url)->assertRedirect('/admin/login'); }
         $this->actingAs($owner)->patch('/admin/shops/'.$shop->id,['status'=>'suspended','reason'=>'x'])->assertRedirect('/admin/login');
         $this->assertSame('active',$shop->fresh()->status);
     }

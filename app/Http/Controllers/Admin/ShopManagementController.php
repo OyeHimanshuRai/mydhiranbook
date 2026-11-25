@@ -38,28 +38,52 @@ class ShopManagementController
         $this->permit($r,'can_manage_shops');
         $shops=Shop::where('status','pending')->orderBy('id')->get();
         $owners=User::whereIn('shop_id',$shops->pluck('id'))->get()->groupBy('shop_id');
-        return view('admin.requests',['shops'=>$shops,'owners'=>$owners,'plans'=>Plan::where('is_active',true)->orderBy('price_monthly')->get(),'rejected'=>Shop::where('status','rejected')->latest('reviewed_at')->limit(10)->get()]);
+        return view('admin.requests',['shops'=>$shops,'owners'=>$owners,'rejected'=>Shop::where('status','rejected')->latest('reviewed_at')->limit(10)->get()]);
     }
-    /** Approve: the shop opens, and access is granted with the plan and end date the admin picks (same grant as Shops > Subscription). */
+    /** Every approval and every extension is exactly one year (owner 2026-11-25: no plan buying, only the access term is tracked). */
+    public const TERM_PLAN = 'dhiran_yearly';
+
+    /** Approve: the shop opens and gets one year of access from today. Needs both the shops and the subscriptions permission. */
     public function approve(Request $r,int $shop)
     {
-        $this->permit($r,'can_manage_shops');
-        $data=$r->validate(['plan'=>'required|exists:plans,code','billing_cycle'=>'required|in:monthly,yearly','ends_at'=>'required|date_format:Y-m-d|after_or_equal:today']);
-        $plan=Plan::where('code',$data['plan'])->firstOrFail();
-        if (!$plan->sellsCycle($data['billing_cycle'])) { throw ValidationException::withMessages(['billing_cycle'=>'This plan does not sell that billing cycle.']); }
-        $approved=DB::transaction(function() use($r,$shop,$plan,$data) {
+        $this->permit($r,'can_manage_shops'); $this->permit($r,'can_manage_subscriptions');
+        $plan=Plan::where('code',self::TERM_PLAN)->firstOrFail();
+        $approved=DB::transaction(function() use($r,$shop,$plan) {
             $shop=Shop::whereKey($shop)->lockForUpdate()->firstOrFail();
             if ($shop->status!=='pending') { return null; }
             $admin=Auth::guard('platform_admin')->user();
+            $ends=today()->addYear();
             $shop->update(['status'=>'active','reviewed_at'=>now(),'review_note'=>null]);
-            $sub=ShopSubscription::create(['shop_id'=>$shop->id,'plan_id'=>$plan->id,'billing_cycle'=>$data['billing_cycle'],'status'=>'active','starts_at'=>today(),'ends_at'=>$data['ends_at'],'grace_ends_at'=>Carbon::parse($data['ends_at'])->addDays($plan->grace_days),'updated_by_admin_id'=>$admin->id,'actor_type'=>'admin']);
-            SubscriptionEvent::create(['shop_subscription_id'=>$sub->id,'shop_id'=>$shop->id,'admin_id'=>$admin->id,'event_type'=>'admin_granted','before'=>null,'after'=>$sub->only('plan_id','billing_cycle','status','ends_at','grace_ends_at'),'reason'=>'Shop approved']);
-            $this->audit->log($admin,'shop.approved','shop',$shop->id,['status'=>'pending'],['status'=>'active','plan'=>$plan->code,'ends_at'=>$data['ends_at']],'Shop approved',$r);
+            $sub=ShopSubscription::create(['shop_id'=>$shop->id,'plan_id'=>$plan->id,'billing_cycle'=>'yearly','status'=>'active','starts_at'=>today(),'ends_at'=>$ends,'grace_ends_at'=>$ends,'updated_by_admin_id'=>$admin->id,'actor_type'=>'admin']);
+            SubscriptionEvent::create(['shop_subscription_id'=>$sub->id,'shop_id'=>$shop->id,'admin_id'=>$admin->id,'event_type'=>'admin_granted','before'=>null,'after'=>$sub->only('plan_id','billing_cycle','status','ends_at','grace_ends_at'),'reason'=>'Shop approved: 1 year']);
+            $this->audit->log($admin,'shop.approved','shop',$shop->id,['status'=>'pending'],['status'=>'active','ends_at'=>$ends->toDateString()],'Shop approved: 1 year',$r);
             return $shop;
         });
         if (!$approved) { return back()->with('error','That request was already decided.'); }
         $this->tellOwner($approved,true);
-        return back()->with('success',$approved->name.' approved. The owner can open the dashboard now.');
+        return back()->with('success',$approved->name.' approved for one year. The owner can open the dashboard now.');
+    }
+    /** Extend by one more year: counted from the end of the current term, or from today when the term already ended. */
+    public function extend(Request $r,int $shop)
+    {
+        $this->permit($r,'can_manage_subscriptions');
+        $plan=Plan::where('code',self::TERM_PLAN)->firstOrFail();
+        $new=DB::transaction(function() use($r,$shop,$plan) {
+            $shop=Shop::whereKey($shop)->lockForUpdate()->firstOrFail();
+            if ($shop->status!=='active') { return null; }
+            $admin=Auth::guard('platform_admin')->user();
+            $live=ShopSubscription::where('shop_id',$shop->id)->where('status','!=','cancelled')->orderByRaw('ends_at desc nulls last')->orderByDesc('id')->lockForUpdate()->first();
+            $from=collect([today(),$live?->ends_at])->filter()->max();
+            $ends=Carbon::parse($from)->addYear();
+            $before=$live?->only('plan_id','billing_cycle','status','ends_at','grace_ends_at');
+            $values=['plan_id'=>$plan->id,'billing_cycle'=>'yearly','status'=>'active','ends_at'=>$ends,'grace_ends_at'=>$ends,'cancelled_at'=>null,'updated_by_admin_id'=>$admin->id,'actor_type'=>'admin'];
+            if ($live) { $live->update($values); $sub=$live; } else { $sub=ShopSubscription::create($values+['shop_id'=>$shop->id,'starts_at'=>today()]); }
+            SubscriptionEvent::create(['shop_subscription_id'=>$sub->id,'shop_id'=>$shop->id,'admin_id'=>$admin->id,'event_type'=>$before?'admin_updated':'admin_granted','before'=>$before,'after'=>$sub->fresh()->only('plan_id','billing_cycle','status','ends_at','grace_ends_at'),'reason'=>'Extended by one year']);
+            $this->audit->log($admin,'subscription.extended','shop',$shop->id,$before,['ends_at'=>$ends->toDateString()],'Extended by one year',$r);
+            return $ends;
+        });
+        if (!$new) { return back()->with('error','Only an approved shop can be extended.'); }
+        return back()->with('success','Access extended until '.$new->format('d M Y').'.');
     }
     public function reject(Request $r,int $shop)
     {
@@ -82,7 +106,7 @@ class ShopManagementController
         $owner=User::where('shop_id',$shop->id)->orderBy('id')->first();
         if (!$owner?->email) { return; }
         try { Mail::to($owner->email)->send(new \App\Mail\ShopDecisionMail($shop->name,$approved,$shop->review_note)); }
-        catch (\Throwable $e) { Log::warning('Shop decision email not sent',['shop_id'=>$shop->id,'error'=>$e->getMessage()]); }
+        catch (\Throwable $e) { Log::warning('Shop decision email not sent',['shop_id'=>$shop->id,'error'=>get_class($e)]); }
     }
     /** Suspend / re-activate. UseShop blocks every user of a non-active shop. */
     public function update(Request $r,int $shop)

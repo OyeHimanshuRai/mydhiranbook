@@ -11,38 +11,28 @@ Tick each box; fill the Results table at the end.
 - [ ] Config cached (`config:cache`, `route:cache`, `view:cache`)
 
 ## Legal and business details
-- [ ] Owner reviewed `resources/views/site/privacy.blade.php`, `terms.blade.php`, `refund.blade.php` (each carries a DRAFT comment); DRAFT comment removed after review
+- [ ] Owner reviewed `resources/views/site/privacy.blade.php`, `terms.blade.php` (each carries a DRAFT comment); DRAFT comment removed after review
 - [ ] `BUSINESS_NAME`, `BUSINESS_LEGAL_NAME`, `BUSINESS_EMAIL`, `BUSINESS_PHONE`, `BUSINESS_ADDRESS`, `BUSINESS_JURISDICTION` set (config/business.php) and displayed correctly
-- [ ] `BILLING_GST_REGISTERED=false` (not GST-registered; receipt titled "Payment Receipt", no GST lines)
-- [ ] `BILLING_ALERT_EMAIL` set to a monitored mailbox
 
-## Razorpay
-- [ ] New Dhiran-only Razorpay account (no sharing with any other product)
-- [ ] Test-mode: `RAZORPAY_KEY`/`SECRET`/`WEBHOOK_SECRET` (test) set; webhook `https://<domain>/subscription/payment/webhook` with events `payment.captured`, `payment.failed`, `refund.created`
-- [ ] Test-mode end-to-end run (below) passed
-- [ ] Live keys and live webhook secret set in `.env`; config cache rebuilt; worker restarted
-- [ ] Live webhook test delivery returns 200; bad-signature request returns 401
-
-## Test-mode end-to-end run
+## End-to-end run
 - [ ] Register a new owner
 - [ ] Email OTP arrives (real mail, not log) and verifies
-- [ ] Choose a plan; pay with a Razorpay test card
-- [ ] Shop is created only after the captured payment
-- [ ] Create business (shop), create a customer, create a loan
+- [ ] Send the business form; the waiting page shows until an admin approves
+- [ ] Admin approves at `/admin/requests`; the 1-year access term starts and the owner gets the decision email
+- [ ] Create a customer, create a loan
 - [ ] Record a loan payment and open the receipt
-- [ ] Subscription "Payment Receipt" is visible and emailed (needs queue worker)
-- [ ] Replay the same webhook (Razorpay dashboard "resend"): response ok, no second subscription period, no duplicate receipt
-- [ ] Failed test payment (`payment.failed`) leaves no shop
+- [ ] "Your plan" page shows the term dates and the contact line
+- [ ] An ended term blocks the shop until an admin extends it
 
 ## Mail
 - [ ] SMTP credentials valid; SPF, DKIM and DMARC set for the sending domain
-- [ ] OTP, receipt and admin password-reset emails land in inbox, not spam
+- [ ] OTP, shop decision and admin password-reset emails land in inbox, not spam
 
 ## Backups, logs, monitoring
 - [ ] Nightly `pg_dump` plus `storage/app/private` and `.env` backup, stored off the server
 - [ ] A restore was tested on a scratch database
 - [ ] Someone reads `storage/logs/dhiran-YYYY-MM-DD.log` (daily files, 14 kept)
-- [ ] `/up` monitored; `queue:failed` and `subscription_events` unresolved payments reviewed (`/admin/unresolved-payments`)
+- [ ] `/up` monitored; `queue:failed` reviewed
 
 ## Admin
 - [ ] First super admin created (GAP in `docs/deployment.md` section 8: no command exists)
@@ -55,10 +45,8 @@ Tick each box; fill the Results table at the end.
 |---|---|---|---|
 | Full test suite (`scripts/test`) count | | | |
 | Test-mode registration and OTP | | | |
-| Test-mode payment and shop creation | | | |
+| Shop approval and access term | | | |
 | Loan and payment receipt | | | |
-| Webhook replay, no duplicates | | | |
-| Live webhook delivery | | | |
 | Mail deliverability | | | |
 | Backup restore test | | | |
 | Admin MFA sign-in | | | |

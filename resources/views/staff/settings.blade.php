@@ -154,7 +154,7 @@
                 @endif
                 @if($atLimit)
                     <p class="st-hint" id="st-limit-help">Your plan allows {{ $staffLimit }} staff accounts. Remove a person you no longer need
-                        @if(auth()->user()->isShopOwner()) or <a href="{{ route('subscription.status') }}">choose a larger plan</a>@endif.</p>
+                        @if(auth()->user()->isShopOwner()) or <a href="{{ route('subscription.status') }}">see how to extend your plan</a>@endif.</p>
                 @endif
             </div>
         </x-settings.panel>

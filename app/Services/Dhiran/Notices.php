@@ -181,6 +181,20 @@ final class Notices
             ];
         }
 
+        // The shop's own one-year access: told from 30 days before it ends (not switchable: it is the only warning before the block).
+        $ends = \App\Models\Shop::find($shopId)?->currentSubscription()?->ends_at;
+        if ($ends) {
+            $left = (int) today()->diffInDays($ends->copy()->startOfDay(), false);
+            if ($left >= 0 && $left <= 30) {
+                array_unshift($rows, [
+                    'key' => 'plan_ending', 'tone' => $left <= 7 ? 'danger' : 'warn', 'count' => 1,
+                    'title' => $left === 0 ? 'Your access ends today' : 'Your access ends in '.$left.' '.($left === 1 ? 'day' : 'days').' ('.$ends->format('d M Y').')',
+                    'hint' => 'When it ends the software is blocked until we extend it by another year. Contact us in good time.',
+                    'url' => route('subscription.status'),
+                ]);
+            }
+        }
+
         return $rows;
     }
 }

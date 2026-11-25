@@ -1,6 +1,6 @@
 <?php
 namespace Tests\Feature\Admin;
-use App\Models\Platform\{PlatformAuditLog,Plan,SubscriptionEvent};
+use App\Models\Platform\{PlatformAuditLog,Plan};
 use App\Services\TotpService;
 use Database\Seeders\PlanSeeder;
 use Illuminate\Support\Facades\Route;
@@ -20,18 +20,16 @@ class AdminSecurityTest extends AdminTestCase
         (new PlanSeeder)->run(); $this->signIn($this->admin());
         $shop=self::createDhiranShop(['name'=>'Audit Shop']); $plan=Plan::where('code','dhiran_yearly')->first();
         $support=$this->admin(['email'=>'support@example.test','role'=>'support','permissions'=>[]]);
-        app(\App\Services\Billing\SubscriptionPaymentService::class)->recordUnresolvedPayment('order_A','pay_A','mismatch');
-        $ev=SubscriptionEvent::where('event_type','payment.unresolved')->sole();
         $ends=today()->addYears(2)->toDateString();
         $p1=\App\Models\Shop::create(['name'=>'Waiting A','status'=>'pending']); $p2=\App\Models\Shop::create(['name'=>'Waiting B','status'=>'pending']);
         $table=[
             'POST admin/requests/{shop}/approve'=>['/admin/requests/'.$p1->id.'/approve',['plan'=>'dhiran_yearly','billing_cycle'=>'yearly','ends_at'=>$ends]],
             'POST admin/requests/{shop}/reject'=>['/admin/requests/'.$p2->id.'/reject',['reason'=>'Audit']],
+            'POST admin/shops/{shop}/extend'=>['/admin/shops/'.$shop->id.'/extend',[]],
             'PATCH admin/shops/{shop}'=>['/admin/shops/'.$shop->id,['status'=>'suspended','reason'=>'Audit']],
             'POST admin/shops/{shop}/subscription'=>['/admin/shops/'.$shop->id.'/subscription',['plan'=>'dhiran_yearly','billing_cycle'=>'yearly','ends_at'=>$ends,'reason'=>'Audit']],
             'POST admin/shops/{shop}/subscription/terminate'=>['/admin/shops/'.$shop->id.'/subscription/terminate',['reason'=>'Audit']],
             'PATCH admin/plans/{plan}'=>['/admin/plans/'.$plan->id,['price_monthly'=>1667,'price_yearly'=>19999,'grace_days'=>14,'staff_limit'=>7,'max_items'=>3000,'is_active'=>1,'reason'=>'Audit']],
-            'POST admin/unresolved-payments/{event}/resolve'=>['/admin/unresolved-payments/'.$ev->id.'/resolve',['reason'=>'Audit']],
             'POST admin/accounts'=>['/admin/accounts',['name'=>'New Support','email'=>'new@example.test','password'=>'Long-enough-pass-1']],
             'PATCH admin/accounts/{admin}'=>['/admin/accounts/'.$support->id,['is_active'=>0]],
         ];
@@ -55,7 +53,7 @@ class AdminSecurityTest extends AdminTestCase
     {
         $admin=$this->admin(); $shop=self::createDhiranShop(['name'=>'Mfa Shop']);
         $this->post('/admin/login',['email'=>$admin->email,'password'=>'Admin-pass-12345'])->assertRedirect('/admin/mfa');
-        foreach (['/admin','/admin/shops','/admin/plans','/admin/accounts','/admin/audit','/admin/unresolved-payments'] as $u) { $this->get($u)->assertRedirect('/admin/mfa'); }
+        foreach (['/admin','/admin/shops','/admin/plans','/admin/accounts','/admin/audit'] as $u) { $this->get($u)->assertRedirect('/admin/mfa'); }
         $this->patch('/admin/shops/'.$shop->id,['status'=>'suspended','reason'=>'x'])->assertRedirect('/admin/mfa');
         $this->post('/admin/accounts',['name'=>'X','email'=>'x@example.test','password'=>'Long-enough-pass-1'])->assertRedirect('/admin/mfa');
         $this->assertSame('active',$shop->fresh()->status);

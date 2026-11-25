@@ -1265,36 +1265,37 @@ class LoanEngineTest extends TestCase
         ShopSubscription::where('shop_id', $this->shop->id)->update(['status' => 'expired', 'ends_at' => today()->subDays(40), 'grace_ends_at' => today()->subDays(30)]);
     }
 
-    public function test_after_the_plan_ends_collections_still_work_but_new_business_waits(): void
+    public function test_after_the_term_ends_every_write_goes_to_the_access_ended_page_and_nothing_changes(): void
     {
         $l = $this->loan();
         $this->at('2026-01-31');
         $this->lapse();
+        $ended = route('dhiran.expired');
+        $count = fn () => [DB::table('dhiran_payments')->count(), DB::table('dhiran_ledger_entries')->count(), DhiranLoan::withoutGlobalScopes()->where('shop_id', $this->shop->id)->count(), $this->fresh($l)->status];
+        $before = $count();
 
-        $this->http("/dhiran/loans/{$l->id}/repay", ['amount' => '1000'])->assertSessionHas('success');
-        $this->assertSame(1, $this->paymentsIn($l));
-
-        $loansBefore = DhiranLoan::withoutGlobalScopes()->where('shop_id', $this->shop->id)->count();
-        $this->http("/dhiran/loans/{$l->id}/renew", [])->assertRedirect(route('dhiran.dashboard'));
+        // no collect-only mode any more: repay, close and new business are all refused the same way
+        $this->http("/dhiran/loans/{$l->id}/repay", ['amount' => '1000'])->assertRedirect($ended);
+        $this->http("/dhiran/loans/{$l->id}/pre-close", [])->assertRedirect($ended);
+        $this->http("/dhiran/loans/{$l->id}/renew", [])->assertRedirect($ended);
         $this->http('/dhiran', ['customer_id' => $this->customer->id, 'principal_amount' => 10000, 'gold_rate_on_date' => 6000,
-            'items' => [['description' => 'Ring', 'metal_type' => 'gold', 'purity' => 22, 'gross_weight' => 10, 'rate_per_gram_at_pledge' => 6000]]])->assertRedirect(route('dhiran.dashboard'));
-        $this->http('/dhiran/old-loans', $this->oldForm())->assertRedirect(route('dhiran.dashboard'));
-        $this->assertSame($loansBefore, DhiranLoan::withoutGlobalScopes()->where('shop_id', $this->shop->id)->count());
+            'items' => [['description' => 'Ring', 'metal_type' => 'gold', 'purity' => 22, 'gross_weight' => 10, 'rate_per_gram_at_pledge' => 6000]]])->assertRedirect($ended);
+        $this->http('/dhiran/old-loans', $this->oldForm())->assertRedirect($ended);
+        $this->assertSame($before, $count());
+        $this->assertSame(0, $this->paymentsIn($l));
         $this->assertSame('active', $this->fresh($l)->status);
-
-        $this->http("/dhiran/loans/{$l->id}/pre-close", [])->assertSessionHas('success');
-        $this->assertSame('closed', $this->fresh($l)->status);
         $this->assertBooks($l);
     }
 
-    public function test_a_renewal_turned_away_by_the_lapsed_plan_does_not_burn_its_key(): void
+    public function test_a_renewal_turned_away_by_the_ended_term_does_not_burn_its_key(): void
     {
         $l = $this->loan();
         $this->at('2026-01-31');
         $k = ['idempotency_key' => 'lapsed-key-0001'];
         $this->lapse();
-        $this->t(fn () => $this->actingAs($this->owner)->post(self::HOST . "/dhiran/loans/{$l->id}/renew", $k))->assertRedirect(route('dhiran.dashboard'));
+        $this->t(fn () => $this->actingAs($this->owner)->post(self::HOST . "/dhiran/loans/{$l->id}/renew", $k))->assertRedirect(route('dhiran.expired'));
         $this->assertSame(0, DB::table('idempotency_keys')->where('key', 'dhiran:lapsed-key-0001')->count());
+        $this->assertSame(0, DhiranLoan::withoutGlobalScopes()->where('renewed_from_id', $l->id)->count());
 
         ShopSubscription::where('shop_id', $this->shop->id)->update(['status' => 'active', 'ends_at' => today()->addYear(), 'grace_ends_at' => today()->addYear()->addDays(14)]);
         $this->t(fn () => $this->actingAs($this->owner)->post(self::HOST . "/dhiran/loans/{$l->id}/renew", $k))->assertSessionHas('success');

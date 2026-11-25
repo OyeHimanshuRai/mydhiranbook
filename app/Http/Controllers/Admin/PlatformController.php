@@ -17,14 +17,19 @@ class PlatformController
     public function dashboard()
     {
         $entitled=DB::table('shop_subscriptions')->whereNotNull('shop_id')->whereIn('status',['active','grace'])->whereRaw('greatest(ends_at,grace_ends_at) >= ?',[today()->toDateString()]);
-        $paidThisMonth=DB::table('shop_subscriptions')->whereNotNull('razorpay_payment_id')->where('created_at','>=',now()->startOfMonth());
         return view('admin.dashboard',['stats'=>[
             'shops'=>Shop::count(),'active'=>Shop::where('status','active')->count(),'suspended'=>Shop::where('status','suspended')->count(),
             'entitled'=>$entitled->distinct()->count('shop_id'),
             'pending'=>Shop::where('status','pending')->count(),
-            'collected'=>$paidThisMonth->sum('price_paid'),
-            'unresolved'=>DB::table('subscription_events')->where('event_type','payment.unresolved')->whereRaw("(after->>'resolved_at') is null")->count(),
-        ],'adminCount'=>PlatformAdmin::where('is_active',true)->count()]);
+        ],'adminCount'=>PlatformAdmin::where('is_active',true)->count(),'ending'=>$this->ending()]);
+    }
+    /** Approved shops whose access term ends within 30 days, has ended, or was never granted: the admin extends them from here. */
+    private function ending()
+    {
+        $ends="(select max(s.ends_at) from shop_subscriptions s where s.shop_id=shops.id and s.status!='cancelled')";
+        return Shop::where('status','active')->selectRaw("shops.*, $ends as access_ends")
+            ->whereRaw("coalesce($ends,'1900-01-01') <= ?",[today()->addDays(30)->toDateString()])
+            ->orderByRaw('access_ends asc nulls first')->limit(50)->get();
     }
     public function audit(Request $r)
     {

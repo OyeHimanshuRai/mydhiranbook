@@ -1,11 +1,10 @@
 <?php
 namespace Tests\Feature\Ruthless;
 
-use App\Http\Middleware\EnsureDhiranEnabled;
 use App\Models\Customer;
 use App\Models\Dhiran\{DhiranAttachment, DhiranLoan, DhiranLoanItem, DhiranSettings};
 use App\Models\Permission;
-use App\Models\Platform\{Plan, PlatformAdmin, PlatformAuditLog, PlatformInvoice, ShopSubscription, SubscriptionEvent};
+use App\Models\Platform\{Plan, PlatformAdmin, PlatformAuditLog, ShopSubscription};
 use App\Models\{Role, Shop, User};
 use App\Services\Dhiran\{DhiranAttachmentService, DhiranOldLoans};
 use App\Services\{DhiranService, TenantRoleService};
@@ -90,9 +89,6 @@ class AccessMatrixTest extends AdminTestCase
             return [$c, $l, $old, $p, $at, DhiranLoanItem::where('dhiran_loan_id', $l->id)->firstOrFail()];
         });
 
-        $sub = $a->currentSubscription();
-        $inv = PlatformInvoice::create(['shop_id' => $a->id, 'shop_subscription_id' => $sub->id, 'plan_id' => $sub->plan_id, 'invoice_number' => 'DHR-2026-000777', 'invoice_sequence' => 777, 'billing_cycle' => 'yearly', 'billing_period_start' => today(), 'billing_period_end' => today()->addYear(), 'amount_before_tax' => 19999, 'total_amount' => 19999, 'issued_at' => now()]);
-        $event = SubscriptionEvent::create(['shop_subscription_id' => $sub->id, 'shop_id' => $a->id, 'event_type' => 'payment.unresolved', 'reason' => 'ruthless']);
         $token = (string) \Illuminate\Support\Str::uuid();
         Storage::disk('local')->put("dhiran-old-loans/{$a->id}/{$token}.csv", DhiranOldLoans::template());
 
@@ -105,10 +101,10 @@ class AccessMatrixTest extends AdminTestCase
         $this->admin();
         $targetAdmin = $this->admin(['email' => 'target-admin@example.test', 'role' => 'support', 'permissions' => []]);
 
-        return compact('a', 'b', 'ownerA', 'staffA', 'viewerA', 'ownerB', 'readerA', 'delegateA', 'roles', 'loan', 'cust', 'loanB', 'custB', 'sub') + ['ids' => [
+        return compact('a', 'b', 'ownerA', 'staffA', 'viewerA', 'ownerB', 'readerA', 'delegateA', 'roles', 'loan', 'cust', 'loanB', 'custB') + ['ids' => [
             'loan' => $loan->id, 'payment' => $pay->id, 'customer' => $cust->id, 'item' => $itemRow->id, 'attachment' => $att->id, 'token' => $token, 'doc' => 'pledge',
-            'staff' => $staffA->id, 'role' => $roles['staff']->id, 'invoice' => $inv->id, 'shop' => $a->id, 'plan' => Plan::orderBy('id')->value('id'),
-            'admin' => $targetAdmin->id, 'event' => $event->id,
+            'staff' => $staffA->id, 'role' => $roles['staff']->id, 'shop' => $a->id, 'plan' => Plan::orderBy('id')->value('id'),
+            'admin' => $targetAdmin->id,
         ], 'oldLoan' => $oldLoan, 'att' => $att];
     }
 
@@ -261,13 +257,13 @@ class AccessMatrixTest extends AdminTestCase
             'owner root -> loans' => ['owner-active', '/', '/dhiran/loans', 200],
             'owner onboarding bounced' => ['owner-active', '/onboarding/business', '/dhiran/loans', 200],
             'grace keeps new loans' => ['owner-grace', '/dhiran/create', '/dhiran/create', 200],
-            'expired new loan page -> loans' => ['owner-expired', '/dhiran/create', '/dhiran/loans', 200],
-            'expired books readable' => ['owner-expired', '/dhiran/loans', '/dhiran/loans', 200],
-            'suspended shop blocked' => ['owner-suspended', '/dhiran', '/dhiran', 403],
+            'expired new loan page -> access ended' => ['owner-expired', '/dhiran/create', '/access-ended', 200],
+            'expired books -> access ended' => ['owner-expired', '/dhiran/loans', '/access-ended', 200],
+            'suspended shop -> blocked page' => ['owner-suspended', '/dhiran', '/account-blocked', 200],
             'minimal staff cannot create' => ['staff-minimal', '/dhiran/create', '/dhiran/create', 403],
             'minimal staff cannot see staff list' => ['staff-minimal', '/settings', '/settings', 403],
-            'deactivated staff blocked' => ['deactivated-staff', '/dhiran', '/dhiran', 403],
-            'deactivated owner blocked' => ['deactivated-owner', '/dhiran/loans', '/dhiran/loans', 403],
+            'deactivated staff -> blocked page' => ['deactivated-staff', '/dhiran', '/account-blocked', 200],
+            'deactivated owner -> blocked page' => ['deactivated-owner', '/dhiran/loans', '/account-blocked', 200],
             'admin pre-mfa -> mfa' => ['admin-pre-mfa', '/admin', '/admin/mfa', 200],
             'admin pre-mfa shops -> mfa' => ['admin-pre-mfa', '/admin/shops', '/admin/mfa', 200],
             'admin post-mfa dashboard' => ['admin-post-mfa', '/admin', '/admin', 200],
@@ -361,7 +357,7 @@ class AccessMatrixTest extends AdminTestCase
         foreach ($this->routes() as $r) {
             $isShop = $this->mwHas($r, 'shop') || str_starts_with($r['uri'], 'subscription/');
             // notices/seen only records the caller's own "I saw today's card" (a per-user date, no shop data): any viewer may send it.
-            if (! $isShop || in_array($r['uri'], ['subscription/payment/webhook', 'dhiran/notices/seen'], true)) { continue; }
+            if (! $isShop || in_array($r['uri'], ['dhiran/notices/seen'], true)) { continue; }
             foreach ($this->writes($r) as $m) {
                 $res = $this->send($m, $this->url($r, $w['ids']), $this->payload($w));
                 $tried++;
@@ -436,28 +432,37 @@ class AccessMatrixTest extends AdminTestCase
         $this->assertNull(User::where('mobile_number', '9000000892')->first());
     }
 
-    // ───────────────────────── collect-only (expired) ─────────────────────────
+    // ───────────────────────── access ended (expired) ─────────────────────────
 
-    public function test_expired_plan_blocks_every_new_business_write_and_page_but_not_settlement(): void
+    /** Every route behind the `shop` middleware, every method, as a plain browser request: must redirect to $landing. @return array{0:int,1:list<string>} */
+    private function sweepShopRoutes(array $w, string $landing): array
+    {
+        $bad = []; $n = 0;
+        foreach ($this->routes() as $r) {
+            if (! $this->mwHas($r, 'shop')) { continue; }
+            foreach ($r['methods'] as $m) {
+                $res = $this->send($m, $this->url($r, $w['ids']), $this->payload($w)); $n++;
+                if (! $res->isRedirect() || $this->pathOf($res->headers->get('Location')) !== $landing) { $bad[] = "$m {$r['uri']} => {$res->getStatusCode()} " . $res->headers->get('Location'); }
+            }
+        }
+        return [$n, $bad];
+    }
+
+    public function test_expired_shop_is_redirected_to_access_ended_on_every_shop_page_and_write_and_no_data_changes(): void
     {
         $w = $this->world();
         $this->enter('owner-expired', $w);
-        $collect = (new \ReflectionClassConstant(EnsureDhiranEnabled::class, 'COLLECT_ONLY_WRITES'))->getValue();
-        $newPages = (new \ReflectionClassConstant(EnsureDhiranEnabled::class, 'NEW_BUSINESS_PAGES'))->getValue();
         $before = $this->snapshot($w['a']->id);
-        $bad = []; $n = 0;
-        foreach ($this->routes() as $r) {
-            if (! $this->mwHas($r, 'dhiran.enabled')) { continue; }
-            foreach ($r['methods'] as $m) {
-                $blocked = $m === 'GET' ? in_array($r['name'], $newPages, true) : ! in_array($r['name'], $collect, true);
-                if (! $blocked) { continue; }
-                $res = $this->send($m, $this->url($r, $w['ids']), $this->payload($w)); $n++;
-                if (! $res->isRedirect() || $this->pathOf($res->headers->get('Location')) !== '/dhiran') { $bad[] = "$m {$r['uri']} => {$res->getStatusCode()}"; }
-            }
-        }
-        $this->assertGreaterThan(8, $n);
+        [$n, $bad] = $this->sweepShopRoutes($w, '/access-ended');
+        $this->assertGreaterThan(25, $n);
         $this->assertSame([], $bad);
-        $this->assertSame($before, $this->snapshot($w['a']->id), 'expired plan still let a new-business write change data');
+        $this->assertSame($before, $this->snapshot($w['a']->id), 'an ended term still let a write change data');
+        // JSON callers get a plain 403, never data
+        $this->app['auth']->shouldUse('web');
+        $this->getJson('/dhiran/loans')->assertForbidden();
+        // the access-ended page itself opens
+        $this->app['auth']->shouldUse('web');
+        $this->get('/access-ended')->assertOk();
     }
 
     // ───────────────────────── 4. admin sweep ─────────────────────────
@@ -473,12 +478,10 @@ class AccessMatrixTest extends AdminTestCase
         'GET admin/shops/{shop}' => 'can_manage_shops',
         'PATCH admin/shops/{shop}' => 'can_suspend_shop',
         'POST admin/shops/{shop}/subscription' => 'can_manage_subscriptions',
+        'POST admin/shops/{shop}/extend' => 'can_manage_subscriptions',
         'POST admin/shops/{shop}/subscription/terminate' => 'can_manage_subscriptions',
-        'GET admin/receipts/{invoice}' => 'can_manage_subscriptions',
         'GET admin/plans' => 'can_manage_plans',
         'PATCH admin/plans/{plan}' => 'can_manage_plans',
-        'GET admin/unresolved-payments' => 'can_manage_subscriptions',
-        'POST admin/unresolved-payments/{event}/resolve' => 'can_manage_subscriptions',
         'GET admin/accounts' => 'can_manage_admins',
         'POST admin/accounts' => 'can_manage_admins',
         'PATCH admin/accounts/{admin}' => 'can_manage_admins',
@@ -495,13 +498,12 @@ class AccessMatrixTest extends AdminTestCase
     private function adminPayload(string $key, array $w): array
     {
         return match ($key) {
-            'POST admin/requests/{shop}/approve' => ['plan' => 'dhiran_monthly', 'billing_cycle' => 'monthly', 'ends_at' => today()->addMonth()->toDateString()],
+            'POST admin/requests/{shop}/approve' => [], // no fields: always exactly one year
             'POST admin/requests/{shop}/reject' => ['reason' => 'ruthless audit'],
             'PATCH admin/shops/{shop}' => ['status' => 'suspended', 'reason' => 'ruthless audit'],
-            'POST admin/shops/{shop}/subscription' => ['plan' => 'dhiran_monthly', 'billing_cycle' => 'monthly', 'ends_at' => today()->addDays(400)->toDateString(), 'reason' => 'ruthless audit'],
+            'POST admin/shops/{shop}/subscription' => ['plan' => 'dhiran_monthly', 'billing_cycle' => 'monthly', 'ends_at' => today()->addYears(5)->toDateString(), 'reason' => 'ruthless audit'], // after approve + extend the shop's term already ends ~2 years out; a grant may not shorten it
             'POST admin/shops/{shop}/subscription/terminate' => ['reason' => 'ruthless audit'],
             'PATCH admin/plans/{plan}' => ['price_monthly' => 1852, 'price_yearly' => 19999, 'grace_days' => 7, 'staff_limit' => 3, 'max_items' => 1000, 'is_active' => 1, 'reason' => 'ruthless audit'],
-            'POST admin/unresolved-payments/{event}/resolve' => ['reason' => 'ruthless audit'],
             'POST admin/accounts' => ['name' => 'New Admin', 'email' => 'new-admin@example.test', 'password' => 'Admin-Created-12345', 'permissions' => []],
             'PATCH admin/accounts/{admin}' => ['is_active' => 1, 'permissions' => ['can_manage_shops']],
             default => [],
@@ -677,13 +679,24 @@ class AccessMatrixTest extends AdminTestCase
         $this->loginAs($w['staffA']);
         $this->get('/dhiran/loans')->assertOk(); $this->fresh();
         User::whereKey($w['staffA']->id)->update(['is_active' => false]);
+        $before = $this->snapshot($w['a']->id);
         $bad = [];
-        foreach (['/dhiran', '/dhiran/loans', '/dhiran/borrowers', '/settings', '/subscription/status', '/subscription/payment', '/', '/verify-email'] as $url) {
+        foreach (['/dhiran', '/dhiran/loans', '/dhiran/borrowers', '/settings', '/subscription/status', '/', '/verify-email'] as $url) {
             $this->fresh();
             [$status, $trail] = $this->follow($url);
-            if ($status === 200 && ! in_array('/login', $trail, true)) { $bad[] = "$url still 200 for a deactivated user (" . implode(' > ', $trail) . ')'; }
+            // only the friendly blocked page (or login, or a plain 403) may answer: never a page of the shop
+            if (! ($status === 403 || ($status === 200 && in_array(end($trail), ['/login', '/account-blocked'], true)))) { $bad[] = "$url still served a deactivated user (" . implode(' > ', $trail) . " => $status)"; }
         }
         $this->assertSame([], $bad);
+        // JSON callers get a plain 403
+        $this->fresh();
+        $this->getJson('/dhiran/loans')->assertForbidden();
+        // every shop page and every write is refused (redirect to the blocked page) and changes nothing
+        $this->fresh();
+        [$n, $badRoutes] = $this->sweepShopRoutes($w, '/account-blocked');
+        $this->assertGreaterThan(25, $n);
+        $this->assertSame([], $badRoutes);
+        $this->assertSame($before, $this->snapshot($w['a']->id), 'a deactivated user changed data');
     }
 
     public function test_deactivated_user_cannot_log_in(): void

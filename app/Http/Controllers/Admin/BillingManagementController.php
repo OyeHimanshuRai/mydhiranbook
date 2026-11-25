@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Admin\Concerns\ChecksAdminPermission;
-use App\Models\Platform\{Plan,PlatformInvoice,ShopSubscription,SubscriptionEvent};
+use App\Models\Platform\{Plan,ShopSubscription,SubscriptionEvent};
 use App\Models\Shop;
 use App\Services\PlatformAuditService;
 use Illuminate\Http\Request;
@@ -56,11 +56,5 @@ class BillingManagementController
             }
         });
         return back()->with('success','Subscription terminated.');
-    }
-    /** Admin copy of a shop's payment receipt (same document the buyer sees). */
-    public function receipt(Request $r,int $invoice)
-    {
-        $this->permit($r,'can_manage_subscriptions'); $invoice=PlatformInvoice::with(['subscription.user','plan','shop'])->findOrFail($invoice);
-        return response(view('subscription.receipt',['invoice'=>$invoice])->render());
     }
 }

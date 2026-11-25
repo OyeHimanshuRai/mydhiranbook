@@ -639,9 +639,27 @@ class InputsTest extends TestCase
 
     public function test_a_real_png_is_stored_privately_with_a_random_path(): void
     {
-        // Rule: private disk, shop-scoped random path, real mime recorded.
+        // Rule: private disk, shop-scoped random path, real mime recorded. An opaque PNG is re-encoded and stored as a JPEG (jpg, image/jpeg).
         $c = $this->cust($this->shopA);
         $this->attach($this->ownerA, $c, $this->file('id.png', $this->png(40, 40)))->assertSessionHasNoErrors();
+        $a = DhiranAttachment::withoutGlobalScopes()->sole();
+        $this->assertSame('image/jpeg', $a->mime_type);
+        $this->assertMatchesRegularExpression('~^dhiran/' . $this->shopA->id . '/[A-Za-z0-9]{2}/[A-Za-z0-9]{40}\.jpg$~', $a->file_path);
+        Storage::disk('local')->assertExists($a->file_path);
+        $this->assertSame([40, 40, IMAGETYPE_JPEG], array_slice(getimagesizefromstring(Storage::disk('local')->get($a->file_path)), 0, 3));
+    }
+
+    public function test_a_png_with_real_transparency_stays_a_png_with_a_random_path(): void
+    {
+        // Rule: only a PNG that really has transparent pixels keeps the PNG format (still private, random path, re-encoded).
+        $c = $this->cust($this->shopA);
+        $i = imagecreatetruecolor(40, 40);
+        imagealphablending($i, false);
+        imagesavealpha($i, true);
+        imagefill($i, 0, 0, imagecolorallocatealpha($i, 0, 0, 0, 127));
+        ob_start();
+        imagepng($i);
+        $this->attach($this->ownerA, $c, $this->file('stamp.png', (string) ob_get_clean()))->assertSessionHasNoErrors();
         $a = DhiranAttachment::withoutGlobalScopes()->sole();
         $this->assertSame('image/png', $a->mime_type);
         $this->assertMatchesRegularExpression('~^dhiran/' . $this->shopA->id . '/[A-Za-z0-9]{2}/[A-Za-z0-9]{40}\.png$~', $a->file_path);
@@ -695,9 +713,12 @@ class InputsTest extends TestCase
     {
         // Rule: images are re-encoded, so appended code cannot survive.
         $c = $this->cust($this->shopA);
+        // The fixture is a valid PNG that GD decodes (code after IEND is ignored), so it must be accepted, re-encoded (opaque -> JPEG) and the code must be gone.
         $this->attach($this->ownerA, $c, $this->file('p.png', $this->png(8, 8) . "<?php system(\$_GET['c']); ?>"))->assertSessionHasNoErrors();
         $a = DhiranAttachment::withoutGlobalScopes()->sole();
-        $this->assertStringNotContainsString('<?php', Storage::disk('local')->get($a->file_path));
+        $stored = Storage::disk('local')->get($a->file_path);
+        $this->assertStringNotContainsString('<?php', $stored);
+        $this->assertSame([8, 8, IMAGETYPE_JPEG], array_slice(getimagesizefromstring($stored), 0, 3));
     }
 
     public function test_png_signature_followed_by_garbage_and_php_is_not_stored_verbatim(): void
@@ -1479,23 +1500,6 @@ class InputsTest extends TestCase
         $this->post('/admin/shops/' . $shop->id . '/subscription/terminate', ['reason' => 'x'])->assertSessionHasErrors('reason');
         $r = $this->post('/admin/shops/' . $shop->id . '/subscription', ['plan' => 'dhiran_monthly', 'billing_cycle' => 'monthly', 'ends_at' => '9999-12-31', 'reason' => 'Lifetime']);
         $this->assertNotSame(500, $r->getStatusCode());
-    }
-
-    public function test_unresolved_payment_resolve_is_idempotent_validated_and_404_for_unknown(): void
-    {
-        // Rule: reason required; unknown id 404; resolving twice writes one audit row.
-        $admin = $this->signIn();
-        app(\App\Services\Billing\SubscriptionPaymentService::class)->recordUnresolvedPayment('order_ABC', 'pay_XYZ', 'amount mismatch');
-        $ev = \App\Models\Platform\SubscriptionEvent::where('event_type', 'payment.unresolved')->sole();
-        $this->post('/admin/unresolved-payments/' . $ev->id . '/resolve', [])->assertSessionHasErrors('reason');
-        $this->post('/admin/unresolved-payments/' . $ev->id . '/resolve', ['reason' => str_repeat('r', 501)])->assertSessionHasErrors('reason');
-        $this->post('/admin/unresolved-payments/999999/resolve', ['reason' => 'x'])->assertNotFound();
-        $this->post('/admin/unresolved-payments/' . $ev->id . '/resolve', ['reason' => 'First <b>note</b>'])->assertRedirect();
-        $this->post('/admin/unresolved-payments/' . $ev->id . '/resolve', ['reason' => 'Second note'])->assertRedirect();
-        $this->assertSame(1, DB::table('platform_audit_logs')->where('action', 'payment.unresolved_resolved')->count());
-        $this->assertSame('First <b>note</b>', $ev->fresh()->after['resolution_note']);
-        $this->get('/admin/unresolved-payments')->assertOk()->assertDontSee('<b>note</b>', false);
-        $this->assertNotNull($admin);
     }
 
     public function test_admin_account_creation_validates_name_email_password_and_permissions(): void

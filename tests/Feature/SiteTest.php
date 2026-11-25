@@ -1,7 +1,6 @@
 <?php
 namespace Tests\Feature;
 
-use App\Models\Platform\Plan;
 use Database\Seeders\PlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\OnboardingFixtures;
@@ -11,7 +10,7 @@ class SiteTest extends TestCase
 {
     use RefreshDatabase, OnboardingFixtures;
 
-    private const PAGES = ['/', '/pricing', '/terms', '/privacy', '/refund', '/contact'];
+    private const PAGES = ['/', '/pricing', '/terms', '/privacy', '/contact'];
 
     public function test_public_pages_render_without_login(): void
     {
@@ -19,15 +18,13 @@ class SiteTest extends TestCase
         foreach (self::PAGES as $p) { $this->get($p)->assertOk(); }
     }
 
-    public function test_pricing_shows_only_active_plans_with_prices(): void
+    public function test_pricing_shows_the_one_year_term_without_prices_or_buy_button(): void
     {
         (new PlanSeeder)->run();
-        Plan::create(['code' => 'old_plan', 'name' => 'Retired Plan', 'price_monthly' => 999, 'price_yearly' => null, 'grace_days' => 1, 'is_active' => false, 'features' => ['staff_limit' => 1, 'max_items' => 1]]);
         $this->get('/pricing')->assertOk()
-            ->assertSee('MyDhiranBook Monthly')->assertSee('₹1,852')->assertSee('/ month', false)
-            ->assertSee('MyDhiranBook Yearly')->assertSee('₹19,999')->assertSee('/ year', false)
-            ->assertSee('No free trial')->assertSee('Prices in INR')
-            ->assertDontSee('Retired Plan')->assertDontSee('GST');
+            ->assertSee('Access is granted for 1 year after we approve your shop; we extend it when the year ends.')
+            ->assertDontSee('₹')->assertDontSee('Razorpay')->assertDontSee('Refund');
+        $this->get('/refund')->assertNotFound();
     }
 
     public function test_footer_links_on_register_and_checkout(): void
@@ -37,7 +34,7 @@ class SiteTest extends TestCase
         $pages = [$this->get('/register'), $this->get('/login'), $this->actingAs($owner)->get(route('dhiran.onboarding'))];
         foreach ($pages as $r) {
             $r->assertOk();
-            foreach (['/pricing', '/terms', '/privacy', '/refund', '/contact'] as $href) { $r->assertSee('href="'.$href.'"', false); }
+            foreach (['/pricing', '/terms', '/privacy', '/contact'] as $href) { $r->assertSee('href="'.$href.'"', false); }
         }
         $this->get('/register')->assertSee('href="/terms"', false)->assertSee('href="/privacy"', false);
     }
@@ -76,7 +73,7 @@ class SiteTest extends TestCase
             $this->assertSame(1, substr_count($html, '<footer class="site-footer"'), 'footer count');
             $this->assertStringContainsString('<meta name="viewport"', $html);
         }
-        $this->assertCount(14, $pages);
+        $this->assertCount(13, $pages); // 5 site pages (the refund page is gone) + 4 auth + verify-email + 2 owner pages + 1 paid shopless
     }
 
     public function test_login_fields_are_wired_for_password_managers_and_errors(): void

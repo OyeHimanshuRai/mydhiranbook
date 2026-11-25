@@ -10,7 +10,7 @@ Dhiran is a Laravel 12 app (PHP 8.4, PostgreSQL 16). Everything below was checke
 
 ## 2. Server packages
 
-- PHP 8.4 with FPM and CLI. Required by `composer.json`: `bcmath`, `pdo`, `pdo_pgsql`. Required transitively (composer.lock): `ctype`, `filter`, `hash`, `mbstring`, `openssl`, `session`, `tokenizer`, and for `phpoffice/phpspreadsheet`: `dom`, `fileinfo`, `gd`, `iconv`, `libxml`, `simplexml`, `xml`, `xmlreader`, `xmlwriter`, `zip`, `zlib`. Also `json` (razorpay SDK). Customer photo upload (`CustomerProfilePhotoEncoder`) calls `imagewebp()` and `exif_read_data()`, so build GD with WebP support and install `exif`; without them the encoder takes its fallback branch.
+- PHP 8.4 with FPM and CLI. Required by `composer.json`: `bcmath`, `pdo`, `pdo_pgsql`. Required transitively (composer.lock): `ctype`, `filter`, `hash`, `mbstring`, `openssl`, `session`, `tokenizer`, and for `phpoffice/phpspreadsheet`: `dom`, `fileinfo`, `gd`, `iconv`, `libxml`, `simplexml`, `xml`, `xmlreader`, `xmlwriter`, `zip`, `zlib`. Also `json`. Customer photo upload (`CustomerProfilePhotoEncoder`) calls `imagewebp()` and `exif_read_data()`, so build GD with WebP support and install `exif`; without them the encoder takes its fallback branch.
 - PostgreSQL 16.
 - nginx, Composer 2, git (or any way to ship the code).
 - Node is not needed on the server: `public/build/` (Vite output) is committed to git. Node (`npm ci && npm run build`) is only needed if you change `resources/` CSS/JS; commit the rebuilt `public/build/`. The `assets:verify`/`build:verify` scripts were removed (their artisan command never existed); use `npm run build`.
@@ -33,7 +33,7 @@ server {
     ssl_certificate     /etc/letsencrypt/live/dhiran.example.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/dhiran.example.com/privkey.pem;
 
-    client_max_body_size 10m;   # customer photos / attachments
+    client_max_body_size 32m;   # customer photos / attachments (see the note below)
 
     location / { try_files $uri $uri/ /index.php?$query_string; }
 
@@ -47,6 +47,8 @@ server {
     location ~ /\.(?!well-known).* { deny all; }   # .env, .git, ...
 }
 ```
+
+Set nginx `client_max_body_size`, PHP `post_max_size` and `upload_max_filesize` to at least 32M, because a New Loan form can carry several photos and documents (each file is limited to 8 MB by the app).
 
 Only `public/` is web-reachable. Trusted proxies come from `TRUSTED_PROXIES` in `.env` (comma list of IPs/CIDRs, or `*`; empty = trust none). With this nginx terminating TLS directly leave it empty and keep `fastcgi_param HTTPS on`; behind a load balancer set it to the balancer's address so `X-Forwarded-Proto` is honoured.
 
@@ -72,11 +74,7 @@ Session / cache / queue
 Mail (config/mail.php; only the `smtp` mailer is defined besides `log`)
 - `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT` (587), `MAIL_SCHEME`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`
 
-Razorpay and billing
-- `RAZORPAY_KEY`, `RAZORPAY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` (all three required in production)
-- `BILLING_GST_REGISTERED` (false), `BILLING_ALERT_EMAIL` (receives the unresolved-payment alert; `UnresolvedPaymentAlert` is queued)
-
-Business details (config/business.php; shown on legal/receipt pages)
+Business details (config/business.php; shown on the legal pages and the "Your plan" page)
 - `BUSINESS_NAME`, `BUSINESS_LEGAL_NAME`, `BUSINESS_EMAIL`, `BUSINESS_PHONE`, `BUSINESS_ADDRESS`, `BUSINESS_JURISDICTION` (default `India`)
 
 Other keys read by config but not in `.env.example`: `BCRYPT_ROUNDS` (default 12), `MATERIALS_FETCH_ENABLED` (default false; the metal-rate fetch job is never scheduled).
@@ -92,12 +90,11 @@ Other keys read by config but not in `.env.example`: `BCRYPT_ROUNDS` (default 12
 - `queue.default` is not `sync`, `null` or empty
 - `session.secure` is `true` (`SESSION_SECURE_COOKIE=true`)
 - `mail.default` is not `log`, `array` or empty
-- `RAZORPAY_KEY`, `RAZORPAY_SECRET` and `RAZORPAY_WEBHOOK_SECRET` are all non-empty
 
-Nothing else is enforced (it does not check that Razorpay keys are live keys, that SMTP works, or that a worker is running). Because the guard runs on app boot, `.env` must be complete before any `php artisan` call, including the `package:discover` that Composer runs after install.
+Nothing else is enforced (it does not check that SMTP works, or that a worker is running). Because the guard runs on app boot, `.env` must be complete before any `php artisan` call, including the `package:discover` that Composer runs after install.
 
 ### Domain: mydhiranbook.shop
-At the registrar, point an `A` record (and `AAAA` if the server has IPv6) for `mydhiranbook.shop` and `www` at the server. In nginx set `server_name mydhiranbook.shop www.mydhiranbook.shop;`, issue the TLS certificate (`certbot --nginx -d mydhiranbook.shop -d www.mydhiranbook.shop`), redirect `www` and port 80 to `https://mydhiranbook.shop`. Then `APP_URL=https://mydhiranbook.shop`, Razorpay webhook `https://mydhiranbook.shop/subscription/payment/webhook`. Leave `SESSION_DOMAIN` empty (host-only cookies). Production mail (Gmail SMTP or other) is set only in the server `.env` (local runs stay on the log mailer).
+At the registrar, point an `A` record (and `AAAA` if the server has IPv6) for `mydhiranbook.shop` and `www` at the server. In nginx set `server_name mydhiranbook.shop www.mydhiranbook.shop;`, issue the TLS certificate (`certbot --nginx -d mydhiranbook.shop -d www.mydhiranbook.shop`), redirect `www` and port 80 to `https://mydhiranbook.shop`. Then `APP_URL=https://mydhiranbook.shop`. Leave `SESSION_DOMAIN` empty (host-only cookies). Production mail (Gmail SMTP or other) is set only in the server `.env` (local runs stay on the log mailer).
 
 ## 6. Deploy steps
 
@@ -131,12 +128,11 @@ chmod -R u+rwX,g+rwX storage bootstrap/cache
 Scheduled in `routes/console.php`, all `withoutOverlapping()`:
 - `dhiran:accrue-interest` daily
 - `dhiran:forfeiture-check` daily
-- `subscription:reconcile-payments` every ten minutes (finalizes captured Razorpay payments the webhook/callback never applied; options `--days=2 --limit=25`)
 - `subscription:check-expiry` daily (active -> grace -> expired bookkeeping)
 
 ### Queue worker
 
-The app queues work: `SendPlatformInvoiceEmail` (receipt email, after commit) and `UnresolvedPaymentAlert` mail (`Mail::queue`). Email OTP (`OtpService`) is sent synchronously. Production refuses `sync`, so a worker must run, otherwise receipts and alerts are never sent.
+The app currently queues no work: Email OTP (`OtpService`) and the shop decision mail are sent synchronously. Production still refuses `sync`, so run a worker for future queued work.
 
 `/etc/systemd/system/dhiran-queue.service`:
 
@@ -158,14 +154,6 @@ WantedBy=multi-user.target
 
 `--queue` must equal `QUEUE_NAME`. `--max-time` makes the worker exit hourly and systemd restarts it, which also picks up new code. Failed jobs go to the `failed_jobs` table (`php artisan queue:failed`).
 
-## 7. Razorpay
-
-- Webhook URL: `https://<your-domain>/subscription/payment/webhook` (POST; route name `subscription.webhook`, CSRF-exempt in `bootstrap/app.php`).
-- Set the webhook secret in the dashboard to the same value as `RAZORPAY_WEBHOOK_SECRET`. The handler verifies `X-Razorpay-Signature`, answers 401 on a bad signature and 400 if `X-Razorpay-Event-Id` is missing. Redeliveries are de-duplicated by event id.
-- Events the handler acts on (`SubscriptionController::webhook`): `payment.captured`, `payment.failed`, `refund.created`. Any other event is acknowledged with 200 and ignored.
-- GAP: the launch plan lists `refund.processed`; the code does not handle it (it handles `refund.created`). Enable `payment.captured`, `payment.failed`, `refund.created`. Enabling `refund.processed` is harmless but does nothing.
-- Use a separate Razorpay account for Dhiran; test keys with a test-mode webhook first, then swap to live keys and a live-mode webhook (the two have different secrets).
-
 ## 8. First platform admin
 
 Create the first super admin on the server: `php artisan dhiran:create-admin you@example.com --name="Your Name"`. It prints a random temporary password once. Sign in at `/admin/login` within 24 hours: the app then shows a TOTP secret, enrols TOTP on the first valid code and issues recovery codes. First enrolment is refused after 24 hours from creation or the last password reset; use "Forgot password" on `/admin/login`: the emailed reset reopens the window and discards any authenticator secret that was shown but never confirmed. Admin sign-in is password plus TOTP.
@@ -179,7 +167,7 @@ pg_dump -Fc -h <host> -U <user> <database> > dhiran-$(date +%F).dump
 tar czf dhiran-files-$(date +%F).tgz -C /var/www/dhiran storage/app/private .env
 ```
 
-Restore: `pg_restore -d <new_db> dhiran-YYYY-MM-DD.dump`, unpack `storage/app/private`, then run the verification steps below. Store `.env` backups encrypted; it holds the Razorpay secrets and `APP_KEY` (without the same `APP_KEY`, encrypted columns cannot be read: admin `two_factor_secret` and borrower PII in `customers.pan`, `customers.id_number`, `dhiran_loans.kyc_pan` — losing the key loses that data; never rotate it without re-encrypting). Test a restore before launch.
+Restore: `pg_restore -d <new_db> dhiran-YYYY-MM-DD.dump`, unpack `storage/app/private`, then run the verification steps below. Store `.env` backups encrypted; it holds `APP_KEY` (without the same `APP_KEY`, encrypted columns cannot be read: admin `two_factor_secret` and borrower PII in `customers.pan`, `customers.id_number`, `dhiran_loans.kyc_pan` — losing the key loses that data; never rotate it without re-encrypting). Test a restore before launch.
 
 ## 10. Upgrade and rollback
 

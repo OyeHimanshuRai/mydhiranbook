@@ -11,7 +11,6 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind('db.connector.pgsql', \App\Support\LocalPostgresConnector::class);
-        $this->app->bind(\App\Services\Billing\RazorpayClient::class, fn () => new \App\Services\Billing\SdkRazorpayClient(config('services.razorpay.key'), config('services.razorpay.secret')));
     }
 
     public function boot(): void

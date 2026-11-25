@@ -1,6 +1,6 @@
 # Dhiran
 
-Dhiran is a SaaS for gold and silver pledge-loan ("girvi") shops: customers, pledged items, loans, interest accrual, payments, forfeiture, and a platform admin area. Shops subscribe through Razorpay (one-time Orders + Checkout, no autopay); a shop exists only after a captured payment or an admin grant.
+Dhiran is a SaaS for gold and silver pledge-loan ("girvi") shops: customers, pledged items, loans, interest accrual, payments, forfeiture, and a platform admin area. There is no payment gateway: an owner registers, verifies email and sends the shop form, an admin approves it (1 year of access), and when the year ends the shop is blocked until an admin extends it.
 
 ## Stack
 Laravel 12, PHP 8.4, PostgreSQL 16, Blade, plain CSS/Vite (built assets are committed in `public/build/`), PHPUnit.

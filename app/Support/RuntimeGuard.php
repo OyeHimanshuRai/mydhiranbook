@@ -52,9 +52,6 @@ final class RuntimeGuard
         self::refuse(!in_array($get('queue.default'), ['sync', 'null', null, ''], true), 'production requires a persistent queue');
         self::refuse($get('session.secure') === true, 'session cookie must be secure in production');
         self::refuse(!in_array($get('mail.default'), ['log', 'array', null, ''], true), 'production requires a real mailer');
-        foreach (['key', 'secret', 'webhook_secret'] as $name) {
-            self::refuse((string) $get('services.razorpay.'.$name) !== '', 'missing Razorpay '.$name);
-        }
     }
 
     private static function verifyLocal(array $config, string $environment): void

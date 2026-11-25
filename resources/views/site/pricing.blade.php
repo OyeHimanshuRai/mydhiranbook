@@ -1,10 +1,8 @@
 @extends('site.layout') @section('title','Pricing')
 @section('content')
-<section class="band"><h1>Pricing</h1><p class="band-lead">No free trial. Prices in INR. Pay once through Razorpay; plans do not renew by themselves, you renew when you choose.</p>
-@if($plans->isEmpty())<p class="ui-notice">Plans are not available right now. Please <a href="/contact">contact us</a>.</p>@endif
-<div class="cards plans">@foreach($plans as $plan)@php($yearly = $plan->price_yearly !== null)
-<article class="plan"><h2>{{ $plan->name }}</h2><p class="price">₹{{ number_format($plan->priceFor($yearly ? 'yearly' : 'monthly')) }}<small> / {{ $yearly ? 'year' : 'month' }}</small></p>
-<ul><li>Up to {{ $plan->feature('staff_limit') }} staff accounts</li><li>Up to {{ number_format($plan->feature('max_items')) }} items</li><li>{{ $plan->grace_days }} days of full access after expiry</li></ul>
-<a class="ui-btn" href="/register">Start {{ $plan->name }}</a></article>@endforeach</div>
-<p class="note">See <a href="/refund">Refund &amp; Cancellation</a> before you pay.</p></section>
+<section class="band"><h1>Pricing</h1><p class="band-lead">Access is granted for 1 year after we approve your shop; we extend it when the year ends. There is nothing to pay on this site.</p>
+<div class="cards plans">
+<article class="plan"><h2>1 year of access</h2>
+<ul><li>Register and verify your email</li><li>Send us your shop details</li><li>We approve your shop and your 1-year access starts</li><li>When the year ends, <a href="/contact">contact us</a> and we extend it</li></ul>
+<a class="ui-btn" href="/register">Register your shop</a></article></div></section>
 @endsection

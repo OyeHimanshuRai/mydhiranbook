@@ -6,7 +6,6 @@ $app = Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->replace(Illuminate\Http\Middleware\TrustProxies::class, App\Http\Middleware\TrustProxies::class); // TRUSTED_PROXIES via config('app.trusted_proxies')
         $middleware->append(App\Http\Middleware\SecurityHeaders::class);
-        $middleware->validateCsrfTokens(except: ['subscription/payment/webhook']);
         $middleware->web(append: [Illuminate\Session\Middleware\AuthenticateSession::class]);
         $middleware->web(prepend: [App\Http\Middleware\UseRouteScopedSessionCookie::class]);
         $middleware->prependToPriorityList(Illuminate\Routing\Middleware\SubstituteBindings::class, App\Http\Middleware\UseShop::class);

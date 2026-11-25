@@ -7,6 +7,6 @@
 <td data-label="Plan">{{ $c?->plan?->code ?? 'No plan' }}</td>
 <td data-label="Subscription">@if($c)@include('admin._badge',['s'=>$c->status])@else<span class="adm-muted">Not set</span>@endif</td>
 <td data-label="Ends" class="num">{{ $c?->ends_at?->format('d M Y') ?? '—' }}</td></tr>
-@empty<tr><td colspan="5" class="adm-empty"><strong>{{ $q ? 'No shops match “'.$q.'”' : 'No shops yet' }}</strong>{{ $q ? 'Check the spelling or clear the search.' : 'A shop appears here after its first captured payment or an admin grant.' }}</td></tr>@endforelse
+@empty<tr><td colspan="5" class="adm-empty"><strong>{{ $q ? 'No shops match “'.$q.'”' : 'No shops yet' }}</strong>{{ $q ? 'Check the spelling or clear the search.' : 'A shop appears here after it registers.' }}</td></tr>@endforelse
 </tbody></table></div>@include('pagination',['page'=>$shops])</section>
 @endsection

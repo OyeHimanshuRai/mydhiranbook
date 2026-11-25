@@ -1,6 +1,6 @@
 <?php
 namespace Tests\Feature\Admin;
-use App\Models\Platform\{Plan,PlatformInvoice,ShopSubscription,SubscriptionEvent};
+use App\Models\Platform\{Plan,ShopSubscription,SubscriptionEvent};
 use App\Models\Shop;
 use Database\Seeders\PlanSeeder;
 
@@ -28,7 +28,6 @@ class BillingAdminTest extends AdminTestCase
         $this->assertSame(2,SubscriptionEvent::where('shop_id',$shop->id)->count());
         $this->assertDatabaseHas('subscription_events',['shop_subscription_id'=>$sub->id,'admin_id'=>$admin->id,'reason'=>'Goodwill']);
         $this->assertDatabaseHas('platform_audit_logs',['actor_admin_id'=>$admin->id,'action'=>'subscription.updated','target_id'=>$shop->id]);
-        $this->assertSame(0,PlatformInvoice::count());
         // a plan cannot be granted for a cycle it does not sell
         $this->grant($shop,'dhiran_monthly','yearly',$end2->toDateString())->assertSessionHasErrors('billing_cycle');
     }
@@ -56,7 +55,6 @@ class BillingAdminTest extends AdminTestCase
         $new->refresh(); $this->assertSame([$end->toDateString(),$end->copy()->addDays(14)->toDateString()],[$new->ends_at->toDateString(),$new->grace_ends_at->toDateString()]);
         $this->assertSame($snap[0],$old->fresh()->ends_at->toDateString());
         $this->assertTrue($shop->fresh()->hasEdition('dhiran'));
-        $this->assertSame(0,PlatformInvoice::count());
     }
     public function test_termination_sets_cancelled_and_never_entitled(): void
     {
@@ -67,34 +65,22 @@ class BillingAdminTest extends AdminTestCase
         $this->assertFalse($shop->fresh()->hasEdition('dhiran'));
         $this->assertDatabaseHas('platform_audit_logs',['action'=>'subscription.terminated','target_id'=>$shop->id]);
     }
-    public function test_unresolved_payment_mark_resolved_audited(): void
-    {
-        $admin=$this->signIn($this->admin());
-        app(\App\Services\Billing\SubscriptionPaymentService::class)->recordUnresolvedPayment('order_ABC','pay_XYZ','amount mismatch');
-        $ev=SubscriptionEvent::where('event_type','payment.unresolved')->sole();
-        $this->get('/admin/unresolved-payments')->assertOk()->assertSee('order_ABC')->assertSee('pay_XYZ')->assertSee('Open');
-        $this->post('/admin/unresolved-payments/'.$ev->id.'/resolve',['reason'=>''])->assertSessionHasErrors('reason');
-        $this->post('/admin/unresolved-payments/'.$ev->id.'/resolve',['reason'=>'Refunded in Razorpay'])->assertRedirect();
-        $after=$ev->fresh()->after; $this->assertNotEmpty($after['resolved_at']); $this->assertSame($admin->id,$after['resolved_by_admin_id']);
-        $this->assertDatabaseHas('platform_audit_logs',['actor_admin_id'=>$admin->id,'action'=>'payment.unresolved_resolved','target_id'=>$ev->id,'reason'=>'Refunded in Razorpay']);
-        $this->get('/admin/unresolved-payments')->assertOk()->assertSee('Refunded in Razorpay');
-    }
     public function test_dashboard_counts(): void
     {
         (new PlanSeeder)->run(); $this->signIn($this->admin());
         self::createDhiranShop(['name'=>'Live']); $b=Shop::create(['name'=>'Susp','status'=>'suspended']); self::activeSubscription($b,'active',today()->subDays(40));
         $plan=Plan::where('code','dhiran_yearly')->first();
-        Shop::create(['name'=>'Waiting','status'=>'pending']); ShopSubscription::create(['shop_id'=>null,'plan_id'=>$plan->id,'status'=>'active','billing_cycle'=>'yearly','starts_at'=>today(),'ends_at'=>today()->addYear(),'price_paid'=>19999,'razorpay_payment_id'=>'pay_1','actor_type'=>'self_service']);
-        $m=$this->get('/admin')->assertOk()->viewData('stats');
-        $this->assertSame([3,1,1,1,1,19999],[$m['shops'],$m['active'],$m['suspended'],$m['entitled'],$m['pending'],(int)$m['collected']]);
+        Shop::create(['name'=>'Waiting','status'=>'pending']); ShopSubscription::create(['shop_id'=>null,'plan_id'=>$plan->id,'status'=>'active','billing_cycle'=>'yearly','starts_at'=>today(),'ends_at'=>today()->addYear(),'actor_type'=>'self_service']);
+        $r=$this->get('/admin')->assertOk()->assertDontSee('Collected this month')->assertDontSee('Unresolved payments')->assertDontSee('/admin/unresolved-payments',false);
+        $m=$r->viewData('stats');
+        $this->assertSame([3,1,1,1,1],[$m['shops'],$m['active'],$m['suspended'],$m['entitled'],$m['pending']]);
+        $this->get('/admin/unresolved-payments')->assertNotFound();
     }
     public function test_admin_without_permission_403(): void
     {
         (new PlanSeeder)->run(); $this->limited(['can_manage_shops','can_suspend_shop','can_view_audit_logs']); $shop=Shop::create(['name'=>'P']);
         $this->grant($shop,'dhiran_monthly','monthly',today()->addMonth()->toDateString())->assertForbidden();
         $this->post('/admin/shops/'.$shop->id.'/subscription/terminate',['reason'=>'x'])->assertForbidden();
-        $this->get('/admin/unresolved-payments')->assertForbidden();
-        $this->post('/admin/unresolved-payments/1/resolve',['reason'=>'x'])->assertForbidden();
         $this->assertSame(0,ShopSubscription::count());
     }
 }

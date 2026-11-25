@@ -25,7 +25,6 @@ class RuntimeGuardTest extends TestCase
             'queue' => ['default' => 'database'],
             'session' => ['secure' => true],
             'mail' => ['default' => 'smtp'],
-            'services' => ['razorpay' => ['key' => 'k', 'secret' => 's', 'webhook_secret' => 'w']],
         ];
         foreach ($override as $path => $value) {
             \Illuminate\Support\Arr::set($c, $path, $value);
@@ -59,7 +58,7 @@ class RuntimeGuardTest extends TestCase
             }
         }
     }
-    public function test_production_refuses_missing_razorpay_webhook_secret(): void { $this->refused($this->prod(['services.razorpay.webhook_secret' => ''])); }
+    public function test_production_does_not_need_any_payment_keys(): void { RuntimeGuard::verifyConfig($this->prod(), dirname(__DIR__, 2)); $this->addToAssertionCount(1); }
     public function test_production_refuses_sync_queue(): void { $this->refused($this->prod(['queue.default' => 'sync'])); }
     public function test_production_refuses_insecure_session_cookie(): void { $this->refused($this->prod(['session.secure' => false])); }
     public function test_production_refuses_missing_key_and_non_pgsql(): void

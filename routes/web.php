@@ -29,17 +29,18 @@ Route::middleware(['auth','dhiran.verified'])->prefix('onboarding')->group(funct
     Route::post('/business',[$o,'store'])->middleware('throttle:10,1')->name('dhiran.onboarding.store');
 });
 Route::middleware(['auth','dhiran.verified'])->get('/pending',[\App\Http\Controllers\DhiranOnboardingController::class,'pending'])->name('dhiran.pending');
+Route::middleware(['auth','dhiran.verified'])->get('/access-ended',[\App\Http\Controllers\DhiranOnboardingController::class,'ended'])->name('dhiran.expired');
+Route::middleware('auth')->get('/account-blocked',[\App\Http\Controllers\DhiranOnboardingController::class,'blocked'])->name('dhiran.blocked');
 use App\Http\Controllers\SiteController;
 Route::get('/pricing',[SiteController::class,'pricing'])->name('site.pricing');
 Route::view('/terms','site.terms')->name('site.terms');
 Route::view('/privacy','site.privacy')->name('site.privacy');
-Route::view('/refund','site.refund')->name('site.refund');
 Route::view('/contact','site.contact')->name('site.contact');
 Route::get('/',[SiteController::class,'home'])->name('site.home');
 
 use App\Http\Controllers\Admin\AuthController as AdminAuth;
 use App\Http\Controllers\Admin\PlatformController as Platform;
-use App\Http\Controllers\Admin\{ShopManagementController as AdminShops,PlanController as AdminPlans,BillingManagementController as AdminBilling,UnresolvedPaymentController as AdminUnresolved};
+use App\Http\Controllers\Admin\{ShopManagementController as AdminShops,PlanController as AdminPlans,BillingManagementController as AdminBilling};
 Route::prefix('admin')->group(function() {
     Route::get('/login',[AdminAuth::class,'form'])->name('admin.login');
     Route::post('/login',[AdminAuth::class,'login'])->middleware('throttle:5,1');
@@ -53,26 +54,18 @@ Route::prefix('admin')->group(function() {
     });
     Route::middleware('admin.session')->group(function() {
         Route::get('/',[Platform::class,'dashboard']); Route::get('/audit',[Platform::class,'audit']);
-        Route::get('/requests',[AdminShops::class,'requests']); Route::post('/requests/{shop}/approve',[AdminShops::class,'approve'])->whereNumber('shop'); Route::post('/requests/{shop}/reject',[AdminShops::class,'reject'])->whereNumber('shop');
+        Route::get('/requests',[AdminShops::class,'requests']); Route::post('/requests/{shop}/approve',[AdminShops::class,'approve'])->whereNumber('shop'); Route::post('/requests/{shop}/reject',[AdminShops::class,'reject'])->whereNumber('shop'); Route::post('/shops/{shop}/extend',[AdminShops::class,'extend'])->whereNumber('shop');
         Route::get('/shops',[AdminShops::class,'index']); Route::get('/shops/{shop}',[AdminShops::class,'show'])->whereNumber('shop'); Route::patch('/shops/{shop}',[AdminShops::class,'update']);
         Route::post('/shops/{shop}/subscription',[AdminBilling::class,'updateShopSubscription']); Route::post('/shops/{shop}/subscription/terminate',[AdminBilling::class,'terminateShopSubscription']);
-        Route::get('/receipts/{invoice}',[AdminBilling::class,'receipt']);
         Route::get('/plans',[AdminPlans::class,'index']); Route::patch('/plans/{plan}',[AdminPlans::class,'update']);
-        Route::get('/unresolved-payments',[AdminUnresolved::class,'index']); Route::post('/unresolved-payments/{event}/resolve',[AdminUnresolved::class,'resolve']);
         Route::get('/accounts',[Platform::class,'admins']); Route::post('/accounts',[Platform::class,'storeAdmin']); Route::patch('/accounts/{admin}',[Platform::class,'updateAdmin']);
     });
 });
 
 
-Route::post('/subscription/payment/webhook',[\App\Http\Controllers\SubscriptionController::class,'webhook'])->name('subscription.webhook');
 Route::middleware(['auth','dhiran.verified'])->prefix('subscription')->name('subscription.')->group(function() {
     $c=\App\Http\Controllers\SubscriptionController::class;
     Route::get('/status',[$c,'status'])->name('status');
-    Route::post('/choose',[$c,'choosePlan'])->name('choose');
-    Route::get('/receipts/{invoice}',[$c,'receipt'])->name('receipt');
-    Route::get('/payment',[$c,'payment'])->name('payment');
-    Route::post('/payment/initiate',[$c,'initiatePayment'])->name('payment.initiate');
-    Route::post('/payment/callback',[$c,'paymentCallback'])->name('payment.callback');
 });
 
 require __DIR__.'/dhiran.php';

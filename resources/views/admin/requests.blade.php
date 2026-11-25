@@ -11,12 +11,8 @@
       <div><dt>Owner</dt><dd>{{ $owner?->name ?: ($owner?->first_name.' '.$owner?->last_name) }} · {{ $owner?->email }} · {{ $owner?->mobile_number }}</dd></div>
     </dl>
     <form method="post" action="/admin/requests/{{ $shop->id }}/approve" class="adm-form" data-once>@csrf
-      <div class="adm-fields">
-        <label>Plan<select name="plan" required>@foreach($plans as $plan)<option value="{{ $plan->code }}">{{ $plan->name }}</option>@endforeach</select></label>
-        <label>Billing<select name="billing_cycle" required><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select></label>
-        <label>Access until<input type="date" name="ends_at" required value="{{ old('ends_at', today()->addMonth()->toDateString()) }}" min="{{ today()->toDateString() }}"></label>
-      </div>
-      <div class="adm-actions"><button class="adm-btn">Approve and open</button></div>
+      <p class="adm-muted">Approving opens the software for one year, until {{ today()->addYear()->format('d M Y') }}. Extend it from the dashboard when the year ends.</p>
+      <div class="adm-actions"><button class="adm-btn">Approve for 1 year</button></div>
     </form>
     <form method="post" action="/admin/requests/{{ $shop->id }}/reject" class="adm-form" data-once>@csrf
       <div class="adm-fields"><label>Reason for turning it down (the owner sees this)<input name="reason" required maxlength="500" placeholder="e.g. Phone number does not match the business"></label></div>

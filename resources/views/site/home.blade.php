@@ -11,5 +11,5 @@
 <div><h3>Staff roles</h3><p>Add staff and give each person only the permissions they need.</p></div>
 <div><h3>Old-loan import</h3><p>Bring your existing loans into MyDhiranBook instead of starting from zero.</p></div>
 </div></section>
-<section class="band alt"><h2>Simple pricing</h2><p>Monthly or yearly plans, paid once through Razorpay. Plans do not renew by themselves.</p><p><a class="ui-btn" href="/pricing">View plans</a></p></section>
+<section class="band alt"><h2>How access works</h2><p>Access is granted for 1 year after we approve your shop; we extend it when the year ends.</p><p><a class="ui-btn" href="/pricing">Read more</a></p></section>
 @endsection
