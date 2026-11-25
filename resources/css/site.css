@@ -292,3 +292,4 @@
 @media (prefers-reduced-motion: reduce) { .is-now .sc-dot::after { animation: none; } }
 
 .sc-form { margin: 0 0 var(--sp-4); text-align: left; }
+.sc-form .sc-actions { margin-top: var(--sp-5); }
