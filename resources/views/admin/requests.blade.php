@@ -32,11 +32,11 @@
         </dl></section>
     </div>
     <div class="rq-decide">
-      <form method="post" action="/admin/requests/{{ $shop->id }}/approve" data-once onsubmit="return confirm(@js('Approve '.$shop->name.' for one year?'))">@csrf
+      <form method="post" action="/admin/requests/{{ $shop->id }}/approve" data-once data-rq-confirm="{{ 'Approve '.$shop->name.' for one year?' }}">@csrf
         <button class="adm-btn adm-btn--block">Approve for 1 year</button>
         <p class="rq-note">Opens the software until {{ $until }}. Extend it from the dashboard when the year ends.</p>
       </form>
-      <form method="post" action="/admin/requests/{{ $shop->id }}/reject" class="rq-reject" data-once onsubmit="return confirm(@js('Turn down '.$shop->name.'? The owner is told the reason.'))">@csrf
+      <form method="post" action="/admin/requests/{{ $shop->id }}/reject" class="rq-reject" data-once data-rq-confirm="{{ 'Turn down '.$shop->name.'? The owner is told the reason.' }}">@csrf
         <h3 class="rq-label">Turn down</h3>
         <div class="adm-field"><label for="rq-reason-{{ $shop->id }}">Reason (the owner sees this)</label>
           <input id="rq-reason-{{ $shop->id }}" name="reason" required maxlength="500" placeholder="e.g. Phone number does not match the business"></div>
@@ -57,4 +57,27 @@
 @foreach($rejected as $s)<tr><td class="adm-key">{{ $s->name }}</td><td data-label="Reason">{{ $s->review_note }}</td><td class="num" data-label="Date">{{ $s->reviewed_at?->format('d M Y') }}</td></tr>@endforeach
 </tbody></table></div></section>
 @endif
+
+<dialog id="rq-dialog" class="rq-dialog" aria-labelledby="rq-dialog-msg">
+  <form method="dialog">
+    <p id="rq-dialog-msg"></p>
+    <div class="rq-dialog-actions"><button value="cancel" class="adm-btn adm-btn--ghost">Cancel</button><button value="ok" class="adm-btn">Yes, continue</button></div>
+  </form>
+</dialog>
+<script>
+// An in-page confirm (a native confirm() box can be blocked or hidden, which made the buttons look dead).
+(() => {
+  const dlg = document.getElementById('rq-dialog');
+  document.addEventListener('submit', (e) => {
+    const f = e.target.closest('form[data-rq-confirm]');
+    if (!f || f.dataset.rqOk === '1') { return; }
+    if (typeof dlg.showModal !== 'function') { return; }          // no dialog support: submit straight away
+    e.preventDefault();
+    document.getElementById('rq-dialog-msg').textContent = f.dataset.rqConfirm;
+    dlg.returnValue = '';
+    dlg.addEventListener('close', () => { if (dlg.returnValue === 'ok') { f.dataset.rqOk = '1'; f.requestSubmit(); } }, { once: true });
+    dlg.showModal();
+  }, true);
+})();
+</script>
 @endsection

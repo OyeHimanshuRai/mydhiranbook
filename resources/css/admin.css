@@ -246,3 +246,8 @@ td.adm-empty strong { display: block; color: var(--dh-ink); font-size: var(--fs-
 .rq-empty p { margin: var(--sp-2) 0 0; max-width: 44ch; }
 
 .rq-prev { margin: 0; padding: var(--sp-3) var(--sp-5); border-bottom: 1px solid var(--adm-line, #e2e8f0); background: var(--adm-wash, #f4f4f5); font-size: .875rem; overflow-wrap: anywhere; }
+
+.rq-dialog { max-width: 26rem; width: calc(100% - 2rem); padding: var(--sp-5, 1.25rem); border: 1px solid var(--adm-line, #e2e8f0); border-radius: 10px; box-shadow: 0 24px 56px rgba(0,0,0,.2); }
+.rq-dialog::backdrop { background: rgba(15, 23, 42, .45); }
+.rq-dialog p { margin: 0 0 var(--sp-4, 1rem); font-size: 1rem; font-weight: 600; overflow-wrap: anywhere; }
+.rq-dialog-actions { display: flex; justify-content: flex-end; gap: .5rem; flex-wrap: wrap; }
