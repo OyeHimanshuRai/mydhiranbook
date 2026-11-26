@@ -524,7 +524,7 @@ final class DeadReferencesTest extends TestCase
         if (preg_match_all('/`([A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+)`/', $doc, $m)) { foreach (array_unique($m[1]) as $k) { if (!in_array($k, $known, true)) { $bad[] = "env key $k in docs is not read by code"; } } }
         $sigs = [];
         foreach (self::files(['app/Console/Commands'], '.php') as $f) { if (preg_match('/\$signature\s*=\s*[\'"]([^\s\'"]+)/', (string) file_get_contents($f), $x)) { $sigs[] = $x[1]; } }
-        $builtin = ['key:generate', 'migrate', 'migrate:status', 'db:seed', 'config:cache', 'route:cache', 'view:cache', 'route:list', 'queue:work', 'queue:failed', 'schedule:run', 'down', 'up', 'package:discover', 'storage:link'];
+        $builtin = ['optimize', 'optimize:clear', 'event:cache', 'config:clear', 'key:generate', 'migrate', 'migrate:status', 'db:seed', 'config:cache', 'route:cache', 'view:cache', 'route:list', 'queue:work', 'queue:failed', 'schedule:run', 'down', 'up', 'package:discover', 'storage:link'];
         if (preg_match_all('/php artisan\s+([a-z][\w:\-]*)/', $doc, $m)) { foreach (array_unique($m[1]) as $c) { if (!in_array($c, $sigs, true) && !in_array($c, $builtin, true)) { $bad[] = "artisan $c in docs does not exist"; } } }
         if (preg_match_all('/`((?:[\w.\-]+\/)+[\w.\-]+\.(?:php|json|md|sh))`/', $doc, $m)) { foreach (array_unique($m[1]) as $p) { if (!file_exists(self::root().'/'.$p) && !str_starts_with($p, 'storage/') && !str_contains($p, 'dhiran-')) { $bad[] = "file $p in docs does not exist"; } } }
         foreach (['PlanSeeder', 'DemoSeeder'] as $s) { if (str_contains($doc, $s)) { $this->assertFileExists(self::root()."/database/seeders/$s.php"); } }

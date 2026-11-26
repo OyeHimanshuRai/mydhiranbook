@@ -959,12 +959,14 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         }
         $borrowers = $query->orderBy('first_name')->orderBy('id')->paginate(\App\Services\Dhiran\DhiranListFilters::perPage($request))->withQueryString();
 
-        // Outstanding per borrower (active loans only), scoped to this shop.
-        $outstanding = [];
-        foreach ($borrowers as $b) {
-            $outstanding[$b->id] = (float) DhiranLoan::where('customer_id', $b->id)
-                ->whereIn('status', DhiranLoan::OPEN)
-                ->sum(DB::raw('outstanding_principal + outstanding_interest + outstanding_penalty'));
+        // Outstanding per borrower (open loans only), in one grouped query for the page's borrowers, scoped to this shop.
+        $outstanding = array_fill_keys($borrowers->pluck('id')->all(), 0.0);
+        if ($outstanding) {
+            DhiranLoan::where('shop_id', $shopId)->whereIn('customer_id', array_keys($outstanding))->whereIn('status', DhiranLoan::OPEN)
+                ->groupBy('customer_id')
+                ->selectRaw('customer_id, SUM(COALESCE(outstanding_principal, 0) + COALESCE(outstanding_interest, 0) + COALESCE(outstanding_penalty, 0)) as total')
+                ->pluck('total', 'customer_id')
+                ->each(function ($total, $id) use (&$outstanding) { $outstanding[$id] = (float) $total; });
         }
 
         return view('dhiran.borrowers.index', compact('borrowers', 'outstanding', 'tabCounts', 'show'));

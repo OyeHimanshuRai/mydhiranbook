@@ -101,6 +101,7 @@ Session / cache / queue
 - `CACHE_STORE=file`
 - `QUEUE_CONNECTION=database` (code default), `QUEUE_NAME` (queue name on the `jobs` table; code default `dhiran-local`, `.env.example` uses `dhiran-production`)
 - Sessions and cache are file based under `storage/framework/`; with several app servers they would need shared storage. Not configured.
+- Optional, for several app servers or heavy use: only the `file` cache store and the `file` session driver are configured in this repo (`config/cache.php` has just that store; `config/database.php` has no redis connection). To move to Redis or the database you must first add that store/connection to the config (`redis`: PHP extension or predis plus `REDIS_*` keys; `database`: the `session:table` / `cache:table` migrations, at the price of a PostgreSQL query per request), then set `SESSION_DRIVER` / `CACHE_STORE`. Local/testing environments are pinned to `file` by `RuntimeGuard`, so this is a production-only choice. The default `file` is fine for one server.
 
 Mail (config/mail.php; only the `smtp` mailer is defined besides `log`)
 - `MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT` (587), `MAIL_SCHEME`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`
@@ -138,12 +139,13 @@ composer install --no-dev --optimize-autoloader
 php artisan key:generate            # only if APP_KEY is empty
 php artisan migrate --force
 php artisan db:seed --class=PlanSeeder --force
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+php artisan optimize                # = config:cache + event:cache + route:cache + view:cache
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R u+rwX,g+rwX storage bootstrap/cache
 ```
+
+- Speed settings on the server: enable OPcache (`opcache.enable=1`, `opcache.memory_consumption=128`, `opcache.validate_timestamps=0` and reload PHP-FPM on each deploy), keep `composer install --no-dev --optimize-autoloader`, and run `php artisan optimize` after every deploy (and `php artisan optimize:clear` first if a cache looks stale). `config:cache` means `.env` is read only when caches are rebuilt, so rebuild after editing `.env`.
+- The list and search indexes (`dhiran_loans` by shop/created_at and shop/loan_date, `customers` by shop/first_name, `dhiran_payments` by shop/payment_date) come with `php artisan migrate --force`. Name and address search uses `ILIKE '%text%'`, which a normal index cannot serve; on a book of tens of thousands of customers the next step would be the `pg_trgm` extension with GIN indexes (needs a database superuser to create the extension, so it is not in the migrations).
 
 - Seeder class is `Database\Seeders\PlanSeeder` (also what `DatabaseSeeder` calls). It defines `dhiran_monthly` and `dhiran_yearly`. Do not run `DemoSeeder` in production: it creates demo owners and a synthetic admin (`admin@dhiran.test`).
 - `storage:link` is not needed: `config/filesystems.php` has only the private `local` disk (`storage/app/private`) and `links` is empty. Uploads are served through controllers.
@@ -212,7 +214,7 @@ git pull        # or deploy the new release
 composer install --no-dev --optimize-autoloader
 pg_dump -Fc ... > pre-upgrade.dump
 php artisan migrate --force
-php artisan config:cache && php artisan route:cache && php artisan view:cache
+php artisan optimize
 sudo systemctl restart dhiran-queue
 php artisan up
 ```
