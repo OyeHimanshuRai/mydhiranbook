@@ -1,4 +1,10 @@
 {
+  "node_modules/flatpickr/dist/esm/index.js": {
+    "file": "assets/index-BPBzpGOV.js",
+    "name": "index",
+    "src": "node_modules/flatpickr/dist/esm/index.js",
+    "isDynamicEntry": true
+  },
   "resources/css/admin.css": {
     "file": "assets/admin-C2GWmCdl.css",
     "src": "resources/css/admin.css",
@@ -81,16 +87,33 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-F4BeG802.js",
+    "file": "assets/app-DvQ7uASi.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "imports": [
       "resources/js/ux/inline-validate.js"
     ],
+    "dynamicImports": [
+      "resources/js/ux/autosave.js",
+      "resources/js/customer-photo.js",
+      "node_modules/flatpickr/dist/esm/index.js"
+    ],
     "css": [
       "assets/app-W445Zzz6.css"
     ]
+  },
+  "resources/js/customer-photo.js": {
+    "file": "assets/customer-photo-vBsjtNgH.js",
+    "name": "customer-photo",
+    "src": "resources/js/customer-photo.js",
+    "isDynamicEntry": true
+  },
+  "resources/js/ux/autosave.js": {
+    "file": "assets/autosave-Dh-RabDA.js",
+    "name": "autosave",
+    "src": "resources/js/ux/autosave.js",
+    "isDynamicEntry": true
   },
   "resources/js/ux/inline-validate.js": {
     "file": "assets/inline-validate-Cabh_xpt.js",

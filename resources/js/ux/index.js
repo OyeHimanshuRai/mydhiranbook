@@ -2,8 +2,11 @@
 import '../../css/ux.css';
 import './palette.js';
 import './shortcuts.js';
-import './autosave.js';
 import './inline-validate.js';
 import './recovery.js';
 import './skeleton.js';
 import './bulk.js';
+import { loadWhen } from '../lazy.js';
+
+// drafts exist only on forms that ask for them
+loadWhen('form[data-autosave]', () => import('./autosave.js'));

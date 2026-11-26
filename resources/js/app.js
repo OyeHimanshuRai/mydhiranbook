@@ -1,12 +1,11 @@
-import './bootstrap';
 import * as Turbo from '@hotwired/turbo';
-import flatpickr from 'flatpickr';
 
 import Alpine from 'alpinejs';
-import { initializeCustomerPhotos, PhotoCamera, cameraError } from './customer-photo';
-// the New Loan item photos reuse the same live-camera helper
-window.PhotoCamera = PhotoCamera;
-window.cameraError = cameraError;
+
+let photoTools;
+// The New Loan page opens the live camera from Alpine: `await window.loadPhotoTools()` then window.PhotoCamera / window.cameraError / window.photoTools.
+window.loadPhotoTools = () => (photoTools ??= import('./customer-photo').then((m) => { window.PhotoCamera = m.PhotoCamera; window.cameraError = m.cameraError; return m; }));
+import { loadWhen } from './lazy';
 import { showFlashes, toastSettings } from './toast';
 import { initializeRowActionLabels } from './table-row-actions';
 import { initializeListWorkspaces } from './list-workspace';
@@ -21,7 +20,7 @@ import { configureDialogDatePicker } from './date-picker-dialog';
 import { extractConfirmMessage } from './confirm-message';
 import './ux/index.js'; // command palette, shortcuts, autosave, inline validation, recovery, skeletons, bulk select
 
-initializeCustomerPhotos();
+loadWhen('[data-customer-photo], [data-customer-avatar]', () => window.loadPhotoTools().then((m) => m.initializeCustomerPhotos()));
 initializeRowActionLabels();
 initializeListWorkspaces();
 initializeSectionSwitch();
@@ -1062,6 +1061,7 @@ function buildDatePickerOptions(nativeInput) {
     });
 }
 
+let flatpickrModule;
 function initDatePickers(root = document) {
     const nodes = [];
 
@@ -1073,13 +1073,13 @@ function initDatePickers(root = document) {
         nodes.push(...root.querySelectorAll(DATE_PICKER_SELECTOR));
     }
 
-    nodes.forEach((nativeInput) => {
-        if (!(nativeInput instanceof HTMLInputElement)) return;
-        if (nativeInput.dataset.jfDatePicker === 'true' && nativeInput._flatpickr) return;
-        if (nativeInput._flatpickr) return;
-
-        flatpickr(nativeInput, buildDatePickerOptions(nativeInput));
-    });
+    const pending = nodes.filter((n) => n instanceof HTMLInputElement && !n._flatpickr);
+    if (!pending.length) return;
+    // flatpickr (about 50 KB) is fetched the first time a page has a date field.
+    flatpickrModule ??= import('flatpickr').then((m) => m.default);
+    flatpickrModule.then((flatpickr) => pending.forEach((nativeInput) => {
+        if (nativeInput.isConnected && !nativeInput._flatpickr) flatpickr(nativeInput, buildDatePickerOptions(nativeInput));
+    }));
 }
 
 function destroyDatePickers(root = document) {

@@ -1014,12 +1014,13 @@
                     this.camTitle = target.kind === 'item' ? 'Photo of item ' + (target.index + 1) : (this.docDefs.find(d => d.key === target.key) || {}).label || 'Take photo';
                     const dialog = this.$refs.camDialog;
                     if (!dialog.open) dialog.showModal();
-                    this.cam = this.cam || new window.PhotoCamera(this.$refs.camVideo);
                     try {
+                        await window.loadPhotoTools(); // the camera code loads on first use
+                        this.cam = this.cam || new window.PhotoCamera(this.$refs.camVideo);
                         await this.cam.start();
                         this.camCanSwitch = await this.cam.canSwitch();
                     } catch (e) {
-                        this.camError = window.cameraError(e);
+                        this.camError = window.cameraError ? window.cameraError(e) : 'The camera could not start. Check your connection and try again.';
                     }
                 },
                 async switchCamera() {
