@@ -3,16 +3,13 @@ import * as Turbo from '@hotwired/turbo';
 import flatpickr from 'flatpickr';
 
 import Alpine from 'alpinejs';
-import { registerHistoricalManual } from './historical-manual';
 import { initializeCustomerPhotos, PhotoCamera, cameraError } from './customer-photo';
 // the New Loan item photos reuse the same live-camera helper
 window.PhotoCamera = PhotoCamera;
 window.cameraError = cameraError;
 import { showFlashes, toastSettings } from './toast';
-import { initializeChallanShare } from './repair-challan-share';
 import { initializeRowActionLabels } from './table-row-actions';
 import { initializeListWorkspaces } from './list-workspace';
-import { initializeRepairIntakes } from './repair-intake';
 import { initMobileHeaderActionFabs, cleanupMobileHeaderActionFabs } from './mobile-header-actions';
 import { initializeSectionSwitch } from './section-switch';
 import './settings-pane';
@@ -20,20 +17,13 @@ import { initializeReportScreens } from './report-screen';
 import { initializeReportExports } from './report-export';
 import { initializeSettingsWorkspace, placeSettingsToast } from './settings-workspace';
 import { initializeSettingsUnsavedChanges } from './settings-unsaved';
-import { createReorderEditor } from './reorder-editor';
-import { createKarigarEditor, createKarigarFieldHelp } from './karigar-editor';
-import { createIndianAddress } from './indian-address';
 import { configureDialogDatePicker } from './date-picker-dialog';
 import { extractConfirmMessage } from './confirm-message';
-import { createQuoteState } from './pos-quote';
-import { createLatestRequest } from './latest-request';
 import './ux/index.js'; // command palette, shortcuts, autosave, inline validation, recovery, skeletons, bulk select
 
 initializeCustomerPhotos();
-initializeChallanShare();
 initializeRowActionLabels();
 initializeListWorkspaces();
-initializeRepairIntakes();
 initializeSectionSwitch();
 initializeReportScreens();
 initializeReportExports();
@@ -224,16 +214,8 @@ window.fetch = function(input, init) {
 window.Alpine = Alpine;
 window.Turbo = Turbo;
 // The retail POS reads its price quote state through this (audit H4).
-window.createQuoteState = createQuoteState;
 // Type-ahead searches on inline pages (the POS customer search) keep only the latest answer (audit M4).
-window.createLatestRequest = createLatestRequest;
 
-registerHistoricalManual(Alpine);
-Alpine.data('reorderRuleEditor', createReorderEditor);
-Alpine.data('karigarEditor', createKarigarEditor);
-Alpine.data('vendorEditor', createKarigarEditor);
-Alpine.data('karigarFieldHelp', createKarigarFieldHelp);
-Alpine.data('indianAddress', createIndianAddress);
 Alpine.start();
 
 function showFlashToasts() {

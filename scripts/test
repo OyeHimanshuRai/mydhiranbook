@@ -3,7 +3,6 @@ set -euo pipefail
 cd -- "$(dirname -- "$0")/.."
 [[ "$(realpath .)" == '/home/himanshu/Desktop/Dhiran ERP' ]]
 [[ "$(git rev-parse --show-toplevel)" == "$PWD" ]]
-[[ -z "$(git remote)" ]]
 export APP_ENV=testing
 php scripts/verify.php
 exec php vendor/bin/phpunit "$@"

@@ -19,6 +19,8 @@ class HardeningTest extends TestCase
     public function test_security_headers_on_public_page_and_hsts_only_when_secure(): void
     {
         $r=$this->get('/login');
+        $r->assertHeader('Permissions-Policy')->assertHeader('Cross-Origin-Opener-Policy','same-origin')->assertHeaderMissing('X-Powered-By');
+        $this->assertStringContainsString('camera=(self)', $r->headers->get('Permissions-Policy'));
         $r->assertHeader('X-Frame-Options','DENY')->assertHeader('X-Content-Type-Options','nosniff')->assertHeader('Referrer-Policy','strict-origin-when-cross-origin')->assertHeaderMissing('Strict-Transport-Security');
         $this->get('https://localhost/login')->assertHeader('Strict-Transport-Security','max-age=31536000; includeSubDomains');
     }
