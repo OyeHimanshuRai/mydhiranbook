@@ -87,7 +87,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-4S2YaYxY.js",
+    "file": "assets/app-Jsyq2qP0.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -100,7 +100,7 @@
       "node_modules/flatpickr/dist/esm/index.js"
     ],
     "css": [
-      "assets/app-W445Zzz6.css"
+      "assets/app-C_ErOUQl.css"
     ]
   },
   "resources/js/customer-photo.js": {

@@ -21,6 +21,10 @@ class LoanEvent extends Model
 
     protected $casts = ['details' => 'array', 'occurred_at' => 'datetime'];
 
+    // occurred_at and created_at are timestamptz: write them WITH the offset, or Postgres reads the India wall time in its own
+    // session zone (UTC on the live server) and the log shows 5h30 late.
+    protected $dateFormat = 'Y-m-d H:i:sP';
+
     public function loan()
     {
         return $this->belongsTo(DhiranLoan::class, 'dhiran_loan_id');

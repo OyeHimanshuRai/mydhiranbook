@@ -13,6 +13,7 @@ class ErrorPagesTest extends TestCase
     private const TITLES = [
         403 => 'You do not have access to this page',
         419 => 'This page expired',
+        422 => 'We could not use that request',
         429 => 'Too many tries',
         500 => 'Something went wrong on our side',
         503 => 'We are updating MyDhiranBook',
@@ -21,7 +22,7 @@ class ErrorPagesTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        foreach ([401, 403, 419, 429, 500, 503] as $code) {
+        foreach ([401, 403, 419, 422, 429, 500, 503] as $code) {
             Route::get("/_e/$code", fn () => abort($code));
         }
         Route::get('/_e/secret-500', fn () => abort(500, 'SQLSTATE secret'));

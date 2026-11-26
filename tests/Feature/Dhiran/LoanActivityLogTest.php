@@ -111,6 +111,30 @@ class LoanActivityLogTest extends TestCase
         $this->assertSame($this->shop->id, (int) $created->shop_id);
     }
 
+    /** Live 2026-11-26: production Postgres runs in UTC, so an India time written without an offset was stored 5h30 late. */
+    public function test_event_time_is_right_when_the_database_session_is_utc(): void
+    {
+        DB::statement("SET TIME ZONE 'UTC'");
+        $this->at('2026-11-26 15:46:00');
+        $event = $this->t(fn () => \App\Services\Dhiran\LoanLog::forLoan($this->loan, 'document.printed', 'print', 'Receipt opened'));
+        $stored = LoanEvent::withoutGlobalScopes()->findOrFail($event->id);
+        $this->assertSame('2026-11-26 15:46', $stored->occurred_at->timezone('Asia/Kolkata')->format('Y-m-d H:i'));
+        $this->assertSame('2026-11-26 10:16', DB::selectOne("select to_char(occurred_at at time zone 'UTC', 'YYYY-MM-DD HH24:MI') as t from dhiran_loan_events where id = ?", [$event->id])->t);
+    }
+
+    public function test_the_time_fix_migration_corrects_old_rows_and_keeps_the_log_append_only(): void
+    {
+        DB::statement("SET TIME ZONE 'UTC'");
+        $id = DB::table('dhiran_loan_events')->insertGetId(['shop_id' => $this->shop->id, 'dhiran_loan_id' => $this->loan->id, 'actor_name' => 'Old',
+            'event' => 'document.printed', 'category' => 'print', 'summary' => 'Old row', 'occurred_at' => '2026-11-26 15:46:00', 'created_at' => '2026-11-26 15:46:00']);
+        (require database_path('migrations/2026_12_08_000000_fix_loan_event_times.php'))->up();
+        $row = LoanEvent::withoutGlobalScopes()->findOrFail($id);
+        $this->assertSame('2026-11-26 15:46', $row->occurred_at->timezone('Asia/Kolkata')->format('Y-m-d H:i'));
+        $this->assertSame('2026-11-26 15:46', $row->created_at->timezone('Asia/Kolkata')->format('Y-m-d H:i'));
+        $this->expectException(QueryException::class);
+        DB::table('dhiran_loan_events')->where('id', $id)->update(['summary' => 'rewritten']);
+    }
+
     public function test_every_payment_is_a_line_with_its_split_and_who_took_it(): void
     {
         $this->at('2026-04-01 11:30');

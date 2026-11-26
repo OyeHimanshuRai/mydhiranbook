@@ -161,6 +161,8 @@ class PaletteTest extends TestCase
     {
         $page = $this->actingAs($this->owner)->get(route('dhiran.loans'))->assertOk()
             ->assertSee('data-palette-open', false)->assertSee('role="combobox"', false)->assertSee('id="dhShortcuts"', false);
+        // Live test 2026-11-26: the floating phone button covered form labels and the Save bar; phones get a header search button instead.
+        $this->assertMatchesRegularExpression('/class="dh-bell dh-search-btn" data-palette-open/', $page->getContent());
         $all = $this->paletteLabels($page);
         foreach (['Loans', 'New loan', 'Customers', 'Old loans', 'Reports hub', 'Report: Active', 'Report: Cash book', 'Settings: Loan', 'Settings: Receipt', 'Settings: Notifications'] as $label) {
             $this->assertContains($label, $all);

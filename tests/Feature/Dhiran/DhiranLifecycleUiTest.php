@@ -208,6 +208,22 @@ class DhiranLifecycleUiTest extends TestCase
         $this->assertStringContainsString('Payment Receipt', $html);
     }
 
+    // Live test 2026-11-26: the payout slip said "Received From" / "Amount Paid" although the money went out to the borrower.
+    public function test_payout_receipt_says_paid_to_and_a_payment_still_says_received_from(): void
+    {
+        [$shop, $owner] = $this->dhiranShopWithOwner('9390000077');
+        $loan = $this->makeLoan($shop);
+        $payout = TenantContext::runFor($shop->id, fn () => $this->fresh($loan->id)->payments()->where('type', 'disbursement')->firstOrFail());
+        $payment = TenantContext::runFor($shop->id, fn () => $this->service->recordPayment($this->fresh($loan->id), 5000));
+        $out = $this->actingAs($owner)->get(route('dhiran.payment-receipt', [$loan->id, $payout->id]))->assertOk()->getContent();
+        $this->assertStringContainsString('Paid To', $out);
+        $this->assertStringContainsString('Amount Paid Out', $out);
+        $this->assertStringNotContainsString('Received From', $out);
+        $in = $this->actingAs($owner)->get(route('dhiran.payment-receipt', [$loan->id, $payment->id]))->assertOk()->getContent();
+        $this->assertStringContainsString('Received From', $in);
+        $this->assertStringNotContainsString('Paid To', $in);
+    }
+
     // 11, 12, 13. Print-document routes are shop-scoped (cross-shop fails).
     public function test_print_routes_are_shop_scoped(): void
     {

@@ -218,6 +218,7 @@
                                     <div class="fm-affix">
                                         <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
                                         <input type="number" inputmode="decimal" step="0.01" min="0" :id="'it-value-' + index" :name="'items['+index+'][market_value]'"
+                                               :disabled="!(item.metal_type === 'other' || item.value_mode === 'appraised')"
                                                x-model.number="item.market_value" placeholder="0.00" class="fm-control" @input="recalcItem(index)" @focus="$event.target.select()">
                                     </div>
                                 </div>
@@ -416,7 +417,7 @@
                             <div class="fm-affix">
                                 <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
                                 <input type="number" inputmode="decimal" step="0.01" name="gold_rate_on_date" id="gold_rate_on_date"
-                                       x-model.number="goldRateOnDate"
+                                       x-model.number="goldRateOnDate" @input="applyGoldRate()"
                                        value="{{ old('gold_rate_on_date') }}"
                                        placeholder="Reference rate" class="fm-control" @focus="$event.target.select()"
                                        @error('gold_rate_on_date') aria-invalid="true" aria-describedby="err-gold_rate_on_date" @enderror>
@@ -739,6 +740,7 @@
                 loanPan: {{ Illuminate\Support\Js::from(old('pan', '')) }},
                 loanAadhaar: {{ Illuminate\Support\Js::from(old('aadhaar', '')) }},
                 goldRateOnDate: {{ old('gold_rate_on_date', 0) }},
+                lastGoldRate: {{ old('gold_rate_on_date', 0) }},
                 principal_amount: {{ old('principal_amount', 0) }},
                 interest_rate_monthly: {{ old('interest_rate_monthly', $defaults['interest_rate_monthly'] ?? 1.5) }},
                 interest_type: '{{ old('interest_type', $defaults['interest_type'] ?? 'flat') }}',
@@ -987,7 +989,7 @@
                 addItem() {
                     this.items.push({
                         description: '', metal_type: 'gold', value_mode: 'metal', gross_weight: 0, stone_weight: 0, purity: 22, purityPick: '22',
-                        rate_per_gram_at_pledge: 0, huid: '',
+                        rate_per_gram_at_pledge: this.goldRateOnDate || 0, huid: '',
                         net_metal_weight: 0, fine_weight: 0, market_value: 0, loan_value: 0,
                         photoFile: null, photoUrl: '', photoError: '', photoBusy: false
                     });
@@ -1142,6 +1144,16 @@
                     if (!typed || window.confirm('Remove item ' + (index + 1) + '?')) this.removeItem(index);
                 },
 
+                // "Gold rate today" fills each gold item's rate that is empty or still the previous rate; a rate typed per item is kept.
+                applyGoldRate() {
+                    const prev = this.lastGoldRate;
+                    this.items.forEach((it, i) => {
+                        if (it.metal_type === 'gold' && (!it.rate_per_gram_at_pledge || it.rate_per_gram_at_pledge === prev)) { it.rate_per_gram_at_pledge = this.goldRateOnDate || 0; }
+                        this.recalcItem(i);
+                    });
+                    this.lastGoldRate = this.goldRateOnDate || 0;
+                },
+
                 recalcItem(index) {
                     let item = this.items[index];
                     const appraised = item.metal_type === 'other' || item.value_mode === 'appraised';
@@ -1154,7 +1166,7 @@
                         // The typed market value is authoritative.
                         item.market_value = Number(item.market_value) || 0;
                     } else {
-                        let rate = item.rate_per_gram_at_pledge || this.goldRateOnDate || 0;
+                        const rate = item.rate_per_gram_at_pledge || 0; // the server values an item only from its own rate
                         item.market_value = fine * rate;
                     }
                     item.loan_value = item.market_value * (this.ltvPercent / 100);

@@ -9,6 +9,7 @@
     $paymentTime = ($payment->created_at ?? now())->format('h:i A');
     $receiptNo = 'DPR-' . str_pad((string) $payment->id, 5, '0', STR_PAD_LEFT);
     $n = fn ($v) => number_format((float) $v, 2);
+    $payout = $payment->type === 'disbursement'; // money went OUT to the borrower: the slip must not say it was received
     $hasFee = (float) ($payment->processing_fee_component ?? 0) > 0;
     $balance = (float) $payment->outstanding_principal_after + (float) $payment->outstanding_interest_after + (float) $payment->outstanding_penalty_after;
 @endphp
@@ -49,7 +50,7 @@
 
         @if($any('customer_name', 'customer_mobile') || ($show('customer_address') && $customer?->address))
         <section class="rc-sec">
-            <h2 class="rc-sec-title">Received From</h2>
+            <h2 class="rc-sec-title">{{ $payout ? 'Paid To' : 'Received From' }}</h2>
             <dl class="rc-rows rc-cols">
                 @if($show('customer_name'))<div class="rc-row"><dt>Name</dt><dd>{{ $customer?->name ?? 'Walk-in Customer' }}</dd></div>@endif
                 @if($show('customer_mobile'))<div class="rc-row"><dt>Contact</dt><dd>{{ \App\Support\Mobile::forDisplay($customer?->mobile) ?: 'No mobile available' }}</dd></div>@endif
@@ -66,14 +67,14 @@
                 @if($show('interest_component'))<div class="rc-row"><dt>Interest Component</dt><dd>{{ $n($payment->interest_component) }}</dd></div>@endif
                 @if($show('penalty_component'))<div class="rc-row"><dt>Penalty Component</dt><dd>{{ $n($payment->penalty_component) }}</dd></div>@endif
                 @if($show('fee_component') && $hasFee)<div class="rc-row"><dt>Processing Fee</dt><dd>{{ $n($payment->processing_fee_component) }}</dd></div>@endif
-                @if($show('amount_paid'))<div class="rc-row rc-strong"><dt>Amount Paid</dt><dd>{{ $n($payment->amount) }}</dd></div>@endif
+                @if($show('amount_paid'))<div class="rc-row rc-strong"><dt>{{ $payout ? 'Amount Paid Out' : 'Amount Paid' }}</dt><dd>{{ $n($payment->amount) }}</dd></div>@endif
             </dl>
         </section>
         @endif
 
         @if($any('balance_principal', 'balance_interest', 'balance_penalty', 'balance_total'))
         <section class="rc-sec">
-            <h2 class="rc-sec-title">Balance After Payment</h2>
+            <h2 class="rc-sec-title">{{ $payout ? 'Balance After Payout' : 'Balance After Payment' }}</h2>
             <dl class="rc-rows">
                 @if($show('balance_principal'))<div class="rc-row"><dt>Outstanding Principal After</dt><dd>{{ $n($payment->outstanding_principal_after) }}</dd></div>@endif
                 @if($show('balance_interest'))<div class="rc-row"><dt>Outstanding Interest After</dt><dd>{{ $n($payment->outstanding_interest_after) }}</dd></div>@endif

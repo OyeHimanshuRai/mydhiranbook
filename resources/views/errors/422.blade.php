@@ -1,0 +1,1 @@
+@include('errors._layout', ['code' => 422, 'title' => 'We could not use that request', 'text' => 'Something the page needed was missing or not valid. For item tags, tick the loans on the Loans list first. Go back and try again.'])

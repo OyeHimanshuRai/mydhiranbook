@@ -1,6 +1,6 @@
 /* ux-palette: command palette (Ctrl/Cmd K), its trigger button and the shortcuts help. Tokens only; no yellow, no fills for warnings. */
 
-/* ---- trigger: a quiet pill bottom-right on tablets and desktops, a round search button bottom-left on phones ---- */
+/* ---- trigger: a quiet pill bottom-right on tablets and desktops; on phones a header button (.dh-search-btn) ---- */
 .pal-fab {
     position: fixed; right: 16px; bottom: 16px; z-index: 35;
     display: inline-flex; align-items: center; gap: var(--sp-2); height: 36px; padding: 0 var(--sp-3);
@@ -10,12 +10,11 @@
 }
 .pal-fab:hover { border-color: var(--dh-accent-line); color: var(--dh-ink); }
 .pal-fab svg { flex: none; }
+/* Phones: no floating button (it covered form labels and the Save bar); the search button sits in the header beside the bell. */
+.dh-bell.dh-search-btn { display: none; }
 @media (max-width: 767.98px) {
-    .pal-fab {
-        right: auto; left: max(12px, env(safe-area-inset-left, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-        width: 44px; height: 44px; padding: 0; justify-content: center;
-    }
-    .pal-fab-text, .pal-fab .pal-kbd { display: none; }
+    .pal-fab { display: none; }
+    .dh-bell.dh-search-btn { display: grid; }
 }
 @media print { .pal-fab { display: none; } }
 
@@ -78,5 +77,4 @@
 }
 
 /* A page with the sticky totals bar (New Loan, Add old loan): the search button sits above the bar, never over its buttons. */
-@media (max-width: 639.98px) { html:has(.fm-bar) .pal-fab { bottom: calc(7.5rem + env(safe-area-inset-bottom, 0px)); } }
 @media (min-width: 640px) and (max-width: 1099.98px) { html:has(.fm-bar) .pal-fab { bottom: calc(6rem + env(safe-area-inset-bottom, 0px)); } }
