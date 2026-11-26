@@ -6,6 +6,8 @@ let photoTools;
 // The New Loan page opens the live camera from Alpine: `await window.loadPhotoTools()` then window.PhotoCamera / window.cameraError / window.photoTools.
 window.loadPhotoTools = () => (photoTools ??= import('./customer-photo').then((m) => { window.PhotoCamera = m.PhotoCamera; window.cameraError = m.cameraError; return m; }));
 import { loadWhen } from './lazy';
+import { createLiveSearch } from './live-search';
+window.createLiveSearch = createLiveSearch; // used by inline page scripts (New Loan borrower search)
 import { showFlashes, toastSettings } from './toast';
 import { initializeRowActionLabels } from './table-row-actions';
 import { initializeListWorkspaces } from './list-workspace';
@@ -282,8 +284,6 @@ function initAjaxDeletes() {
 }
 
 const SIDEBAR_SCROLL_KEY = 'jewelflow:sidebar-scroll-top';
-let translationObserver = null;
-const translationCache = new Map();
 let confirmDialogEl = null;
 let confirmDialogResolve = null;
 let confirmDialogFocusReturn = null;
@@ -626,108 +626,6 @@ function closeAllMobileDrawers() {
     keys.forEach((key) => setMobileDrawerState(key, false));
 }
 
-function normalizeLocale(rawLocale) {
-    if (!rawLocale) return 'en';
-    return rawLocale.toLowerCase().split('-')[0];
-}
-
-function shouldTranslateText(text) {
-    if (!text) return false;
-    return /[A-Za-z]/.test(text);
-}
-
-function applyTranslationMap(root, map) {
-    if (!root || !map || Object.keys(map).length === 0) return;
-
-    const translateExact = (value) => {
-        if (typeof value !== 'string' || !value.trim()) return value;
-        const trimmed = value.trim();
-        const translated = map[trimmed];
-        if (!translated || translated === trimmed) return value;
-        return value.replace(trimmed, translated);
-    };
-
-    const translateNode = (node) => {
-        if (!node) return;
-
-        if (node.nodeType === Node.TEXT_NODE) {
-            const text = node.nodeValue;
-            if (!shouldTranslateText(text)) return;
-            const translated = translateExact(text);
-            if (translated !== text) node.nodeValue = translated;
-            return;
-        }
-
-        if (node.nodeType !== Node.ELEMENT_NODE) return;
-
-        const tag = node.tagName;
-        if (['SCRIPT','STYLE','NOSCRIPT','TEXTAREA','PRE','CODE'].includes(tag)) return;
-        if (node.hasAttribute('data-no-auto-translate')) return;
-
-        ['placeholder', 'title', 'aria-label'].forEach((attr) => {
-            if (!node.hasAttribute(attr)) return;
-            const value = node.getAttribute(attr);
-            if (!shouldTranslateText(value)) return;
-            const translated = translateExact(value);
-            if (translated !== value) node.setAttribute(attr, translated);
-        });
-
-        if (node.hasAttribute('value') && (tag === 'INPUT' || tag === 'BUTTON')) {
-            const inputType = (node.getAttribute('type') || '').toLowerCase();
-            if (tag === 'BUTTON' || ['button','submit','reset'].includes(inputType)) {
-                const value = node.getAttribute('value');
-                if (shouldTranslateText(value)) {
-                    const translated = translateExact(value);
-                    if (translated !== value) node.setAttribute('value', translated);
-                }
-            }
-        }
-
-        for (const child of node.childNodes) translateNode(child);
-    };
-
-    translateNode(root);
-}
-
-async function runLocaleSweep() {
-    const locale = normalizeLocale(document.documentElement?.lang);
-    if (translationObserver) {
-        translationObserver.disconnect();
-        translationObserver = null;
-    }
-    if (locale === 'en') return;
-
-    try {
-        let translations = translationCache.get(locale);
-
-        if (!translations) {
-            const response = await fetch(`/translations/${encodeURIComponent(locale)}.json`, {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-            });
-            if (!response.ok) return;
-            translations = await response.json();
-            translationCache.set(locale, translations ?? {});
-        }
-
-        if (!translations || Object.keys(translations).length === 0) return;
-
-        applyTranslationMap(document.body, translations);
-
-        translationObserver = new MutationObserver((mutations) => {
-            for (const mutation of mutations) {
-                mutation.addedNodes.forEach((node) => applyTranslationMap(node, translations));
-            }
-        });
-
-        translationObserver.observe(document.body, { childList: true, subtree: true });
-    } catch (error) {
-        console.error('Locale sweep failed:', error);
-    }
-}
-
 // ─── Search auto-submit (debounced) ─────────────────────────────
 // Attaches a 400 ms debounced auto-submit to every search/filter text
 // input inside a GET form — unless the input has data-suggest (handled
@@ -821,176 +719,6 @@ function initSkeletonLoaders() {
             window.setTimeout(() => {
                 host.classList.remove('is-loading');
             }, 150);
-        });
-    });
-}
-
-// ─── Live search suggestions (Google-style) ─────────────────────
-// Any <input data-suggest="customers"> fetches suggestions from
-// /search/suggestions?type=customers&q=... and renders a dropdown.
-// Works on any page. Inject once, styles included.
-const _suggestInited = new WeakSet();
-let _suggestStyleInjected = false;
-
-function injectSuggestStyles() {
-    if (_suggestStyleInjected) return;
-    _suggestStyleInjected = true;
-    const style = document.createElement('style');
-    style.textContent = `
-.jf-suggest{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.12),0 4px 8px rgba(15,23,42,.06);z-index:500;max-height:320px;overflow-y:auto;overflow-x:hidden;display:none;scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent}
-.jf-suggest.open{display:block;animation:jf-suggest-in .15s ease-out}
-@keyframes jf-suggest-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-.jf-suggest-item{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f8fafc;transition:background .12s ease,padding-left .12s ease}
-.jf-suggest-item:last-child{border-bottom:none}
-.jf-suggest-item:hover,.jf-suggest-item.active{background:var(--kh-ink-soft);padding-left:18px}
-.jf-suggest-item .label{font-size:13px;font-weight:600;color:#0f172a;line-height:1.3}
-.jf-suggest-item .sub{font-size:11px;color:#64748b;line-height:1.3}
-.jf-suggest-item .arrow{margin-left:auto;color:var(--kh-ink);font-size:14px;opacity:.6;transition:opacity .12s}
-.jf-suggest-item:hover .arrow,.jf-suggest-item.active .arrow{opacity:1}
-.jf-suggest-empty{padding:16px;text-align:center;font-size:13px;color:#94a3b8}
-.jf-suggest-loading{padding:16px;text-align:center;font-size:13px;color:#94a3b8}
-.jf-suggest mark{background:var(--kh-ink-soft);color:var(--kh-ink);border-radius:2px;padding:0 2px;font-weight:600}
-`;
-    document.head.appendChild(style);
-}
-
-function escHtmlSuggest(str) {
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
-}
-
-function highlightMatch(text, q) {
-    if (!q) return escHtmlSuggest(text);
-    const escaped = escHtmlSuggest(text);
-    const qEsc = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return escaped.replace(new RegExp('(' + qEsc + ')', 'gi'), '<mark>$1</mark>');
-}
-
-function initSearchSuggestions() {
-    injectSuggestStyles();
-
-    document.querySelectorAll('input[data-suggest]').forEach(input => {
-        if (_suggestInited.has(input)) return;
-        _suggestInited.add(input);
-
-        const type = input.dataset.suggest;
-        // Find the best positioned ancestor — prefer a parent that already has
-        // position:relative, or the outer filter-bar div, not an inner flex wrapper.
-        let wrapper = input.parentElement;
-        // Walk up to find a div that has min-width or flex-1 (filter field wrapper)
-        // to avoid attaching to a tight inner flex container
-        const filterField = input.closest('[class*="min-w-"], [class*="flex-1"]');
-        if (filterField && filterField.contains(input)) {
-            wrapper = filterField;
-        }
-        wrapper.style.position = 'relative';
-
-        // Create dropdown
-        const dropdown = document.createElement('div');
-        dropdown.className = 'jf-suggest';
-        wrapper.appendChild(dropdown);
-
-        let timer = null;
-        let activeIdx = -1;
-        let items = [];
-        let abortCtrl = null;
-
-        function render(results, q) {
-            items = results;
-            activeIdx = -1;
-            if (!results.length) {
-                dropdown.innerHTML = '<div class="jf-suggest-empty">No results found</div>';
-                dropdown.classList.add('open');
-                return;
-            }
-            dropdown.innerHTML = results.map((r, i) =>
-                '<div class="jf-suggest-item" data-idx="' + i + '">' +
-                    '<div><div class="label">' + highlightMatch(r.label || '', q) + '</div>' +
-                    (r.sub ? '<div class="sub">' + highlightMatch(r.sub, q) + '</div>' : '') +
-                    '</div><span class="arrow">\u203A</span></div>'
-            ).join('');
-            dropdown.classList.add('open');
-        }
-
-        function close() {
-            dropdown.classList.remove('open');
-            activeIdx = -1;
-        }
-
-        function navigate(url) {
-            close();
-            if (window.Turbo) {
-                Turbo.visit(url);
-            } else {
-                window.location.href = url;
-            }
-        }
-
-        function setActive(idx) {
-            dropdown.querySelectorAll('.jf-suggest-item').forEach(el => el.classList.remove('active'));
-            if (idx >= 0 && idx < items.length) {
-                activeIdx = idx;
-                const el = dropdown.querySelector('[data-idx="' + idx + '"]');
-                if (el) {
-                    el.classList.add('active');
-                    el.scrollIntoView({ block: 'nearest' });
-                }
-            }
-        }
-
-        input.addEventListener('input', function () {
-            const q = this.value.trim();
-            clearTimeout(timer);
-            if (!q) { close(); return; }
-
-            timer = setTimeout(() => {
-                if (abortCtrl) abortCtrl.abort();
-                abortCtrl = new AbortController();
-
-                dropdown.innerHTML = '<div class="jf-suggest-loading">Searching\u2026</div>';
-                dropdown.classList.add('open');
-
-                fetch('/search/suggestions?type=' + encodeURIComponent(type) + '&q=' + encodeURIComponent(q), {
-                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    signal: abortCtrl.signal,
-                })
-                .then(r => r.json())
-                .then(data => render(data, q))
-                .catch(e => {
-                    if (e.name !== 'AbortError') close();
-                });
-            }, 200);
-        });
-
-        input.addEventListener('keydown', function (e) {
-            if (!dropdown.classList.contains('open') || !items.length) return;
-
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                setActive(activeIdx < items.length - 1 ? activeIdx + 1 : 0);
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                setActive(activeIdx > 0 ? activeIdx - 1 : items.length - 1);
-            } else if (e.key === 'Enter' && activeIdx >= 0) {
-                e.preventDefault();
-                navigate(items[activeIdx].url);
-            } else if (e.key === 'Escape') {
-                close();
-            }
-        });
-
-        dropdown.addEventListener('mousedown', function (e) {
-            e.preventDefault(); // keep focus on input
-            const item = e.target.closest('.jf-suggest-item');
-            if (!item) return;
-            const idx = parseInt(item.dataset.idx);
-            if (items[idx]) navigate(items[idx].url);
-        });
-
-        input.addEventListener('blur', () => setTimeout(close, 150));
-        input.addEventListener('focus', function () {
-            if (this.value.trim() && items.length) dropdown.classList.add('open');
         });
     });
 }
@@ -1507,13 +1235,6 @@ document.addEventListener('turbo:before-cache', () => {
         delete form.dataset.ajaxDeleteBound;
     });
 
-    // Stop translation observer so it doesn't interfere with Turbo's
-    // own DOM manipulation during the snapshot process
-    if (translationObserver) {
-        translationObserver.disconnect();
-        translationObserver = null;
-    }
-
     // Re-stamp x-cloak on every Alpine root so the cached snapshot
     // has hidden elements. Without this, when the snapshot is shown
     // on back-navigation, Alpine-managed elements (modals, dropdowns)
@@ -1544,11 +1265,9 @@ document.addEventListener('turbo:load', () => {
     normalizeConfirmForms();
     restoreSidebarScroll();
     closeAllMobileDrawers();
-    runLocaleSweep();
     syncActiveNavLink();
     initSearchAutoSubmit();
     initLiveFilter();
-    initSearchSuggestions();
     initDatePickers();
     ensureDatePickerObserver();
     initEnhancedFilterSelects();
@@ -1577,11 +1296,9 @@ if (document.readyState !== 'loading') {
     normalizeConfirmForms();
     restoreSidebarScroll();
     closeAllMobileDrawers();
-    runLocaleSweep();
     syncActiveNavLink();
     initSearchAutoSubmit();
     initLiveFilter();
-    initSearchSuggestions();
     initDatePickers();
     ensureDatePickerObserver();
     initEnhancedFilterSelects();
@@ -1599,11 +1316,9 @@ if (document.readyState !== 'loading') {
         normalizeConfirmForms();
         restoreSidebarScroll();
         closeAllMobileDrawers();
-        runLocaleSweep();
-        syncActiveNavLink();
+            syncActiveNavLink();
         initSearchAutoSubmit();
         initLiveFilter();
-        initSearchSuggestions();
         initDatePickers();
         ensureDatePickerObserver();
         initEnhancedFilterSelects();

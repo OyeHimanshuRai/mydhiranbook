@@ -1,14 +1,15 @@
+import { createLiveSearch } from '../live-search.js';
 // Command palette: Ctrl/Cmd K opens a native <dialog> (focus trap and Esc come with it). The "Go to" pages are filtered here;
 // from two typed characters on, loans and customers are fetched from the shop-scoped endpoint (debounced, previous request cancelled).
 // Everything shown from the server is written with textContent, never as HTML. Turbo replaces the layout (and the dialog) on every
 // visit, so the elements are looked up each time and the document listeners are added on turbo:load and removed on turbo:before-cache.
 const MIN_Q = 2;
 const MAX_Q = 60;
-const DEBOUNCE_MS = 200;
+const DEBOUNCE_MS = 300;
 const MAX_LOCAL = 8;
 const TYPES = { loan: 'Loans', customer: 'Customers' };
 
-const S = { items: [], remote: [], q: '', rows: [], active: -1, pending: false, failed: false, timer: 0, ctl: null };
+const S = { items: [], remote: [], q: '', rows: [], active: -1, pending: false, failed: false };
 let ac = null;
 
 const dlg = () => document.getElementById('dhPalette');
@@ -122,11 +123,16 @@ function setActive(i, scroll = true) {
     }
 }
 
-function cancelSearch() {
-    clearTimeout(S.timer);
-    S.ctl?.abort();
-    S.ctl = null;
+let live = null; // one searcher per open palette page: 300 ms pause, 2+ characters, one request at a time, answers cached for the session
+function searcher() {
+    return live ??= createLiveSearch({
+        url: (q) => dlg().dataset.searchUrl + '?q=' + encodeURIComponent(q),
+        delay: DEBOUNCE_MS, min: MIN_Q, max: MAX_Q,
+        onResult: (q, rows) => { if (q !== S.q.trim().slice(0, MAX_Q)) return; S.remote = clean(rows); S.pending = false; render(); },
+        onError: () => { S.pending = false; S.failed = true; render(); },
+    });
 }
+function cancelSearch() { live?.cancel(); }
 
 function clean(rows) {
     if (!Array.isArray(rows)) return [];
@@ -148,18 +154,7 @@ function search() {
     S.failed = false;
     S.pending = S.q.length >= MIN_Q;
     render();
-    if (!S.pending) return;
-    S.timer = setTimeout(() => {
-        const q = S.q.slice(0, MAX_Q);
-        const ctl = new AbortController();
-        S.ctl = ctl;
-        fetch(dlg().dataset.searchUrl + '?q=' + encodeURIComponent(q), {
-            signal: ctl.signal, credentials: 'same-origin', headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-        })
-            .then((r) => (r.ok ? r.json() : Promise.reject(new Error('http ' + r.status))))
-            .then((rows) => { if (S.ctl !== ctl) return; S.remote = clean(rows); S.pending = false; render(); })
-            .catch((e) => { if (e?.name === 'AbortError' || S.ctl !== ctl) return; S.pending = false; S.failed = true; render(); });
-    }, DEBOUNCE_MS);
+    if (S.pending) searcher().query(S.q);
 }
 
 function open() {

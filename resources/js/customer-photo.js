@@ -1,3 +1,6 @@
+import { resizeImage } from './photo-resize';
+export { resizeImage };
+
 export function cameraError(error) {
     if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') {
         return 'Camera permission was refused. Allow it in your browser, or use Upload photo.';
@@ -5,11 +8,13 @@ export function cameraError(error) {
     return 'A camera is unavailable or could not start. You can still use Upload photo.';
 }
 
-export function photoFileError(file) {
+const RAW_LIMIT = 40 * 1024 * 1024; // refuse absurd files before decoding; the 5 MB limit applies to what is uploaded
+
+export function photoFileError(file, limit = 5 * 1024 * 1024) {
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file?.type)) {
         return 'Choose a JPEG, PNG or WebP image. HEIC and other formats are not supported.';
     }
-    return file.size > 5 * 1024 * 1024 ? 'Choose an image no larger than 5 MB.' : '';
+    return file.size > limit ? 'Choose an image no larger than 5 MB.' : '';
 }
 
 export function cameraSwitchError() {
@@ -255,8 +260,16 @@ function initializePhoto(root) {
             if (alive && status.textContent === 'Switching camera…') status.textContent = '';
         }
     };
-    const select = (file) => {
-        const error = photoFileError(file);
+    let selecting = 0;
+    const select = async (file) => {
+        let error = photoFileError(file, RAW_LIMIT);
+        if (error) { fail(error); return; }
+        const turn = ++selecting;
+        status.textContent = 'Preparing photo…';
+        file = await resizeImage(file, { maxBytes: 5 * 1024 * 1024 }); // phone photos shrink to about 2400 px before upload
+        if (!alive || turn !== selecting) return;
+        status.textContent = '';
+        error = photoFileError(file);
         if (error) { fail(error); return; }
         camera.stop();
         clearCandidate();

@@ -275,6 +275,7 @@
                                         </button>
                                     </div>
                                     <input type="file" hidden :id="'it-photo-pick-' + index" accept="image/jpeg,image/png" @change="pickItemPhoto(index, $event)">
+                                    <p class="fm-hint" role="status" x-show="item.photoBusy" x-cloak>Preparing photo…</p>
                                     <p class="fm-error" role="alert" x-show="item.photoError" x-cloak><x-icon name="circle-alert" size="16" /><span x-text="item.photoError"></span></p>
                                     {{-- The file that is posted: filled from the item's own photo at submit, so removing or reordering items can never mismatch a photo. --}}
                                     <input type="file" class="fm-sr" tabindex="-1" aria-hidden="true" :id="'it-photo-submit-' + index" :name="'items['+index+'][photo]'">
@@ -490,6 +491,7 @@
                                     </button>
                                 </div>
                                 <input type="file" hidden :id="'doc-pick-' + d.key" accept="image/jpeg,image/png,application/pdf" @change="pickDoc(d.key, $event)">
+                                <p class="fm-hint" role="status" x-show="docs[d.key].busy" x-cloak>Preparing photo…</p>
                                 <p class="fm-error" role="alert" x-show="docs[d.key].error" x-cloak><x-icon name="circle-alert" size="16" /><span x-text="docs[d.key].error"></span></p>
                                 {{-- The file that is posted: filled from the slot at submit. --}}
                                 <input type="file" class="fm-sr" tabindex="-1" aria-hidden="true" :id="'doc-submit-' + d.key" :name="d.key">
@@ -673,8 +675,6 @@
                 // Matches for what was typed, fetched from the server (8 at most): the page never carries the borrower book.
                 results: [],
                 searchState: 'idle', // idle | loading | done | failed
-                searchTimer: null,
-                searchSeq: 0,
                 selectedCustomer: null,
                 // Add Borrower dialog: one state, 'closed' -> 'open' -> 'saving' -> 'closed' (saved) or 'open' (refused).
                 nbState: 'closed',
@@ -682,9 +682,9 @@
                 // ID proof and PAN card: each slot holds its file (chosen or taken with the camera) until the form is sent.
                 docDefs: [{ key: 'id_proof_front', label: 'ID proof, front' }, { key: 'id_proof_back', label: 'ID proof, back' }, { key: 'pan_card', label: 'PAN card' }],
                 docs: {
-                    id_proof_front: { file: null, url: '', name: '', pdf: false, error: '' },
-                    id_proof_back: { file: null, url: '', name: '', pdf: false, error: '' },
-                    pan_card: { file: null, url: '', name: '', pdf: false, error: '' },
+                    id_proof_front: { file: null, url: '', name: '', pdf: false, error: '', busy: false },
+                    id_proof_back: { file: null, url: '', name: '', pdf: false, error: '', busy: false },
+                    pan_card: { file: null, url: '', name: '', pdf: false, error: '', busy: false },
                 },
                 pickDoc(key, ev) {
                     const f = ev.target.files && ev.target.files[0];
@@ -693,12 +693,18 @@
                 },
                 setDoc(key, f) {
                     const d = this.docs[key];
-                    if (!f || !d) return;
+                    if (!f || !d) return Promise.resolve();
                     const pdf = f.type === 'application/pdf';
-                    if (!pdf && !/^image\/(jpeg|png)$/.test(f.type)) { d.error = 'Choose a JPG, PNG or PDF file.'; return; }
-                    if (f.size > 8 * 1024 * 1024) { d.error = 'That file is over 8 MB. Choose a smaller one.'; return; }
-                    if (d.url) URL.revokeObjectURL(d.url);
-                    d.file = f; d.name = f.name; d.pdf = pdf; d.url = pdf ? '' : URL.createObjectURL(f); d.error = '';
+                    if (!pdf && !/^image\/(jpeg|png)$/.test(f.type)) { d.error = 'Choose a JPG, PNG or PDF file.'; return Promise.resolve(); }
+                    if (f.size > (pdf ? 8 : 40) * 1024 * 1024) { d.error = 'That file is over 8 MB. Choose a smaller one.'; return Promise.resolve(); }
+                    d.busy = !pdf; d.error = '';
+                    const ready = pdf ? Promise.resolve(f) : window.loadPhotoTools().then((t) => t.resizeImage(f, { maxBytes: 8 * 1024 * 1024 }), () => f);
+                    return ready.then((g) => {
+                        d.busy = false;
+                        if (g.size > 8 * 1024 * 1024) { d.error = 'That file is over 8 MB. Choose a smaller one.'; return; }
+                        if (d.url) URL.revokeObjectURL(d.url);
+                        d.file = g; d.name = g.name; d.pdf = pdf; d.url = pdf ? '' : URL.createObjectURL(g); d.error = '';
+                    });
                 },
                 clearDoc(key) {
                     const d = this.docs[key];
@@ -765,7 +771,7 @@
                     'huid' => (string) ($i['huid'] ?? ''),
                     'net_metal_weight' => 0, 'fine_weight' => 0,
                     'market_value' => (float) ($i['market_value'] ?? 0), 'loan_value' => 0,
-                    'photoFile' => null, 'photoUrl' => '', 'photoError' => '', // a chosen photo cannot be refilled after a refusal: choose again
+                    'photoFile' => null, 'photoUrl' => '', 'photoError' => '', 'photoBusy' => false, // a chosen photo cannot be refilled after a refusal: choose again
                 ])) }},
 
                 get totalMarketValue() {
@@ -845,23 +851,17 @@
                     if (this.preselected) this.selectCustomer(this.preselected, true);
                 },
 
+                // 300 ms after typing stops, 2+ characters, the request still in flight is cancelled, repeated names come from the session cache.
+                borrowerSearch: null,
                 searchBorrowers() {
-                    const q = (this.customerSearch || '').trim();
-                    clearTimeout(this.searchTimer);
-                    const seq = ++this.searchSeq; // an older answer never overwrites a newer one
-                    if (q.length < 2) { this.results = []; this.searchState = 'idle'; return; } // suggestions only after typing
-                    this.searchState = 'loading';
-                    this.searchTimer = setTimeout(async () => {
-                        try {
-                            const res = await fetch('{{ route('dhiran.borrowers.search') }}?q=' + encodeURIComponent(q), { headers: { 'Accept': 'application/json' } });
-                            if (!res.ok) throw new Error(res.status);
-                            const rows = await res.json();
-                            if (seq !== this.searchSeq) return;
-                            this.results = rows; this.searchState = 'done';
-                        } catch (e) {
-                            if (seq === this.searchSeq) { this.results = []; this.searchState = 'failed'; }
-                        }
-                    }, 250);
+                    this.borrowerSearch ??= window.createLiveSearch({
+                        url: (q) => '{{ route('dhiran.borrowers.search') }}?q=' + encodeURIComponent(q),
+                        onPending: () => { this.searchState = 'loading'; },
+                        onIdle: () => { this.results = []; this.searchState = 'idle'; }, // suggestions only after typing
+                        onResult: (q, rows) => { this.results = rows; this.searchState = 'done'; },
+                        onError: () => { this.results = []; this.searchState = 'failed'; },
+                    });
+                    this.borrowerSearch.query(this.customerSearch);
                 },
 
                 handleCustomerSearchInput() {
@@ -910,7 +910,7 @@
                     this.customerDisplayName = customer.name + (customer.mobile ? ' (' + customer.mobile + ')' : '');
                     this.customerSearch = customer.name || '';
                     this.customerDropdownOpen = false;
-                    this.results = []; this.searchSeq++; // drop any search still in flight
+                    this.results = []; this.borrowerSearch?.cancel(); // drop any search still in flight
                     if (!keepExistingKyc) { this.loanPan = ''; this.loanAadhaar = ''; } // never keep the previous borrower's KYC
                     // PAN / ID are not in the page: fetch this one borrower's, then prefill as before.
                     try {
@@ -989,7 +989,7 @@
                         description: '', metal_type: 'gold', value_mode: 'metal', gross_weight: 0, stone_weight: 0, purity: 22, purityPick: '22',
                         rate_per_gram_at_pledge: 0, huid: '',
                         net_metal_weight: 0, fine_weight: 0, market_value: 0, loan_value: 0,
-                        photoFile: null, photoUrl: '', photoError: ''
+                        photoFile: null, photoUrl: '', photoError: '', photoBusy: false
                     });
                 },
 
@@ -1001,11 +1001,18 @@
                 },
                 setItemPhoto(index, f) {
                     const item = this.items[index];
-                    if (!f || !item) return;
-                    if (!/^image\/(jpeg|png)$/.test(f.type)) { item.photoError = 'Choose a JPG or PNG photo.'; return; }
-                    if (f.size > 8 * 1024 * 1024) { item.photoError = 'That photo is over 8 MB. Choose a smaller one.'; return; }
-                    if (item.photoUrl) URL.revokeObjectURL(item.photoUrl);
-                    item.photoFile = f; item.photoUrl = URL.createObjectURL(f); item.photoError = '';
+                    if (!f || !item) return Promise.resolve();
+                    if (!/^image\/(jpeg|png)$/.test(f.type)) { item.photoError = 'Choose a JPG or PNG photo.'; return Promise.resolve(); }
+                    if (f.size > 40 * 1024 * 1024) { item.photoError = 'That photo is over 8 MB. Choose a smaller one.'; return Promise.resolve(); }
+                    item.photoBusy = true; item.photoError = '';
+                    // shrink to about 2400 px in the browser first (the server re-encodes anyway); the 8 MB limit applies to what is sent
+                    return window.loadPhotoTools().then((t) => t.resizeImage(f, { maxBytes: 8 * 1024 * 1024 }), () => f).then((g) => {
+                        item.photoBusy = false;
+                        if (this.items[index] !== item) return;
+                        if (g.size > 8 * 1024 * 1024) { item.photoError = 'That photo is over 8 MB. Choose a smaller one.'; return; }
+                        if (item.photoUrl) URL.revokeObjectURL(item.photoUrl);
+                        item.photoFile = g; item.photoUrl = URL.createObjectURL(g);
+                    });
                 },
                 // Live camera for an item photo: one shared dialog, the same camera helper as the borrower photo.
                 camTarget: null, camTitle: 'Take photo', camError: '', camCanSwitch: false, cam: null,
@@ -1155,6 +1162,8 @@
 
                 prepareSubmit(e) {
                     if (this.submitting) { e.preventDefault(); return; } // one tap = one loan; the key below also guards it server-side
+                    // a photo still being shrunk would be left out: wait for it (one tap = one loan, so the person taps again)
+                    if (this.items.some(i => i.photoBusy) || Object.values(this.docs).some(d => d.busy)) { e.preventDefault(); window.showToast?.('A photo is still being prepared. Try again in a moment.'); return; }
                     // Recalculate all items before submit
                     this.items.forEach((_, i) => this.recalcItem(i));
                     // each item's own photo goes into the file input named for its position, so the server pairs them right

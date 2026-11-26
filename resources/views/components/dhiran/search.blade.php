@@ -1,5 +1,5 @@
 {{-- Dhiran live search (owner 2026-11-12): results follow the typing without reloading the page or taking the cursor
-     out of the box. Typing pauses 350 ms, then only the page's results frame (turbo-frame#dh-results) is refreshed with
+     out of the box. Typing pauses 300 ms (one character is ignored, empty clears), then only the page's results frame (turbo-frame#dh-results) is refreshed with
      the form's current filters; the URL follows, so refresh, back and Export keep the search. Without that frame or
      Turbo, the form is submitted normally. The site-wide 400 ms auto-submit (app.js) leaves this box alone. --}}
 @props(['value' => '', 'placeholder' => 'Search', 'label' => 'Search'])
@@ -19,7 +19,7 @@
      }">
     <x-icon name="search" size="16" />
     <input type="search" name="search" x-model="q" value="{{ $value }}" placeholder="{{ $placeholder }}" aria-label="{{ $label }}"
-           autocomplete="off" enterkeyhint="search" @input.debounce.350ms="go()" @keydown.enter.prevent="go()">
+           autocomplete="off" enterkeyhint="search" @input.debounce.300ms="(q.trim().length !== 1) && go()" @keydown.enter.prevent="go()">
     <button type="button" class="dh-fbar-clear" x-show="q" x-cloak @click="q = ''; $nextTick(() => { go(); $el.parentElement.querySelector('input').focus() })" aria-label="Clear search">
         <x-icon name="x" size="14" />
     </button>

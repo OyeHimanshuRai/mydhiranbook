@@ -15,7 +15,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-C9LEr9PH.css",
+    "file": "assets/app-CcElYlcz.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -87,7 +87,7 @@
     ]
   },
   "resources/js/app.js": {
-    "file": "assets/app-DvQ7uASi.js",
+    "file": "assets/app-4S2YaYxY.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -104,7 +104,7 @@
     ]
   },
   "resources/js/customer-photo.js": {
-    "file": "assets/customer-photo-vBsjtNgH.js",
+    "file": "assets/customer-photo-Bqq-mC6M.js",
     "name": "customer-photo",
     "src": "resources/js/customer-photo.js",
     "isDynamicEntry": true
