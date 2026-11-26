@@ -48,6 +48,37 @@ server {
 }
 ```
 
+### Compression and caching (nginx)
+
+Measured read-only on the live site (2026-11-26): HTML is gzipped (4,780 B to 2,023 B) but `/build/assets/*.js` (378,542 B) and `*.css` (87,082 B for `dhiran-*.css`) are sent uncompressed, with no `Cache-Control`/`Expires`, so every visit revalidates or re-downloads them. nginx's default `gzip_types` is only `text/html`. The app does not serve `/build/*` (nginx serves the files straight from `public/`), so this is nginx config. Put the `gzip` lines in the `http {}` block (or the server block) and the `location` blocks in the server block, before `location ~ \.php$`:
+
+```nginx
+# http {} or server {}
+gzip on;
+gzip_vary on;
+gzip_comp_level 5;
+gzip_min_length 1024;
+gzip_proxied any;
+gzip_types text/css application/javascript text/javascript application/json image/svg+xml text/plain;
+
+# server {}
+# Vite output is content-hashed: a changed file gets a new name, so cache forever.
+location /build/assets/ {
+    access_log off;
+    add_header Cache-Control "public, max-age=31536000, immutable";
+    try_files $uri =404;
+}
+# manifest is read by PHP, not browsers; never cache it.
+location = /build/manifest.json { add_header Cache-Control "no-cache"; }
+```
+
+Notes:
+- `add_header` in a `location` replaces headers inherited from the server block; the app's security headers (X-Frame-Options, HSTS, ...) are added by PHP and are not affected, but headers you set with `add_header` at server level are lost inside these two locations. Repeat them there if you have any.
+- Brotli is optional (needs `libnginx-mod-http-brotli-filter` or a build with ngx_brotli; `brotli on; brotli_comp_level 5; brotli_types <same list as gzip_types>;`). Measured sizes of `app-*.js` (349,631 B raw): gzip -9 108,050 B, brotli 94,759 B (about 12 percent smaller than gzip). On this shared host gzip alone is the safe default.
+- Verify after `nginx -t && systemctl reload nginx`:
+  `curl -s -o /dev/null -D - -H 'Accept-Encoding: gzip' https://mydhiranbook.shop/build/assets/<file>.js` must show `content-encoding: gzip` and `cache-control: public, max-age=31536000, immutable`, and `curl -w '%{size_download}'` must be well below the raw size.
+- `public/build` files are replaced, never edited, on deploy; old hashed files may stay on disk, so a long cache is safe.
+
 Set nginx `client_max_body_size`, PHP `post_max_size` and `upload_max_filesize` to at least 32M, because a New Loan form can carry several photos and documents (each file is limited to 8 MB by the app).
 
 Only `public/` is web-reachable. Trusted proxies come from `TRUSTED_PROXIES` in `.env` (comma list of IPs/CIDRs, or `*`; empty = trust none). With this nginx terminating TLS directly leave it empty and keep `fastcgi_param HTTPS on`; behind a load balancer set it to the balancer's address so `X-Forwarded-Proto` is honoured.
