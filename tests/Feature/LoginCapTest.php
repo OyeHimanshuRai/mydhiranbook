@@ -116,4 +116,15 @@ class LoginCapTest extends TestCase
         $this->exhaust('admin', $admin->email);
         $this->withCookie('known_admin', $cookie)->post('/admin/login', ['email' => $admin->email, 'password' => 'Admin-pass-12345'])->assertRedirect('/admin/mfa');
     }
+
+    public function test_a_password_change_voids_every_known_device_cookie(): void
+    {
+        $shop = self::createDhiranShop(['name' => 'Cap shop 7']);
+        $user = self::userWithRole($shop, ['name' => 'O', 'email' => 'cap7@x.test', 'password' => 'Synthetic-pass-12345']);
+        $cookie = $this->knownShopDevice('cap7@x.test');
+        $user->forceFill(['password' => 'Changed-pass-123456'])->save();
+        $this->exhaust('shop', 'cap7@x.test');
+        $this->withCookie('known_shop', $cookie)->post('/login', ['email' => 'cap7@x.test', 'password' => 'Changed-pass-123456'])->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
 }

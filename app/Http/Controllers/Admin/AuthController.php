@@ -18,7 +18,7 @@ class AuthController
     public function login(Request $r)
     {
         $data=$r->validate(['email'=>'required|email','password'=>'required|string']);
-        \App\Support\LoginCap::check($r,'admin',$data['email']); // 30 failed tries an hour per account, whatever the IP
+        \App\Support\LoginCap::check($r,'admin',$data['email'],fn()=>PlatformAdmin::where('email',$data['email'])->value('password')); // 30 failed tries an hour per account, whatever the IP
         if (!Auth::guard('platform_admin')->attempt([...$data,'is_active'=>true])) {
             \App\Support\LoginCap::failed('admin',$data['email']);
             $this->audit->log(null,'admin.login_failed',reason:'Credentials refused',request:$r);
@@ -70,7 +70,7 @@ class AuthController
             throw ValidationException::withMessages(['code'=>'Code could not be verified. Use a fresh authenticator code or an unused recovery code.']);
         }
         Auth::guard('platform_admin')->setUser($admin->fresh());
-        $r->session()->regenerate(); $r->session()->put('admin.mfa_admin_id',$admin->id); \App\Support\LoginCap::remember($r,'admin',$admin->email); // known device only after MFA
+        $r->session()->regenerate(); $r->session()->put('admin.mfa_admin_id',$admin->id); \App\Support\LoginCap::remember($r,'admin',$admin->password,$admin->email); // known device only after MFA
         if ($result['codes']) { $r->session()->flash('recovery_codes',$result['codes']); }
         $this->audit->log($admin,'admin.mfa_passed',targetId:$admin->id,request:$r);
         return redirect('/admin');

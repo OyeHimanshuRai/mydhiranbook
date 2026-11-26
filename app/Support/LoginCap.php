@@ -13,8 +13,8 @@ use Illuminate\Validation\ValidationException;
  * It is not cleared by a successful sign-in, so a guess mixed with a real login does not reset it.
  *
  * So that a stranger cannot lock the owner out by burning the 30 tries, a browser that has fully signed in to that account
- * before carries a known-device cookie (an HMAC of this account's key, per account, max 5) and skips the cap; the per-IP
- * limits still apply to it. A new device stays capped until the hour ends or the password is reset (reset clears the cap).
+ * before carries a known-device cookie (an HMAC of this account's key and password hash, per account, max 5) and skips the cap;
+ * the per-IP limits still apply to it, and a password change voids the cookie. A new device stays capped until the hour ends or the password is reset (reset clears the cap).
  */
 final class LoginCap
 {
@@ -27,11 +27,14 @@ final class LoginCap
         return "login-cap:{$scope}:" . sha1(mb_strtolower(trim($identity)));
     }
 
-    /** @throws ValidationException when the account has used up its attempts and this browser has not signed in to it before */
-    public static function check(Request $r, string $scope, string $identity, string $field = 'email'): void
+    /**
+     * @param \Closure():?string $stamp the account's current password hash, looked up only when the cap is reached
+     * @throws ValidationException when the account has used up its attempts and this browser has not signed in to it before
+     */
+    public static function check(Request $r, string $scope, string $identity, \Closure $stamp, string $field = 'email'): void
     {
         $key = self::key($scope, $identity);
-        if (RateLimiter::tooManyAttempts($key, self::MAX) && !in_array(self::token($key), self::tokens($r, $scope), true)) {
+        if (RateLimiter::tooManyAttempts($key, self::MAX) && !self::known($r, $scope, $key, $stamp())) {
             $minutes = max(1, (int) ceil(RateLimiter::availableIn($key) / 60));
             throw ValidationException::withMessages([$field => "Too many failed sign-ins for this account. Try again in {$minutes} minutes, sign in from a device you have used before, or reset your password."]);
         }
@@ -43,9 +46,9 @@ final class LoginCap
     }
 
     /** After a complete sign-in: mark this browser as known for each identity of the account (email and mobile both sign in). */
-    public static function remember(Request $r, string $scope, ?string ...$identities): void
+    public static function remember(Request $r, string $scope, string $stamp, ?string ...$identities): void
     {
-        $new = array_map(fn ($i) => self::token(self::key($scope, $i)), array_filter($identities));
+        $new = array_map(fn ($i) => self::token(self::key($scope, $i), $stamp), array_filter($identities));
         $tokens = array_slice(array_values(array_unique([...$new, ...self::tokens($r, $scope)])), 0, self::DEVICES);
         Cookie::queue(Cookie::make("known_{$scope}", implode(',', $tokens), 60 * 24 * 365, null, null, null, true, false, 'lax'));
     }
@@ -56,10 +59,16 @@ final class LoginCap
         foreach (array_filter($identities) as $identity) { RateLimiter::clear(self::key($scope, $identity)); }
     }
 
-    // HMAC with the app key, so the cookie cannot be forged even if cookie encryption were ever turned off for it.
-    private static function token(string $key): string
+    // HMAC with the app key (cannot be forged even if cookie encryption were ever turned off for it) over the account key and its
+    // current password hash: any password change or reset makes every earlier known-device cookie worthless.
+    private static function token(string $key, string $stamp): string
     {
-        return substr(hash_hmac('sha256', $key, (string) config('app.key')), 0, 32);
+        return substr(hash_hmac('sha256', $key . '|' . $stamp, (string) config('app.key')), 0, 32);
+    }
+
+    private static function known(Request $r, string $scope, string $key, ?string $stamp): bool
+    {
+        return $stamp !== null && $stamp !== '' && in_array(self::token($key, $stamp), self::tokens($r, $scope), true);
     }
 
     private static function tokens(Request $r, string $scope): array
