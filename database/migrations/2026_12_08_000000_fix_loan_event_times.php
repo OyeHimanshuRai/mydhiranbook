@@ -18,8 +18,12 @@ return new class extends Migration
         $this->rewrite("(occurred_at at time zone current_setting('TimeZone')) at time zone ?");
     }
 
-    // One-way: rows written after this fix are already right, so shifting them back would corrupt them.
-    public function down(): void {}
+    // Irreversible on purpose: shifting back would corrupt rows written after the fix, and a silent no-op would let a
+    // rollback + migrate run up() twice (a double shift). Refusing the rollback keeps up() to exactly one run per database.
+    public function down(): void
+    {
+        throw new \RuntimeException('2026_12_08_000000_fix_loan_event_times cannot be rolled back: the loan-log time correction runs once per database.');
+    }
 
     private function rewrite(string $expression): void
     {

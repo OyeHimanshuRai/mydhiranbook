@@ -135,6 +135,12 @@ class LoanActivityLogTest extends TestCase
         DB::table('dhiran_loan_events')->where('id', $id)->update(['summary' => 'rewritten']);
     }
 
+    public function test_the_time_fix_migration_refuses_a_rollback_so_it_can_never_shift_twice(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        (require database_path('migrations/2026_12_08_000000_fix_loan_event_times.php'))->down();
+    }
+
     public function test_every_payment_is_a_line_with_its_split_and_who_took_it(): void
     {
         $this->at('2026-04-01 11:30');
