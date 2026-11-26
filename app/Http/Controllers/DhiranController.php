@@ -719,7 +719,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             [$path, $mime] = [$thumb, 'image/jpeg'];
         }
 
-        return $disk->response($path, $attachment->original_name, ['Content-Type' => $mime, 'X-Content-Type-Options' => 'nosniff'] + ($mime === 'application/pdf' ? [] : ['Content-Security-Policy' => 'sandbox']) /* Chromium's PDF viewer refuses sandboxed documents */, 'inline');
+        return $disk->response($path, $attachment->original_name, ['Content-Type' => $mime, 'X-Content-Type-Options' => 'nosniff'] + ($mime === 'application/pdf' ? ['Cross-Origin-Resource-Policy' => 'same-origin'] : ['Content-Security-Policy' => 'sandbox']) /* Chromium's PDF viewer refuses sandboxed documents */, 'inline');
     }
 
     /** Resolve+verify an attachment owner is in the current shop, or 404. */

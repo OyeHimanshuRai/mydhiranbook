@@ -20,7 +20,7 @@ class RuntimeGuardTest extends TestCase
     private function prod(array $override = []): array
     {
         $c = [
-            'app' => ['env' => 'production', 'debug' => false, 'url' => 'https://dhiran.example.com', 'key' => 'base64:abc'],
+            'app' => ['env' => 'production', 'debug' => false, 'url' => 'https://dhiran.example.com', 'key' => 'base64:abc', 'trusted_proxies' => '127.0.0.1', 'direct_exposure' => false],
             'database' => ['default' => 'pgsql', 'connections' => ['pgsql' => ['driver' => 'pgsql']]],
             'queue' => ['default' => 'database'],
             'session' => ['secure' => true],
@@ -42,6 +42,21 @@ class RuntimeGuardTest extends TestCase
     public function test_production_accepts_valid_config(): void
     {
         RuntimeGuard::verifyConfig($this->prod(), dirname(__DIR__, 2));
+        $this->addToAssertionCount(1);
+    }
+
+    public function test_production_refuses_empty_or_wildcard_trusted_proxies_unless_direct_exposure_is_declared(): void
+    {
+        foreach (['', '*', ' * '] as $list) {
+            try {
+                RuntimeGuard::verifyConfig($this->prod(['app.trusted_proxies' => $list]), dirname(__DIR__, 2));
+                $this->fail("'$list' accepted");
+            } catch (\RuntimeException $e) {
+                $this->assertStringContainsString('TRUSTED_PROXIES', $e->getMessage());
+            }
+            RuntimeGuard::verifyConfig($this->prod(['app.trusted_proxies' => $list, 'app.direct_exposure' => true]), dirname(__DIR__, 2));
+        }
+        RuntimeGuard::verifyConfig($this->prod(['app.trusted_proxies' => '10.0.0.0/8,127.0.0.1']), dirname(__DIR__, 2));
         $this->addToAssertionCount(1);
     }
 

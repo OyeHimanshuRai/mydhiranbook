@@ -1,5 +1,7 @@
 # Deployment guide
 
+> **READ BEFORE DEPLOYING THE TRUSTED_PROXIES CHANGE.** From this release, production refuses to boot (`Dhiran runtime target refused: set TRUSTED_PROXIES ...`) when `TRUSTED_PROXIES` is empty or `*`, unless `DIRECT_EXPOSURE=true` is also set. The live server (nginx on the same host, no `TRUSTED_PROXIES` today) will go DOWN on the first request after `php artisan config:cache` if its `.env` is not changed first. **Before pulling this code on the live server, edit its `.env`: add `TRUSTED_PROXIES=127.0.0.1` (nginx talks to PHP-FPM from the same host), or, only if nothing at all sits in front of the app, `DIRECT_EXPOSURE=true`. Then deploy, rebuild the caches, and check `curl -sI https://mydhiranbook.shop/up`.** Never set `TRUSTED_PROXIES=*`: any visitor could then forge their IP address and the https scheme.
+
 Dhiran is a Laravel 12 app (PHP 8.4, PostgreSQL 16). Everything below was checked against the code in this repository. Items the code does not provide are marked `GAP:`.
 
 ## 1. Local scripts versus production
@@ -81,7 +83,7 @@ Notes:
 
 Set nginx `client_max_body_size`, PHP `post_max_size` and `upload_max_filesize` to at least 32M, because a New Loan form can carry several photos and documents (each file is limited to 8 MB by the app).
 
-Only `public/` is web-reachable. Trusted proxies come from `TRUSTED_PROXIES` in `.env` (comma list of IPs/CIDRs, or `*`; empty = trust none). With this nginx terminating TLS directly leave it empty and keep `fastcgi_param HTTPS on`; behind a load balancer set it to the balancer's address so `X-Forwarded-Proto` is honoured.
+Only `public/` is web-reachable. Trusted proxies come from `TRUSTED_PROXIES` in `.env` (comma list of IPs/CIDRs; `*` trusts every sender and is refused in production). Production refuses to boot unless `TRUSTED_PROXIES` names at least one proxy (use `127.0.0.1` for nginx on the same host, or the load balancer's address so `X-Forwarded-Proto` is honoured) or `DIRECT_EXPOSURE=true` says the app is reachable from the internet with nothing in front of it. With the nginx in this guide (TLS ends in nginx, `fastcgi_param HTTPS on`), `TRUSTED_PROXIES=127.0.0.1` is the right value.
 
 `GET /up` is the Laravel health route (`withRouting(health: '/up')`).
 
@@ -122,6 +124,7 @@ Other keys read by config but not in `.env.example`: `BCRYPT_ROUNDS` (default 12
 - `queue.default` is not `sync`, `null` or empty
 - `session.secure` is `true` (`SESSION_SECURE_COOKIE=true`)
 - `mail.default` is not `log`, `array` or empty
+- `TRUSTED_PROXIES` is neither empty nor `*`, or `DIRECT_EXPOSURE=true` is set
 
 Nothing else is enforced (it does not check that SMTP works, or that a worker is running). Because the guard runs on app boot, `.env` must be complete before any `php artisan` call, including the `package:discover` that Composer runs after install.
 
@@ -193,16 +196,40 @@ WantedBy=multi-user.target
 
 Create the first super admin on the server: `php artisan dhiran:create-admin you@example.com --name="Your Name"`. It prints a random temporary password once. Sign in at `/admin/login` within 24 hours: the app then shows a TOTP secret, enrols TOTP on the first valid code and issues recovery codes. First enrolment is refused after 24 hours from creation or the last password reset; use "Forgot password" on `/admin/login`: the emailed reset reopens the window and discards any authenticator secret that was shown but never confirmed. Admin sign-in is password plus TOTP.
 
+## 7b. Sign-in limits, Content-Security-Policy and uploaded files
+
+- Sign-in: besides the per-IP route throttle (5 a minute) and the per-account-and-IP limit (5 a minute), each account (shop user by email or mobile, platform admin by email) may fail at most 30 sign-ins an hour from any address; a successful sign-in does not reset that count. The counters live in the cache (`file` store here), so emptying `storage/framework/cache/data` also lifts a lock-out.
+- Content-Security-Policy (`app/Http/Middleware/SecurityHeaders.php`):
+  - Enforced on every page: `object-src 'none'; base-uri 'self'; frame-ancestors 'none'`.
+  - Report-only, full policy: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'`. The browser console shows what it would block; there is no report endpoint.
+  - What the pages need: the Vite assets in `/build/assets` (same origin, no CDN, no web fonts, no Razorpay); `data:` and `blob:` images for photo and camera previews (the camera itself, `getUserMedia`, is governed by Permissions-Policy `camera=(self)`, not CSP); same-origin `fetch` for search and Turbo.
+  - Why `script-src` is not enforced yet: the app uses Alpine's standard build, which compiles `x-data`/`@click` expressions with `new Function` and therefore needs `'unsafe-eval'`; the pages also have 13 inline `<script>` blocks, 33 inline `on...=` handlers and inline `style=` attributes, which need `'unsafe-inline'`. A script policy that allows both protects almost nothing. To enforce one: move the inline scripts and handlers into the bundle (or give them a per-request nonce), switch to the `@alpinejs/csp` build and rewrite the inline Alpine expressions as registered components, then drop `'unsafe-eval'`/`'unsafe-inline'` from `script-src` and move the whole policy to `Content-Security-Policy`. Until then keep watching the report-only console output after UI changes.
+- Uploaded files: images are sent with `Content-Security-Policy: sandbox` and `X-Content-Type-Options: nosniff`. PDFs open inline in the browser's own viewer (owner decision) with `nosniff` and `Cross-Origin-Resource-Policy: same-origin` but without `sandbox`, because Chromium's PDF viewer refuses to show a sandboxed document (the code comment in `DhiranController::showAttachment` records this). Uploads are limited to JPEG, PNG and PDF, stored outside `public/` and only served through a shop-scoped controller.
+
 ## 8. Backups
 
+Two things must be backed up, and they must be backed up TOGETHER and kept SEPARATELY: the database dump and `APP_KEY`. Borrower PAN and ID numbers (`customers.pan`, `customers.id_number`, `dhiran_loans.kyc_pan`) and admin TOTP secrets are encrypted with `APP_KEY`; a dump without the key cannot be read for those columns, and a key without a dump is useless. Never put both, unencrypted, in the same place, and never commit either.
+
 ```bash
-# database (nightly, keep copies off the server)
-pg_dump -Fc -h <host> -U <user> <database> > dhiran-$(date +%F).dump
-# files: private uploads (customer photos, attachments) and .env
-tar czf dhiran-files-$(date +%F).tgz -C /var/www/dhiran storage/app/private .env
+# nightly on the server, as the app user; the key file is created once (see below)
+umask 077
+STAMP=$(date +%F)
+pg_dump -Fc -h <host> -U <user> <database> \
+  | gpg --batch --yes --pinentry-mode loopback --symmetric --cipher-algo AES256 \
+        --passphrase-file /root/.dhiran-backup-pass -o /var/backups/dhiran/db-$STAMP.dump.gpg
+tar czf - -C /var/www/dhiran storage/app/private \
+  | gpg --batch --yes --pinentry-mode loopback --symmetric --cipher-algo AES256 \
+        --passphrase-file /root/.dhiran-backup-pass -o /var/backups/dhiran/files-$STAMP.tgz.gpg
+# APP_KEY (and the whole .env) separately, once, and again whenever .env changes:
+gpg --batch --yes --pinentry-mode loopback --symmetric --cipher-algo AES256 \
+    --passphrase-file /root/.dhiran-backup-pass -o /var/backups/dhiran/env-$STAMP.gpg /var/www/dhiran/.env
+find /var/backups/dhiran -type f -mtime +30 -delete
 ```
 
-Restore: `pg_restore -d <new_db> dhiran-YYYY-MM-DD.dump`, unpack `storage/app/private`, then run the verification steps below. Store `.env` backups encrypted; it holds `APP_KEY` (without the same `APP_KEY`, encrypted columns cannot be read: admin `two_factor_secret` and borrower PII in `customers.pan`, `customers.id_number`, `dhiran_loans.kyc_pan` — losing the key loses that data; never rotate it without re-encrypting). Test a restore before launch.
+- Passphrase: generate it once (`openssl rand -base64 32 > /root/.dhiran-backup-pass; chmod 600 ...`), and ALSO store it in the owner's password manager. Without the passphrase the backups cannot be opened. Do not keep the only copy on the same server.
+- Off-site: copy `/var/backups/dhiran/*.gpg` to a place the server cannot overwrite or delete (another machine or a bucket with versioning, `rclone copy` or `rsync` from a cron on the other side); the files are already encrypted, so the storage need not be trusted. Keep `APP_KEY` copies (`env-*.gpg`) separate from where the database dumps go if you can: then losing one place leaks nothing readable.
+- Retention: 30 days of nightly copies on the server (the `find` line), longer off-site (for example monthly for a year). You can lose at most one day of loans, so also dump before every upgrade (section 9).
+- Restore (test this before launch and after any change to the setup): `gpg --decrypt db-YYYY-MM-DD.dump.gpg | pg_restore -d <new_db> --clean --if-exists`, unpack `files-*.tgz.gpg` the same way into `storage/app/private`, put the matching `.env` (same `APP_KEY`) in place, then check one loan with a PAN opens. Without the same `APP_KEY`, the encrypted columns cannot be read; never rotate the key without re-encrypting them.
 
 ## 9. Upgrade and rollback
 

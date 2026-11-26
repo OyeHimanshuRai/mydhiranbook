@@ -39,7 +39,7 @@ class HardeningTest extends TestCase
         $owner=\App\Models\User::create(['name'=>'O','email'=>'pdf@example.test','password'=>'Local-pass-12345','shop_id'=>$shop->id,'role_id'=>app(\App\Services\TenantRoleService::class)->ensureDefaultsForShop($shop->id)['owner']->id]);
         Storage::fake('local'); Storage::disk('local')->put('dhiran/x/a.pdf','%PDF-1.4');
         $att=DhiranAttachment::create(['shop_id'=>$shop->id,'owner_type'=>DhiranAttachment::OWNER_LOAN,'owner_id'=>1,'document_type'=>'loan_document','file_disk'=>'local','file_path'=>'dhiran/x/a.pdf','original_name'=>'a.pdf','mime_type'=>'application/pdf','size_bytes'=>8]);
-        $this->actingAs($owner)->get(route('dhiran.attachments.show',$att))->assertOk()->assertHeaderMissing('Content-Security-Policy')->assertHeader('X-Content-Type-Options','nosniff');
+        $this->actingAs($owner)->get(route('dhiran.attachments.show',$att))->assertOk()->assertHeaderMissing('Content-Security-Policy')->assertHeaderMissing('Content-Security-Policy-Report-Only')->assertHeader('Cross-Origin-Resource-Policy','same-origin')->assertHeader('X-Content-Type-Options','nosniff');
     }
     public function test_trusted_proxies_come_from_config_at_request_time(): void
     {

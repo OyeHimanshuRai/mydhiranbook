@@ -52,6 +52,10 @@ final class RuntimeGuard
         self::refuse(!in_array($get('queue.default'), ['sync', 'null', null, ''], true), 'production requires a persistent queue');
         self::refuse($get('session.secure') === true, 'session cookie must be secure in production');
         self::refuse(!in_array($get('mail.default'), ['log', 'array', null, ''], true), 'production requires a real mailer');
+        // Trusting nobody (empty) or everybody ('*') is only right when nothing sits in front of the app: say so with DIRECT_EXPOSURE=true,
+        // otherwise name the proxy addresses (TRUSTED_PROXIES=127.0.0.1 for a proxy on the same host). '*' lets any client forge its IP and scheme.
+        $proxies = trim((string) $get('app.trusted_proxies'));
+        self::refuse(($proxies !== '' && $proxies !== '*') || $get('app.direct_exposure') === true, 'set TRUSTED_PROXIES to the proxy address(es) (for example 127.0.0.1), or DIRECT_EXPOSURE=true if the app faces the internet with no proxy; empty or * is refused');
     }
 
     private static function verifyLocal(array $config, string $environment): void

@@ -18,7 +18,9 @@ class AuthController
     public function login(Request $r)
     {
         $data=$r->validate(['email'=>'required|email','password'=>'required|string']);
+        \App\Support\LoginCap::check('admin',$data['email']); // 30 failed tries an hour per account, whatever the IP
         if (!Auth::guard('platform_admin')->attempt([...$data,'is_active'=>true])) {
+            \App\Support\LoginCap::failed('admin',$data['email']);
             $this->audit->log(null,'admin.login_failed',reason:'Credentials refused',request:$r);
             throw ValidationException::withMessages(['email'=>'These platform credentials could not be verified.']);
         }
