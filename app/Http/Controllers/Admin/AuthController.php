@@ -18,7 +18,7 @@ class AuthController
     public function login(Request $r)
     {
         $data=$r->validate(['email'=>'required|email','password'=>'required|string']);
-        \App\Support\LoginCap::check('admin',$data['email']); // 30 failed tries an hour per account, whatever the IP
+        \App\Support\LoginCap::check($r,'admin',$data['email']); // 30 failed tries an hour per account, whatever the IP
         if (!Auth::guard('platform_admin')->attempt([...$data,'is_active'=>true])) {
             \App\Support\LoginCap::failed('admin',$data['email']);
             $this->audit->log(null,'admin.login_failed',reason:'Credentials refused',request:$r);
@@ -70,7 +70,7 @@ class AuthController
             throw ValidationException::withMessages(['code'=>'Code could not be verified. Use a fresh authenticator code or an unused recovery code.']);
         }
         Auth::guard('platform_admin')->setUser($admin->fresh());
-        $r->session()->regenerate(); $r->session()->put('admin.mfa_admin_id',$admin->id);
+        $r->session()->regenerate(); $r->session()->put('admin.mfa_admin_id',$admin->id); \App\Support\LoginCap::remember($r,'admin',$admin->email); // known device only after MFA
         if ($result['codes']) { $r->session()->flash('recovery_codes',$result['codes']); }
         $this->audit->log($admin,'admin.mfa_passed',targetId:$admin->id,request:$r);
         return redirect('/admin');
@@ -94,7 +94,7 @@ class AuthController
         $r->validate(['email'=>'required|email','token'=>'required|string','password'=>['required','confirmed',PasswordRule::min(12)]]);
         $result=Password::broker('platform_admins')->reset($r->only('email','token','password','password_confirmation'),function(PlatformAdmin $admin,string $password) use($r) {
             $admin->forceFill(['password'=>Hash::make($password),'remember_token'=>Str::random(60),'password_changed_at'=>now()] + ($admin->two_factor_enabled ? [] : ['two_factor_secret'=>null]))->save(); // a reopened window never reuses a secret shown before
-            $this->audit->log($admin,'admin.password_reset',targetId:$admin->id,request:$r);
+            $this->audit->log($admin,'admin.password_reset',targetId:$admin->id,request:$r); \App\Support\LoginCap::clear('admin',$admin->email);
         });
         if ($result !== Password::PASSWORD_RESET) { throw ValidationException::withMessages(['email'=>'This reset link is invalid or has expired.']); }
         Auth::guard('platform_admin')->logout(); $r->session()->invalidate(); $r->session()->regenerateToken();

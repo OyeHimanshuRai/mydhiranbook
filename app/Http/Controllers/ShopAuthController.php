@@ -31,10 +31,10 @@ class ShopAuthController
         if (!$identity) { throw ValidationException::withMessages(['email'=>'Enter your email address or mobile number.']); }
         $key='shop-login:'.$identity.'|'.$r->ip(); // per account+IP: one attacker can't lock a known account out for everyone
         if (RateLimiter::tooManyAttempts($key,5)) { throw ValidationException::withMessages(['email'=>'Too many sign-in attempts. Try again in a minute.']); }
-        \App\Support\LoginCap::check('shop',$identity); // 30 failed tries an hour per account, whatever the IP
+        \App\Support\LoginCap::check($r,'shop',$identity); // 30 failed tries an hour per account, whatever the IP
         $data=[$column=>$identity,'password'=>$input['password']];
         if (!Auth::guard('web')->attempt([...$data,'is_active'=>true])) { RateLimiter::hit($key,60); \App\Support\LoginCap::failed('shop',$identity); throw ValidationException::withMessages(['email'=>'These credentials could not be verified.']); }
-        RateLimiter::clear($key); $r->session()->regenerate(); return redirect('/');
+        RateLimiter::clear($key); $u=Auth::guard('web')->user(); \App\Support\LoginCap::remember($r,'shop',$u->email,$u->mobile_number); $r->session()->regenerate(); return redirect('/');
     }
     public function logout(Request $r)
     {

@@ -31,7 +31,7 @@ class PasswordResetController extends Controller
         $r->validate(['token' => 'required|string', 'email' => 'required|string|email', 'password' => ['required', 'confirmed', PasswordRule::min(12)]]);
         $status = Password::broker('users')->reset(
             ['email' => strtolower(trim($r->input('email'))), 'token' => $r->input('token'), 'password' => $r->input('password'), 'password_confirmation' => $r->input('password_confirmation')],
-            function (User $user, string $password) { $user->forceFill(['password' => $password, 'remember_token' => Str::random(60), 'email_verified_at' => $user->email_verified_at ?? now()])->save(); },
+            function (User $user, string $password) { $user->forceFill(['password' => $password, 'remember_token' => Str::random(60), 'email_verified_at' => $user->email_verified_at ?? now()])->save(); \App\Support\LoginCap::clear('shop', $user->email, $user->mobile_number); },
         );
         if ($status !== Password::PASSWORD_RESET) { throw ValidationException::withMessages(['email' => 'This reset link is invalid or has expired.']); }
         return redirect('/login')->with('success', 'Password reset. Sign in with your new password.');

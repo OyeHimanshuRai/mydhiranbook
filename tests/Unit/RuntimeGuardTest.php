@@ -45,16 +45,21 @@ class RuntimeGuardTest extends TestCase
         $this->addToAssertionCount(1);
     }
 
-    public function test_production_refuses_empty_or_wildcard_trusted_proxies_unless_direct_exposure_is_declared(): void
+    public function test_production_refuses_empty_trusted_proxies_unless_direct_exposure_and_wildcards_always(): void
     {
-        foreach (['', '*', ' * '] as $list) {
+        $refused = function (array $override): void {
             try {
-                RuntimeGuard::verifyConfig($this->prod(['app.trusted_proxies' => $list]), dirname(__DIR__, 2));
-                $this->fail("'$list' accepted");
+                RuntimeGuard::verifyConfig($this->prod($override), dirname(__DIR__, 2));
+                $this->fail('accepted: '.json_encode($override));
             } catch (\RuntimeException $e) {
                 $this->assertStringContainsString('TRUSTED_PROXIES', $e->getMessage());
             }
-            RuntimeGuard::verifyConfig($this->prod(['app.trusted_proxies' => $list, 'app.direct_exposure' => true]), dirname(__DIR__, 2));
+        };
+        $refused(['app.trusted_proxies' => '']);
+        RuntimeGuard::verifyConfig($this->prod(['app.trusted_proxies' => '', 'app.direct_exposure' => true]), dirname(__DIR__, 2));
+        foreach (['*', ' * ', '**', '127.0.0.1,*', '0.0.0.0/0', '127.0.0.1, ::/0'] as $list) { // DIRECT_EXPOSURE never excuses a wildcard
+            $refused(['app.trusted_proxies' => $list]);
+            $refused(['app.trusted_proxies' => $list, 'app.direct_exposure' => true]);
         }
         RuntimeGuard::verifyConfig($this->prod(['app.trusted_proxies' => '10.0.0.0/8,127.0.0.1']), dirname(__DIR__, 2));
         $this->addToAssertionCount(1);
