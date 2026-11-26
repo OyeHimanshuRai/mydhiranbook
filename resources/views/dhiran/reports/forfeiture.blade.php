@@ -26,7 +26,7 @@
                             <th scope="col" data-low="2">Mobile</th>
                             <th scope="col" class="text-right">Principal</th>
                             <th scope="col" class="text-right">Written off</th>
-                            <th scope="col" class="text-center" data-low="1">Items Count</th>
+                            <th scope="col" class="text-right" data-low="1">Items Count</th>
                             <th scope="col">Forfeiture Date</th>
                             <th scope="col" data-low="1">Notice sent</th>
                         </tr>
@@ -42,11 +42,11 @@
                                 <td data-label="Loan #" data-cell="title" class="whitespace-nowrap">
                                     <a href="{{ route('dhiran.show', $loan) }}" class="font-mono font-medium text-slate-700 hover:text-[var(--kh-ink-2)]">{{ $loan->loan_number }}</a>
                                 </td>
-                                <td data-label="Customer" class="font-medium text-slate-700">{{ $loan->customer?->name ?? '-' }}</td>
+                                <td data-label="Customer" class="dh-clip font-medium text-slate-700" title="{{ $loan->customer?->name ?? '-' }}">{{ $loan->customer?->name ?? '-' }}</td>
                                 <x-dhiran.mobile-cell :number="$loan->customer?->mobile" />
                                 <td data-label="Principal" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->principal_amount, 2) }}</td>
                                 <td data-label="Written off" class="whitespace-nowrap text-right font-semibold">{{ \App\Support\IndianNumber::rupee($writtenOff, 2) }}</td>
-                                <td data-label="Items Count" data-low="1" class="whitespace-nowrap text-center">{{ $itemsCount }}</td>
+                                <td data-label="Items Count" data-low="1" class="whitespace-nowrap text-right">{{ $itemsCount }}</td>
                                 <td data-label="Forfeiture Date" class="whitespace-nowrap">{{ $loan->forfeited_at?->format('d M Y') ?? '-' }}</td>
                                 <td data-label="Notice sent" data-low="1" class="whitespace-nowrap">
                                     @if($loan->forfeiture_notice_sent_at)
@@ -75,7 +75,7 @@
                             <td data-low="2"></td>
                             <td class="text-right" data-report-total="principal">{{ \App\Support\IndianNumber::rupee($totals['principal'], 2) }}</td>
                             <td class="text-right" data-report-total="outstanding">{{ \App\Support\IndianNumber::rupee($totals['outstanding'], 2) }}</td>
-                            <td data-low="1" class="text-center">{{ $totals['items'] }}</td>
+                            <td data-low="1" class="text-right">{{ $totals['items'] }}</td>
                             <td></td>
                             <td data-low="1"></td>
                         </tr>

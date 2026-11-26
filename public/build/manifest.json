@@ -1,6 +1,6 @@
 {
   "resources/css/admin.css": {
-    "file": "assets/admin-CQegDKNS.css",
+    "file": "assets/admin-C2GWmCdl.css",
     "src": "resources/css/admin.css",
     "isEntry": true,
     "name": "admin",
@@ -9,7 +9,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-DlTJwbnD.css",
+    "file": "assets/app-C9LEr9PH.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -18,7 +18,7 @@
     ]
   },
   "resources/css/dhiran-detail.css": {
-    "file": "assets/dhiran-detail-CTRO-YGE.css",
+    "file": "assets/dhiran-detail-Cy_hH_Ag.css",
     "src": "resources/css/dhiran-detail.css",
     "isEntry": true,
     "name": "dhiran-detail",
@@ -27,7 +27,7 @@
     ]
   },
   "resources/css/dhiran-documents.css": {
-    "file": "assets/dhiran-documents-BDGuNYlA.css",
+    "file": "assets/dhiran-documents-a1z71Suf.css",
     "src": "resources/css/dhiran-documents.css",
     "isEntry": true,
     "name": "dhiran-documents",
@@ -36,7 +36,7 @@
     ]
   },
   "resources/css/dhiran-forms.css": {
-    "file": "assets/dhiran-forms-0PuD1aP3.css",
+    "file": "assets/dhiran-forms-cpvbxcOy.css",
     "src": "resources/css/dhiran-forms.css",
     "isEntry": true,
     "name": "dhiran-forms",
@@ -45,7 +45,7 @@
     ]
   },
   "resources/css/dhiran-settings.css": {
-    "file": "assets/dhiran-settings-B8fqSjyD.css",
+    "file": "assets/dhiran-settings-B0qDVBn7.css",
     "src": "resources/css/dhiran-settings.css",
     "isEntry": true,
     "name": "dhiran-settings",
@@ -54,7 +54,7 @@
     ]
   },
   "resources/css/dhiran.css": {
-    "file": "assets/dhiran-CW5IDLgX.css",
+    "file": "assets/dhiran-D2Q53xim.css",
     "src": "resources/css/dhiran.css",
     "isEntry": true,
     "name": "dhiran",
@@ -63,7 +63,7 @@
     ]
   },
   "resources/css/site.css": {
-    "file": "assets/site-BiudjXie.css",
+    "file": "assets/site-BwGlSgSl.css",
     "src": "resources/css/site.css",
     "isEntry": true,
     "name": "site",
@@ -71,10 +71,31 @@
       "site.css"
     ]
   },
+  "resources/css/ux-forms.css": {
+    "file": "assets/ux-forms-BQi5Lf3K.css",
+    "src": "resources/css/ux-forms.css",
+    "isEntry": true,
+    "name": "ux-forms",
+    "names": [
+      "ux-forms.css"
+    ]
+  },
   "resources/js/app.js": {
-    "file": "assets/app-COeXRQeM.js",
+    "file": "assets/app-CgI6HOHd.js",
     "name": "app",
     "src": "resources/js/app.js",
+    "isEntry": true,
+    "imports": [
+      "resources/js/ux/inline-validate.js"
+    ],
+    "css": [
+      "assets/app-W445Zzz6.css"
+    ]
+  },
+  "resources/js/ux/inline-validate.js": {
+    "file": "assets/inline-validate-Cabh_xpt.js",
+    "name": "inline-validate",
+    "src": "resources/js/ux/inline-validate.js",
     "isEntry": true
   }
 }

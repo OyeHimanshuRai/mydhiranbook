@@ -1,5 +1,30 @@
-@extends('site.layout') @section('title','Contact')
+@extends('site.layout')
+@section('title', 'Contact')
+
 @section('content')
-<section class="band prose"><h1>Contact</h1><p>Questions about your access, your shop or your data? Write to us and we will reply by email.</p>
-<dl class="contact-list"><div><dt>Business</dt><dd><x-site.biz key="legal_name"/></dd></div><div><dt>Email</dt><dd>@if(config('business.email'))<a href="mailto:{{ config('business.email') }}"><x-site.biz key="email"/></a>@else<x-site.biz key="email"/>@endif</dd></div><div><dt>Phone</dt><dd><x-site.biz key="phone"/></dd></div><div><dt>Address</dt><dd><x-site.biz key="address"/></dd></div></dl></section>
+<section class="lp-subhero">
+    <div class="lp-in lp-subhero-grid">
+        <div>
+            <h1>Contact us</h1>
+            <p class="lp-lead">
+                Questions about your shop access, onboarding, or your data? Write to us by email and we will reply directly.
+            </p>
+        </div>
+
+        <div class="lp-sheet-frame lp-contact-sheet">
+            <dl class="lp-kv">
+                <div>
+                    <dt>Support email</dt>
+                    <dd>
+                        @if(config('business.email'))
+                            <a href="mailto:{{ config('business.email') }}"><x-site.biz key="email"/></a>
+                        @else
+                            <x-site.biz key="email"/>
+                        @endif
+                    </dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+</section>
 @endsection

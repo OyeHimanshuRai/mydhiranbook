@@ -1,10 +1,10 @@
 @extends('auth.base') @section('title','Create an account') @section('content')
 <h1>Your own book.</h1><p class="lede">Create your MyDhiranBook owner account. You add your business details next; we approve each new shop before it opens.</p>
-<form method="post" action="/register" data-once>@csrf
+<form method="post" action="/register" data-once data-validate>@csrf
 <fieldset class="ui-group"><legend>About you</legend>
 <x-site.field name="name" label="Your name" req :value="old('name')" required autocomplete="name" />
 <x-site.field name="email" label="Email address" type="email" req :value="old('email')" required autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" />
-<x-site.field name="mobile" label="Mobile number" type="tel" req :value="old('mobile')" required autocomplete="tel" inputmode="tel" hint="10-digit Indian mobile number." /></fieldset>
+<x-site.field name="mobile" label="Mobile number" type="tel" req :value="old('mobile')" required autocomplete="tel" inputmode="tel" data-rule="mobile" hint="10-digit Indian mobile number." /></fieldset>
 <fieldset class="ui-group"><legend>Secure your account</legend>
 <x-site.field name="password" label="Password" password req required minlength="12" autocomplete="new-password" hint="At least 12 characters." />
 <x-site.field name="password_confirmation" label="Confirm password" password required autocomplete="new-password" /></fieldset>

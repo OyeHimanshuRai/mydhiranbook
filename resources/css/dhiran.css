@@ -51,7 +51,7 @@
         }
         .dset-input {
             width: 100%; padding: 10px 12px; font-size: 13px; font-weight: 500;
-            border: 1.5px solid var(--dset-border); border-radius: var(--kh-radius);
+            border: 1px solid var(--dset-border); border-radius: var(--kh-radius);
             background: var(--dset-bg); color: var(--dset-ink);
             transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
         }
@@ -239,7 +239,7 @@
     padding: 10px 12px;
     font-size: 13px;
     font-weight: 500;
-    border: 1.5px solid var(--dh-field-border);
+    border: 1px solid var(--dh-field-border);
     border-radius: var(--kh-radius);
     background: var(--dh-field);
     color: var(--dh-ink);
@@ -446,7 +446,7 @@ body.dh-modal-open {
    settings, auth, and mobile cards. */
 .dh-app {
     font-family: var(--kh-font);
-    font-size: 14px;
+    font-size: var(--fl-fs-body);
     line-height: 1.5;
     font-weight: 400;
     color: var(--dh-ink);
@@ -859,7 +859,8 @@ turbo-frame#dh-results { display: contents; }  /* list pages make it the scroll 
 }
 /* The binding wordmark: "dhiran." in a serif, the full stop in ink. */
 .dh-wordmark { font: 600 clamp(1.375rem, 1.2rem + 0.5vw, 1.625rem)/1 var(--font-display); letter-spacing: -0.01em; white-space: nowrap; }
-.dh-wordmark span { color: var(--dh-highlight); }
+.dh-wordmark > span:last-child { color: var(--dh-highlight); }
+.dh-wordmark-short { display: none; }
 .dh-sidebar-close {
     display: none; align-items: center; justify-content: center; flex: none; width: var(--tap); height: var(--tap); padding: 0;
     border: 1px solid var(--dh-sidebar-line); border-radius: var(--r-sm); background: transparent; color: var(--dh-sidebar-ink); cursor: pointer;
@@ -895,7 +896,7 @@ turbo-frame#dh-results { display: contents; }  /* list pages make it the scroll 
 .dh-page-header, .content-header {
     position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; flex: none; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
     min-height: var(--dh-head); margin: 0; padding: var(--sp-2) var(--dh-pad);
-    background: var(--dh-header); border-bottom: 2px solid var(--dh-highlight); box-shadow: var(--dh-shadow-soft);
+    background: var(--dh-header); border-bottom: 1px solid var(--dh-line); box-shadow: var(--dh-shadow-soft);
 }
 .dh-app .dh-page-header > .dh-page-header-content { display: flex; align-items: center; flex: 1 1 auto; gap: var(--sp-3); min-width: 0; }
 .dh-header-mobile-fab { margin-left: var(--sp-3); }
@@ -967,10 +968,12 @@ turbo-frame#dh-results { display: contents; }  /* list pages make it the scroll 
 
 /* ---- tablet (768-1023): the menu stays in view as an icon rail with a label under each icon ---- */
 @media (min-width: 768px) and (max-width: 1023.98px) {
-    .dh-sidebar { width: 92px; padding: var(--sp-3) var(--sp-2); }
+    .dh-sidebar { width: 92px; padding: var(--sp-3) var(--sp-2); overflow-x: hidden; }
     .dh-sidebar-head { justify-content: center; }
     .dh-brand { padding: 0; justify-content: center; }
     .dh-wordmark { font-size: 20px; }
+    .dh-wordmark-full { display: none; }
+    .dh-wordmark-short { display: inline; }
     .dh-nav-link, .dh-logout {
         flex-direction: column; justify-content: center; gap: var(--sp-1); min-height: 60px; padding: var(--sp-2) 2px;
         font-size: var(--fs-xs); text-align: center;
@@ -1060,21 +1063,10 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 }
 .dh-app .dh-table-wrap { overflow-x: auto; }
 .dh-app table.dh-stack { width: 100%; min-width: 0; border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
-.dh-app table.dh-stack > thead > tr > th {
-    padding: var(--sp-3); background: var(--dh-table-head); border-bottom: 1px solid var(--dh-line); color: var(--dh-ink-soft);
-    font-size: var(--fl-fs-meta); font-weight: 600; line-height: 1.3; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: bottom; white-space: normal;
-}
-.dh-app table.dh-stack > tbody > tr > td {
-    padding: var(--sp-3); border-bottom: 1px solid var(--dh-line-soft); color: var(--dh-ink-soft);
-    font-size: var(--fl-fs-cell); font-weight: 500; line-height: 1.4; vertical-align: middle;
-}
-.dh-app table.dh-stack > tbody > tr:has(.jf-row-action):hover { background: var(--dh-row-hover); }
-.dh-app table.dh-stack > tbody > tr:last-child > td { border-bottom: 0; }
 .dh-app table.dh-stack .dh-sno-th, .dh-app table.dh-stack td.dh-sno { width: 48px; padding-inline: var(--sp-4) var(--sp-1) !important; text-align: left; }
 .dh-app table.dh-stack td.jf-table-empty { padding: 0; }
 .dh-app table.dh-stack td :is(.btn, .jf-row-action) { vertical-align: middle; }
 @media (min-width: 1024px) { .dh-app table.dh-stack td .btn-sm { min-height: 36px; } }
-.dh-app table.dh-stack tfoot td { padding: var(--sp-3); font-weight: 600; color: var(--dh-ink); background: var(--dh-muted-surface); }
 
 /* Links in table cells: a 44px hit area on touch screens without making rows taller (padding grown, margin taken back). */
 @media (max-width: 1023.98px), (pointer: coarse) {
@@ -1086,11 +1078,11 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 
 /* Narrow tables: tighter cell padding so the kept columns fit without sideways scrolling. */
 @container dhl (min-width: 560px) and (max-width: 1239px) {
-    .dh-app table.dh-stack > :is(thead, tbody, tfoot) > tr > :is(th, td) { padding-inline: var(--sp-2); }
+    .dh-app table.dh-stack > :is(thead, tbody, tfoot) > tr > :is(th, td) { padding-inline: 12px; }
 }
 
 @container dhl (min-width: 560px) and (max-width: 719px) {
-    .dh-app table.dh-stack > :is(thead, tbody, tfoot) > tr > :is(th, td) { padding-inline: var(--sp-1); }
+    .dh-app table.dh-stack > :is(thead, tbody, tfoot) > tr > :is(th, td) { padding-inline: 8px; }
 }
 
 /* Stacked cards (< 560): each row is one card, no table chrome, no sideways scrolling. */
@@ -1248,21 +1240,21 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 /* ==== Shell: the oxblood cloth ==== */
 .dh-sidebar { background: var(--kh-cloth); color: var(--kh-on-cloth); }
 /* The stitch: a dotted seam sewn along the cloth edge. */
-.dh-sidebar::after { content: ""; position: absolute; top: 8px; bottom: 8px; right: 5px; width: 0; border-right: 1px dotted var(--kh-cloth-line); pointer-events: none; }
+.dh-sidebar::after { content: none; }
 .dh-sidebar-head, .dh-foot { border-color: transparent; border-image: none; }
-.dh-sidebar-head { border-bottom: 1px dotted var(--kh-cloth-line); }
-.dh-foot { border-top: 1px dotted var(--kh-cloth-line); }
+.dh-sidebar-head { border-bottom: 1px solid var(--kh-cloth-line); }
+.dh-foot { border-top: 1px solid var(--kh-cloth-line); }
 .dh-wordmark { font-family: var(--kh-font-serif); font-weight: 600; color: var(--kh-on-cloth); }
-.dh-wordmark span { color: var(--kh-on-cloth-soft); }
+.dh-wordmark > span:last-child { color: var(--kh-on-cloth-soft); }
 .dh-nav-link { border-radius: var(--kh-radius); font-weight: 500; color: var(--kh-on-cloth); }
 .dh-nav-link:hover { background: color-mix(in srgb, #fff 9%, transparent); }
-.dh-nav-link.active, .dh-nav-link.active:hover { background: var(--kh-cloth-lift); font-weight: 600; box-shadow: inset 3px 0 0 #fff; }
+.dh-nav-link.active, .dh-nav-link.active:hover { background: var(--kh-cloth-lift); font-weight: 600; box-shadow: none; }
 .dh-sidebar :is(a, button):focus-visible, .dh-sidebar-close:focus-visible { outline: 2px solid var(--kh-focus-on-cloth); outline-offset: 2px; }
 .dh-logout, .dh-sidebar-close { border-color: var(--kh-cloth-line); border-radius: var(--kh-radius); }
 .dh-logout:hover { background: color-mix(in srgb, #fff 9%, transparent); }
 .dh-foot-shop { color: var(--kh-on-cloth-soft); }
 .dh-page-header, .content-header { background: var(--kh-panel); border-bottom: 1px solid var(--kh-rule); box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
-.dh-page-header::after { content: ""; position: absolute; left: 0; right: 0; bottom: -4px; height: 0; border-top: 1px dotted var(--kh-rule); pointer-events: none; }
+.dh-page-header::after { content: none; }
 .dh-page-header { position: sticky; min-height: calc(var(--fl-head-h) + 8px); }
 .dh-app .dh-page-header > .dh-page-header-content { align-items: center; }
 .page-subtitle, .dh-page-header p { color: var(--kh-text-3); font-size: var(--fl-fs-body); }
@@ -1271,7 +1263,7 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 .dh-footer a:hover { color: var(--kh-ink); }
 /* Phones: the top bar is cloth too, so the book keeps its cover when the rail is a drawer. */
 @media (max-width: 767.98px) {
-    .dh-page-header, .content-header { background: var(--kh-cloth); border-bottom: 1px dotted var(--kh-cloth-line); }
+    .dh-page-header, .content-header { background: var(--kh-cloth); border-bottom: 1px solid var(--kh-cloth-line); }
     .dh-page-header::after { display: none; }
     .dh-page-header :is(.page-title, h1) { color: var(--kh-on-cloth); }
     .dh-page-header :is(.page-subtitle, p) { color: var(--kh-on-cloth-soft); }
@@ -1291,18 +1283,18 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px; position: relative;
     min-height: var(--kh-ctl-h); padding: 0 var(--fl-btn-px);
-    border: 1.5px solid var(--kh-ink-2); border-radius: var(--kh-radius-btn); background: var(--kh-panel); color: var(--kh-ink);
+    border: 1px solid var(--kh-btn-edge); border-radius: var(--kh-radius-btn); background: var(--kh-panel); color: var(--kh-ink);
     font: 600 var(--fl-fs-body)/1.15 var(--kh-font); letter-spacing: 0; text-decoration: none; text-align: center; cursor: pointer;
-    box-shadow: 0 1px 2px rgba(29, 34, 48, .10);
+    box-shadow: 0 1px 1px rgba(29, 34, 48, .05);
 }
 .btn svg { flex: none; }
 .btn:hover { background: var(--kh-ink-soft); color: var(--kh-ink-2); }
 .btn:active:not([disabled]):not([aria-disabled="true"]) { background: var(--kh-ink-line); transform: translateY(1px); box-shadow: none; }
-.btn-primary, .btn-dark, .btn-success { background: var(--kh-ink); border-color: var(--kh-ink); color: #fff; box-shadow: 0 1px 2px rgba(10, 18, 38, .35); }
+.btn-primary, .btn-dark, .btn-success { background: var(--kh-ink); border-color: var(--kh-ink); color: #fff; box-shadow: 0 1px 2px rgba(10, 18, 38, .22); }
 .btn-primary:hover, .btn-dark:hover, .btn-success:hover { background: var(--kh-ink-2); border-color: var(--kh-ink-2); color: #fff; }
 .btn-primary:active:not([disabled]):not([aria-disabled="true"]), .btn-dark:active:not([disabled]), .btn-success:active:not([disabled]) { background: var(--kh-ink-3); border-color: var(--kh-ink-3); color: #fff; }
-.btn-danger, .btn-destructive { background: var(--kh-panel); border-color: var(--kh-err); color: var(--kh-err); }
-.btn-danger:hover, .btn-destructive:hover { background: var(--kh-err-soft); border-color: var(--kh-err); color: var(--kh-err); }
+.btn-danger, .btn-destructive { background: var(--kh-panel); border-color: color-mix(in srgb, var(--kh-err) 40%, #fff); color: var(--kh-err); }
+.btn-danger:hover, .btn-destructive:hover { background: var(--kh-err-soft); border-color: var(--kh-err-line); color: var(--kh-err); }
 .btn-danger:active:not([disabled]), .btn-destructive:active:not([disabled]) { background: var(--kh-err-line); color: var(--kh-err); }
 .btn-ghost { background: transparent; border-color: transparent; box-shadow: none; color: var(--kh-ink); }
 .btn-ghost:hover { background: transparent; color: var(--kh-ink-2); text-decoration: underline; text-underline-offset: 3px; }
@@ -1317,8 +1309,8 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
     border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: kh-spin 700ms linear infinite;
 }
 /* Row action: an icon button, same family. */
-.dh-app .jf-row-action { border-radius: var(--kh-radius-btn); box-shadow: 0 1px 2px rgba(29, 34, 48, .10); }
-.dh-app .jf-row-action--view { --jf-ra-bg: var(--kh-panel); --jf-ra-line: var(--kh-ink-2); --jf-ra-fg: var(--kh-ink); border-width: 1.5px; }
+.dh-app .jf-row-action { border-radius: var(--kh-radius-btn); box-shadow: none; }
+.dh-app .jf-row-action--view { --jf-ra-bg: var(--kh-panel); --jf-ra-line: var(--kh-btn-edge); --jf-ra-fg: var(--kh-ink); border-width: 1px; }
 .dh-app .jf-row-action--view:hover { --jf-ra-bg: var(--kh-ink-soft); }
 
 /* ==== Fields ==== */
@@ -1330,14 +1322,16 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 }
 .dh-app select:not([multiple]):not(.dh-fbar-search select), .dh-native-select {
     /* A dropdown is a field with an arrow zone: tinted, divided from the value, always showing a chevron. */
-    appearance: none; -webkit-appearance: none; padding-right: 52px; cursor: pointer;
+    display: inline-block; height: var(--kh-ctl-h); vertical-align: top; appearance: none; -webkit-appearance: none; padding-right: 52px; cursor: pointer;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 4.25 6 8.25l4-4' fill='none' stroke='%231a2a4a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
         linear-gradient(var(--kh-field-edge), var(--kh-field-edge)), linear-gradient(var(--kh-wash), var(--kh-wash));
     background-repeat: no-repeat; background-position: right 14px center, right 40px top 0, right 0 top 0; background-size: 12px 12px, 1px 100%, 40px 100%;
 }
+.dh-app select:not([multiple]):not(.dh-fbar-search select)::picker-icon, .dh-native-select::picker-icon { display: none; }
 .dh-app textarea, .dset-textarea { min-height: calc(var(--kh-ctl-h) * 2); padding: 10px 12px; }
 .dh-app :is(input, select, textarea)::placeholder, .dset-input::placeholder { color: var(--kh-text-3); font-weight: 400; opacity: 1; }
-.dh-app :is(input, select, textarea):hover:not(:disabled) { border-color: var(--kh-ink); }
+.dh-app :is(input, select, textarea):hover:not(:disabled) { border-color: var(--kh-text-3); }
 .dh-app :is(input, select, textarea):focus, .dset-input:focus, .dh-form-control:focus {
     outline: 2px solid var(--kh-focus); outline-offset: 2px; border-color: var(--kh-ink); box-shadow: none;
 }
@@ -1379,54 +1373,22 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 .dh-app :is(.dh-stat-label) { margin: 0; }
 .dh-app .dh-stat { padding: var(--fl-card-pad); }
 .dh-app .dh-stat-value { font-size: var(--fl-fs-h2); font-weight: 600; color: var(--kh-ink); }
-/* The margin line: a hairline red rule inset from the left edge of every money card. */
-.dh-stat, .dr-report-grid, .dh-table-wrap { position: relative; }
-/* The margin line lives in reserved padding: tables get a 14px gutter and the rule is drawn at 6px, so it can never reach content. */
-.dh-table-wrap, .dr-report-grid { padding-inline-start: 14px; }
-.dh-table-wrap::before, .dh-stat::before, .dr-report-grid::before {
-    content: ""; position: absolute; top: 0; bottom: 0; left: 6px; width: 1px; background: var(--kh-margin); opacity: .8; pointer-events: none; z-index: 1;
+/* No ledger margin line on tables or KPI tiles (owner 2026-11-26: no leftover lines); only the report-card grid on the Reports index keeps it. */
+.dr-report-grid { position: relative; padding-inline-start: 14px; }
+.dr-report-grid::before {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 6px; width: 1px; background: var(--kh-margin); opacity: .35; pointer-events: none; z-index: 1;
 }
-.dh-app .dh-stat { padding-left: 22px; }
 .dh-app .dh-empty svg { color: var(--kh-text-3); }
 
 /* ==== Money tables: the ledger rhythm ==== */
 .dh-table-card { overflow: hidden; }
 .dh-app table.dh-stack, .dh-app .dh-table, .jf-table { font-size: var(--fl-fs-cell); font-variant-numeric: tabular-nums; }
-.dh-app table.dh-stack > thead > tr > th, .jf-table > thead > tr > th {
-    background: var(--kh-panel); color: var(--kh-text-2); border-bottom: 3px double var(--kh-text-3);
-    font-size: var(--kh-fs-label); font-weight: 600; letter-spacing: var(--kh-label-track); text-transform: uppercase; line-height: 1.3; white-space: nowrap;
-}
-.dh-app table.dh-stack > tbody > tr > td, .jf-table > tbody > tr > td { color: var(--kh-text); border-bottom: 1px solid var(--kh-rule-soft); font-size: var(--fl-fs-cell); font-weight: 400; }
-.dh-app table.dh-stack > tbody > tr:has(.jf-row-action):hover { background: color-mix(in srgb, var(--kh-ink) 4%, transparent); }
-.dh-app table.dh-stack > tbody > tr:last-child > td { border-bottom: 0; }
 /* Figures sit on the right edge, in tabular numerals, a touch heavier than words. */
 .dh-app table.dh-stack :is(th, td).text-right { text-align: right; }
 .dh-app table.dh-stack td.text-right { font-weight: 500; font-variant-numeric: tabular-nums; color: var(--kh-text); }
 .dh-app table.dh-stack td.text-right.font-semibold { font-weight: 600; }
-/* Stacked cards (phones, narrow containers): each row card carries its own margin line. */
-@container dhl (max-width: 559px) {
-    .dh-table-wrap { padding-inline-start: 0; }
-    .dh-table-wrap::before { display: none; }
-    .dh-app table.dh-stack > tbody > tr { padding-inline-start: 24px !important; }
-    .dh-app table.dh-stack > tbody > tr > td:first-child { padding-inline-start: 0 !important; }
-    .dh-app table.dh-stack > tbody > tr { background: linear-gradient(var(--kh-margin), var(--kh-margin)) 10px 0 / 1px 100% no-repeat var(--kh-panel); }
-}
-@media (max-width: 720px) {
-    .dh-app .content-inner:not([data-list-workspace]) .dh-table-wrap { padding-inline-start: 0; }
-    .dh-app .content-inner:not([data-list-workspace]) .dh-table-wrap::before { display: none; }
-    .dh-app .content-inner:not([data-list-workspace]) table.dh-stack > tbody > tr { padding-inline-start: 24px !important; }
-    .dh-app .content-inner:not([data-list-workspace]) table.dh-stack > tbody > tr > td:first-child { padding-inline-start: 0 !important; }
-    .dh-app .content-inner:not([data-list-workspace]) table.dh-stack > tbody > tr { background: linear-gradient(var(--kh-margin), var(--kh-margin)) 10px 0 / 1px 100% no-repeat var(--kh-panel); }
-}
-/* Loan-detail and profile tables (.dd-table) wear the same ledger skin as the shared lists. */
-.dh-app .dd-table th { font-size: var(--kh-fs-label); font-weight: 600; letter-spacing: var(--kh-label-track); text-transform: uppercase; color: var(--kh-text-2); background: var(--kh-panel); }
-.dh-app .dd-table td { font-weight: 400; color: var(--kh-text); }
-.dh-app .dd-table td.num { font-weight: 500; }
-.dh-app .dd-table td.strong { color: var(--kh-ink); font-weight: 600; }
-/* Totals: a double rule above the sum, the sum in ink. */
-.dh-app table.dh-stack tfoot td, .jf-table tfoot td { background: transparent; color: var(--kh-ink); font-weight: 600; border-top: 3px double var(--kh-text-3); }
 /* Identifiers (loan numbers) and names keep one weight and one family wherever they appear. */
-.dh-app table .font-mono, .dh-app td.font-mono, .dh-app th.font-mono { font-family: var(--jf-font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace); font-size: 1em; font-weight: 500; letter-spacing: 0; }
+.dh-app table .font-mono, .dh-app td.font-mono, .dh-app th.font-mono { font-family: var(--jf-font-mono, ui-monospace, "SF Mono", Menlo, Consolas, monospace); font-size: 0.92em; font-weight: 500; letter-spacing: 0; }
 .dh-app table a:not(.jf-row-action):not(.btn) { color: var(--kh-ink) !important; font-weight: 500; }
 .dh-app table a:not(.jf-row-action):not(.btn):is(:hover, :focus-visible) { color: var(--kh-ink-2) !important; }
 .dh-app table :is(.text-slate-700, .text-slate-800, .text-slate-900, .text-gray-700, .text-gray-800, .text-gray-900) { color: var(--kh-text) !important; }
@@ -1435,12 +1397,12 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 
 /* ==== Chips and filters: outlined buttons at control height (button radius, no pills). Selected = tinted fill + a check, never colour alone. ==== */
 .dh-app :is(.dh-tab, .dh-fchip, .dh-fopt span, .st-role-btn) {
-    display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--kh-field-edge); border-radius: var(--kh-radius-btn); background: var(--kh-panel); color: var(--kh-text);
+    display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--kh-btn-edge); border-radius: var(--kh-radius-btn); background: var(--kh-panel); color: var(--kh-text);
     font-size: var(--fl-fs-body); font-weight: 500; min-height: var(--kh-ctl-h); box-shadow: none; cursor: pointer;
 }
-.dh-app :is(.dh-tab, .dh-fchip, .dh-fopt span, .st-role-btn):hover { background: var(--kh-ink-soft); border-color: var(--kh-ink); color: var(--kh-ink-2); }
+.dh-app :is(.dh-tab, .dh-fchip, .dh-fopt span, .st-role-btn):hover { background: var(--kh-ink-soft); border-color: var(--kh-ink-edge); color: var(--kh-ink-2); }
 .dh-app :is(.dh-tab[aria-current="page"], .dh-fopt input:checked + span, .dh-fopt--btn.is-picked span, .st-role-btn[aria-selected="true"]) {
-    background: var(--kh-ink-soft); border-color: var(--kh-ink); color: var(--kh-ink-2); font-weight: 600;
+    background: var(--kh-ink-soft); border-color: var(--kh-ink-edge); color: var(--kh-ink-2); font-weight: 600;
 }
 .dh-app :is(.dh-tab[aria-current="page"], .dh-fopt input:checked + span, .dh-fopt--btn.is-picked span, .st-role-btn[aria-selected="true"])::before {
     content: ""; flex: none; width: 14px; height: 14px; margin-inline-start: -2px;
@@ -1448,12 +1410,12 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 }
 .dh-app .dh-fopt input:checked + span .dh-fopt-count { background: var(--kh-ink); color: #fff; }
 /* Tabs: text with an indicator, no box. */
-.dh-app .dh-subnav-link { border: 0; border-radius: 0; background: none; box-shadow: inset 0 -3px 0 transparent; color: var(--kh-text-2); font-weight: 500; padding-inline: var(--sp-2); min-height: var(--kh-ctl-h); }
-.dh-app .dh-subnav-link:hover { background: none; color: var(--kh-ink); box-shadow: inset 0 -3px 0 var(--kh-rule); }
-.dh-app .dh-subnav-link[aria-current="page"] { background: none; color: var(--kh-ink); font-weight: 600; box-shadow: inset 0 -3px 0 var(--kh-ink); }
+.dh-app .dh-subnav-link { border: 0; border-radius: 0; background: none; box-shadow: inset 0 -2px 0 transparent; color: var(--kh-text-2); font-weight: 500; padding-inline: var(--sp-2); min-height: var(--kh-ctl-h); }
+.dh-app .dh-subnav-link:hover { background: none; color: var(--kh-ink); box-shadow: inset 0 -2px 0 var(--kh-rule); }
+.dh-app .dh-subnav-link[aria-current="page"] { background: none; color: var(--kh-ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--kh-ink); }
 
 /* ==== Pagination ==== */
-.dh-app .dh-pager-num, .dh-app .dh-pager-btn { border-radius: var(--kh-radius-btn); border: 1.5px solid var(--kh-ink-2); background-color: var(--kh-panel); box-shadow: 0 1px 2px rgba(29, 34, 48, .10); color: var(--kh-ink); font-weight: 600; }
+.dh-app .dh-pager-num, .dh-app .dh-pager-btn { border-radius: var(--kh-radius-btn); border: 1px solid var(--kh-btn-edge); background-color: var(--kh-panel); box-shadow: none; color: var(--kh-ink); font-weight: 600; }
 .dh-app .dh-pager-num.is-current { background: var(--kh-ink); border-color: var(--kh-ink); color: #fff; }
 .dh-pager { border-top: 1px solid var(--kh-rule); color: var(--kh-text-2); }
 
@@ -1461,7 +1423,7 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 .dh-app .dh-fbar-search, .dh-app .dh-fbar-open { border-radius: var(--kh-radius); background: var(--kh-panel); }
 .dh-app .dh-fbar-search { box-shadow: inset 0 0 0 1px var(--kh-field-edge); }
 .dh-app .dh-fbar-search:focus-within { box-shadow: inset 0 0 0 1px var(--kh-ink); outline: 2px solid var(--kh-focus); outline-offset: 2px; }
-.dh-app .dh-fbar-open { border: 1.5px solid var(--kh-ink-2); border-radius: var(--kh-radius-btn); box-shadow: 0 1px 2px rgba(29, 34, 48, .10); color: var(--kh-ink); font-weight: 600; }
+.dh-app .dh-fbar-open { border: 1px solid var(--kh-btn-edge); border-radius: var(--kh-radius-btn); box-shadow: none; color: var(--kh-ink); font-weight: 600; }
 .dh-app .dh-fbar-badge { background: var(--kh-ink); color: #fff; }
 
 /* ==== Dialogs and sheets ==== */
@@ -1471,26 +1433,127 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 
 /* ==== Alerts and notices: a full hairline border, an icon or word carries the tone ==== */
 .alert, .st-notice { border: 1px solid var(--kh-rule); border-radius: var(--kh-radius); padding: 12px 14px; background: var(--kh-panel); color: var(--kh-text); font-size: var(--fl-fs-body); box-shadow: none; }
-.alert.success { background: var(--kh-ok-soft); border-color: var(--kh-ok-line); color: var(--kh-ok); }
-.alert.danger { background: var(--kh-err-soft); border-color: var(--kh-err-line); color: var(--kh-err); }
+.alert.success { background: var(--kh-ok-soft); border-color: transparent; color: var(--kh-ok); }
+.alert.danger { background: var(--kh-err-soft); border-color: transparent; color: var(--kh-err); }
 .alert.warn, .st-notice { background: var(--kh-panel); border-color: var(--kh-warn-line); color: var(--kh-warn-text); }
-.alert.info { background: var(--kh-info-soft); border-color: var(--kh-info-line); color: var(--kh-info); }
+.alert.info { background: var(--kh-info-soft); border-color: transparent; color: var(--kh-info); }
 
-/* ==== List pages (x-dhiran-layout list): the title row and the toolbar stay put; only the list region scrolls, with a
-   sticky header row, and the pager sticks to the bottom of the region. Short lists end at their last row. ==== */
-.dh-page--list .dh-scroll { overflow: hidden; }
-.dh-page--list .dh-content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-.dh-page--list .content-inner[data-list-workspace] { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-.dh-page--list [data-list-workspace] > :not(turbo-frame#dh-results):not(.dh-list-region) { flex: none; }
-.dh-page--list [data-list-workspace] > :is(turbo-frame#dh-results, .dh-list-region) {
-    display: block; flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+/* ==== Lists and reports: layout (owner 2026-11-26) ====
+   Desktop: the title row, the KPI tiles / count tabs, the toolbar and the pager stay put and ONLY the table body scrolls, inside
+   .dh-table-wrap, under a sticky header row. The results frame / list region is a plain flex column (never a scroller), the card
+   takes the room that is left (and ends at its last row when the list is short), the wrap scrolls both ways, the pager is pinned
+   below it. Below 1024px (or on a window under 600px tall) nothing is fixed: the page scrolls and tables become stacked cards. */
+@media screen and (min-width: 1024px) and (min-height: 600px) {
+    .dh-page--list .dh-scroll { overflow: hidden; padding-bottom: calc(var(--dh-pad) + 24px); } /* the floating Search pill never sits on the pager */
+    .dh-page--list .dh-content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    .dh-page--list .content-inner[data-list-workspace] { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    .dh-page--list [data-list-workspace] > :not(turbo-frame#dh-results):not(.dh-list-region) { flex: none; }
+    .dh-page--list [data-list-workspace] > :is(turbo-frame#dh-results, .dh-list-region) { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+    .dh-page--list :is(turbo-frame#dh-results, .dh-list-region) > :not(.dh-table-card) { flex: none; }
+    .dh-page--list .dh-table-card { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .dh-page--list .dh-table-wrap {
+        flex: 0 1 auto; min-height: 0; padding-inline-start: 0; overflow: auto; overscroll-behavior: contain;
+        scrollbar-width: thin; scrollbar-color: var(--dh-scrollbar-thumb) transparent;
+    }
+    .dh-page--list .dh-table-wrap:focus-visible { outline: 2px solid var(--dh-focus); outline-offset: -2px; }
+    .dh-page--list .dh-table-card > .dh-pager { flex: none; position: static; }
+    .dh-page--list table.dh-stack > thead > tr > th { position: sticky; top: 0; z-index: 3; }
+    .dh-page--list table.dh-stack > tfoot > tr > td { position: sticky; bottom: 0; z-index: 2; } /* the totals row stays in view */
 }
-.dh-page--list :is(.dh-table-card, [data-list-frame]) { overflow: clip; }
-/* A table that needs more room than the screen gives widens its card, and the list region scrolls sideways: nothing is ever clipped. */
-.dh-page--list .dh-table-card { width: fit-content; min-width: 100%; }
-.dh-page--list .dh-table-wrap { overflow: visible; }
-.dh-page--list table.dh-stack > thead > tr > th { position: sticky; top: 0; z-index: 3; }
-.dh-page--list .dh-pager { position: sticky; bottom: 0; z-index: 3; background: var(--kh-panel); }
+/* The page is the scroller everywhere else; the pager just trails the card. */
+@media screen and (max-width: 1023.98px), screen and (max-height: 599.98px) {
+    .dh-page--list .dh-pager { position: static; }
+}
+/* Printing a report prints every row: release the fixed-height shell and every scroll region. */
+@media print {
+    .dh-html, .dh-html body, .dh-page--list :is(.dh-shell, .dh-main, .dh-scroll, .dh-content, .content-inner, turbo-frame#dh-results, .dh-list-region, .dh-table-card, .dh-table-wrap) {
+        height: auto; min-height: 0; max-height: none; overflow: visible; display: block;
+    }
+    .dh-page--list table.dh-stack > thead > tr > th { position: static; }
+}
+
+/* ==== Tables: one quiet look (owner 2026-11-26: no row hairlines, proper headers) ====
+   Header: a tinted band, 44px, small semi-bold muted caps, the ONE rule of the table drawn under it. Rows: 48px, no lines, a barely
+   tinted alternate row, a clear hover/focus-within tint, a soft selected tint. Figures right-aligned in tabular numerals, header
+   and cells alike. The table sits in a single soft-shadow card. Written with :where() on the table so the stacked-card layout
+   (phones, narrow lists) and the unusual cases keep winning without !important. */
+.dh-app {
+    --tb-head: color-mix(in srgb, var(--kh-wash) 60%, var(--kh-panel));
+    --tb-zebra: color-mix(in srgb, var(--kh-paper) 40%, var(--kh-panel));
+    --tb-hover: var(--kh-ink-soft);
+    --tb-selected: color-mix(in srgb, var(--dh-accent, var(--kh-ink)) 10%, var(--kh-panel));
+    --tb-head-h: 44px;
+    --tb-row-h: 48px;
+    --tb-pad: 14px;
+}
+.dh-app :where(table.dh-stack) { font-size: var(--fl-fs-cell); font-variant-numeric: tabular-nums; }
+.dh-app :where(table.dh-stack) > thead > tr > th {
+    height: var(--tb-head-h); padding: 0 var(--tb-pad); background: var(--tb-head); color: var(--kh-text-2);
+    border: 0; box-shadow: inset 0 -1px 0 var(--kh-rule);
+    font-size: var(--kh-fs-label); font-weight: 600; letter-spacing: 0.03em; line-height: 1.3; text-transform: uppercase;
+    text-align: start; vertical-align: middle; white-space: nowrap;
+}
+.dh-app :where(table.dh-stack) > tbody > tr > td {
+    height: var(--tb-row-h); padding: 10px var(--tb-pad); border: 0; background: transparent; color: var(--kh-text);
+    font-size: var(--fl-fs-cell); font-weight: 400; line-height: 1.4; vertical-align: middle;
+}
+.dh-app table.dh-stack > thead > tr > th:is(.text-right, .num),
+.dh-app table.dh-stack > tbody > tr > td:is(.text-right, .num) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dh-app table.dh-stack > thead > tr > th:is(.text-center),
+.dh-app table.dh-stack > tbody > tr > td:is(.text-center) { text-align: center; }
+.dh-app table.dh-stack > tbody > tr > td:is(.text-right, .num) { font-weight: 500; }
+.dh-app table.dh-stack > tbody > tr > td.text-right.font-semibold { font-weight: 600; }
+/* Long free text (a description, a customer name) is clipped with an ellipsis; the cell carries the full value in title. */
+@container dhl (min-width: 560px) {
+    .dh-app table.dh-stack td.dh-clip { max-width: 24ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dh-app table.dh-stack td.dh-clip--wide { max-width: 38ch; }
+}
+.dh-app :where(table.dh-stack) > tbody > tr:nth-child(even) { background: var(--tb-zebra); }
+@media (hover: hover) { .dh-app :where(table.dh-stack) > tbody > tr:hover { background: var(--tb-hover); } }
+.dh-app :where(table.dh-stack) > tbody > tr:focus-within { background: var(--tb-hover); }
+.dh-app table.dh-stack > tbody > tr:is(:nth-child(odd), :nth-child(even))[data-bulk-selected] { background-color: var(--tb-selected); }
+.dh-app :where(table.dh-stack) > tbody > tr:has(> .jf-table-empty) { background: transparent; }
+/* Summary row (report totals): the header's tint, bold, no rule. */
+.dh-app :where(table.dh-stack) > tfoot > tr > td {
+    height: var(--tb-row-h); padding: 10px var(--tb-pad); background: var(--tb-head); border: 0; color: var(--kh-ink); font-weight: 700; vertical-align: middle;
+}
+.dh-app table.dh-stack > tfoot > tr > td { font-weight: 700; }
+.dh-app :where(table.dh-stack) > tfoot > tr > td.text-right { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* First and last cells keep a little more room from the card edge. */
+.dh-app table.dh-stack > :is(thead, tbody, tfoot) > tr > :is(th, td):first-child:not(.dh-sno-th):not(.dh-sno):not(.dh-pick-th):not(.dh-pick) { padding-inline-start: 20px; }
+.dh-app table.dh-stack > :is(thead, tbody, tfoot) > tr > :is(th, td):last-child { padding-inline-end: 20px; }
+/* Row actions: light ghost controls beside a pointer (touch screens and stacked cards keep their bordered 44px buttons). */
+@media (pointer: fine) {
+    @container dhl (min-width: 560px) {
+        .dh-app table.dh-stack td .jf-row-action { width: 32px; height: 32px; min-height: 32px; border-color: transparent; background: transparent; color: var(--kh-text-2); transform: none; }
+        .dh-app table.dh-stack td .jf-row-action:hover { background: var(--kh-ink-soft); color: var(--kh-ink); }
+        .dh-app table.dh-stack td .btn.btn-secondary.btn-sm { min-height: 32px; border-color: transparent; background: transparent; box-shadow: none; color: var(--kh-ink); }
+        .dh-app table.dh-stack td .btn.btn-secondary.btn-sm:hover { background: var(--kh-ink-soft); }
+    }
+}
+/* The pager is the table's footer band: the header's tint, no rule. */
+@container dhl (min-width: 560px) { .dh-app .dh-table-card > .dh-pager { border-top: 0; background: var(--tb-head); } }
+/* Stacked cards keep one card per row: no stripe, no tinted summary band. */
+@container dhl (max-width: 559px) {
+    .dh-app .dh-pick-box, .dh-app .dh-pick-text { white-space: nowrap; } /* the phone card's "Select" label stayed one letter wide */
+    .dh-app table.dh-stack > tbody > tr:is(:nth-child(odd), :nth-child(even)) { background: var(--dh-card); }
+    .dh-app table.dh-stack > tfoot > tr > td { background: var(--dh-muted-surface); }
+}
+
+/* ---- KPI tiles and count tabs: soft borderless cards, equal height, figures prominent ---- */
+.dh-app .dh-stats { align-items: stretch; gap: var(--sp-3); }
+.dh-app .dh-stat {
+    display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; min-height: 84px; padding: 16px 18px;
+    border: 0; border-radius: var(--kh-radius-card); background: var(--kh-panel); box-shadow: var(--elev-1);
+}
+.dh-app .dh-stat-label { color: var(--kh-text-3); font-size: 12.5px; font-weight: 500; line-height: 1.3; }
+.dh-app .dh-stat-value { margin: 0; color: var(--kh-ink); font-size: clamp(1.25rem, 1.05rem + 0.6vw, 1.5rem); font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.dh-app .dh-stat-sub { margin: 0; }
+.dh-app .dh-tabs { gap: var(--sp-2); }
+.dh-app .dh-tabs .dh-tab { border-color: transparent; background: var(--kh-panel); box-shadow: var(--elev-1); }
+.dh-app .dh-tabs .dh-tab:hover { background: var(--kh-ink-soft); border-color: transparent; }
+.dh-app .dh-tabs .dh-tab[aria-current="page"] { background: var(--kh-ink-soft); border-color: transparent; box-shadow: inset 0 0 0 1px var(--kh-ink-edge); }
+.dh-app .dh-tab-count { color: var(--kh-text-2); }
 
 
 @media (min-width: 768px) and (max-width: 1023.98px) { .dh-nav-link, .dh-nav-link.active, .dh-logout { font-weight: 500; font-size: var(--fs-meta); } }
@@ -1502,11 +1565,12 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 .dh-content { animation: kh-fade var(--dur-1) var(--ease-out); }
 [role="tabpanel"]:not([hidden]) { animation: kh-fade 140ms var(--ease-out); }
 
-@media print { .dh-table-card::before, .dh-stat::before, .dh-sidebar::after { display: none; } }
+@media print { .dh-sidebar::after { display: none; } }
 
 /* Notices: the bell in the header band and the big centred card (owner 2026-11-24). Warn and info are an outline colour, never a fill. */
 .dh-bell { position: relative; flex: none; display: grid; place-items: center; width: var(--tap); height: var(--tap); padding: 0; border: 1px solid transparent; border-radius: var(--r-sm); background: transparent; color: var(--dh-ink-soft); cursor: pointer; }
 .dh-bell:hover { background: var(--dh-muted-surface); }
+@media (max-width: 1023.98px) { .dh-page-header .dh-bell:hover { background: color-mix(in srgb, #fff 12%, transparent); } }
 .dh-bell svg { width: 22px; height: 22px; }
 .dh-bell-n { position: absolute; top: 2px; right: 2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--dh-danger); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
 .dh-app dialog.nc { width: min(100% - 32px, 38rem); max-height: min(90dvh, 42rem); }
@@ -1518,11 +1582,11 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 .nc-head h3 { margin: 0; font-size: var(--fl-fs-h1); line-height: var(--fl-lh-head); font-weight: 600; color: var(--dh-ink); }
 .nc-head p { margin: 2px 0 0; color: var(--dh-muted); font-size: var(--fl-fs-cell); }
 .nc-body { flex: 1 1 auto; overflow: auto; display: grid; grid-auto-rows: max-content; align-content: start; gap: var(--sp-2); padding: var(--sp-4) var(--sp-5); }
-.nc-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: var(--tap); padding: var(--sp-3) var(--sp-4); border: 1px solid var(--dh-line); border-left-width: 4px; border-radius: var(--r-sm); background: var(--dh-card); color: var(--dh-ink); text-decoration: none; }
+.nc-row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-height: var(--tap); padding: var(--sp-3) var(--sp-4); border: 0; border-left: 2px solid transparent; border-radius: var(--r-sm); background: color-mix(in srgb, var(--kh-wash) 40%, #fff); color: var(--dh-ink); text-decoration: none; }
 .nc-row:hover, .nc-row:focus-visible { background: var(--dh-muted-surface); }
 .nc-danger { border-left-color: var(--dh-danger); }
 .nc-warn { border-left-color: var(--dh-warning-line); }
-.nc-info { border-left-color: var(--dh-line); }
+.nc-info { border-left-color: var(--kh-info-line); }
 .nc-text { display: grid; gap: 2px; min-width: 0; }
 .nc-text strong { font-size: var(--fl-fs-body); font-weight: 600; overflow-wrap: anywhere; }
 .nc-text span { color: var(--dh-muted); font-size: var(--fl-fs-cell); }
@@ -1530,3 +1594,24 @@ html:has(dialog.dh-fpanel[open]) .dh-scroll { overflow: hidden; }
 .nc-go svg { width: 16px; height: 16px; }
 .nc-empty { margin: 0; padding: var(--sp-6) 0; text-align: center; color: var(--dh-muted); }
 .nc-foot { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: var(--sp-2); padding: var(--sp-3) var(--sp-5) var(--sp-4); border-top: 1px solid var(--dh-line); }
+
+/* Access chip (sidebar footer): outline only, never a fill. The state shows in the border weight, the icon and the words. */
+.dh-access { display: grid; gap: 2px; padding: var(--sp-2) var(--sp-3); border: 1px solid var(--dh-sidebar-line); border-radius: var(--kh-radius); color: var(--dh-sidebar-ink); text-decoration: none; font-size: var(--fl-fs-meta); line-height: var(--fl-lh-head); min-height: var(--tap); align-content: center; }
+.dh-access:hover { background: var(--dh-sidebar-hover); }
+.dh-access-until { display: flex; align-items: center; gap: var(--sp-2); font-weight: 600; color: var(--dh-sidebar-ink-strong); overflow-wrap: anywhere; }
+.dh-access-until svg { flex: none; width: 14px; height: 14px; }
+.dh-access-left { color: var(--dh-sidebar-muted); }
+.dh-access--warn { border-color: var(--dh-sidebar-ink-strong); }
+.dh-access--danger { border: 2px solid var(--dh-sidebar-ink-strong); }
+.dh-access--danger .dh-access-left { color: var(--dh-sidebar-ink-strong); font-weight: 700; }
+
+/* Refer a jeweller page */
+.dh-ref { display: grid; gap: var(--sp-5); max-width: 720px; }
+.dh-ref-card { padding: var(--fl-card-pad); border: 1px solid var(--dh-line); border-radius: var(--dh-card-radius); background: var(--dh-card); display: grid; gap: var(--sp-3); }
+.dh-ref-h { margin: 0; font-size: var(--fl-fs-h1); font-weight: 600; color: var(--dh-ink); display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-2); }
+.dh-ref-count { font-size: var(--fl-fs-cell); font-weight: 500; color: var(--dh-muted); }
+.dh-ref-row { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.dh-ref-link { flex: 1 1 220px; min-width: 0; min-height: var(--tap); padding: 0 var(--sp-3); border: 1px solid var(--dh-line); border-radius: var(--r-sm); background: var(--dh-muted-surface); color: var(--dh-ink); font: inherit; }
+.dh-ref-code, .dh-ref-note, .dh-ref-empty { margin: 0; color: var(--dh-muted); font-size: var(--fl-fs-cell); }
+.dh-ref-note:empty { display: none; }
+.dh-ref-steps { margin: 0; padding-left: var(--sp-5); display: grid; gap: var(--sp-1); color: var(--dh-ink-soft); }

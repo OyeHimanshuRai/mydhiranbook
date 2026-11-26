@@ -5,11 +5,11 @@
         <x-status-card icon="x" title="We could not approve your shop">
             <p class="sc-lede"><strong>{{ $shop->name }}</strong> was not approved. You can fix the details below and send them again.</p>
             @if($shop->review_note)<div class="sc-note"><strong>Reason</strong><p>{{ $shop->review_note }}</p></div>@endif
-            <form method="POST" action="{{ route('dhiran.resubmit') }}" data-turbo="false" data-once class="sc-form">@csrf
+            <form method="POST" action="{{ route('dhiran.resubmit') }}" data-turbo="false" data-once data-validate class="sc-form">@csrf
                 <div class="ck-grid">
                     <x-site.field wide name="name" label="Business name" req :value="old('name', $shop->name)" required maxlength="150" autocomplete="organization" />
-                    <x-site.field name="phone" label="Business phone" type="tel" req :value="old('phone', $shop->phone)" required inputmode="numeric" maxlength="16" autocomplete="tel" placeholder="10-digit number" />
-                    <x-site.field name="loan_number_prefix" label="Loan receipt prefix" hint="Printed before every loan number." :value="old('loan_number_prefix', $prefix)" maxlength="10" autocapitalize="characters" />
+                    <x-site.field name="phone" label="Business phone" type="tel" req :value="old('phone', $shop->phone)" required inputmode="numeric" maxlength="16" autocomplete="tel" data-rule="mobile" placeholder="10-digit number" />
+                    <x-site.field name="loan_number_prefix" label="Loan receipt prefix" hint="Printed before every loan number." :value="old('loan_number_prefix', $prefix)" maxlength="10" autocapitalize="characters" data-rule="prefix" />
                     <x-site.field wide name="address" label="Business address" req :value="old('address', $shop->address)" required maxlength="500" autocomplete="street-address" />
                 </div>
                 <div class="sc-actions"><button type="submit" class="ui-btn sc-btn" data-busy="Sending…">Fix and send again</button></div>

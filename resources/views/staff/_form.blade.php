@@ -3,7 +3,7 @@
     $editing = isset($staff);
     $user = $editing ? $staff : null;
 @endphp
-<form method="POST" action="{{ $editing ? route('staff.update', $staff) : route('staff.store') }}" class="st-stack"
+<form method="POST" action="{{ $editing ? route('staff.update', $staff) : route('staff.store') }}" class="st-stack" data-validate
       x-data="stSaveForm({{ session()->hasOldInput() ? 'true' : 'false' }})" @input="dirty = true" @change="dirty = true" @submit="submit($event)"
       @beforeunload.window="if (dirty && !saving) $event.preventDefault()">
     @csrf
@@ -13,7 +13,7 @@
         <x-settings.panel title="Who they are" desc="Their name and the number they sign in with.">
             <div class="st-grid">
                 <x-settings.field name="name" id="name" label="Full name" wide req required autocomplete="off" placeholder="Full name" :value="old('name', $user?->name)" />
-                <x-settings.field name="mobile_number" id="mobile_number" label="Mobile number" type="tel" req inputmode="numeric" maxlength="10" pattern="[0-9]{10}" required autocomplete="off" prefix="+91"
+                <x-settings.field name="mobile_number" id="mobile_number" label="Mobile number" type="tel" req inputmode="numeric" maxlength="10" pattern="[0-9]{10}" data-rule="mobile" required autocomplete="off" prefix="+91"
                                   placeholder="10 digits" :value="old('mobile_number', $user?->mobile_number)" hint="Used for login" />
                 <x-settings.field name="email" id="email" label="Email" type="email" autocomplete="off" placeholder="name@example.com" :value="old('email', $user?->email)" />
             </div>

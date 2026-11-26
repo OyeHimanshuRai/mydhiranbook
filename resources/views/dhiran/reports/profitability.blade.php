@@ -64,7 +64,7 @@
                                 <td data-label="Loan #" data-cell="title" class="whitespace-nowrap">
                                     <a href="{{ route('dhiran.show', $loan) }}" class="font-mono font-medium text-slate-700 hover:text-[var(--kh-ink-2)]">{{ $loan->loan_number }}</a>
                                 </td>
-                                <td data-label="Customer" data-low="2" class="font-medium text-slate-700">{{ $loan->customer?->name ?? '-' }}</td>
+                                <td data-label="Customer" data-low="2" class="dh-clip font-medium text-slate-700" title="{{ $loan->customer?->name ?? '-' }}">{{ $loan->customer?->name ?? '-' }}</td>
                                 <x-dhiran.mobile-cell :number="$loan->customer?->mobile" low="1" />
                                 <td data-label="Principal" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->principal_amount, 2) }}</td>
                                 <td data-label="Interest Collected" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->total_interest_collected, 2) }}</td>

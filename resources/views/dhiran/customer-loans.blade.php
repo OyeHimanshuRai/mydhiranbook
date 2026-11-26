@@ -77,7 +77,7 @@
                             <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Date</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Principal</th>
                             <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Outstanding</th>
-                            <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Rate</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Rate</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Status</th>
                             <th class="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Actions</th>
                         </tr>
@@ -92,7 +92,7 @@
                                 <td data-label="Date" class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">{{ $loan->loan_date->format('d M Y') }}</td>
                                 <td data-label="Principal" class="px-4 py-4 whitespace-nowrap text-sm text-right text-slate-700">{{ $currencySymbol ?? '₹' }}{{ number_format($loan->principal_amount, 2) }}</td>
                                 <td data-label="Outstanding" class="px-4 py-4 whitespace-nowrap text-sm text-right font-medium text-slate-800">{{ $currencySymbol ?? '₹' }}{{ number_format($loan->total_outstanding, 2) }}</td>
-                                <td data-label="Rate" class="px-4 py-4 whitespace-nowrap text-sm text-center text-slate-600">{{ $loan->interest_rate_monthly }}%/mo</td>
+                                <td data-label="Rate" class="px-4 py-4 whitespace-nowrap text-sm text-right text-slate-600">{{ $loan->interest_rate_monthly }}%/mo</td>
                                 <td data-label="Status" class="px-4 py-4 whitespace-nowrap text-center">
                                     <x-dhiran.status :value="$loan->status" />
                                 </td>

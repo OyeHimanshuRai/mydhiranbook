@@ -35,7 +35,7 @@
                                 <th scope="col" data-low="2">Mobile</th>
                                 <th scope="col" class="text-right">Lent</th>
                                 <th scope="col" class="text-right">Owed now</th>
-                                <th scope="col" class="text-center" data-low="1">Items</th>
+                                <th scope="col" class="text-right" data-low="1">Items</th>
                                 <th scope="col">Check</th>
                             </tr>
                         </thead>
@@ -50,7 +50,7 @@
                                     <td data-label="Mobile" data-low="2">{{ $d['borrower']['mobile'] ?? '---' }}</td>
                                     <td data-label="Lent" class="text-right">{{ is_numeric($d['principal_amount']) ? '₹' . \App\Support\IndianNumber::format($d['principal_amount']) : '---' }}</td>
                                     <td data-label="Owed now" class="text-right">{{ is_numeric($d['principal_owed']) ? '₹' . \App\Support\IndianNumber::format($d['principal_owed']) : '---' }}</td>
-                                    <td data-label="Items" class="text-center" data-low="1">{{ count($d['items']) }}</td>
+                                    <td data-label="Items" class="text-right" data-low="1">{{ count($d['items']) }}</td>
                                     <td data-label="Check">
                                         <div class="fm-check-body">
                                             @if($loan['problems'])

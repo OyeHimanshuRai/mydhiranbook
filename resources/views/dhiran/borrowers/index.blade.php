@@ -51,9 +51,9 @@
                                     <th scope="col" data-low="1">Code</th>
                                     <th scope="col">Loan state</th>
                                     <th scope="col" data-low="2">Mobile</th>
-                                    <th scope="col" class="text-center">Active</th>
-                                    <th scope="col" class="text-center" data-low="2">Closed</th>
-                                    <th scope="col" class="text-center" data-low="1">Forfeited</th>
+                                    <th scope="col" class="text-right">Active</th>
+                                    <th scope="col" class="text-right" data-low="2">Closed</th>
+                                    <th scope="col" class="text-right" data-low="1">Forfeited</th>
                                     <th scope="col" class="text-right">Outstanding</th>
                                     <th scope="col" class="text-center">Actions</th>
                                 </tr>
@@ -82,9 +82,9 @@
                                         @endif
                                     </td>
                                     <x-dhiran.mobile-cell :number="$borrower->mobile" />
-                                    <td data-label="Active" class="text-center font-medium">{{ $borrower->active_loans_count }}</td>
-                                    <td data-label="Closed" data-low="2" class="text-center text-slate-500">{{ $borrower->closed_loans_count }}</td>
-                                    <td data-label="Forfeited" data-low="1" class="text-center">{{ $borrower->forfeited_loans_count }}</td>
+                                    <td data-label="Active" class="text-right font-medium">{{ $borrower->active_loans_count }}</td>
+                                    <td data-label="Closed" data-low="2" class="text-right text-slate-500">{{ $borrower->closed_loans_count }}</td>
+                                    <td data-label="Forfeited" data-low="1" class="text-right">{{ $borrower->forfeited_loans_count }}</td>
                                     <td data-label="Outstanding" class="whitespace-nowrap text-right font-semibold text-slate-800">{{ $rupee($outstanding[$borrower->id] ?? 0) }}</td>
                                     <td data-label="Actions" data-cell="actions" class="whitespace-nowrap text-center">
                                         <a href="{{ route('dhiran.borrowers.show', $borrower) }}" class="jf-row-action jf-row-action--view dh-act-extra" title="Profile"><x-icon name="eye" size="16" /><span class="dh-act-label">Profile</span></a>

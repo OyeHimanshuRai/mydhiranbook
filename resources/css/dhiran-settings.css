@@ -67,7 +67,7 @@
 .dh-app .st-error svg { flex: none; margin-top: 1px; }
 
 /* Errors summary at the top of a failed form */
-.dh-app .st-notice { display: flex; gap: var(--sp-3); align-items: flex-start; padding: var(--sp-3) var(--sp-4); border: 1px solid var(--dh-line); border-radius: var(--r-md); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fl-fs-body); }
+.dh-app .st-notice { display: flex; gap: var(--sp-3); align-items: flex-start; padding: var(--sp-3) var(--sp-4); border: 0; border-radius: var(--r-md); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fl-fs-body); }
 .dh-app .st-notice svg { flex: none; margin-top: 2px; }
 
 /* ---- Save bar: sticky bottom on phones and tablets, a normal row at the end of the form on desktop ---- */
@@ -114,7 +114,7 @@
 .dh-app .st-meter-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .dh-app .st-meter-figure { margin: 0; font-size: var(--fl-fs-body); color: var(--dh-ink-soft); }
 .dh-app .st-meter-figure strong { font-size: var(--fl-fs-h2); color: var(--dh-ink); font-variant-numeric: tabular-nums; }
-.dh-app .st-bar { height: 8px; border-radius: var(--r-pill); background: var(--dh-muted-surface); overflow: hidden; border: 1px solid var(--dh-line); }
+.dh-app .st-bar { height: 8px; border-radius: var(--r-pill); background: var(--dh-muted-surface); overflow: hidden; border: 0; }
 .dh-app .st-bar > span { display: block; height: 100%; width: var(--w, 0%); background: var(--kh-ink); }
 .dh-app .st-bar.is-warn > span { background: var(--kh-ink); }
 .dh-app .st-bar.is-full > span { background: var(--dh-danger); }
@@ -170,10 +170,10 @@
 @media (min-width: 640px) { .dh-app .st-choices { grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); } }
 .dh-app .st-choice { position: relative; display: block; min-width: 0; cursor: pointer; }
 .dh-app .st-choice input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
-.dh-app .st-choice > span { display: block; height: 100%; min-height: 48px; padding: var(--sp-3); border: 1.5px solid var(--ui-field-edge); border-radius: var(--r-sm); background: var(--dh-card); }
+.dh-app .st-choice > span { display: block; height: 100%; min-height: 48px; padding: var(--sp-3); border: 1px solid var(--ui-field-edge); border-radius: var(--r-sm); background: var(--dh-card); }
 .dh-app .st-choice b { display: block; font-size: var(--fl-fs-body); color: var(--dh-ink); }
 .dh-app .st-choice small { display: block; margin-top: var(--sp-1); font-size: 0.8125rem; line-height: 1.4; color: var(--dh-muted); }
-.dh-app .st-choice input:checked + span { border-color: var(--kh-ink); background: var(--dh-accent-soft); box-shadow: inset 0 0 0 1px var(--kh-ink); }
+.dh-app .st-choice input:checked + span { border-color: var(--kh-ink); background: var(--dh-accent-soft); box-shadow: none; }
 .dh-app .st-choice input:focus-visible + span { outline: 2px solid var(--dh-focus); outline-offset: 2px; }
 
 /* ---- Plan & billing ---- */

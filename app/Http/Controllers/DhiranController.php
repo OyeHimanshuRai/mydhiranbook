@@ -417,6 +417,11 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
 
         $query = $filters->applyToLoans(DhiranLoan::where('shop_id', $shopId));
         if ($request->query('export') === 'csv') {
+            // Loans ticked on the list: only those, on top of the shop scope and the filters. Never more than 100.
+            if ($request->has('ids')) {
+                $ids = $request->validate(self::BULK_IDS_RULES)['ids'];
+                $query->whereIn('dhiran_loans.id', array_map('intval', $ids));
+            }
             return app(\App\Services\Dhiran\DhiranExports::class)->loans($query->latest()->orderByDesc('id'), 'loans-' . now()->toDateString());
         }
         // id breaks ties (loans saved in the same second), so rows never shift between pages or exports.
@@ -821,6 +826,29 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
         return view('dhiran.tag', compact('loan', 'shop', 'width'));
     }
 
+    /** Rules for the loan ids ticked on the Loans list (CSV export and bulk tags). */
+    private const BULK_IDS_RULES = ['ids' => ['required', 'array', 'min:1', 'max:100'], 'ids.*' => ['required', 'integer', 'min:1']];
+
+    /** Item tag slips for the loans ticked on the Loans list: one 58 mm (or 80 mm) slip per loan. Other shops' ids are skipped silently. */
+    public function tags(Request $request)
+    {
+        $check = \Illuminate\Support\Facades\Validator::make($request->query(), self::BULK_IDS_RULES);
+        abort_if($check->fails(), 422, $check->errors()->first());
+        $ids = array_values(array_unique(array_map('intval', $check->validated()['ids'])));
+
+        $loans = DhiranLoan::where('shop_id', auth()->user()->shop_id)->whereIn('id', $ids)->with(['customer', 'items', 'shop'])->get()
+            ->sortBy(fn ($loan) => array_search((int) $loan->id, $ids, true))->values();
+        abort_if($loans->isEmpty(), 404);
+
+        $shop = $loans->first()->shop;
+        $width = (int) $request->query('w') === 80 ? 80 : 58; // bill roll width in mm
+        foreach ($loans as $loan) {
+            \App\Services\Dhiran\LoanLog::forLoan($loan, 'document.printed', 'print', "Item tag opened for printing ({$width} mm)");
+        }
+
+        return view('dhiran.tags-bulk', compact('loans', 'shop', 'width'));
+    }
+
     public function closureCertificate(DhiranLoan $loan)
     {
         abort_unless((int) $loan->shop_id === (int) auth()->user()->shop_id, 404);
@@ -1135,6 +1163,7 @@ class DhiranController extends Controller implements \Illuminate\Routing\Control
             'loan_number_digits'            => 'nullable|integer|min:1|max:8',
         ]);
 
+        if (! empty($data['loan_number_prefix'])) { $data['loan_number_prefix'] = strtoupper($data['loan_number_prefix']); } // DH-1 and dh-1 are one prefix
         $data['sms_reminders_enabled'] = $request->boolean('sms_reminders_enabled');
         $data['advance_interest_enabled'] = $request->boolean('advance_interest_enabled');
         $data['advance_interest_default_months'] = $data['advance_interest_default_months'] ?? 1;

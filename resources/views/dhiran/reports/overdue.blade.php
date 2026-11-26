@@ -32,7 +32,7 @@
                             <th scope="col" data-low="2">Mobile</th>
                             <th scope="col" class="text-right">Principal</th>
                             <th scope="col" class="text-right">Outstanding</th>
-                            <th scope="col" class="text-center">Days Overdue</th>
+                            <th scope="col" class="text-right">Days Overdue</th>
                             <th scope="col">Maturity Date</th>
                             <th scope="col" data-low="1">Grace End</th>
                             <th scope="col" class="text-center">Notice Sent?</th>
@@ -51,11 +51,11 @@
                                 <td data-label="Loan #" data-cell="title" class="whitespace-nowrap">
                                     <a href="{{ route('dhiran.show', $loan) }}" class="font-mono font-medium text-slate-700 hover:text-[var(--kh-ink-2)]">{{ $loan->loan_number }}</a>
                                 </td>
-                                <td data-label="Customer" class="font-medium text-slate-700">{{ $loan->customer?->name ?? '-' }}</td>
+                                <td data-label="Customer" class="dh-clip font-medium text-slate-700" title="{{ $loan->customer?->name ?? '-' }}">{{ $loan->customer?->name ?? '-' }}</td>
                                 <x-dhiran.mobile-cell :number="$loan->customer?->mobile" />
                                 <td data-label="Principal" class="whitespace-nowrap text-right">{{ \App\Support\IndianNumber::rupee((float) $loan->principal_amount, 2) }}</td>
                                 <td data-label="Outstanding" class="whitespace-nowrap text-right font-semibold">{{ \App\Support\IndianNumber::rupee($loan->totalOutstanding(), 2) }}</td>
-                                <td data-label="Days Overdue" data-cell="status" class="whitespace-nowrap text-center">
+                                <td data-label="Days Overdue" data-cell="status" class="whitespace-nowrap text-right">
                                     @if($daysOverdue > 90)
                                         <span class="dh-status dh-status--danger">{{ $daysOverdue }}d</span>
                                     @else

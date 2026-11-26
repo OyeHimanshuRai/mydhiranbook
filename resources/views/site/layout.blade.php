@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head>@include('site._head', ['title' => $__env->yieldContent('title'), 'description' => $__env->yieldContent('description')])</head><body class="site @yield('bodyclass')">
+<!doctype html><html lang="en"><head>@include('site._head', ['title' => $__env->yieldContent('title'), 'description' => $__env->yieldContent('description')])</head><body class="site @unless($__env->hasSection('shell')) site-public @endunless @yield('bodyclass')">
 <a class="skip" href="#main">Skip to content</a>
 @hasSection('shell')@yield('shell')@else
 <header class="site-head"><div class="site-head-in"><a href="/" class="brand">mydhiranbook<span>.</span></a><button type="button" class="site-burger" data-menu aria-expanded="false" aria-controls="site-nav">Menu</button><nav id="site-nav" class="site-nav" aria-label="Main"><a href="/pricing" @if(request()->is('pricing')) aria-current="page" @endif>Pricing</a><a href="/contact" @if(request()->is('contact')) aria-current="page" @endif>Contact</a><a href="/login">Sign in</a><a href="/register" class="ui-btn ui-btn--sm">Get started</a></nav></div></header>

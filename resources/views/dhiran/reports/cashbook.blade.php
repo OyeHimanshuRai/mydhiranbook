@@ -82,7 +82,7 @@
                                     {{ $entry->type === 'in' ? '+' : '-' }}₹{{ \App\Support\IndianNumber::format((float) $entry->amount, 2) }}
                                 </td>
                                 <td data-label="Method" class="whitespace-nowrap">{{ \App\Models\Dhiran\DhiranPayment::methodLabel($entry->payment_method) }}</td>
-                                <td data-label="Description" data-low="1">{{ $entry->description ?? '-' }}</td>
+                                <td data-label="Description" data-low="1" class="dh-clip dh-clip--wide" title="{{ $entry->description ?? '-' }}">{{ $entry->description ?? '-' }}</td>
                                 <td data-label="Running Balance" class="whitespace-nowrap text-right font-medium {{ $runningBalance >= 0 ? '' : 'text-red-600' }}" data-running-balance>{{ $showRunning ? \App\Support\IndianNumber::rupee($runningBalance, 2) : '—' }}</td>
                             </tr>
                         @empty

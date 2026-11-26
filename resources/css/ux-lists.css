@@ -1,0 +1,53 @@
+/* ux-lists */
+
+/* Bulk selection on the Loans list (resources/js/ux/bulk.js). Read-only actions only. Tokens only; no yellow. */
+.dh-app .dh-pick-box { display: flex; align-items: center; justify-content: center; gap: var(--sp-2); min-width: 28px; min-height: 28px; margin: 0; cursor: pointer; }
+.dh-app .dh-pick-box input, .dh-app .dh-pick-all-sm input { width: 18px; height: 18px; margin: 0; accent-color: var(--dh-accent); cursor: pointer; }
+.dh-app .dh-pick-box input:focus-visible, .dh-app .dh-pick-all-sm input:focus-visible { outline: 2px solid var(--dh-focus); outline-offset: 2px; }
+.dh-app table.dh-stack :is(th.dh-pick-th, td.dh-pick) { width: 44px; padding-inline: var(--sp-3) var(--sp-1) !important; text-align: center; }
+.dh-app .dh-pick-text, .dh-app .dh-pick-all-sm { display: none; }
+/* Touch screens and narrow desktops: a 44px hit area without taller rows (padding grown, margin taken back). */
+@media (max-width: 1023.98px), (pointer: coarse) {
+    .dh-app .dh-pick-box { min-width: var(--tap); min-height: var(--tap); margin-block: calc(var(--sp-3) * -1); }
+}
+.dh-app table.dh-stack > tbody > tr[data-bulk-selected] { background-color: color-mix(in srgb, var(--dh-accent) 7%, var(--dh-card)); }
+
+/* Stacked cards: the Select box is the first line of each card; the head's box is hidden, the one above the cards replaces it. */
+@container dhl (max-width: 559px) {
+    .dh-app .dh-pick-all-sm { display: block; margin-bottom: var(--sp-3); }
+    .dh-app .dh-pick-all-sm label { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--tap); font-size: var(--fl-fs-body); font-weight: 500; color: var(--dh-ink-soft); cursor: pointer; }
+    .dh-app table.dh-stack th.dh-pick-th { visibility: hidden; }
+    .dh-app table.dh-stack > tbody > tr > td.dh-pick { grid-column: 1 / -1; grid-row: 1; justify-content: flex-start; padding: 0 0 var(--sp-1); text-align: left; position: relative; z-index: 1; }
+    .dh-app table.dh-stack > tbody > tr > td.dh-pick .dh-pick-box { justify-content: flex-start; margin-block: 0; }
+    .dh-app .dh-pick-text { display: inline; color: var(--dh-ink-soft); font-size: var(--fl-fs-body); font-weight: 500; }
+    .dh-app table.dh-stack > tbody > tr:has(> td.dh-pick) > td[data-cell="title"],
+    .dh-app table.dh-stack > tbody > tr:has(> td.dh-pick) > td[data-cell="status"] { grid-row: 2; }
+}
+
+/* The action bar: sticks to the bottom of the page on desktop, docks fixed to the screen bottom on phones. */
+.dh-app .dh-bulk-dock { flex: none; padding-block: 0; }
+.dh-app .dh-bulk {
+    position: sticky; bottom: 0; z-index: 30; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2) var(--sp-3);
+    margin-top: var(--sp-3); padding: var(--sp-3) var(--sp-4); background: var(--dh-card); border: 1px solid var(--dh-line);
+    border-radius: var(--dh-card-radius); box-shadow: 0 -6px 20px color-mix(in srgb, var(--dh-shadow-tint) 10%, transparent);
+}
+.dh-app .dh-bulk[hidden] { display: none; }
+.dh-app .dh-bulk-count { color: var(--dh-ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.dh-app .dh-bulk-note { flex: 1 1 12rem; color: var(--dh-ink-soft); font-size: var(--fl-fs-meta); }
+.dh-app .dh-bulk-note:empty { display: none; }
+.dh-app .dh-bulk-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-inline-start: auto; }
+@media (prefers-reduced-motion: no-preference) {
+    .dh-app .dh-bulk:not([hidden]) { animation: dh-bulk-in 160ms ease-out; }
+    @keyframes dh-bulk-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+}
+@media (max-width: 767.98px) {
+    .dh-app .dh-bulk {
+        position: fixed; inset-inline: 0; bottom: 0; z-index: 60; margin: 0; border-inline: 0; border-bottom: 0; border-radius: 0;
+        padding: var(--sp-3) var(--sp-4) calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
+    }
+    .dh-app .dh-bulk-actions { flex: 1 1 100%; margin-inline-start: 0; }
+    .dh-app .dh-bulk-actions .btn { flex: 1 1 0; min-height: var(--tap); justify-content: center; }
+    /* Keep the last row (and the pager) clear of the docked bar. */
+    .dh-bulk-on .dh-page--list turbo-frame#dh-results { padding-bottom: var(--dh-bulk-h, 0px); }
+    .dh-bulk-on .dh-page--list .dh-pager { bottom: var(--dh-bulk-h, 0px); }
+}

@@ -15,11 +15,6 @@ use Illuminate\Support\Facades\DB;
 /** Onboarding: verify email -> business form -> wait for an admin to approve the shop (no payment step). */
 class DhiranOnboardingController extends Controller
 {
-    /** Free text must be valid UTF-8 without control characters (a NUL byte or broken bytes reach the database as an error). */
-    private static function clean(): array
-    {
-        return ['regex:/^[^\x00-\x08\x0B\x0C\x0E-\x1F\x7F]*$/', fn ($attr, $value, $fail) => is_string($value) && ! mb_check_encoding($value, 'UTF-8') ? $fail('The '.$attr.' contains characters we cannot store.') : null];
-    }
 
     /** The old plans step is gone: old links land on the business form. */
     public function plans()
@@ -31,7 +26,7 @@ class DhiranOnboardingController extends Controller
     {
         $user = Auth::user();
         if ($user->shop_id) { return redirect()->route('dhiran.pending'); }
-        return view('dhiran.onboarding.create', ['user' => $user]);
+        return view('dhiran.onboarding.create', ['user' => $user, 'ref' => session('referral_ref')]);
     }
 
     public function store(Request $request, TenantRoleService $roles)
@@ -40,22 +35,32 @@ class DhiranOnboardingController extends Controller
         if ($auth->shop_id) { return redirect()->route('dhiran.pending'); }
         if (is_string($request->input('phone'))) { $request->merge(['phone' => Mobile::normalize($request->input('phone')) ?? $request->input('phone')]); }
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:150', ...self::clean()], 'phone' => ['required', 'string', new IndianMobileRule()],
-            'address' => ['required', 'string', 'max:500', ...self::clean()], 'loan_number_prefix' => 'nullable|string|max:10|alpha_dash',
+            'name' => 'required|string|max:150', 'phone' => ['required', 'string', new IndianMobileRule()],
+            'address' => 'required|string|max:500', 'loan_number_prefix' => 'nullable|string|max:10|alpha_dash',
+            'referred_by' => 'nullable|string|max:80',
         ]);
 
-        $created = DB::transaction(function () use ($auth, $data, $roles) {
+        DB::transaction(function () use ($auth, $data, $roles) {
             $user = User::whereKey($auth->id)->lockForUpdate()->firstOrFail();
             if ($user->shop_id) { return false; }
             // pending: the shop exists but nothing opens until an admin approves it (UseShop sends everyone to the waiting page)
             $shop = Shop::create(['name' => $data['name'], 'phone' => $data['phone'], 'address' => $data['address'], 'status' => 'pending']);
-            TenantContext::runFor($shop->id, fn () => DhiranSettings::getForShop($shop->id)->update(['is_enabled' => true] + (($data['loan_number_prefix'] ?? '') !== '' ? ['loan_number_prefix' => $data['loan_number_prefix']] : [])));
+            $this->rememberReferrer($shop, trim((string) ($data['referred_by'] ?? '')));
+            TenantContext::runFor($shop->id, fn () => DhiranSettings::getForShop($shop->id)->update(['is_enabled' => true] + (($data['loan_number_prefix'] ?? '') !== '' ? ['loan_number_prefix' => strtoupper($data['loan_number_prefix'])] : [])));
             $owner = $roles->ensureDefaultsForShop($shop->id)['owner'];
             $user->forceFill(['shop_id' => $shop->id, 'role_id' => $owner->id])->save();
             return true;
         });
-        if (!$created) { return redirect()->route('dhiran.pending'); }
+        session()->forget('referral_ref');
         return redirect()->route('dhiran.pending');
+    }
+
+    /** Who told this shop about us: a matching shop code (never the shop's own) links that shop, anything else is kept as the typed text. */
+    private function rememberReferrer(Shop $shop, string $ref): void
+    {
+        if ($ref === '' || strcasecmp($ref, (string) $shop->referral_code) === 0) { return; }
+        $referrer = Shop::cleanReferralCode($ref) ? Shop::where('referral_code', strtoupper($ref))->whereKeyNot($shop->id)->value('id') : null;
+        $shop->update($referrer ? ['referred_by_shop_id' => $referrer] : ['referred_by_text' => mb_substr($ref, 0, 80)]);
     }
 
     /** The waiting page: shown until an admin approves (then straight to the dashboard) or turns the request down. */
@@ -78,8 +83,8 @@ class DhiranOnboardingController extends Controller
         abort_unless($auth->shop_id && $auth->is_active && $auth->isShopOwner(), 403);
         if (is_string($request->input('phone'))) { $request->merge(['phone' => Mobile::normalize($request->input('phone')) ?? $request->input('phone')]); }
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:150', ...self::clean()], 'phone' => ['required', 'string', new IndianMobileRule()],
-            'address' => ['required', 'string', 'max:500', ...self::clean()], 'loan_number_prefix' => 'nullable|string|max:10|alpha_dash',
+            'name' => 'required|string|max:150', 'phone' => ['required', 'string', new IndianMobileRule()],
+            'address' => 'required|string|max:500', 'loan_number_prefix' => 'nullable|string|max:10|alpha_dash',
         ]);
         $sent = DB::transaction(function () use ($auth, $data, $request) {
             $shop = Shop::whereKey($auth->shop_id)->lockForUpdate()->firstOrFail();
@@ -90,7 +95,7 @@ class DhiranOnboardingController extends Controller
                 'previous_review_note' => $shop->review_note, 'review_note' => null, 'reviewed_at' => null,
                 'submissions' => $shop->submissions + 1, 'resubmitted_at' => now(),
             ]);
-            if (($data['loan_number_prefix'] ?? '') !== '') { TenantContext::runFor($shop->id, fn () => DhiranSettings::getForShop($shop->id)->update(['loan_number_prefix' => $data['loan_number_prefix']])); }
+            if (($data['loan_number_prefix'] ?? '') !== '') { TenantContext::runFor($shop->id, fn () => DhiranSettings::getForShop($shop->id)->update(['loan_number_prefix' => strtoupper($data['loan_number_prefix'])])); }
             app(\App\Services\PlatformAuditService::class)->log(null, 'shop.resubmitted', 'shop', $shop->id, $before, $shop->only('name', 'phone', 'address', 'status') + ['submissions' => $shop->submissions], 'Owner fixed the details and sent them again', $request);
             return true;
         });

@@ -23,6 +23,7 @@
         <dl class="adm-kv">
           <div><dt>Phone</dt><dd>@if($shop->phone)<a href="tel:{{ preg_replace('/[^0-9+]/', '', $shop->phone) }}">{{ $shop->phone }}</a>@else <span class="adm-muted">Not given</span>@endif</dd></div>
           <div><dt>Address</dt><dd>{{ $shop->address ?: 'Not given' }}</dd></div>
+          <div><dt>Referred by</dt><dd>@include('admin._referrer')</dd></div>
         </dl></section>
       <section aria-label="Owner"><h3 class="rq-label">Owner</h3>
         <dl class="adm-kv">

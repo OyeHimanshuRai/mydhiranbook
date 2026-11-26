@@ -1,0 +1,33 @@
+/* ux-forms: draft banner + "Draft saved" note (autosave.js) and inline messages (inline-validate.js). Tokens only, no motion for reduced-motion users. */
+
+.ux-draft-banner {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-2) var(--sp-4);
+    margin: 0 0 var(--sp-4); padding: var(--sp-3) var(--sp-4); min-width: 0;
+    background: var(--dh-muted-surface); border: 1px solid var(--dh-line); border-radius: var(--r-md);
+}
+.ux-draft-banner:focus-visible { outline: var(--focus); outline-offset: 2px; }
+.ux-draft-text { margin: 0; min-width: 0; flex: 1 1 14rem; color: var(--dh-ink); font-size: 0.9375rem; line-height: 1.4; overflow-wrap: anywhere; }
+.ux-draft-acts { display: flex; gap: var(--sp-2); flex: none; }
+
+/* Reserved in the bar's own corner (the bar is sticky, so it is the containing block): saying "saved" never moves anything. */
+.ux-draft-status {
+    display: inline-block; min-height: 1.25rem; font-size: 0.75rem; line-height: 1.25rem; color: var(--dh-muted);
+    opacity: 0; transition: opacity 0.3s ease; pointer-events: none;
+}
+.ux-draft-status.is-on { opacity: 1; }
+.fm-bar > .ux-draft-status {
+    position: absolute; right: var(--dh-pad, var(--sp-4)); bottom: 100%; margin-bottom: var(--sp-1); min-height: 0;
+    padding: 0 var(--sp-2); background: var(--dh-card); border: 1px solid var(--dh-line); border-radius: var(--r-sm);
+}
+.fm-bar > .ux-draft-status:empty { border-color: transparent; background: transparent; }
+
+.ux-err { margin: var(--sp-2) 0 0; font-size: 0.875rem; line-height: 1.4; font-weight: 600; color: var(--dh-danger, #b42318); overflow-wrap: anywhere; }
+
+/* Settings and site fields only style their own server-error class; give a client-flagged field the same look. */
+.dh-app form[data-validate] :is(.st-control, .fm-control)[aria-invalid="true"]:not(#_) { border-color: var(--dh-danger); background-color: var(--dh-danger-soft); }
+.dh-app form[data-validate] :is(.st-affix, .fm-affix):has(> [aria-invalid="true"]) { border-color: var(--dh-danger); background-color: var(--dh-danger-soft); }
+form[data-validate] .ui-field input[aria-invalid="true"]:not(#_) { border-color: var(--dh-danger); background-color: var(--dh-danger-soft); }
+
+@media (prefers-reduced-motion: reduce) {
+    .ux-draft-status { transition: none; }
+}

@@ -1,0 +1,82 @@
+/* ux-palette: command palette (Ctrl/Cmd K), its trigger button and the shortcuts help. Tokens only; no yellow, no fills for warnings. */
+
+/* ---- trigger: a quiet pill bottom-right on tablets and desktops, a round search button bottom-left on phones ---- */
+.pal-fab {
+    position: fixed; right: 16px; bottom: 16px; z-index: 35;
+    display: inline-flex; align-items: center; gap: var(--sp-2); height: 36px; padding: 0 var(--sp-3);
+    border: 1px solid var(--dh-line); border-radius: 999px; background: var(--dh-card); color: var(--dh-ink-soft);
+    font: 500 13px/1 var(--font-body); cursor: pointer;
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--dh-shadow-tint) 10%, transparent);
+}
+.pal-fab:hover { border-color: var(--dh-accent-line); color: var(--dh-ink); }
+.pal-fab svg { flex: none; }
+@media (max-width: 767.98px) {
+    .pal-fab {
+        right: auto; left: max(12px, env(safe-area-inset-left, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        width: 44px; height: 44px; padding: 0; justify-content: center;
+    }
+    .pal-fab-text, .pal-fab .pal-kbd { display: none; }
+}
+@media print { .pal-fab { display: none; } }
+
+.pal-kbd {
+    display: inline-block; min-width: 20px; padding: 3px 6px; border: 1px solid var(--dh-line); border-bottom-width: 2px; border-radius: var(--kh-radius-sm);
+    background: var(--dh-muted-surface); color: var(--dh-ink-soft); font: 600 11px/1 var(--font-body); text-align: center; white-space: nowrap;
+}
+
+/* ---- the dialog: near the top, list scrolls inside ---- */
+.dh-dialog.pal { width: min(100% - 24px, 600px); margin: 10vh auto auto; max-height: min(76dvh, 560px); }
+.dh-dialog.pal[open] { display: flex; flex-direction: column; }
+.pal-field {
+    display: flex; align-items: center; gap: var(--sp-3); flex: none; padding: 0 var(--sp-3) 0 var(--sp-4);
+    border-bottom: 1px solid var(--dh-line); color: var(--dh-muted);
+}
+.pal-input {
+    flex: 1; min-width: 0; height: 52px; padding: 0; border: 0; outline: 0; background: transparent; box-shadow: none;
+    color: var(--dh-ink); font: 500 16px/1.2 var(--font-body); /* 16px: no zoom on iOS */
+}
+.pal-input::placeholder { color: var(--dh-muted); }
+.pal-field:focus-within { color: var(--dh-focus); box-shadow: inset 0 -2px 0 var(--dh-focus); }
+.pal-close {
+    flex: none; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0;
+    border: 1px solid var(--dh-line); border-radius: var(--kh-radius); background: transparent; color: var(--dh-ink-soft); cursor: pointer;
+}
+.pal-close:hover { background: var(--dh-row-hover); }
+
+.pal-status { flex: none; margin: 0; padding: var(--sp-2) var(--sp-4); color: var(--dh-muted); font-size: 12px; line-height: 1.3; }
+.pal-status:empty { display: none; }
+.pal-status.is-empty { padding: var(--sp-6) var(--sp-4); text-align: center; font-size: 14px; overflow-wrap: anywhere; }
+
+.pal-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 var(--sp-2) var(--sp-2); }
+.pal-list:empty { display: none; }
+.pal-gh { padding: var(--sp-3) var(--sp-2) var(--sp-1); color: var(--dh-muted); font: 600 11px/1.2 var(--font-body); letter-spacing: .06em; text-transform: uppercase; }
+.pal-o {
+    display: flex; flex-direction: column; gap: 2px; min-height: 44px; justify-content: center; padding: var(--sp-2) var(--sp-3);
+    border-radius: var(--kh-radius); color: var(--dh-ink); text-decoration: none; cursor: pointer;
+}
+.pal-o-label { font-size: 14px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.pal-o-sub { color: var(--dh-muted); font-size: 12px; line-height: 1.3; overflow-wrap: anywhere; }
+.pal-o.is-active { background: var(--dh-accent-soft); box-shadow: inset 3px 0 0 var(--dh-accent); }
+
+.pal-hint { display: flex; flex: none; gap: var(--sp-4); margin: 0; padding: var(--sp-2) var(--sp-4); border-top: 1px solid var(--dh-line); color: var(--dh-muted); font-size: 12px; }
+@media (max-width: 767.98px), (hover: none) { .pal-hint { display: none; } }
+@media (max-width: 767.98px) { .dh-dialog.pal { margin-top: 8px; max-height: calc(100dvh - 16px); } }
+
+/* ---- shortcuts help ---- */
+.pal-help { width: min(100% - 24px, 420px); }
+.pal-help-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); flex: none; padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--dh-line); }
+.pal-help-head h3 { margin: 0; font-size: 16px; }
+.pal-help-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin: 0; padding: var(--sp-2) var(--sp-4); }
+.pal-help-list > div { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-2) 0; border-bottom: 1px solid var(--dh-line-soft); }
+.pal-help-list > div:last-child { border-bottom: 0; }
+.pal-help-list dt { display: flex; align-items: center; gap: var(--sp-1); flex: none; color: var(--dh-muted); font-size: 12px; white-space: pre; }
+.pal-help-list dd { margin: 0; font-size: 14px; text-align: right; }
+.pal-help-note { margin: 0; padding: var(--sp-2) var(--sp-4) var(--sp-3); color: var(--dh-muted); font-size: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+    .dh-dialog.pal, .dh-dialog.pal::backdrop, .pal-fab { transition: none; transform: none; }
+}
+
+/* A page with the sticky totals bar (New Loan, Add old loan): the search button sits above the bar, never over its buttons. */
+@media (max-width: 639.98px) { html:has(.fm-bar) .pal-fab { bottom: calc(7.5rem + env(safe-area-inset-bottom, 0px)); } }
+@media (min-width: 640px) and (max-width: 1099.98px) { html:has(.fm-bar) .pal-fab { bottom: calc(6rem + env(safe-area-inset-bottom, 0px)); } }

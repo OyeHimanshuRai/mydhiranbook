@@ -8,6 +8,19 @@ class Shop extends Model
     /** A new shop waits for an admin to approve it (pending), or was turned down (rejected); only active shops open the software. */
     public function awaitsApproval(): bool { return in_array($this->status, ['pending', 'rejected'], true); }
     public function users() { return $this->hasMany(User::class); }
+    /** Every shop gets its share code the moment it exists: 'MDB' + base36 id, 5 wide. Derived from the unique id, so it can never collide. */
+    protected static function booted(): void
+    {
+        static::created(fn (self $shop) => $shop->forceFill(['referral_code' => 'MDB'.strtoupper(str_pad(base_convert((string) $shop->id, 10, 36), 5, '0', STR_PAD_LEFT))])->saveQuietly());
+    }
+    /** A share code as typed (any case): the upper-case code when it looks like one, else null. */
+    public static function cleanReferralCode(mixed $v): ?string
+    {
+        return is_string($v) && preg_match('/^[A-Za-z0-9]{3,12}$/', $v) ? strtoupper($v) : null;
+    }
+    public function referrer() { return $this->belongsTo(self::class, 'referred_by_shop_id'); }
+    public function referrals() { return $this->hasMany(self::class, 'referred_by_shop_id'); }
+    public function approvedReferralCount(): int { return $this->referrals()->whereIn('status', ['active', 'suspended'])->count(); }
     public function subscriptions() { return $this->hasMany(\App\Models\Platform\ShopSubscription::class); }
     /** The live term that has started (an early-renewed future term only counts once it starts); else the next one queued. */
     public function currentSubscription(): ?\App\Models\Platform\ShopSubscription
@@ -39,5 +52,5 @@ class Shop extends Model
     }
     // a lapsed shop (refunded/terminated/expired) is collect-only: no new staff either, whatever the old plan allowed
     public function canAddStaff(): bool { return !$this->isLapsed() && ($this->staffLimit() === -1 || $this->currentStaffCount() < $this->staffLimit()); }
-    protected $fillable = ['name', 'phone', 'address', 'status', 'financial_lock_date', 'reviewed_at', 'review_note', 'submissions', 'resubmitted_at', 'previous_review_note'];
+    protected $fillable = ['name', 'phone', 'address', 'status', 'financial_lock_date', 'reviewed_at', 'review_note', 'submissions', 'resubmitted_at', 'previous_review_note', 'referred_by_shop_id', 'referred_by_text'];
 }

@@ -149,8 +149,8 @@
                         @endif
                     @endcan
                 </div>
-                @if($staffLimit !== -1)
-                    <div class="st-bar{{ $atLimit ? ' is-full' : ($pct >= 80 ? ' is-warn' : '') }}" role="img" aria-label="{{ $staffCount }} of {{ $staffLimit }} staff accounts used"><span style="--w: {{ $pct }}%"></span></div>
+                @if($staffLimit > 0)
+                    <div class="st-bar{{ $atLimit ? ' is-full' : ($pct >= 80 ? ' is-warn' : '') }}" role="meter" aria-label="Staff accounts used" aria-valuemin="0" aria-valuemax="{{ $staffLimit }}" aria-valuenow="{{ min($staffCount, $staffLimit) }}" aria-valuetext="{{ $staffCount }} of {{ $staffLimit }} staff accounts used"><span style="--w: {{ $pct }}%"></span></div>
                 @endif
                 @if($atLimit)
                     <p class="st-hint" id="st-limit-help">Your access allows {{ $staffLimit }} staff accounts. Remove a person you no longer need

@@ -328,9 +328,9 @@ class NewFeaturesBreakTest extends AdminTestCase
     public function test_unicode_names_and_every_phone_spelling_are_stored_clean(): void
     {
         $owner = $this->newOwner(); Auth::shouldUse('web');
-        $this->actingAs($owner)->post(route('dhiran.onboarding.store'), $this->payload(['name' => '🙏 श्री गोल्ड ज्वैलर्स', 'address' => 'पता, मुख्य मार्ग', 'loan_number_prefix' => 'ab-c_1']))->assertRedirect(route('dhiran.pending'));
+        $this->actingAs($owner)->post(route('dhiran.onboarding.store'), $this->payload(['name' => '🙏 श्री गोल्ड ज्वैलर्स', 'address' => 'पता, मुख्य मार्ग', 'loan_number_prefix' => 'AB-C_1']))->assertRedirect(route('dhiran.pending'));
         $shop = Shop::findOrFail($owner->fresh()->shop_id);
-        $this->assertSame('🙏 श्री गोल्ड ज्वैलर्स', $shop->name); $this->assertSame('ab-c_1', DhiranSettings::getForShop($shop->id)->loan_number_prefix);
+        $this->assertSame('🙏 श्री गोल्ड ज्वैलर्स', $shop->name); $this->assertSame('AB-C_1', DhiranSettings::getForShop($shop->id)->loan_number_prefix);
         foreach (['+91 98765 43210', '09876543210', '98765-43210', '919876543210', '+91-98765-43210', '0091 9876543210', ' 9876543210 '] as $phone) {
             $o = $this->newOwner(); Auth::shouldUse('web');
             $this->actingAs($o)->post(route('dhiran.onboarding.store'), $this->payload(['phone' => $phone]))->assertRedirect(route('dhiran.pending'))->assertSessionHasNoErrors();

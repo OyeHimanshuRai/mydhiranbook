@@ -15,15 +15,15 @@
         $fields = [
             ['first_name', 'First name', 'text', true, 255, 'autofocus'],
             ['last_name', 'Last name', 'text', false, 255, ''],
-            ['mobile', 'Mobile number', 'tel', true, 10, 'inputmode="numeric" placeholder="10 digits"'],
-            ['pan', 'PAN', 'text', false, 10, 'placeholder="ABCDE1234F" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase"'],
+            ['mobile', 'Mobile number', 'tel', true, 10, 'inputmode="numeric" placeholder="10 digits" data-rule="mobile"'],
+            ['pan', 'PAN', 'text', false, 10, 'placeholder="ABCDE1234F" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase" data-rule="pan"'],
             ['id_number', 'ID number', 'text', false, 50, ''],
             ['state_code', 'State code', 'text', false, 10, ''],
         ];
     @endphp
 
     <div class="content-inner">
-        <form method="POST" action="{{ route('dhiran.customers.store') }}" enctype="multipart/form-data" id="bc-form" class="fm-page fm-page--narrow"
+        <form method="POST" action="{{ route('dhiran.customers.store') }}" enctype="multipart/form-data" id="bc-form" class="fm-page fm-page--narrow" data-autosave="new-borrower" data-autosave-label="customer" data-validate
               x-data="{ busy: false }" @submit="busy = !$event.defaultPrevented" @pageshow.window="busy = false" @turbo:submit-end="if (!$event.detail.success) busy = false">
             @csrf
             @if($errors->any())

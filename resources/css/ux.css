@@ -1,0 +1,5 @@
+/* UX layer styles: one @import per module (each module owner appends only to its own file). */
+@import './ux-palette.css';
+@import './ux-forms.css';
+@import './ux-feedback.css';
+@import './ux-lists.css';

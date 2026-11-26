@@ -1,0 +1,1 @@
+@if($shop->referrer)<a href="/admin/shops/{{ $shop->referrer->id }}">{{ $shop->referrer->name }}</a>@elseif($shop->referred_by_text){{ $shop->referred_by_text }}@else<span class="adm-muted">No one</span>@endif

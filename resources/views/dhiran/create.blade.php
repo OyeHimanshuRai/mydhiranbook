@@ -33,7 +33,7 @@
          @turbo:before-cache.window="document.body.classList.remove('dh-modal-open')"
          @pageshow.window="submitting = false">
 
-        <form method="POST" action="{{ route('dhiran.store') }}" enctype="multipart/form-data" id="fm-form" class="fm-page dhiran-create-form" @submit="prepareSubmit($event)" @turbo:submit-end="if (!$event.detail.success) submitting = false" data-turbo-frame="_top">
+        <form method="POST" action="{{ route('dhiran.store') }}" enctype="multipart/form-data" id="fm-form" class="fm-page dhiran-create-form" data-autosave="new-loan" data-autosave-label="loan" @submit="prepareSubmit($event)" @turbo:submit-end="if (!$event.detail.success) submitting = false" data-turbo-frame="_top">
             @csrf <x-dhiran.once />
 
             @if($errors->any())
@@ -52,10 +52,11 @@
 
 
 
+            <div class="fm-layout">
+            <div class="fm-main">
             {{-- 1 Customer --}}
             <section class="fm-card" id="fm-step-customer" aria-labelledby="fm-h-customer">
                 <header class="fm-card-head">
-                    <span class="fm-num" aria-hidden="true">1</span>
                     <div>
                         <h2 class="fm-title" id="fm-h-customer">Customer</h2>
                         <p class="fm-desc">Who is pledging? Search the borrowers you have saved, or add a new one.</p>
@@ -63,12 +64,13 @@
                 </header>
                 <div class="fm-card-body">
                     <input type="hidden" name="customer_id" :value="customer_id">
+                    <div class="fm-borrower-row">
                     <div class="fm-field fm-combo" @click.outside="customerDropdownOpen = false">
                         <label class="fm-label" for="fm-customer-search">Borrower <x-req /></label>
                         <div class="fm-affix" :class="{ 'is-invalid': {{ $errors->has('customer_id') ? 'true' : 'false' }} && !selectedCustomer }">
                             <span class="fm-unit fm-unit--pre" aria-hidden="true"><x-icon name="search" size="16" /></span>
                             <input type="search" id="fm-customer-search" class="fm-control"
-                                   placeholder="Name, mobile or address" autocomplete="off" autocapitalize="off" spellcheck="false"
+                                   placeholder="Name or mobile" autocomplete="off" autocapitalize="off" spellcheck="false"
                                    role="combobox" aria-required="true" aria-autocomplete="list" aria-controls="fm-customer-list" :aria-expanded="customerDropdownOpen.toString()"
                                    @if($errors->has('customer_id')) aria-invalid="true" aria-describedby="err-customer_id" @endif
                                    x-model="customerSearch"
@@ -98,6 +100,7 @@
                     <button type="button" class="btn btn-secondary fm-add-borrower" @click="openNewBorrower()">
                         <x-icon name="user-plus" size="16" /> Add new borrower
                     </button>
+                    </div>
 
                     <div class="fm-picked" x-show="selectedCustomer" x-cloak aria-live="polite">
                         <div class="fm-picked-head">
@@ -123,11 +126,17 @@
             {{-- 2 Pledged items --}}
             <section class="fm-card" id="fm-step-items" aria-labelledby="fm-h-items">
                 <header class="fm-card-head">
-                    <span class="fm-num" aria-hidden="true">2</span>
                     <div>
                         <h2 class="fm-title" id="fm-h-items">Pledged items</h2>
                         <p class="fm-desc">One card for each piece the customer leaves with you.</p>
+                        @php($itemShop = auth()->user()->shop)
+                        @if(($itemCap = $itemShop->itemLimit()) > 0 && ($itemUsed = $itemShop->pledgedItemCount()) * 100 >= $itemCap * 80)
+                            <p class="fm-desc">Pledged items: {{ $itemUsed }} of {{ $itemCap }} (this access term)</p>
+                        @endif
                     </div>
+                    <button type="button" class="btn btn-secondary fm-add-item" data-autosave-add-row aria-label="Add another item" title="Add another item" @click="addItem(); $nextTick(() => focusItem(items.length - 1))">
+                        <x-icon name="plus" size="16" /> <span class="fm-add-text">Add another item</span>
+                    </button>
                 </header>
                 <div class="fm-card-body">
                     <template x-for="(item, index) in items" :key="index">
@@ -140,13 +149,22 @@
                             </div>
                             <p class="fm-error" role="alert" x-show="itemErr(index)" x-cloak><x-icon name="circle-alert" size="16" /><span x-text="itemErr(index)"></span></p>
 
-                            <div class="fm-grid">
-                                <div class="fm-field fm-wide">
+                            {{-- Rows of right-sized fields (.fm-w-*): description + HUID, metal / valuation / purity / rate, weights with the worked-out net and fine, then value and photo. --}}
+                            <div class="fm-row fm-irow fm-irow--ident">
+                                <div class="fm-field fm-span fm-w-xl">
                                     <label class="fm-label" :for="'it-desc-' + index">Description <x-req /></label>
                                     <input type="text" :id="'it-desc-' + index" :name="'items['+index+'][description]'" x-model="item.description" data-item-desc
                                            placeholder="e.g. Gold chain, silver anklet" class="fm-control" required aria-required="true" autocomplete="off">
                                 </div>
-                                <div class="fm-field">
+                                <div class="fm-field fm-span fm-w-lg">
+                                    <label class="fm-label" :for="'it-huid-' + index">HUID</label>
+                                    <input type="text" :id="'it-huid-' + index" :name="'items['+index+'][huid]'" x-model="item.huid"
+                                           placeholder="6-character ID" class="fm-control" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false">
+                                </div>
+                            </div>
+
+                            <div class="fm-row fm-irow">
+                                <div class="fm-field fm-w-md">
                                     <label class="fm-label" :for="'it-metal-' + index">Metal</label>
                                     <select :id="'it-metal-' + index" :name="'items['+index+'][metal_type]'" x-model="item.metal_type" class="fm-control" @change="onMetalChange(index)">
                                         <option value="gold">Gold</option>
@@ -154,21 +172,12 @@
                                         <option value="other">Other (diamond, platinum, watch…)</option>
                                     </select>
                                 </div>
-                                {{-- Valuation: metal-melt (auto from purity × rate) OR appraised (operator enters value). 'Other' is always appraised. --}}
-                                <div class="fm-field" x-show="item.metal_type !== 'other'">
-                                    <label class="fm-label" :for="'it-mode-' + index">Valuation</label>
-                                    <select :id="'it-mode-' + index" :name="'items['+index+'][value_mode]'" x-model="item.value_mode" class="fm-control" @change="recalcItem(index)">
-                                        <option value="metal">Auto (metal value)</option>
-                                        <option value="appraised">Appraised (enter value)</option>
-                                    </select>
-                                </div>
-
                                 {{-- Metal-mode fields (gold/silver, auto valuation) --}}
                                 <template x-if="item.metal_type !== 'other'">
-                                    <div class="fm-field">
+                                    <div class="fm-field fm-w-sm">
                                         <label class="fm-label" :for="'it-purity-' + index">Purity</label>
                                         {{-- Standard purities (from MetalRegistry) or Other = type any value. The posted purity is the hidden field: gold = karat, silver = fineness. --}}
-                                        <select :id="'it-purity-' + index" class="fm-control" @change="pickPurity(index, $event.target.value)">
+                                        <select :id="'it-purity-' + index" data-autosave-include class="fm-control" @change="pickPurity(index, $event.target.value)">
                                             <template x-for="opt in purityOptions(item.metal_type)" :key="opt.value">
                                                 {{-- :selected — the options draw after the value is set, so a plain value showed the first option. --}}
                                                 <option :value="String(opt.value)" x-text="opt.label" :selected="String(opt.value) === item.purityPick"></option>
@@ -176,14 +185,26 @@
                                             <option value="other" :selected="item.purityPick === 'other'">Other</option>
                                         </select>
                                         <input type="hidden" :name="'items['+index+'][purity]'" :value="item.purity">
-                                        <input type="number" inputmode="decimal" step="0.01" min="0" :id="'it-purity-custom-' + index" x-model.number="item.purity" x-show="item.purityPick === 'other'" x-cloak
-                                               class="fm-control" :placeholder="item.metal_type === 'silver' ? 'e.g. 925.5' : 'e.g. 22.5'" :aria-label="'Purity, ' + (item.metal_type === 'silver' ? 'fineness' : 'karat')" @input="recalcItem(index)" @focus="$event.target.select()">
-                                        <p class="fm-note" aria-live="polite" x-text="purityNote(item)"></p>
                                     </div>
                                 </template>
+                                {{-- Custom purity sits in its own grid field so picking "Other" never pushes sibling controls out of alignment. --}}
+                                <div class="fm-field fm-w-sm" x-show="item.metal_type !== 'other' && item.purityPick === 'other'" x-cloak>
+                                    <label class="fm-label" :for="'it-purity-custom-' + index" x-text="item.metal_type === 'silver' ? 'Custom fineness' : 'Custom karat'">Custom purity</label>
+                                    <input type="number" inputmode="decimal" step="0.01" min="0" data-autosave-include :id="'it-purity-custom-' + index" x-model.number="item.purity"
+                                           class="fm-control" :placeholder="item.metal_type === 'silver' ? 'e.g. 925.5' : 'e.g. 22.5'" :aria-label="'Purity, ' + (item.metal_type === 'silver' ? 'fineness' : 'karat')" @input="recalcItem(index)" @focus="$event.target.select()">
+                                </div>
+                                {{-- Valuation: metal-melt (auto from purity × rate) OR appraised (operator enters value). 'Other' is always appraised. --}}
+                                <div class="fm-field fm-span fm-w-lg" x-show="item.metal_type !== 'other'">
+                                    <label class="fm-label" :for="'it-mode-' + index">Valuation</label>
+                                    <select :id="'it-mode-' + index" :name="'items['+index+'][value_mode]'" x-model="item.value_mode" class="fm-control" @change="recalcItem(index)">
+                                        <option value="metal">Auto (metal value)</option>
+                                        <option value="appraised">Appraised (enter value)</option>
+                                    </select>
+                                </div>
+
                                 <template x-if="item.metal_type !== 'other' && item.value_mode !== 'appraised'">
-                                    <div class="fm-field">
-                                        <label class="fm-label" :for="'it-rate-' + index" x-text="item.metal_type === 'silver' ? 'Silver rate per gram (pure, 999)' : 'Gold rate per gram (24K, pure)'">Gold rate per gram (24K, pure)</label>
+                                    <div class="fm-field fm-w-md">
+                                        <label class="fm-label" :for="'it-rate-' + index" x-text="item.metal_type === 'silver' ? 'Silver rate per gram (999)' : 'Gold rate per gram (24K)'">Gold rate per gram (24K)</label>
                                         <div class="fm-affix">
                                             <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
                                             <input type="number" inputmode="decimal" step="0.01" min="0" :id="'it-rate-' + index" :name="'items['+index+'][rate_per_gram_at_pledge]'" x-model.number="item.rate_per_gram_at_pledge"
@@ -192,7 +213,7 @@
                                     </div>
                                 </template>
 
-                                <div class="fm-field" x-show="item.metal_type === 'other' || item.value_mode === 'appraised'">
+                                <div class="fm-field fm-w-md" x-show="item.metal_type === 'other' || item.value_mode === 'appraised'">
                                     <label class="fm-label" :for="'it-value-' + index">Appraised value</label>
                                     <div class="fm-affix">
                                         <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
@@ -200,9 +221,11 @@
                                                x-model.number="item.market_value" placeholder="0.00" class="fm-control" @input="recalcItem(index)" @focus="$event.target.select()">
                                     </div>
                                 </div>
+                            </div>
+                            <p class="fm-note fm-hint" aria-live="polite" x-text="purityNote(item)"></p>
 
-                                <div class="fm-wide fm-grid fm-grid--pair" style="align-items:end"> {{-- end-aligned: a wrapped label must not push its input down --}}
-                                <div class="fm-field">
+                            <div class="fm-row fm-irow">
+                                <div class="fm-field fm-w-sm">
                                     <label class="fm-label" :for="'it-gross-' + index">Gross weight</label>
                                     <div class="fm-affix">
                                         <input type="number" inputmode="decimal" step="0.001" min="0" :id="'it-gross-' + index" :name="'items['+index+'][gross_weight]'" x-model.number="item.gross_weight"
@@ -210,7 +233,7 @@
                                         <span class="fm-unit fm-unit--suf">g</span>
                                     </div>
                                 </div>
-                                <div class="fm-field">
+                                <div class="fm-field fm-w-sm">
                                     <label class="fm-label" :for="'it-stone-' + index">Stone / other weight</label>
                                     <div class="fm-affix">
                                         <input type="number" inputmode="decimal" step="0.001" min="0" :id="'it-stone-' + index" :name="'items['+index+'][stone_weight]'" x-model.number="item.stone_weight"
@@ -218,68 +241,57 @@
                                         <span class="fm-unit fm-unit--suf">g</span>
                                     </div>
                                 </div>
-                                </div>
-                                <p class="fm-error fm-wide" role="alert" x-show="stoneTooHeavy(item)" x-cloak><x-icon name="circle-alert" size="16" /><span>Stone weight must be less than the gross weight.</span></p>
                                 {{-- Net = gross - stone; fine (pure metal) = net x purity (gold / silver only). Worked out as you type, same rule as the server, whether the value is melt or appraised. --}}
-                                <dl class="fm-readout fm-wide" aria-live="polite">
+                                <dl class="fm-readout fm-readout--stat fm-span" aria-live="polite">
                                     <div><dt>Net weight</dt><dd x-text="item.net_metal_weight.toFixed(3) + ' g'"></dd></div>
                                     <div x-show="item.metal_type !== 'other'"><dt>Fine (pure metal) weight</dt><dd x-text="item.fine_weight.toFixed(3) + ' g'"></dd></div>
                                 </dl>
-                                <div class="fm-field fm-wide">
-                                    <label class="fm-label" :for="'it-huid-' + index">HUID</label>
-                                    <input type="text" :id="'it-huid-' + index" :name="'items['+index+'][huid]'" x-model="item.huid"
-                                           placeholder="6-character hallmark ID" class="fm-control" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false">
+                            </div>
+                            <p class="fm-error" role="alert" x-show="stoneTooHeavy(item)" x-cloak><x-icon name="circle-alert" size="16" /><span>Stone weight must be less than the gross weight.</span></p>
+
+                            {{-- What the item is worth, worked out as you type; the photo of this item (saved with the loan as item_photo evidence, so activation needs no second trip) sits at the end of the row. --}}
+                            <div class="fm-row fm-irow fm-item-foot">
+                                <dl class="fm-readout fm-readout--stat fm-span" aria-live="polite">
+                                    <div><dt>Market value</dt><dd x-text="'{{ $sym }}' + money(item.market_value)"></dd></div>
+                                    <div><dt>Loan value</dt><dd x-text="'{{ $sym }}' + money(item.loan_value)"></dd></div>
+                                </dl>
+                                <div class="fm-field fm-span fm-foot-end">
+                                    <span class="fm-label">Photo of this item</span>
+                                    <div class="fm-photo-row">
+                                        <button type="button" class="fm-thumb-btn" x-show="item.photoUrl" x-cloak @click="viewPhoto(item.photoUrl, 'Item ' + (index + 1))" :aria-label="'View the photo of item ' + (index + 1) + ' full size'" title="View full size">
+                                            <img class="fm-photo-thumb" :src="item.photoUrl" alt="">
+                                        </button>
+                                        <button type="button" class="btn btn-secondary fm-photo-act" @click="document.getElementById('it-photo-pick-' + index).click()" :title="item.photoFile ? 'Change photo (upload a file)' : 'Upload a photo'" :aria-label="(item.photoFile ? 'Change photo of item ' : 'Upload a photo of item ') + (index + 1)">
+                                            <x-icon name="upload" size="18" />
+                                        </button>
+                                        <button type="button" class="btn btn-secondary fm-photo-act" @click="openCamera({ kind: 'item', index })" title="Take a photo with the camera" :aria-label="'Take a photo of item ' + (index + 1) + ' with the camera'">
+                                            <x-icon name="camera" size="18" />
+                                        </button>
+                                        <button type="button" class="btn btn-secondary fm-photo-act" x-show="item.photoFile" x-cloak @click="viewPhoto(item.photoUrl, 'Item ' + (index + 1))" :aria-label="'View the photo of item ' + (index + 1) + ' full size'" title="View full size">
+                                            <x-icon name="eye" size="18" />
+                                        </button>
+                                        <button type="button" class="btn btn-secondary fm-photo-act" x-show="item.photoFile" x-cloak @click="clearItemPhoto(index)" :aria-label="'Remove photo of item ' + (index + 1)" title="Remove photo">
+                                            <x-icon name="trash-2" size="18" />
+                                        </button>
+                                    </div>
+                                    <input type="file" hidden :id="'it-photo-pick-' + index" accept="image/jpeg,image/png" @change="pickItemPhoto(index, $event)">
+                                    <p class="fm-error" role="alert" x-show="item.photoError" x-cloak><x-icon name="circle-alert" size="16" /><span x-text="item.photoError"></span></p>
+                                    {{-- The file that is posted: filled from the item's own photo at submit, so removing or reordering items can never mismatch a photo. --}}
+                                    <input type="file" class="fm-sr" tabindex="-1" aria-hidden="true" :id="'it-photo-submit-' + index" :name="'items['+index+'][photo]'">
                                 </div>
                             </div>
-
-                            {{-- A photo of this item, saved with the loan (item_photo evidence): activation then needs no second trip. --}}
-                            <div class="fm-field fm-wide">
-                                <span class="fm-label">Photo of this item</span>
-                                <div class="fm-photo-row">
-                                    <button type="button" class="fm-thumb-btn" x-show="item.photoUrl" x-cloak @click="viewPhoto(item.photoUrl, 'Item ' + (index + 1))" :aria-label="'View the photo of item ' + (index + 1) + ' full size'" title="View full size">
-                                        <img class="fm-photo-thumb" :src="item.photoUrl" alt="">
-                                    </button>
-                                    <button type="button" class="btn btn-secondary fm-photo-act" @click="document.getElementById('it-photo-pick-' + index).click()" :title="item.photoFile ? 'Change photo (upload a file)' : 'Upload a photo'" :aria-label="(item.photoFile ? 'Change photo of item ' : 'Upload a photo of item ') + (index + 1)">
-                                        <x-icon name="upload" size="18" />
-                                    </button>
-                                    <button type="button" class="btn btn-secondary fm-photo-act" @click="openCamera({ kind: 'item', index })" title="Take a photo with the camera" :aria-label="'Take a photo of item ' + (index + 1) + ' with the camera'">
-                                        <x-icon name="camera" size="18" />
-                                    </button>
-                                    <button type="button" class="btn btn-secondary fm-photo-act" x-show="item.photoFile" x-cloak @click="viewPhoto(item.photoUrl, 'Item ' + (index + 1))" :aria-label="'View the photo of item ' + (index + 1) + ' full size'" title="View full size">
-                                        <x-icon name="eye" size="18" />
-                                    </button>
-                                    <button type="button" class="btn btn-secondary fm-photo-act" x-show="item.photoFile" x-cloak @click="clearItemPhoto(index)" :aria-label="'Remove photo of item ' + (index + 1)" title="Remove photo">
-                                        <x-icon name="trash-2" size="18" />
-                                    </button>
-                                </div>
-                                <input type="file" hidden :id="'it-photo-pick-' + index" accept="image/jpeg,image/png" @change="pickItemPhoto(index, $event)">
-                                <p class="fm-error" role="alert" x-show="item.photoError" x-cloak><x-icon name="circle-alert" size="16" /><span x-text="item.photoError"></span></p>
-                                {{-- The file that is posted: filled from the item's own photo at submit, so removing or reordering items can never mismatch a photo. --}}
-                                <input type="file" class="fm-sr" tabindex="-1" aria-hidden="true" :id="'it-photo-submit-' + index" :name="'items['+index+'][photo]'">
-                            </div>
-
-                            {{-- What the item is worth, worked out as you type. --}}
-                            <dl class="fm-readout" aria-live="polite">
-                                <div><dt>Market value</dt><dd x-text="'{{ $sym }}' + money(item.market_value)"></dd></div>
-                                <div><dt>Loan value</dt><dd x-text="'{{ $sym }}' + money(item.loan_value)"></dd></div>
-                            </dl>
                             <input type="hidden" :name="'items['+index+'][loan_value]'" :value="item.loan_value">
                             {{-- Hidden carriers so server always gets net/fine even when the weights are hidden (0 for appraised/other). --}}
                             <input type="hidden" :name="'items['+index+'][net_metal_weight]'" :value="item.net_metal_weight">
                             <input type="hidden" :name="'items['+index+'][fine_weight]'" :value="item.fine_weight">
                         </fieldset>
                     </template>
-
-                    <button type="button" class="btn btn-secondary fm-add-item" @click="addItem(); $nextTick(() => focusItem(items.length - 1))">
-                        <x-icon name="plus" size="16" /> Add another item
-                    </button>
                 </div>
             </section>
 
             {{-- 3 Loan terms --}}
             <section class="fm-card" id="fm-step-terms" aria-labelledby="fm-h-terms">
                 <header class="fm-card-head">
-                    <span class="fm-num" aria-hidden="true">3</span>
                     <div>
                         <h2 class="fm-title" id="fm-h-terms">Loan terms</h2>
                         <p class="fm-desc">Amount, interest and period.</p>
@@ -289,17 +301,16 @@
                     <label class="ui-switch-row fm-head-switch" for="advance_on">
                         <span class="ui-switch-text"><span class="ui-switch-label">Interest paid in advance</span></span>
                         <span class="ui-switch">
-                            <input type="checkbox" role="switch" id="advance_on" class="ui-switch-input" x-model="advance_on">
+                            <input type="checkbox" role="switch" id="advance_on" data-autosave-include class="ui-switch-input" x-model="advance_on">
                             <span class="ui-switch-track" aria-hidden="true"><span class="ui-switch-thumb"></span></span>
                         </span>
                     </label>
                     @endif
                 </header>
                 <div class="fm-card-body">
-                    <div class="fm-grid">
-                        <div class="fm-field fm-wide">
-                            <label for="principal_amount" class="fm-label">Principal amount <x-req /></label>
-                            <div class="fm-affix fm-affix--lead" :class="{ 'is-invalid': principalProblem }">
+                    <div class="fm-field">
+                        <label for="principal_amount" class="fm-label">Principal amount <x-req /></label>
+                        <div class="fm-affix fm-affix--lead fm-w-lg" :class="{ 'is-invalid': principalProblem }">
                                 <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
                                 <input type="number" inputmode="decimal" step="0.01" name="principal_amount" id="principal_amount"
                                        x-model.number="principal_amount"
@@ -311,11 +322,25 @@
                             @error('principal_amount')
                                 <p class="fm-error" id="err-principal_amount" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
                             @enderror
-                            <dl class="fm-ltv">
-                                <div><dt x-text="'Max loan at ' + ltvPercent + '% LTV'"></dt><dd x-text="'{{ $sym }}' + money(maxPrincipal)"></dd></div>
-                            </dl>
-                        </div>
-                        <div class="fm-field">
+                            {{-- What can be lent: the limit, what the items are worth, what is still free, and how much of the limit this principal uses. --}}
+                            <div class="fm-limitbox" :class="{ 'is-over': maxPrincipal > 0 && (Number(principal_amount) || 0) > maxPrincipal }">
+                                <dl class="fm-limitbox-figs">
+                                    <div class="fm-limitbox-lead"><dt x-text="'Max loan at ' + ltvPercent + '% LTV'">Max loan</dt><dd x-text="'{{ $sym }}' + money(maxPrincipal)"></dd></div>
+                                    <div><dt>Items' market value</dt><dd x-text="'{{ $sym }}' + money(totalMarketValue)"></dd></div>
+                                    <div>
+                                        <dt x-text="(Number(principal_amount) || 0) > maxPrincipal && maxPrincipal > 0 ? 'Over the limit by' : 'Still available'">Still available</dt>
+                                        <dd x-text="'{{ $sym }}' + money(Math.abs(maxPrincipal - (Number(principal_amount) || 0)))"></dd>
+                                    </div>
+                                </dl>
+                                <div class="fm-meter" role="meter" aria-label="Principal against the maximum loan" aria-valuemin="0" aria-valuemax="100"
+                                     :aria-valuenow="maxPrincipal > 0 ? Math.min(100, Math.round((Number(principal_amount) || 0) / maxPrincipal * 100)) : 0"
+                                     :aria-valuetext="maxPrincipal > 0 ? Math.round((Number(principal_amount) || 0) / maxPrincipal * 100) + '% of the maximum loan used' : 'No items added yet'">
+                                    <span :style="'--used:' + (maxPrincipal > 0 ? Math.min(1, (Number(principal_amount) || 0) / maxPrincipal) : 0)"></span>
+                                </div>
+                            </div>
+                    </div>
+                    <div class="fm-row">
+                        <div class="fm-field fm-w-unit">
                             <label for="interest_rate_monthly" class="fm-label">Interest rate</label>
                             <div class="fm-affix">
                                 <input type="number" inputmode="decimal" step="0.01" name="interest_rate_monthly" id="interest_rate_monthly"
@@ -329,7 +354,21 @@
                                 <p class="fm-error" id="err-interest_rate_monthly" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
                             @enderror
                         </div>
-                        <div class="fm-field">
+                        <div class="fm-field fm-w-unit">
+                            <label for="penalty_rate_monthly" class="fm-label">Penalty rate</label>
+                            <div class="fm-affix">
+                                <input type="number" inputmode="decimal" step="0.01" name="penalty_rate_monthly" id="penalty_rate_monthly"
+                                       x-model.number="penalty_rate_monthly"
+                                       value="{{ old('penalty_rate_monthly', $defaults['penalty_rate_monthly'] ?? '') }}"
+                                       placeholder="e.g. 2.0" class="fm-control" @focus="$event.target.select()"
+                                       @error('penalty_rate_monthly') aria-invalid="true" aria-describedby="err-penalty_rate_monthly" @enderror>
+                                <span class="fm-unit fm-unit--suf">% / month</span>
+                            </div>
+                            @error('penalty_rate_monthly')
+                                <p class="fm-error" id="err-penalty_rate_monthly" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div class="fm-field fm-span fm-w-unit">
                             <label for="interest_type" class="fm-label">Interest type</label>
                             <select name="interest_type" id="interest_type" x-model="interest_type" class="fm-control"
                                     @error('interest_type') aria-invalid="true" aria-describedby="err-interest_type" @enderror>
@@ -341,8 +380,22 @@
                                 <p class="fm-error" id="err-interest_type" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
                             @enderror
                         </div>
+                        <div class="fm-field fm-w-sm">
+                            <label for="tenure_months" class="fm-label">Tenure</label>
+                            <div class="fm-affix">
+                                <input type="number" inputmode="numeric" name="tenure_months" id="tenure_months"
+                                       x-model.number="tenure_months"
+                                       value="{{ old('tenure_months', $defaults['tenure_months'] ?? 6) }}"
+                                       placeholder="6" class="fm-control" min="1" step="1" @focus="$event.target.select()"
+                                       @error('tenure_months') aria-invalid="true" aria-describedby="err-tenure_months" @enderror>
+                                <span class="fm-unit fm-unit--suf">months</span>
+                            </div>
+                            @error('tenure_months')
+                                <p class="fm-error" id="err-tenure_months" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
+                            @enderror
+                        </div>
                         @if($settings->advance_interest_enabled)
-                        <div class="fm-field" x-show="advance_on" x-cloak>
+                        <div class="fm-field fm-span fm-w-lg" x-show="advance_on" x-cloak>
                             <label for="advance_interest_months" class="fm-label">Months taken now</label>
                             {{-- Off posts a single 0 (a paid-afterwards loan); on posts the chosen months and the next installment falls due each month after. --}}
                             <input type="hidden" name="advance_interest_months" value="0" :disabled="advance_on">
@@ -357,36 +410,8 @@
                             @enderror
                         </div>
                         @endif
-                        <div class="fm-field">
-                            <label for="tenure_months" class="fm-label">Tenure</label>
-                            <div class="fm-affix">
-                                <input type="number" inputmode="numeric" name="tenure_months" id="tenure_months"
-                                       x-model.number="tenure_months"
-                                       value="{{ old('tenure_months', $defaults['tenure_months'] ?? 6) }}"
-                                       placeholder="6" class="fm-control" min="1" step="1" @focus="$event.target.select()"
-                                       @error('tenure_months') aria-invalid="true" aria-describedby="err-tenure_months" @enderror>
-                                <span class="fm-unit fm-unit--suf">months</span>
-                            </div>
-                            @error('tenure_months')
-                                <p class="fm-error" id="err-tenure_months" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
-                            @enderror
-                        </div>
-                        <div class="fm-field">
-                            <label for="penalty_rate_monthly" class="fm-label">Penalty rate</label>
-                            <div class="fm-affix">
-                                <input type="number" inputmode="decimal" step="0.01" name="penalty_rate_monthly" id="penalty_rate_monthly"
-                                       x-model.number="penalty_rate_monthly"
-                                       value="{{ old('penalty_rate_monthly', $defaults['penalty_rate_monthly'] ?? '') }}"
-                                       placeholder="e.g. 2.0" class="fm-control" @focus="$event.target.select()"
-                                       @error('penalty_rate_monthly') aria-invalid="true" aria-describedby="err-penalty_rate_monthly" @enderror>
-                                <span class="fm-unit fm-unit--suf">% / month</span>
-                            </div>
-                            @error('penalty_rate_monthly')
-                                <p class="fm-error" id="err-penalty_rate_monthly" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
-                            @enderror
-                        </div>
-                        <div class="fm-field">
-                            <label for="gold_rate_on_date" class="fm-label">Gold rate today (24K, per gram)</label>
+                        <div class="fm-field fm-span fm-w-lg">
+                            <label for="gold_rate_on_date" class="fm-label">Gold rate today (24K)</label>
                             <div class="fm-affix">
                                 <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
                                 <input type="number" inputmode="decimal" step="0.01" name="gold_rate_on_date" id="gold_rate_on_date"
@@ -401,7 +426,7 @@
                             @enderror
                         </div>
                         {{-- the server requires the silver reference rate when any silver item is valued by metal weight --}}
-                        <div class="fm-field" x-cloak x-show="items.some(i => i.metal_type === 'silver' && i.value_mode !== 'appraised')">
+                        <div class="fm-field fm-span fm-w-lg" x-cloak x-show="items.some(i => i.metal_type === 'silver' && i.value_mode !== 'appraised')">
                             <label for="silver_rate_on_date" class="fm-label">Silver rate today (pure, per gram)</label>
                             <div class="fm-affix">
                                 <span class="fm-unit fm-unit--pre">{{ $sym }}</span>
@@ -417,39 +442,12 @@
                         </div>
                     </div>
 
-                    <h3 class="fm-sub">Loan summary</h3>
-                    <dl class="fm-sum" aria-live="polite">
-                        <div><dt>Total market value</dt><dd x-text="'{{ $sym }}' + money(totalMarketValue)"></dd></div>
-                        <div><dt>Total loan value (from items)</dt><dd x-text="'{{ $sym }}' + money(totalLoanValue)"></dd></div>
-                        <div class="fm-sum-main"><dt>Principal amount</dt><dd x-text="'{{ $sym }}' + money((principal_amount || 0))"></dd></div>
-                        <div><dt>Monthly interest (approx.)</dt><dd x-text="'{{ $sym }}' + money(monthlyInterest)"></dd></div>
-                        <div>
-                            <dt>Processing fee</dt>
-                            <dd x-text="'{{ $sym }}' + money(processingFee)"></dd>
-                            <input type="hidden" name="processing_fee" :value="processingFee">
-                        </div>
-                        @if($settings->advance_interest_enabled)
-                        <div x-show="advanceInterest > 0" x-cloak>
-                            <dt>Interest taken now</dt>
-                            <dd x-text="'{{ $sym }}' + money(advanceInterest)"></dd>
-                        </div>
-                        <div class="fm-sum-main" x-show="advanceInterest > 0" x-cloak>
-                            <dt>Cash to hand over</dt>
-                            <dd x-text="'{{ $sym }}' + money((Number(principal_amount) || 0) - advanceInterest - processingFee)"></dd>
-                        </div>
-                        <div x-show="advanceInterest > 0" x-cloak>
-                            <dt>Next installment due</dt>
-                            <dd x-text="nextInstallmentLabel"></dd>
-                        </div>
-                        @endif
-                    </dl>
                 </div>
             </section>
 
             {{-- 4 KYC & notes --}}
             <section class="fm-card" id="fm-step-kyc" aria-labelledby="fm-h-kyc">
                 <header class="fm-card-head">
-                    <span class="fm-num" aria-hidden="true">4</span>
                     <div>
                         <h2 class="fm-title" id="fm-h-kyc">KYC &amp; notes</h2>
                         <p class="fm-desc">PAN and ID number come from the borrower's saved profile. Add the ID proof and PAN card photos here.</p>
@@ -469,9 +467,9 @@
                         <p class="fm-error" role="alert"><x-icon name="circle-alert" size="16" />{{ $message }}</p>
                     @enderror
                     {{-- The borrower's ID proof and PAN card, saved to the borrower: upload a file or take a live photo. --}}
-                    <div class="fm-grid">
+                    <div class="fm-row fm-slots">
                         <template x-for="d in docDefs" :key="d.key">
-                            <div class="fm-field">
+                            <div class="fm-field fm-span fm-slot">
                                 <span class="fm-label" x-text="d.label"></span>
                                 <div class="fm-photo-row">
                                     <button type="button" class="fm-thumb-btn" x-show="docs[d.key].url" x-cloak @click="viewPhoto(docs[d.key].url, d.label)" :aria-label="'View ' + d.label + ' full size'" title="View full size">
@@ -509,6 +507,45 @@
                     </div>
                 </div>
             </section>
+
+            </div>
+            <aside class="fm-aside" aria-labelledby="fm-h-summary">
+                <div class="fm-aside-card">
+                    <h2 class="fm-aside-title" id="fm-h-summary">Loan summary</h2>
+                    <dl class="fm-sum" aria-live="polite">
+                        <div><dt>Total market value</dt><dd x-text="'{{ $sym }}' + money(totalMarketValue)"></dd></div>
+                        <div><dt>Total loan value (from items)</dt><dd x-text="'{{ $sym }}' + money(totalLoanValue)"></dd></div>
+                        <div class="fm-sum-main"><dt>Principal amount</dt><dd x-text="'{{ $sym }}' + money((principal_amount || 0))"></dd></div>
+                        <div><dt>Monthly interest (approx.)</dt><dd x-text="'{{ $sym }}' + money(monthlyInterest)"></dd></div>
+                        <div>
+                            <dt>Processing fee</dt>
+                            <dd x-text="'{{ $sym }}' + money(processingFee)"></dd>
+                            <input type="hidden" name="processing_fee" :value="processingFee">
+                        </div>
+                        @if($settings->advance_interest_enabled)
+                        <div x-show="advanceInterest > 0" x-cloak>
+                            <dt>Interest taken now</dt>
+                            <dd x-text="'{{ $sym }}' + money(advanceInterest)"></dd>
+                        </div>
+                        <div class="fm-sum-main" x-show="advanceInterest > 0" x-cloak>
+                            <dt>Cash to hand over</dt>
+                            <dd x-text="'{{ $sym }}' + money((Number(principal_amount) || 0) - advanceInterest - processingFee)"></dd>
+                        </div>
+                        <div x-show="advanceInterest > 0" x-cloak>
+                            <dt>Next installment due</dt>
+                            <dd x-text="nextInstallmentLabel"></dd>
+                        </div>
+                        @endif
+                    </dl>
+                    <div class="fm-aside-acts">
+                        <a href="{{ route('dhiran.loans') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary" :disabled="submitting" :aria-busy="submitting.toString()">
+                            <x-icon name="save" size="16" /> <span x-text="submitting ? 'Creating…' : 'Create loan'">Create loan</span>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+            </div>
 
             {{-- Always in reach: the three figures that matter and the way to finish. --}}
             <div class="fm-bar" role="region" aria-label="Loan totals and create">
@@ -578,32 +615,32 @@
                     @can('dhiran.create')
                         <x-customer-photo mode="form" />
                     @endcan
-                    <div class="fm-grid">
-                        <div class="fm-field">
+                    <div class="fm-row">
+                        <div class="fm-field fm-w-lg">
                             <label class="fm-label" for="nb-first_name">First name <x-req /></label>
                             <input type="text" id="nb-first_name" class="fm-control" x-model="nb.first_name" aria-required="true" autocomplete="off" maxlength="255" :aria-invalid="nbField === 'first_name' ? 'true' : null" autofocus>
                         </div>
-                        <div class="fm-field">
+                        <div class="fm-field fm-w-lg">
                             <label class="fm-label" for="nb-last_name">Last name</label>
                             <input type="text" id="nb-last_name" class="fm-control" x-model="nb.last_name" autocomplete="off" maxlength="255">
                         </div>
-                        <div class="fm-field">
+                        <div class="fm-field fm-w-md">
                             <label class="fm-label" for="nb-mobile">Mobile number <x-req /></label>
                             <input type="tel" id="nb-mobile" class="fm-control" inputmode="numeric" placeholder="10 digits" maxlength="10" autocomplete="off" aria-required="true" x-model="nb.mobile" :aria-invalid="nbField === 'mobile' ? 'true' : null">
                         </div>
-                        <div class="fm-field">
+                        <div class="fm-field fm-w-md">
                             <label class="fm-label" for="nb-pan">PAN</label>
                             <input type="text" id="nb-pan" class="fm-control" placeholder="ABCDE1234F" maxlength="10" autocomplete="off" autocapitalize="characters" spellcheck="false" x-model="nb.pan" @input="nb.pan = nb.pan.toUpperCase()">
                         </div>
-                        <div class="fm-field">
+                        <div class="fm-field fm-w-lg">
                             <label class="fm-label" for="nb-id_number">ID number</label>
                             <input type="text" id="nb-id_number" class="fm-control" autocomplete="off" x-model="nb.id_number">
                         </div>
-                        <div class="fm-field">
+                        <div class="fm-field fm-w-xs">
                             <label class="fm-label" for="nb-state_code">State code</label>
                             <input type="text" id="nb-state_code" class="fm-control" autocomplete="off" x-model="nb.state_code">
                         </div>
-                        <div class="fm-field fm-wide">
+                        <div class="fm-field fm-span">
                             <label class="fm-label" for="nb-address">Address</label>
                             <textarea id="nb-address" class="fm-control" rows="3" autocomplete="off" x-model="nb.address"></textarea>
                         </div>

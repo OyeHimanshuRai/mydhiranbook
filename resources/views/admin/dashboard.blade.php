@@ -3,7 +3,7 @@
 <div class="adm-head"><div><h1>Dashboard</h1><p>MyDhiranBook platform: shops, access terms and admin access.</p></div>@include('admin._badge',['s'=>'enabled','label'=>'MFA verified'])</div>
 @if($stats['pending'])<div class="notice" role="status"><a href="/admin/requests">{{ $stats['pending'] }} new shop request(s) waiting for approval</a></div>@endif
 <dl class="adm-stats">
-<div class="adm-stat"><dt>Shops</dt><dd>{{ $stats['shops'] }}</dd><small>{{ $stats['active'] }} active · {{ $stats['suspended'] }} suspended</small></div>
+<div class="adm-stat"><dt>Shops</dt><dd>{{ $stats['shops'] }}</dd><small>{{ $stats['active'] }} active · {{ $stats['suspended'] }} suspended · {{ $stats['pending'] }} waiting</small></div>
 <div class="adm-stat"><dt>Entitled shops</dt><dd>{{ $stats['entitled'] }}</dd><small>Access term running</small></div>
 <div class="adm-stat"><dt>New shop requests</dt><dd>{{ $stats['pending'] }}</dd><small>Waiting for approval</small></div>
 </dl>

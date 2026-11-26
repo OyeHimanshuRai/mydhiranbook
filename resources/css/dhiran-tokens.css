@@ -64,6 +64,7 @@
 
     /* printed documents */
     --dh-doc-tint: color-mix(in srgb, var(--dh-accent) 5%, var(--dh-white));
+    --dh-doc-rule: #d9dce3;   /* printed paper keeps the earlier, stronger hairline (the screen hairline is lighter) */
     --dh-doc-tint-line: color-mix(in srgb, var(--dh-accent) 16%, var(--dh-white));
 
     /* effects */

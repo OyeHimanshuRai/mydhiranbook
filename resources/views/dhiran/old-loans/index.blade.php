@@ -42,7 +42,7 @@
                                 <td data-label="Ticket #" data-cell="title" class="whitespace-nowrap">
                                     <a href="{{ route('dhiran.show', $loan) }}" class="font-mono font-medium text-slate-700 hover:text-[var(--kh-ink-2)]">{{ $loan->loan_number }}</a>
                                 </td>
-                                <td data-label="Customer" class="font-medium text-slate-700">{{ $loan->customer->name ?? '---' }}</td>
+                                <td data-label="Customer" class="dh-clip font-medium text-slate-700" title="{{ $loan->customer->name ?? '---' }}">{{ $loan->customer->name ?? '---' }}</td>
                                 <x-dhiran.mobile-cell :number="$loan->customer?->mobile" />
                                 <td data-label="Loan date" class="whitespace-nowrap">{{ $loan->loan_date?->format('d M Y') }}</td>
                                 <td data-label="Lent" class="whitespace-nowrap text-right">₹{{ \App\Support\IndianNumber::format($loan->principal_amount, 2) }}</td>

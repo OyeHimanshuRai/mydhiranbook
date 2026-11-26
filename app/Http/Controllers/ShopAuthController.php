@@ -9,7 +9,11 @@ use Illuminate\Validation\ValidationException;
 class ShopAuthController
 {
     public function loginForm() { return view('auth.login'); }
-    public function registerForm() { return view('auth.register'); }
+    public function registerForm(Request $r)
+    {
+        if ($ref=\App\Models\Shop::cleanReferralCode($r->query('ref'))) { $r->session()->put('referral_ref',$ref); } // remembered until the business form
+        return view('auth.register');
+    }
     public function register(Request $r)
     {
         $email=$r->input('email'); $mobile=$r->input('mobile'); // arrays/non-strings are left for validation to reject

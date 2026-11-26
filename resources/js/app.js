@@ -27,6 +27,7 @@ import { configureDialogDatePicker } from './date-picker-dialog';
 import { extractConfirmMessage } from './confirm-message';
 import { createQuoteState } from './pos-quote';
 import { createLatestRequest } from './latest-request';
+import './ux/index.js'; // command palette, shortcuts, autosave, inline validation, recovery, skeletons, bulk select
 
 initializeCustomerPhotos();
 initializeChallanShare();

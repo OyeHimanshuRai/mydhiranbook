@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
     Route::prefix('dhiran')->name('dhiran.')->middleware(['shop'])->group(function () {
         // Dashboard & Activation — no dhiran.enabled check (dashboard shows activation page)
         Route::post('/activate', [\App\Http\Controllers\DhiranController::class, 'activate'])->middleware('can:dhiran.settings')->name('activate');
+        Route::get('/referrals', [\App\Http\Controllers\DhiranReferralController::class, 'index'])->middleware('can:dhiran.view')->name('referrals');
 
         // All remaining routes require dhiran to be enabled
         Route::middleware(['dhiran.enabled'])->group(function () {
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\Route;
             Route::post('/customers', [\App\Http\Controllers\DhiranController::class, 'storeCustomer'])->middleware('can:dhiran.create')->name('customers.store');
             // New Loan borrower picker: at most 8 active matches for what was typed (declared before /borrowers/{customer}).
             Route::get('/borrowers/search', [\App\Http\Controllers\DhiranController::class, 'searchBorrowers'])->middleware(['can:dhiran.create', 'throttle:60,1'])->name('borrowers.search');
+            // Command palette (Ctrl K): this shop's loans and customers by what was typed, 6 of each at most.
+            Route::get('/palette', \App\Http\Controllers\DhiranPaletteController::class)->middleware(['can:dhiran.view', 'throttle:60,1,palette'])->name('palette');
             // Save a customer's details without a loan (declared before /borrowers/{customer}).
             Route::get('/borrowers/create', [\App\Http\Controllers\DhiranController::class, 'createCustomer'])->middleware('can:dhiran.create')->name('borrowers.create');
 
@@ -24,6 +27,8 @@ use Illuminate\Support\Facades\Route;
 
             // Loan listing & detail — view permission
             Route::get('/loans', [\App\Http\Controllers\DhiranController::class, 'loans'])->middleware(['can:dhiran.view', 'report.password:export'])->name('loans');
+            // Bulk item tags for the loans ticked on the Loans list (declared before /loans/{loan} so 'tags' is never taken for a loan).
+            Route::get('/loans/tags', [\App\Http\Controllers\DhiranController::class, 'tags'])->middleware(['can:dhiran.view', 'throttle:30,1,bulk-tags'])->name('tags.bulk');
             Route::get('/loans/{loan}', [\App\Http\Controllers\DhiranController::class, 'show'])->middleware('can:dhiran.view')->name('show');
             // Activate a pending-evidence loan (evidence-gated in the service).
             Route::post('/loans/{loan}/activate', [\App\Http\Controllers\DhiranController::class, 'activateLoan'])->middleware('can:dhiran.create')->name('activate-loan');

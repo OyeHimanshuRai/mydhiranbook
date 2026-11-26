@@ -1,0 +1,104 @@
+/* ux-feedback: skeleton loaders, loading states, offline banner and recovery toasts.
+   Owned by resources/js/ux/skeleton.js, recovery.js and components/dhiran/skeleton.blade.php.
+   Tokens only (dhiran-tokens.css / khata-tokens.css); no yellow; shimmer stops under prefers-reduced-motion. */
+
+/* ---- Turbo's own progress bar: brand ink, 2px (Turbo injects its stylesheet first in <head>, this one wins) ---- */
+:root .turbo-progress-bar { height: 2px; background: var(--dh-accent, var(--kh-ink)); }
+
+/* ---- Skeleton blocks ---- */
+.ux-skel {
+    display: block;
+    border-radius: var(--kh-radius-sm, 4px);
+    background: linear-gradient(90deg, var(--kh-wash) 0%, color-mix(in srgb, var(--kh-wash) 35%, var(--kh-panel)) 50%, var(--kh-wash) 100%);
+    background-size: 200% 100%;
+    animation: ux-shimmer 1.4s linear infinite;
+}
+.ux-skel-line { height: .9rem; }
+.ux-skel-line.ux-tall { height: 1.4rem; }
+.ux-skel-box { height: 2.75rem; border-radius: var(--kh-radius, 6px); }
+@keyframes ux-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+/* widths without inline styles */
+.ux-w-15 { width: 15%; } .ux-w-25 { width: 25%; } .ux-w-35 { width: 35%; } .ux-w-50 { width: 50%; }
+.ux-w-65 { width: 65%; } .ux-w-80 { width: 80%; } .ux-w-100 { width: 100%; }
+
+.ux-skel-wrap { display: block; width: 100%; }
+.ux-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* the card that holds rows / one card of the "cards" variant */
+.ux-skel-card {
+    display: block; padding: var(--sp-3, 12px) var(--sp-4, 16px);
+    background: var(--dh-card, var(--kh-panel)); border: 1px solid var(--dh-line, var(--kh-rule));
+    border-radius: var(--dh-card-radius, var(--kh-radius-card, 12px));
+}
+.ux-skel-table { padding: 0; overflow: hidden; }
+.ux-skel-table > .ux-skel-head { display: grid; grid-template-columns: 1fr 2fr 1fr 1fr; gap: var(--sp-4, 16px); padding: var(--sp-3, 12px) var(--sp-4, 16px); background: var(--dh-table-head, var(--kh-wash)); border-bottom: 1px solid var(--dh-line, var(--kh-rule)); }
+.ux-skel-table > .ux-skel-row { display: grid; grid-template-columns: 1fr 2fr 1fr 1fr; gap: var(--sp-4, 16px); align-items: center; padding: var(--sp-3, 12px) var(--sp-4, 16px); min-height: 3rem; border-bottom: 1px solid var(--dh-line-soft, var(--kh-rule-soft)); }
+.ux-skel-table > .ux-skel-row:last-child { border-bottom: 0; }
+.ux-skel-cards { display: grid; gap: var(--sp-3, 12px); grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); }
+.ux-skel-cards > .ux-skel-row { display: grid; gap: var(--sp-2, 8px); }
+.ux-skel-form { display: grid; gap: var(--sp-4, 16px); }
+.ux-skel-form > .ux-skel-row { display: grid; gap: var(--sp-2, 8px); }
+.ux-skel-detail { display: grid; gap: var(--sp-3, 12px); }
+.ux-skel-detail > .ux-skel-row { display: grid; gap: var(--sp-2, 8px); }
+.ux-skel-detail .ux-skel-title { display: grid; gap: var(--sp-2, 8px); margin-bottom: var(--sp-2, 8px); }
+
+/* phones (360px): fewer columns, the third and fourth cell drop out */
+@media (max-width: 599.98px) {
+    .ux-skel-table > .ux-skel-head, .ux-skel-table > .ux-skel-row { grid-template-columns: 1fr 1fr; gap: var(--sp-3, 12px); }
+    .ux-skel-table > .ux-skel-head > :nth-child(n+3), .ux-skel-table > .ux-skel-row > :nth-child(n+3) { display: none; }
+}
+
+/* ---- The overlay put over .dh-content (page visit) or turbo-frame#dh-results (live search) while a load is slow.
+   Absolute, so nothing moves: no layout shift. Children of the host are made inert by skeleton.js meanwhile. ---- */
+.dh-content[aria-busy="true"], turbo-frame[data-ux-skel] { position: relative; }
+.ux-skel-overlay {
+    position: absolute; inset: 0; z-index: 6; overflow: hidden; background: var(--kh-paper, var(--dh-bg)); cursor: progress;
+    animation: ux-skel-in var(--dur-2, 180ms) var(--ease-out, ease-out);
+}
+.ux-skel-overlay > .ux-skel-wrap { position: sticky; top: 0; }
+turbo-frame[data-ux-skel] > .ux-skel-overlay { z-index: 4; }
+@keyframes ux-skel-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---- Submit buttons while working ---- */
+button[data-ux-busy], input[data-ux-busy] { cursor: progress; }
+
+/* ---- Recovery host: lives on <html>, so a Turbo body swap never removes it ---- */
+.ux-rec { position: fixed; inset: 0; z-index: 10001; pointer-events: none; }
+.ux-offline {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: calc(env(safe-area-inset-top, 0px) + 6px) max(12px, env(safe-area-inset-right, 0px)) 6px max(12px, env(safe-area-inset-left, 0px));
+    background: var(--kh-ink); color: #fff; font-size: var(--fs-meta, 13px); font-weight: 600; line-height: 1.4; text-align: center;
+}
+.ux-offline[data-state="online"] { background: var(--kh-ok); }
+.ux-offline[hidden], .ux-toast[hidden] { display: none; }
+.ux-toast {
+    position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px));
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+    display: flex; align-items: center; gap: var(--sp-3, 12px); padding: 10px 8px 10px 14px; pointer-events: auto;
+    background: var(--kh-ink); color: #fff; border-radius: var(--kh-radius, 6px); box-shadow: var(--kh-lift, 0 6px 20px rgba(0, 0, 0, .25));
+    font-size: var(--fs-meta, 14px); font-weight: 600; line-height: 1.45; overflow-wrap: anywhere;
+    animation: ux-skel-in var(--dur-2, 180ms) var(--ease-out, ease-out);
+}
+.ux-toast-text { flex: 1 1 auto; min-width: 0; }
+.ux-toast button {
+    flex: none; min-height: var(--tap, 44px); min-width: var(--tap, 44px); padding: 0 12px; border-radius: var(--kh-radius-btn, 8px);
+    font: inherit; cursor: pointer; background: transparent; color: #fff; border: 1px solid transparent;
+}
+.ux-toast button.ux-toast-retry { background: #fff; color: var(--kh-ink); }
+.ux-toast button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (min-width: 768px) { .ux-toast { right: auto; left: 24px; bottom: 24px; max-width: 440px; } }
+
+/* ---- The notices card was opened: the bell badge goes quiet (rolled back if the "seen" request fails) ---- */
+.dh-bell.is-seen .dh-bell-n { background: var(--dh-muted); }
+
+/* ---- Motion and contrast preferences ---- */
+@media (prefers-reduced-motion: reduce) {
+    .ux-skel { animation: none; background: var(--kh-wash); }
+    .ux-skel-overlay, .ux-toast { animation: none; }
+}
+@media (forced-colors: active) {
+    .ux-skel { background: GrayText; opacity: .35; animation: none; }
+    .ux-offline, .ux-toast { border: 1px solid CanvasText; }
+}
+@media print { .ux-rec, .ux-skel-overlay { display: none; } }

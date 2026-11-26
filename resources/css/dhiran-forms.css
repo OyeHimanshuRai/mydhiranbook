@@ -23,7 +23,7 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
     border: 1px solid var(--dh-line); border-radius: var(--r-sm); background: var(--dh-card); color: var(--dh-ink-soft);
     font-size: 0.8125rem; font-weight: 600; line-height: 1.2; text-align: center; text-decoration: none; overflow-wrap: anywhere;
 }
-.dh-app .fm-flow li[aria-current="step"] { border-color: var(--dh-accent); background: var(--dh-icon-soft); color: var(--dh-ink); }
+.dh-app .fm-flow li[aria-current="step"] { border-color: var(--kh-ink-edge); background: var(--dh-icon-soft); color: var(--dh-ink); }
 .dh-app .fm-num {
     flex: none; display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: var(--r-sm);
     background: var(--dh-accent); color: var(--dh-on-accent); font-size: 0.875rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums;
@@ -56,6 +56,14 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
     display: block; width: 100%; min-width: 0; min-height: var(--fl-ctl-h); padding: 0 var(--sp-3);
     font: inherit; font-size: var(--fl-fs-body); line-height: 1.3; color: var(--dh-ink); font-variant-numeric: tabular-nums;
     background-color: var(--dh-field); border: 1px solid var(--kh-field-edge); border-radius: var(--kh-radius); -webkit-appearance: none; appearance: none;
+}
+.dh-app select.fm-control:not([multiple]) {
+    display: inline-block; height: var(--fl-ctl-h); vertical-align: top; padding: 0 52px 0 var(--sp-3);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dh-app select.fm-control:not([multiple])::picker-icon { display: none; }
+@media (min-width: 1024px) {
+    .dh-app .fm-item .fm-irow select.fm-control:not([multiple]) { font-size: var(--fs-sm); padding-left: 10px; }
 }
 .dh-app textarea.fm-control { min-height: 5.5rem; padding: var(--sp-3); resize: vertical; line-height: 1.45; }
 .dh-app .fm-control:hover { border-color: var(--dh-muted); }
@@ -91,7 +99,7 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
 .dh-app .fm-limit.is-problem { color: var(--dh-danger); font-weight: 600; }
 
 /* Summary of failed submit, and the same look for a refusal inside the borrower dialog */
-.dh-app .fm-alert { display: flex; gap: var(--sp-3); align-items: flex-start; padding: var(--sp-3) var(--sp-4); border: 1px solid var(--dh-danger-line); border-radius: var(--r-md); background: var(--dh-danger-soft); color: var(--dh-danger); font-size: var(--fl-fs-body); }
+.dh-app .fm-alert { display: flex; gap: var(--sp-3); align-items: flex-start; padding: var(--sp-3) var(--sp-4); border: 0; border-radius: var(--r-md); background: var(--dh-danger-soft); color: var(--dh-danger); font-size: var(--fl-fs-body); }
 .dh-app .fm-alert:focus { outline: 2px solid var(--dh-danger); outline-offset: 2px; }
 .dh-app .fm-alert svg { flex: none; margin-top: 2px; }
 .dh-app .fm-alert > div, .dh-app .fm-alert > span { min-width: 0; }
@@ -104,7 +112,7 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
 /* ---- Buttons in forms: touch size, wrap-safe ---- */
 .dh-app :is(.fm-page, .fm-dialog) .btn { min-height: var(--fl-ctl-h); padding: 0 var(--fl-btn-px); font-size: var(--fl-fs-body); line-height: 1.2; text-align: center; }
 .dh-app .fm-add-item, .dh-app .fm-add-borrower { width: 100%; }
-.dh-app .fm-add-item { border-style: dashed; border-width: 1.5px; }
+.dh-app .fm-add-item { border-style: solid; border-width: 1px; }
 @media (min-width: 640px) { .dh-app .fm-add-item, .dh-app .fm-add-borrower { width: auto; justify-self: start; } }
 
 /* ---- Customer search ---- */
@@ -120,7 +128,7 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
 .dh-app .fm-combo-name { display: block; font-weight: 600; overflow-wrap: anywhere; }
 .dh-app .fm-combo-sub { display: block; font-size: 0.875rem; color: var(--dh-muted); overflow-wrap: anywhere; }
 .dh-app .fm-combo-none { padding: var(--sp-3); font-size: var(--fl-fs-body); color: var(--dh-muted); }
-.dh-app .fm-picked { min-width: 0; padding: var(--sp-3) var(--sp-4); background: var(--dh-muted-surface); border: 1px solid var(--dh-line); border-radius: var(--r-sm); }
+.dh-app .fm-picked { min-width: 0; padding: var(--sp-3) var(--sp-4); background: var(--dh-muted-surface); border: 0; border-radius: var(--r-sm); }
 .dh-app .fm-picked-name { margin: 0 0 var(--sp-2); font-size: var(--fl-fs-h2); font-weight: 600; color: var(--dh-ink); overflow-wrap: anywhere; }
 
 /* Label above value, two to a row from 480px */
@@ -131,7 +139,7 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
 .dh-app .fm-facts dd { margin: 0; font-size: var(--fl-fs-body); font-weight: 600; color: var(--dh-ink); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 
 /* ---- Pledged item (one repeater unit) ---- */
-.dh-app .fm-item { min-width: 0; margin: 0; padding: var(--sp-3); display: grid; gap: var(--sp-3); background: var(--dh-muted-surface); border: 1px solid var(--dh-line); border-radius: var(--r-sm); }
+.dh-app .fm-item { min-width: 0; margin: 0; padding: var(--sp-3); display: grid; gap: var(--sp-3); background: var(--dh-muted-surface); border: 0; border-radius: var(--r-sm); }
 @media (min-width: 640px) { .dh-app .fm-item { padding: var(--sp-4); gap: var(--sp-4); } }
 .dh-app .fm-item-head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); min-width: 0; }
 .dh-app .fm-item-head h3 { margin: 0; font-size: var(--fl-fs-h3); font-weight: 600; color: var(--dh-ink); }
@@ -166,6 +174,9 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
 .dh-app .fm-bar-figs > div { min-width: 0; }
 .dh-app .fm-bar-figs dt { font-size: 0.75rem; line-height: 1.2; color: var(--dh-muted); }
 .dh-app .fm-bar-figs dd { margin: 0; font-size: var(--fl-fs-body); font-weight: 600; color: var(--dh-ink); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+@media (max-width: 419.98px) {
+    .dh-app .fm-bar-figs dd { white-space: nowrap; font-size: clamp(0.75rem, 3.6vw, 0.9375rem); }
+}
 .dh-app .fm-bar-text { margin: 0; font-size: var(--fl-fs-body); color: var(--dh-ink-soft); min-width: 0; overflow-wrap: anywhere; }
 .dh-app .fm-bar-text strong { color: var(--dh-ink); }
 .dh-app .fm-bar-acts { display: flex; gap: var(--sp-2); min-width: 0; }
@@ -192,9 +203,13 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
 .dh-app .fm-dialog .fm-dialog-x { flex: none; width: var(--tap); min-width: var(--tap); height: var(--tap); padding: 0; }
 .fm-dialog-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: var(--sp-4); }
 .fm-dialog-foot { flex: none; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--dh-line); background: var(--dh-card); }
+.fm-cam .fm-dialog-foot { display: flex; flex-wrap: wrap; }
+.fm-cam .fm-dialog-foot > .btn { flex: 1 1 8rem; }
+.fm-cam .fm-dialog-foot > .btn-primary { flex: 2 1 11rem; }
 @media (min-width: 768px) {
     .fm-dialog[open] { inset: auto; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(40rem, calc(100vw - 2rem)); height: auto; max-height: min(90dvh, 46rem); border-radius: var(--r-lg); box-shadow: var(--dh-shadow); }
     .fm-dialog-foot { display: flex; justify-content: flex-end; }
+    .fm-cam .fm-dialog-foot > .btn, .fm-cam .fm-dialog-foot > .btn-primary { flex: none; }
     .fm-dialog-head, .fm-dialog-body, .fm-dialog-foot { padding-left: var(--sp-5); padding-right: var(--sp-5); }
     .fm-dialog-head { padding-top: var(--sp-4); }
     .fm-dialog-foot { padding-bottom: var(--sp-4); }
@@ -204,7 +219,7 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
 .dh-app .fm-flow li { flex-direction: row; justify-content: flex-start; gap: var(--sp-2); padding-inline: var(--sp-2); text-align: left; }
 @media (max-width: 479.98px) { .dh-app .fm-flow li { flex-direction: column; justify-content: center; text-align: center; } }
 .dh-app .fm-flow .fm-flow-name { min-width: 0; }
-.dh-app .fm-drop { position: relative; display: grid; place-items: center; gap: var(--sp-1); min-height: 9rem; padding: var(--sp-4); text-align: center; background: var(--dh-muted-surface); border: 1.5px dashed var(--ui-field-edge); border-radius: var(--r-md); color: var(--dh-ink-soft); }
+.dh-app .fm-drop { position: relative; display: grid; place-items: center; gap: var(--sp-1); min-height: 9rem; padding: var(--sp-4); text-align: center; background: var(--dh-muted-surface); border: 1px solid var(--kh-btn-edge); border-radius: var(--r-md); color: var(--dh-ink-soft); }
 .dh-app .fm-drop:hover { border-color: var(--dh-muted); }
 .dh-app .fm-drop:focus-within { outline: 2px solid var(--dh-focus); outline-offset: 2px; border-color: var(--dh-focus); }
 .dh-app .fm-drop.is-invalid { border-color: var(--dh-danger); background: var(--dh-danger-soft); }
@@ -234,7 +249,7 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
 
 /* A photo of a pledged item, on the item card: thumbnail, add/change, remove. */
 .dh-app .fm-photo-row { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
-.dh-app .fm-photo-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: var(--kh-radius); border: 1px solid var(--kh-field-edge); background: var(--dh-muted-surface); }
+.dh-app .fm-photo-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: var(--kh-radius); border: 1px solid var(--dh-line); background: var(--dh-muted-surface); }
 
 .dh-app .fm-cam-video { display: block; width: 100%; max-height: 60vh; background: #000; border-radius: var(--kh-radius); object-fit: contain; }
 
@@ -242,7 +257,7 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
 .dh-app .fm-photo-row .btn.fm-photo-act { min-width: 44px; min-height: 44px; padding: 0; justify-content: center; }
 .dh-app .fm-thumb-btn { padding: 0; border: 0; background: none; border-radius: var(--kh-radius); cursor: zoom-in; line-height: 0; }
 .dh-app .fm-thumb-btn:focus-visible, .dh-app .fm-avatar-btn:focus-visible { outline: 2px solid var(--dh-focus); outline-offset: 2px; }
-.dh-app .fm-doc-chip { display: inline-flex; align-items: center; gap: var(--sp-2); max-width: 100%; padding: 0 var(--sp-3); min-height: 44px; border: 1px solid var(--kh-field-edge); border-radius: var(--kh-radius); background: var(--dh-muted-surface); color: var(--dh-ink); font-size: var(--fl-fs-cell); overflow-wrap: anywhere; }
+.dh-app .fm-doc-chip { display: inline-flex; align-items: center; gap: var(--sp-2); max-width: 100%; padding: 0 var(--sp-3); min-height: 44px; border: 1px solid var(--kh-btn-edge); border-radius: var(--kh-radius); background: var(--dh-muted-surface); color: var(--dh-ink); font-size: var(--fl-fs-cell); overflow-wrap: anywhere; }
 .dh-app .fm-picked-head { display: flex; align-items: center; gap: var(--sp-3); margin: 0 0 var(--sp-2); }
 .dh-app .fm-picked-head .fm-picked-name { margin: 0; }
 .dh-app .fm-avatar-btn { padding: 0; border: 0; background: none; border-radius: 50%; line-height: 0; cursor: zoom-in; flex: none; }
@@ -255,3 +270,231 @@ html:has(.fm-bar), .dh-scroll:has(.fm-bar) { scroll-padding-bottom: 8rem; }
 .dh-app .fm-view-card img { max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: var(--kh-radius); background: #fff; }
 .dh-app .fm-view-card figcaption { color: #fff; font-size: var(--fl-fs-body); }
 .dh-app .fm-view-card .btn.fm-view-x { position: absolute; top: calc(var(--sp-2) * -1); right: calc(var(--sp-2) * -1); min-width: 44px; min-height: 44px; padding: 0; justify-content: center; z-index: 1; }
+
+/* ---- Right-sized fields (New Loan): a field is as wide as what it holds, never the whole card ----
+   .fm-row   related fields on one line: two-up grid on phones, a wrapping row from 560px (bottoms line up, so a wrapped label never pushes an input down).
+   .fm-w-*   width of the field's cell, from 560px (on phones every cell is half or full width, so nothing is cut off):
+             xs 6rem a short number | sm 8.5rem weights, purity, months | unit 12rem a number with a word suffix (% / month)
+             md 11rem rate, metal, phone, PAN | lg 15rem amounts, valuation, names, HUID | xl up to 30rem item description (grows).
+   .fm-span  takes the whole line on phones only (long cells like the description); on wider screens it is just a cell. */
+.dh-app .fm-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); align-items: end; min-width: 0; }
+.dh-app .fm-row > * { min-width: 0; }
+.dh-app .fm-row > .fm-span { grid-column: 1 / -1; }
+.dh-app .fm-row select.fm-control { text-overflow: ellipsis; }
+@media (min-width: 560px) {
+    .dh-app .fm-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--sp-4); }
+    .dh-app .fm-item .fm-row { gap: var(--sp-3) var(--sp-4); }
+    .dh-app .fm-w-xs { width: min(100%, 6rem); }
+    .dh-app .fm-w-sm { width: min(100%, 8.5rem); }
+    .dh-app .fm-w-unit { width: min(100%, 12rem); }
+    .dh-app .fm-w-md { width: min(100%, 11rem); }
+    .dh-app .fm-w-lg { width: min(100%, 15rem); }
+    .dh-app .fm-w-xl { flex: 1 1 12rem; max-width: 30rem; } /* grows to fill the line, up to 30rem */
+    /* Inside dialogs (e.g. Add new borrower), keep a tidy 2-column grid so Address spans both columns rather than shrinking to intrinsic textarea width. */
+    .dh-app .fm-dialog .fm-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3) var(--sp-4); align-items: end; }
+    .dh-app .fm-dialog .fm-row > .fm-field { width: auto; max-width: none; }
+    .dh-app .fm-dialog .fm-row > .fm-span { grid-column: 1 / -1; }
+}
+
+/* Customer: the search grows, "Add new borrower" hugs its text on the same line from 768px (a full-width button on phones). */
+.dh-app .fm-borrower-row { display: grid; gap: var(--sp-3); min-width: 0; }
+@media (min-width: 768px) {
+    .dh-app .fm-borrower-row { grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--sp-4); align-items: start; }
+    /* drop the button past the label (one line of label type + its margin), so it sits level with the search box even when an error shows below it */
+    .dh-app .fm-borrower-row .fm-add-borrower { margin-top: calc(var(--fl-fs-body) * 1.35 + var(--sp-2)); white-space: nowrap; }
+}
+
+/* Worked-out figures beside the inputs: label above like a field, the value on the same 44px line as an input. */
+.dh-app .fm-hint { margin: 0; }
+.dh-app .fm-hint:empty { display: none; }
+.dh-app .fm-readout.fm-readout--stat { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); align-items: end; }
+.dh-app .fm-readout.fm-readout--stat > div, .dh-app .fm-readout.fm-readout--stat > div:first-child { display: block; padding: 0; border: 0; border-radius: 0; background: none; }
+.dh-app .fm-readout--stat dt { margin: 0 0 var(--sp-2); font-size: var(--fl-fs-body); font-weight: 600; line-height: 1.35; color: var(--dh-ink-soft); }
+.dh-app .fm-readout--stat dd { display: flex; align-items: center; min-height: var(--fl-ctl-h); margin: 0; font-size: var(--fl-fs-body); text-align: left; }
+@media (min-width: 560px) {
+    .dh-app .fm-readout.fm-readout--stat { display: flex; gap: var(--sp-4); }
+    .dh-app .fm-readout.fm-readout--stat > div { flex: 0 0 auto; width: 10rem; }
+    .dh-app .fm-foot-end { margin-left: auto; }
+}
+/* Item photo buttons: a tidy row of 44px icon buttons, left on phones, at the end of the card from 560px. */
+.dh-app .fm-photo-row { gap: var(--sp-2); }
+.dh-app .fm-photo-row .fm-thumb-btn { flex: none; }
+
+/* Loan terms and summary: figures read as a compact block, not a 60rem-wide line. */
+.dh-app .fm-ltv, .dh-app .fm-sum { max-width: 28rem; }
+
+/* Evidence slots: three content-sized cells in a row (stacked on phones). */
+.dh-app .fm-slots { gap: var(--sp-4) var(--sp-6); }
+@media (min-width: 560px) { .dh-app .fm-slot { flex: 0 1 auto; min-width: 10rem; } }
+
+/* Phones: a card header whose switch would squeeze the title puts the switch on its own line under it. */
+@media (max-width: 479.98px) {
+    .dh-app .fm-card-head:has(.fm-head-switch) { flex-wrap: wrap; }
+    .dh-app .fm-card-head .fm-head-switch { margin: var(--sp-1) 0 0; }
+    .dh-app .fm-card-head .fm-head-switch .ui-switch-label { text-align: left; }
+    .dh-app .fm-card-head:has(.fm-num) .fm-head-switch { margin: 0 0 0 calc(28px + var(--sp-3)); }
+}
+
+/* Pledged item card: responsive container grid inside .fm-main so 1100px laptops with sidebar + aside don't squish into 4 cramped columns. */
+.dh-app .fm-item .fm-irow .fm-label,
+.dh-app .fm-item .fm-irow .fm-readout--stat dt { display: block; margin: 0 0 var(--sp-2); font-size: clamp(0.75rem, 0.714rem + 0.179vw, 0.875rem); font-weight: 600; line-height: 1.3; color: var(--dh-muted); white-space: normal; }
+.dh-app .fm-item .fm-irow .fm-readout--stat dd { display: flex; align-items: center; min-height: var(--fl-ctl-h); padding: 0 var(--sp-3); margin: 0; border-radius: var(--r-sm); background: var(--kh-wash, #f4f5f8); font-weight: 600; font-variant-numeric: tabular-nums; }
+.dh-app .fm-item .fm-irow { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3) var(--sp-4); align-items: end; }
+.dh-app .fm-item .fm-irow > .fm-field, .dh-app .fm-item .fm-irow > .fm-w-xs, .dh-app .fm-item .fm-irow > .fm-w-sm,
+.dh-app .fm-item .fm-irow > .fm-w-md, .dh-app .fm-item .fm-irow > .fm-w-lg { width: auto; max-width: none; min-width: 0; }
+.dh-app .fm-item .fm-irow .fm-affix, .dh-app .fm-item .fm-irow .fm-control { width: 100%; }
+.dh-app .fm-item .fm-irow .fm-readout--stat { display: contents; }
+.dh-app .fm-item .fm-irow .fm-readout--stat > div { display: block; min-width: 0; width: auto; padding: 0; }
+.dh-app .fm-item .fm-irow > .fm-span { grid-column: auto; }
+.dh-app .fm-item .fm-irow > .fm-w-xl, .dh-app .fm-item .fm-irow .fm-foot-end { grid-column: 1 / -1; justify-self: stretch; }
+
+/* =====================================================================================================================
+   New Loan, reworked (owner 2026-11-26: "the whole page looks bad").
+   Spatial thesis: ONE reading path (borrower -> items -> terms -> proof) in a calm main column, and the running money
+   figures in a summary panel beside it that stays in view; below 1100px the summary sits after the form and the
+   sticky bar keeps the three key figures and the Create button in reach. Sections are flat panels separated by space
+   (no card inside a card, no numbered badges); a pledged item is a block between hairlines, not a grey box.
+   ===================================================================================================================== */
+.dh-app .dhiran-create-form.fm-page { max-width: 74rem; gap: 0; }
+.dh-app .fm-layout { display: grid; gap: var(--sp-5); min-width: 0; align-items: start; }
+.dh-app .fm-main { display: grid; gap: var(--sp-6, 1.5rem); min-width: 0; container: fm-main / inline-size; }
+@media (min-width: 1100px) {
+    .dh-app .fm-layout { grid-template-columns: minmax(0, 1fr) 19.5rem; gap: var(--sp-5, 1.5rem); }
+    .dh-app .fm-aside { position: sticky; top: calc(var(--dh-head, 56px) + var(--sp-4)); max-height: calc(100dvh - var(--dh-head, 56px) - var(--sp-6)); overflow-y: auto; }
+    .dh-app .dhiran-create-form .fm-bar { display: none; }              /* the summary panel carries the figures and the actions */
+}
+@media (min-width: 1100px) and (max-width: 1279.98px) {
+    .dh-app .fm-layout { grid-template-columns: minmax(0, 1fr) 17.5rem; gap: var(--sp-4); }
+}
+@media (max-width: 639.98px) {
+    .dh-scroll:has(.fm-bar) { padding-bottom: 0; }
+}
+@media (max-width: 1099.98px) {
+    .dh-scroll:has(.dhiran-create-form .fm-bar) { padding-bottom: 0; }
+    .dh-app .dhiran-create-form .fm-layout { padding-bottom: var(--sp-4); }
+}
+
+/* Sections: flat panel, soft shadow, no inner dividing line under the header */
+.dh-app .fm-main > .fm-card { border: 0; border-radius: var(--dh-card-radius); box-shadow: var(--elev-1); background: var(--dh-card); }
+.dh-app .fm-main > .fm-card > .fm-card-head { padding: var(--sp-5) var(--sp-5) var(--sp-2); border: 0; align-items: center; }
+.dh-app .fm-main > .fm-card > .fm-card-body { padding: var(--sp-3) var(--sp-5) var(--sp-5); gap: var(--sp-5); }
+@media (max-width: 639.98px) {
+    .dh-app .fm-main > .fm-card > .fm-card-head { padding: var(--sp-4) var(--sp-4) var(--sp-1); }
+    .dh-app .fm-main > .fm-card > .fm-card-body { padding: var(--sp-2) var(--sp-4) var(--sp-4); }
+}
+.dh-app .fm-main .fm-title { font-size: var(--fl-fs-h2); letter-spacing: 0; }
+.dh-app .fm-main .fm-desc { margin-top: 2px; font-size: var(--fs-sm); }
+.dh-app .fm-head-switch { margin-left: auto; }
+
+/* Labels: quiet, one weight, never shouting; controls keep their 3:1 edge (the only line that matters) */
+.dh-app .dhiran-create-form .fm-label { margin-bottom: 6px; font-size: clamp(0.75rem, 0.714rem + 0.179vw, 0.875rem); font-weight: 500; color: var(--dh-ink-soft); }
+.dh-app .dhiran-create-form .fm-control { border-radius: var(--r-md, 6px); }
+.dh-app .dhiran-create-form select.fm-control:not([multiple]) { padding-right: 52px; text-overflow: ellipsis; }
+.dh-app .dhiran-create-form .fm-control:hover:not(:focus) { border-color: var(--kh-ink-edge, var(--kh-field-edge)); }
+
+/* Borrower row and the borrower once chosen: a quiet strip, no box */
+.dh-app .fm-picked { padding: var(--sp-3) 0 0; border: 0; background: none; border-top: 1px solid var(--dh-line-soft); }
+.dh-app .fm-picked-name { font-weight: 600; }
+
+/* Pledged items: blocks separated by a hairline and space, never a card in a card */
+.dh-app .fm-main .fm-item { padding: var(--sp-5) 0 0; background: none; border-radius: 0; border-top: 1px solid var(--dh-line-soft); gap: var(--sp-4); }
+.dh-app .fm-main .fm-item:first-of-type { padding-top: var(--sp-1); border-top: 0; }
+.dh-app .fm-main .fm-item-head h3 { font-size: var(--fl-fs-h3); font-weight: 600; }
+.dh-app .fm-main .fm-item-head h3::before { content: ''; }
+.dh-app .btn.fm-remove { background: none; border-color: transparent; color: var(--dh-danger); box-shadow: none; }
+.dh-app .btn.fm-remove:hover { background: var(--dh-danger-soft); }
+.dh-app .fm-add-item { justify-self: start; }
+/* worked-out boxes inside an item sit on a faint tint, not on a bordered tile */
+.dh-app .fm-item .fm-irow .fm-readout--stat dd { background: var(--dh-muted-surface); border-radius: var(--r-md, 6px); }
+
+/* Loan terms: the principal leads, the rest follow in a tidy grid */
+.dh-app #principal_amount { font-size: clamp(1rem, 0.946rem + 0.268vw, 1.1875rem); font-weight: 600; }
+.dh-app .fm-ltv > div { padding-top: var(--sp-1); }
+.dh-app .fm-limit { margin: 6px 0 0; font-size: clamp(0.75rem, 0.714rem + 0.179vw, 0.875rem); color: var(--dh-muted); }
+
+/* Summary panel */
+.dh-app .fm-aside-card { display: grid; gap: var(--sp-4); padding: var(--sp-5); background: var(--dh-card); border-radius: var(--dh-card-radius); box-shadow: var(--elev-1); min-width: 0; }
+.dh-app .fm-aside-title { margin: 0; font-size: var(--fl-fs-h2); font-weight: 600; color: var(--dh-ink); }
+.dh-app .fm-aside .fm-sum { border: 0; padding: 0; gap: 0; }
+.dh-app .fm-aside .fm-sum > div { padding: var(--sp-2) 0; border-top: 1px solid var(--dh-line-soft); }
+.dh-app .fm-aside .fm-sum > div:first-child { border-top: 0; }
+.dh-app .fm-aside .fm-sum .fm-sum-main { padding: var(--sp-3) 0; }
+.dh-app .fm-aside .fm-sum .fm-sum-main dd { font-size: var(--fl-fs-h2); }
+.dh-app .fm-aside-acts { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-2); padding-top: var(--sp-2); }
+.dh-app .fm-aside-acts .btn-primary { width: 100%; }
+@media (max-width: 1099.98px) {
+    .dh-app .fm-aside-card { padding: var(--sp-4); }
+    .dh-app .fm-aside-acts { display: none; }                          /* the sticky bar carries Cancel + Create loan below 1100px */
+}
+
+/* Sticky bar: quieter and flush full-bleed across the bottom below 1100px */
+.dh-app .dhiran-create-form .fm-bar { border-top: 0; box-shadow: 0 -8px 20px color-mix(in srgb, var(--dh-shadow-tint) 10%, transparent); }
+@media (max-width: 1099.98px) {
+    .dh-app .dhiran-create-form .fm-bar {
+        margin-inline: calc(var(--dh-pad) * -1);
+        padding: var(--sp-2) var(--dh-pad);
+        padding-bottom: calc(var(--sp-2) + env(safe-area-inset-bottom, 0px));
+        border: 0; border-top: 1px solid var(--dh-line); border-radius: 0;
+    }
+}
+@media (min-width: 640px) and (max-width: 1099.98px) {
+    .dh-app .dhiran-create-form .fm-bar {
+        padding: var(--sp-3) var(--dh-pad);
+        padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+/* Loan terms & pledged item rows respond to .fm-main container width rather than viewport width alone. */
+.dh-app #fm-step-terms .fm-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); align-items: end; }
+.dh-app #fm-step-terms .fm-row > .fm-field { width: auto; max-width: none; }
+@container fm-main (max-width: 419.98px) {
+    .dh-app .fm-item .fm-irow > .fm-span { grid-column: 1 / -1; }
+    .dh-app .fm-item .fm-irow > .fm-field:has(> [id^="it-purity-custom-"], > .fm-affix > [id^="it-rate-"], > .fm-affix > [id^="it-value-"]) { grid-column: 1 / -1; }
+}
+@container fm-main (max-width: 345px) {
+    .dh-app .fm-item .fm-irow > .fm-field:has(> select) { grid-column: 1 / -1; }
+}
+@container fm-main (min-width: 420px) and (max-width: 759.98px) {
+    .dh-app .fm-item .fm-irow--ident { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); }
+    .dh-app .fm-item .fm-irow--ident > .fm-w-xl { grid-column: auto; width: auto; max-width: none; flex: none; }
+}
+@container fm-main (min-width: 480px) {
+    .dh-app #fm-step-terms .fm-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); }
+    .dh-app #fm-step-terms .fm-row > .fm-span { grid-column: auto; }
+}
+@container fm-main (min-width: 720px) {
+    .dh-app #fm-step-terms .fm-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@container fm-main (min-width: 760px) {
+    .dh-app .fm-item .fm-irow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .dh-app .fm-item .fm-irow > .fm-span { grid-column: auto; }
+    .dh-app .fm-item .fm-irow > .fm-w-xl { grid-column: span 2; width: auto; max-width: none; flex: none; }
+    .dh-app .fm-item .fm-irow .fm-foot-end { grid-column: span 2; margin-left: 0; justify-self: end; }
+}
+.dh-app #fm-step-terms .fm-ltv > div { justify-content: flex-start; gap: var(--sp-3); padding-top: var(--sp-2); }
+.dh-app #fm-step-terms .fm-ltv dd { text-align: left; }
+
+/* "Add item" lives in the Pledged items heading row, at the right (owner 2026-11-26) */
+.dh-app #fm-step-items > .fm-card-head { justify-content: space-between; }
+.dh-app #fm-step-items > .fm-card-head .fm-add-item { margin-left: auto; flex: none; }
+
+/* Max-loan area under the principal: lead figure, two supporting figures and a thin usage meter */
+.dh-app .fm-limitbox { display: grid; gap: var(--sp-3); padding: var(--sp-4); margin-top: var(--sp-2); background: var(--dh-muted-surface); border-radius: var(--r-md, 6px); max-width: 36rem; }
+.dh-app .fm-limitbox-figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3) var(--sp-4); margin: 0; }
+.dh-app .fm-limitbox-figs > div { min-width: 0; }
+.dh-app .fm-limitbox-lead { grid-column: 1 / -1; }
+.dh-app .fm-limitbox-figs dt { margin: 0 0 2px; font-size: clamp(0.75rem, 0.714rem + 0.179vw, 0.875rem); font-weight: 500; color: var(--dh-muted); }
+.dh-app .fm-limitbox-figs dd { margin: 0; font-size: var(--fl-fs-body); font-weight: 600; color: var(--dh-ink); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.dh-app .fm-limitbox-lead dd { font-size: clamp(1.125rem, 0.98rem + 0.714vw, 1.625rem); line-height: 1.2; }
+.dh-app .fm-meter { height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--dh-ink) 12%, transparent); overflow: hidden; }
+.dh-app .fm-meter > span { display: block; width: 100%; height: 100%; border-radius: 3px; background: var(--dh-accent); transform: scaleX(var(--used, 0)); transform-origin: left center; transition: transform 150ms ease-out; }
+.dh-app .fm-limitbox.is-over .fm-meter > span { background: var(--dh-danger); }
+.dh-app .fm-limitbox.is-over .fm-limitbox-figs > div:last-child dt, .dh-app .fm-limitbox.is-over .fm-limitbox-figs > div:last-child dd { color: var(--dh-danger); }
+@media (min-width: 560px) { .dh-app .fm-limitbox-figs { grid-template-columns: 1.4fr 1fr 1fr; } .dh-app .fm-limitbox-lead { grid-column: auto; } }
+@media (prefers-reduced-motion: reduce) { .dh-app .fm-meter > span { transition: none; } }
+
+/* Phones: "Add another item" is a plain plus button in the heading row (the words stay for screen readers) */
+@media (max-width: 639.98px) {
+    .dh-app #fm-step-items > .fm-card-head .fm-add-item { width: 44px; min-width: 44px; padding: 0; justify-content: center; }
+    .dh-app #fm-step-items > .fm-card-head .fm-add-item .fm-add-text { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}

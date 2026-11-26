@@ -79,7 +79,7 @@
             color-scheme: light;
             --ink: var(--dh-ink);
             --muted: var(--dh-muted);
-            --line: var(--dh-line);
+            --line: var(--dh-doc-rule);
             --line-soft: var(--dh-muted-surface);
             --surface: var(--dh-card);
             --bg: var(--dh-muted-surface);
@@ -254,7 +254,7 @@
             color-scheme: light;
             --ink: var(--dh-ink);
             --muted: var(--dh-muted);
-            --line: var(--dh-line);
+            --line: var(--dh-doc-rule);
             --line-soft: var(--dh-muted-surface);
             --surface: var(--dh-card);
             --bg: var(--dh-muted-surface);
@@ -602,7 +602,7 @@
             color-scheme: light;
             --ink: var(--dh-ink);
             --muted: var(--dh-muted);
-            --line: var(--dh-line);
+            --line: var(--dh-doc-rule);
             --line-soft: var(--dh-muted-surface);
             --surface: var(--dh-card);
             --bg: var(--dh-muted-surface);
@@ -802,7 +802,7 @@
 :root {
     --dh-doc-ink: var(--dh-ink);
     --dh-doc-muted: var(--dh-muted);
-    --dh-doc-line: var(--dh-line);
+    --dh-doc-line: var(--dh-doc-rule);
     --dh-doc-soft: var(--dh-muted-surface);
     --dh-doc-brand: var(--dh-accent);
 }

@@ -113,46 +113,26 @@
 /* ───────── Tables: one card per row below 860px, a real table from there ───────── */
 .dd-tablecard { overflow: hidden; }
 .dh-app .dd-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.dh-app .dd-table th { padding: var(--sp-3) var(--sp-2); background: var(--kh-panel); border-bottom: 3px double var(--kh-text-3); color: var(--dh-ink-soft); font-size: var(--fl-fs-meta); font-weight: 600; line-height: 1.3; letter-spacing: 0.06em; text-transform: uppercase; text-align: left; vertical-align: bottom; }
-.dh-app .dd-table td { padding: var(--sp-3) var(--sp-2); border-top: 1px solid var(--dh-line-soft); color: var(--dh-ink-soft); font-size: var(--fl-fs-cell); font-weight: 400; line-height: 1.4; vertical-align: middle; overflow-wrap: anywhere; }
+.dh-app .dd-table th { padding: 0 var(--tb-pad); background: var(--tb-head); box-shadow: inset 0 -1px 0 var(--kh-rule); border: 0; color: var(--kh-text-2); font-size: var(--kh-fs-label); font-weight: 600; line-height: 1.3; letter-spacing: 0.03em; text-transform: uppercase; text-align: left; vertical-align: middle; white-space: nowrap; }
+.dh-app .dd-table td { padding: 10px var(--tb-pad); border: 0; color: var(--kh-text); font-size: var(--fl-fs-cell); font-weight: 400; line-height: 1.4; vertical-align: middle; overflow-wrap: anywhere; }
 .dh-app .dd-table :is(th, td):first-child { padding-left: var(--fl-card-pad); }
 .dh-app .dd-table :is(th, td):last-child { padding-right: var(--fl-card-pad); }
-.dh-app .dd-table :is(th, td).num { text-align: right; }
+.dh-app .dd-table :is(th, td).num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .dh-app .dd-table td.strong { color: var(--dh-ink); font-weight: 600; }
 .dh-app .dd-table td.mono { font-variant-numeric: tabular-nums; }
 .dh-app .dd-table td.is-empty { padding: var(--sp-6) var(--fl-card-pad); text-align: center; color: var(--dh-muted); font-size: var(--fl-fs-body); font-weight: 400; }
-.dd-method { display: inline-flex; align-items: center; padding: 2px 10px; border: 1px solid var(--dh-line); border-radius: var(--kh-radius-sm); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fs-sm); font-weight: 500; white-space: nowrap; }
+.dd-method { display: inline-flex; align-items: center; padding: 2px 10px; border: 0; border-radius: var(--kh-radius-sm); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fs-sm); font-weight: 500; white-space: nowrap; }
 .dh-app .dd-table a.dd-tlink { display: inline-flex; align-items: center; min-height: var(--tap); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .dh-app .dd-table a.dd-tlink--link { text-decoration: none; }
 @media (min-width: 1024px) and (pointer: fine) { .dh-app .dd-table a.dd-tlink { min-height: 36px; } }
-
-/* Ledger skin for the real table: the shared double rule under the header (see .dd-table th) and the hairline margin line, drawn at 6px
-   inside a 14px gutter so it never touches a cell. */
+/* A real table (not stacked cards): 44px header, 48px rows, no row lines, a barely tinted alternate row, a clear hover tint. */
 @container dd (min-width: 860px) {
-    .dh-app .dd-tablecard { position: relative; }
-    .dh-app .dd-tablecard::before { content: ""; position: absolute; top: 0; bottom: 0; left: 6px; width: 1px; background: var(--kh-margin); opacity: .8; pointer-events: none; }
-    .dh-app .dd-table { margin-inline-start: 14px; width: calc(100% - 14px); }
+    .dh-app .dd-table th { height: var(--tb-head-h); }
+    .dh-app .dd-table td { height: var(--tb-row-h); }
+    .dh-app .dd-table tbody tr:nth-child(even) { background: var(--tb-zebra); }
+    .dh-app .dd-table tbody tr:has(> td.is-empty) { background: transparent; }
 }
-
-@container dd (max-width: 859.98px) {
-    .dd-top > .dd-rail .dd-h { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-}
-
-/* ───────── Tables: one card per row below 860px, a real table from there ───────── */
-.dd-tablecard { overflow: hidden; }
-.dh-app .dd-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.dh-app .dd-table th { padding: var(--sp-3) var(--sp-2); background: var(--kh-panel); border-bottom: 3px double var(--kh-text-3); color: var(--dh-ink-soft); font-size: var(--fl-fs-meta); font-weight: 600; line-height: 1.3; letter-spacing: 0.06em; text-transform: uppercase; text-align: left; vertical-align: bottom; }
-.dh-app .dd-table td { padding: var(--sp-3) var(--sp-2); border-top: 1px solid var(--dh-line-soft); color: var(--dh-ink-soft); font-size: var(--fl-fs-cell); font-weight: 400; line-height: 1.4; vertical-align: middle; overflow-wrap: anywhere; }
-.dh-app .dd-table :is(th, td):first-child { padding-left: var(--fl-card-pad); }
-.dh-app .dd-table :is(th, td):last-child { padding-right: var(--fl-card-pad); }
-.dh-app .dd-table :is(th, td).num { text-align: right; }
-.dh-app .dd-table td.strong { color: var(--dh-ink); font-weight: 600; }
-.dh-app .dd-table td.mono { font-variant-numeric: tabular-nums; }
-.dh-app .dd-table td.is-empty { padding: var(--sp-6) var(--fl-card-pad); text-align: center; color: var(--dh-muted); font-size: var(--fl-fs-body); font-weight: 400; }
-.dd-method { display: inline-flex; align-items: center; padding: 2px 10px; border: 1px solid var(--dh-line); border-radius: var(--kh-radius-sm); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fs-sm); font-weight: 500; white-space: nowrap; }
-.dh-app .dd-table a.dd-tlink { display: inline-flex; align-items: center; min-height: var(--tap); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
-.dh-app .dd-table a.dd-tlink--link { text-decoration: none; }
-@media (min-width: 1024px) and (pointer: fine) { .dh-app .dd-table a.dd-tlink { min-height: 36px; } }
+@media (hover: hover) { @container dd (min-width: 860px) { .dh-app .dd-table tbody tr:not(:has(> td.is-empty)):hover { background: var(--tb-hover); } } }
 
 
 @container dd (max-width: 859.98px) {
@@ -182,7 +162,7 @@
     .dd-tablecard > .dh-pager { margin-top: var(--sp-3); }
     .dh-app .dd-table td[data-cell="act"] { grid-column: 1 / -1; padding-top: var(--sp-2); border-top: 1px solid var(--dh-line-soft); }
     .dh-app .dd-table td[data-cell="act"]::before { content: none; }
-    .dh-app .dd-table td[data-cell="act"] a.dd-tlink { width: 100%; justify-content: center; border: 1px solid var(--dh-field-border); border-radius: var(--dh-radius-sm); text-decoration: none; background: var(--dh-raised); color: var(--dh-ink); }
+    .dh-app .dd-table td[data-cell="act"] a.dd-tlink { width: 100%; justify-content: center; border: 1px solid var(--kh-btn-edge); border-radius: var(--dh-radius-sm); text-decoration: none; background: var(--dh-raised); color: var(--dh-ink); }
 }
 @container dd (min-width: 560px) and (max-width: 859.98px) {
     .dh-app .dd-t-rec tbody tr { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -205,12 +185,12 @@
 .dh-app .dd-sheet-body p { margin: 0; font-size: var(--fl-fs-body); line-height: var(--fl-lh-body); font-weight: 400; color: var(--dh-ink-soft); }
 .dh-app .dd-sheet-body p.dd-hint { font-size: var(--fl-fs-cell); color: var(--dh-muted); }
 .dh-app .dd-sheet-body p strong { color: var(--dh-ink); font-weight: 600; font-variant-numeric: tabular-nums; }
-.dh-app .dd-sheet-body .dd-takes { font-weight: 600; padding: var(--sp-3); background: var(--dh-accent-soft); border: 1px solid var(--dh-accent-line); border-radius: var(--dh-radius-sm); color: var(--dh-ink); }
+.dh-app .dd-sheet-body .dd-takes { font-weight: 600; padding: var(--sp-3); background: var(--dh-accent-soft); border: 0; border-radius: var(--dh-radius-sm); color: var(--dh-ink); }
 .dh-app .dd-sheet-body .dd-takes strong { font-size: var(--fl-fs-h2); }
-.dh-app .dd-sheet-body .dd-takes.is-danger { background: var(--dh-danger-soft); border-color: var(--dh-danger-line); }
+.dh-app .dd-sheet-body .dd-takes.is-danger { background: var(--dh-danger-soft); }
 .dd-sheet-foot { flex: none; display: flex; justify-content: flex-end; gap: var(--sp-2); padding: var(--sp-3) var(--fl-card-pad) calc(var(--sp-3) + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--dh-line); background: var(--dh-muted-surface); }
 .dh-app .dd-sheet-foot .btn { min-width: 6.5rem; justify-content: center; white-space: normal; }
-.dd-readback { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-4); margin: 0; padding: var(--sp-3); background: var(--dh-muted-surface); border: 1px solid var(--dh-line); border-radius: var(--dh-radius-sm); }
+.dd-readback { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-4); margin: 0; padding: var(--sp-3); background: var(--dh-muted-surface); border: 0; border-radius: var(--dh-radius-sm); }
 .dd-readback > div { min-width: 0; }
 .dh-app .dd-readback dt { margin: 0; font-size: var(--fs-sm); font-weight: 500; line-height: 1.3; letter-spacing: 0; text-transform: none; color: var(--kh-text-2); }
 .dh-app .dd-readback dd { margin: 0; font-size: var(--fl-fs-body); font-weight: 600; color: var(--dh-ink); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
@@ -270,8 +250,8 @@
 .dh-app .dd-who-card .customer-photo__label { font-size: var(--fl-fs-body); }
 .dh-app .dd-who-card .customer-photo .btn, .dh-app .dd-who-card .customer-photo .customer-photo-icon { min-height: var(--tap); width: var(--tap); flex-basis: var(--tap); }
 .dd-chips { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0; padding: 0; list-style: none; }
-.dh-app .dd-chips li { display: inline-flex; align-items: center; gap: var(--sp-1); min-height: 32px; padding: 0 var(--sp-3); border: 1px solid var(--dh-line); border-radius: var(--kh-radius-sm); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fl-fs-cell); font-weight: 600; overflow-wrap: anywhere; }
-.dh-app .dd-chips li.is-ok { background: var(--dh-success-soft); border-color: var(--dh-success-line); color: var(--dh-success); }
+.dh-app .dd-chips li { display: inline-flex; align-items: center; gap: var(--sp-1); min-height: 32px; padding: 0 var(--sp-3); border: 1px solid transparent; border-radius: var(--kh-radius-sm); background: var(--dh-muted-surface); color: var(--dh-ink-soft); font-size: var(--fl-fs-cell); font-weight: 600; overflow-wrap: anywhere; }
+.dh-app .dd-chips li.is-ok { background: var(--dh-success-soft); color: var(--dh-success); }
 .dh-app .dd-chips li.is-missing { background: var(--dh-warning-soft); border-color: var(--dh-warning-line); color: var(--dh-warning-ink); }
 .dd-chips svg { width: 14px; height: 14px; flex: none; }
 .dd-kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr)); gap: var(--sp-4) var(--sp-5); margin: 0; }
@@ -285,8 +265,8 @@
 .dh-app .dd-figs dd.is-zero { color: var(--dh-muted); font-weight: 600; }
 .dd-figs { overflow: hidden; border-radius: var(--dh-card-radius); }
 .dd-jump { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 7.5rem), 1fr)); gap: var(--sp-2); }
-.dh-app .dd-jump-link { display: flex; align-items: center; justify-content: center; min-height: var(--tap); padding: 0 var(--sp-3); border: 1px solid var(--dh-field-border); border-radius: var(--dh-radius-sm); background: var(--dh-card); color: var(--dh-ink); font-size: var(--fl-fs-body); font-weight: 600; text-decoration: none; text-align: center; overflow-wrap: anywhere; }
-@media (hover: hover) and (pointer: fine) { .dh-app .dd-jump-link:hover { border-color: var(--dh-accent); } }
+.dh-app .dd-jump-link { display: flex; align-items: center; justify-content: center; min-height: var(--tap); padding: 0 var(--sp-3); border: 1px solid var(--kh-btn-edge); border-radius: var(--dh-radius-sm); background: var(--dh-card); color: var(--dh-ink); font-size: var(--fl-fs-body); font-weight: 600; text-decoration: none; text-align: center; overflow-wrap: anywhere; }
+@media (hover: hover) and (pointer: fine) { .dh-app .dd-jump-link:hover { border-color: var(--kh-ink-edge); } }
 .dh-app .dd-section { scroll-margin-top: var(--sp-4); }
 .dh-app .dd-section .dh-section-count { font-size: var(--fl-fs-meta); }
 .dh-app .dd .dh-fbar-open--sm { height: var(--fl-ctl-h); min-height: var(--fl-ctl-h); }
@@ -297,7 +277,7 @@
 .dd-empty { display: grid; justify-items: start; gap: var(--sp-2); padding: var(--sp-5) var(--fl-card-pad); }
 .dh-app .dd-empty p { margin: 0; font-size: var(--fl-fs-body); color: var(--dh-muted); font-weight: 400; }
 .dh-app .dd-empty .dd-empty-title { font-size: var(--fl-fs-h2); font-weight: 600; color: var(--dh-ink); }
-.dd-photo-tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: var(--kh-radius-sm); background: var(--dh-success-soft); border: 1px solid var(--dh-success-line); color: var(--dh-success); font-size: var(--fs-sm); font-weight: 500; }
+.dd-photo-tag { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: var(--kh-radius-sm); background: var(--dh-success-soft); border: 0; color: var(--dh-success); font-size: var(--fs-sm); font-weight: 500; }
 .dh-app .dd .dh-fchip, .dh-app .dd .dh-fbar-clearall { min-height: var(--tap); }
 .dh-app .dd-pager { margin: 0; }
 
@@ -309,7 +289,7 @@
 .dh-app .dd-activate-title { margin: 0; font-size: var(--fl-fs-h1); line-height: var(--fl-lh-head); font-weight: 600; color: var(--dh-ink); text-wrap: balance; }
 .dd-steps { display: grid; gap: var(--sp-4); margin: 0; padding: 0; list-style: none; counter-reset: step; }
 .dh-app .dd-steps li { display: grid; grid-template-columns: 2rem minmax(0, 1fr); gap: var(--sp-3); align-items: start; margin: 0; font-size: var(--fl-fs-body); line-height: var(--fl-lh-body); font-weight: 400; color: var(--dh-ink-soft); counter-increment: step; }
-.dh-app .dd-steps li::before { content: counter(step); display: grid; place-items: center; width: 2rem; height: 2rem; border: 1px solid var(--dh-field-border); border-radius: var(--r-sm); font-size: var(--fl-fs-cell); font-weight: 600; color: var(--dh-ink); font-variant-numeric: tabular-nums; }
+.dh-app .dd-steps li::before { content: counter(step); display: grid; place-items: center; width: 2rem; height: 2rem; border: 1px solid var(--kh-btn-edge); border-radius: var(--r-sm); font-size: var(--fl-fs-cell); font-weight: 600; color: var(--dh-ink); font-variant-numeric: tabular-nums; }
 .dh-app .dd-steps strong { display: block; color: var(--dh-ink); font-weight: 600; }
 .dh-app .dd-activate-card form .btn { width: 100%; justify-content: center; }
 .dh-app .dd-activate-note { margin: 0; font-size: var(--fl-fs-body); color: var(--dh-muted); font-weight: 400; }
@@ -322,7 +302,7 @@
 .dh-app .al-filters .dh-form-control { min-width: 150px; }
 .dh-app .al-day { margin-top: var(--sp-5); }
 .dh-app .al-day:first-of-type { margin-top: 0; }
-.dh-app .al-day-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); padding-bottom: var(--sp-2); border-bottom: 2px solid var(--dh-ink); }
+.dh-app .al-day-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); padding-bottom: var(--sp-2); border-bottom: 1px solid var(--dh-line); }
 .dh-app .al-day-title { margin: 0; font-size: var(--fl-fs-body); font-weight: 700; color: var(--dh-ink); }
 .dh-app .al-day-count { font-size: var(--fl-fs-cell); color: var(--dh-muted); white-space: nowrap; }
 .dh-app .al-list { list-style: none; margin: 0; padding: 0; }
@@ -337,15 +317,15 @@
 .dh-app .al-text { font-size: var(--fl-fs-body); color: var(--dh-ink); overflow-wrap: anywhere; flex: 1 1 18rem; min-width: 0; }
 .dh-app .al-who { font-size: var(--fl-fs-cell); color: var(--dh-muted); white-space: nowrap; }
 .dh-app .al-loan { font: 600 var(--fl-fs-cell)/1 var(--kh-mono, monospace); }
-.dh-app .al-chip { font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--dh-line); background: var(--dh-muted-surface); color: var(--dh-ink); }
+.dh-app .al-chip { font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; border: 1px solid transparent; background: var(--dh-muted-surface); color: var(--dh-ink); }
 .dh-app .al-chip--money { background: var(--dh-success-soft, #e7f4ec); border-color: transparent; color: #17623a; }
 .dh-app .al-chip--item { background: #eef1f8; border-color: transparent; color: #243a6e; }
 .dh-app .al-chip--document { background: #f3eefb; border-color: transparent; color: #4a2c82; }
 .dh-app .al-chip--loan { background: #fdeceb; border-color: transparent; color: #8a1c1c; }
 .dh-app .al-chip--print { background: #f1f1f1; border-color: transparent; color: #444; }
-.dh-app .al-chip--system { background: transparent; border-style: dashed; color: var(--dh-muted); }
+.dh-app .al-chip--system { background: var(--dh-muted-surface); color: var(--dh-muted); }
 .dh-app .al-item--system .al-text { color: var(--dh-muted); }
-.dh-app .al-details { margin: var(--sp-2) 0 var(--sp-1); padding: var(--sp-3); background: var(--dh-muted-surface); border: 1px solid var(--dh-line); border-radius: var(--kh-radius); display: grid; gap: var(--sp-1); }
+.dh-app .al-details { margin: var(--sp-2) 0 var(--sp-1); padding: var(--sp-3); background: var(--dh-muted-surface); border: 0; border-radius: var(--kh-radius); display: grid; gap: var(--sp-1); }
 .dh-app .al-details > div { display: grid; grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr); gap: var(--sp-3); font-size: var(--fl-fs-cell); }
 .dh-app .al-details dt { color: var(--dh-muted); margin: 0; }
 .dh-app .al-details dd { margin: 0; color: var(--dh-ink); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }

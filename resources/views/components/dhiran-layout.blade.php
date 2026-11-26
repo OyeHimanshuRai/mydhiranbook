@@ -7,6 +7,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     {{-- Alpine-rendered pages are not snapshot-safe: restoring a Turbo snapshot re-ran x-for clones without their scope. --}}
     <meta name="turbo-cache-control" content="no-cache">
+    {{-- Scope for browser-side drafts: one shop + one user, never shared (resources/js/ux/autosave.js). --}}
+    <meta name="ux-scope" content="{{ auth()->user() ? substr(sha1(auth()->id().'|'.auth()->user()->shop_id.'|'.config('app.key')), 0, 16) : '' }}">
     <title>{{ $title ?? 'MyDhiranBook' }}</title>
     @include('partials.favicon')
 
@@ -53,7 +55,7 @@
         <aside class="dh-sidebar" id="dh-sidebar" x-ref="sidebar" :role="drawer ? 'dialog' : null" :aria-modal="drawer ? 'true' : null" :aria-label="drawer ? 'Main menu' : null">
             <div class="dh-sidebar-head">
                 <a href="{{ route('dhiran.loans') }}" class="dh-brand" aria-label="MyDhiranBook, Loans" @click="show = false">
-                    <span class="dh-wordmark" aria-hidden="true">mydhiranbook<span>.</span></span>
+                    <span class="dh-wordmark" aria-hidden="true"><span class="dh-wordmark-full">mydhiranbook</span><span class="dh-wordmark-short">mdb</span><span>.</span></span>
                 </a>
                 <button type="button" class="dh-sidebar-close"
                         @click="closeMenu()"
@@ -91,10 +93,17 @@
                         <x-icon name="settings" />
                         <span class="dh-nav-text">Settings</span>
                     </a>
+                    @can('dhiran.view')
+                    <a href="{{ route('dhiran.referrals') }}" class="dh-nav-link {{ request()->routeIs('dhiran.referrals') ? 'active' : '' }}" @if(request()->routeIs('dhiran.referrals')) aria-current="page" @endif @click="show = false">
+                        <x-icon name="gift" />
+                        <span class="dh-nav-text">Refer a jeweller</span>
+                    </a>
+                    @endcan
                 @endif
             </nav>
 
             <div class="dh-foot">
+                @if((bool) auth()->user()?->shop_id)<x-dhiran.access-chip />@endif
                 <div class="dh-foot-user">{{ auth()->user()->name ?? \App\Support\Mobile::forDisplay(auth()->user()?->mobile_number) }}</div>
                 <div class="dh-foot-shop">{{ auth()->user()->shop?->name ?? 'MyDhiranBook account' }}</div>
                 <form method="POST" action="{{ route('logout') }}" data-turbo-frame="_top" data-confirm-message="Sign out of MyDhiranBook?">
@@ -145,7 +154,7 @@
         </main>
     </div>
     <div id="global-toast" class="global-toast" role="status" aria-live="polite" aria-atomic="true" aria-hidden="true"></div>
-    @if((bool) auth()->user()?->shop_id)<x-dhiran.notice-card />@endif
+    @if((bool) auth()->user()?->shop_id)<x-dhiran.notice-card /><x-dhiran.palette />@endif
     @stack('scripts')
 </body>
 </html>

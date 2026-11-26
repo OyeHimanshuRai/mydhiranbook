@@ -40,7 +40,9 @@
             const dlg = document.querySelector('#noticesCard[data-auto="1"]');
             if (!dlg || dlg.open) { return; }
             dlg.showModal();
-            fetch(dlg.dataset.seenUrl, { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content ?? '', 'X-Requested-With': 'XMLHttpRequest' } }).catch(() => {});
+            const seen = () => fetch(dlg.dataset.seenUrl, { method: 'POST', credentials: 'same-origin', headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content ?? '', 'X-Requested-With': 'XMLHttpRequest' } });
+            // The bell badge goes quiet at once and comes back if the server did not take "seen" (resources/js/ux/recovery.js).
+            window.mdbOptimistic ? window.mdbOptimistic(document.querySelector('.dh-bell'), { apply: (b) => b?.classList.add('is-seen'), rollback: (b) => b?.classList.remove('is-seen'), request: seen }) : seen().catch(() => {});
         };
         document.addEventListener('turbo:load', () => window.__noticesAuto());
         document.addEventListener('turbo:before-cache', () => document.getElementById('noticesCard')?.close());
